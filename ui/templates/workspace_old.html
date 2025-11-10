@@ -1,0 +1,2159 @@
+{% extends "base.html" %}
+
+{% block title %}Workspace - Fun Work Hub{% endblock %}
+
+{% block styles %}
+<style>
+    body {
+        margin: 0;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        background: #f8f9fa;
+        height: 100vh;
+        overflow: hidden;
+    }
+
+    .workspace-container {
+        display: flex;
+        height: 100vh;
+        background: #f8f9fa;
+    }
+
+    .sidebar {
+        width: 280px;
+        background: white;
+        border-right: 1px solid #e9ecef;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 2px 0 10px rgba(0, 0, 0, 0.05);
+    }
+
+    .sidebar-header {
+        padding: 20px;
+        border-bottom: 1px solid #e9ecef;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        position: relative;
+    }
+
+    .sidebar-title {
+        font-size: 18px;
+        font-weight: 600;
+        margin-bottom: 8px;
+    }
+
+    .user-menu {
+        position: absolute;
+        top: 15px;
+        right: 20px;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+    
+    .user-avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: linear-gradient(45deg, #8B5CF6, #06B6D4);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 500;
+        font-size: 14px;
+    }
+    
+    .logout-btn {
+        background: rgba(255, 255, 255, 0.1);
+        color: white;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 12px;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    
+    .logout-btn:hover {
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+        text-decoration: none;
+    }
+
+    .search-box {
+        position: relative;
+        margin-top: 12px;
+    }
+
+    .search-input {
+        width: 100%;
+        padding: 10px 40px 10px 12px;
+        border: none;
+        border-radius: 6px;
+        background: rgba(255, 255, 255, 0.15);
+        color: white;
+        font-size: 14px;
+        backdrop-filter: blur(10px);
+    }
+
+    .search-input::placeholder {
+        color: rgba(255, 255, 255, 0.8);
+    }
+
+    .search-input:focus {
+        outline: none;
+        background: rgba(255, 255, 255, 0.25);
+    }
+
+    .search-icon {
+        position: absolute;
+        right: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: rgba(255, 255, 255, 0.8);
+    }
+
+    .folders-section {
+        flex: 1;
+        overflow-y: auto;
+        padding: 20px;
+    }
+
+    .folder-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 16px;
+        color: #6c757d;
+        font-size: 14px;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .add-folder-btn {
+        background: none;
+        border: none;
+        color: #6c757d;
+        cursor: pointer;
+        padding: 4px;
+        border-radius: 4px;
+        transition: all 0.2s;
+    }
+
+    .add-folder-btn:hover {
+        background: #f8f9fa;
+        color: #495057;
+    }
+
+    .folder-item {
+        display: flex;
+        align-items: center;
+        padding: 12px 16px;
+        margin-bottom: 8px;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s;
+        position: relative;
+    }
+
+    .folder-item:hover {
+        background: #f8f9fa;
+    }
+
+    .folder-item.active {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+
+    .folder-icon {
+        margin-right: 12px;
+        font-size: 16px;
+    }
+
+    .folder-name {
+        flex: 1;
+        font-weight: 500;
+    }
+
+    .folder-count {
+        background: rgba(255, 255, 255, 0.2);
+        color: rgba(255, 255, 255, 0.9);
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 500;
+    }
+
+    .folder-item:not(.active) .folder-count {
+        background: #e9ecef;
+        color: #6c757d;
+    }
+
+    .main-content {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+    .top-bar {
+        height: 60px;
+        background: white;
+        border-bottom: 1px solid #e9ecef;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 24px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    }
+
+    .page-title {
+        font-size: 24px;
+        font-weight: 600;
+        color: #212529;
+    }
+
+    .top-actions {
+        display: flex;
+        gap: 12px;
+    }
+
+    .btn {
+        padding: 8px 16px;
+        border-radius: 6px;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        color: white;
+        text-decoration: none;
+    }
+
+    .btn-secondary {
+        background: white;
+        color: #6c757d;
+        border: 1px solid #e9ecef;
+    }
+
+    .btn-secondary:hover {
+        background: #f8f9fa;
+        color: #495057;
+        text-decoration: none;
+    }
+
+    .content-area {
+        flex: 1;
+        padding: 24px;
+        overflow-y: auto;
+    }
+
+    .content-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 24px;
+    }
+
+    .content-title {
+        font-size: 20px;
+        font-weight: 600;
+        color: #212529;
+    }
+
+    .filter-tabs {
+        display: flex;
+        gap: 8px;
+    }
+
+    .filter-tab {
+        padding: 8px 16px;
+        border-radius: 6px;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+        border: none;
+        background: none;
+        color: #6c757d;
+    }
+
+    .filter-tab.active {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+
+    .items-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 20px;
+    }
+
+    .item-card {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        border: 1px solid #e9ecef;
+        transition: all 0.2s;
+        cursor: pointer;
+    }
+
+    .item-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    }
+
+    .item-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 12px;
+    }
+
+    .item-type {
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 500;
+        text-transform: uppercase;
+    }
+
+    .item-type.task {
+        background: #e3f2fd;
+        color: #1976d2;
+    }
+
+    .item-type.note {
+        background: #f3e5f5;
+        color: #7b1fa2;
+    }
+
+    .item-type.bug {
+        background: #ffebee;
+        color: #d32f2f;
+    }
+
+    .item-menu {
+        position: relative;
+    }
+
+    .item-menu-btn {
+        background: none;
+        border: none;
+        color: #6c757d;
+        cursor: pointer;
+        padding: 4px;
+        border-radius: 4px;
+        transition: all 0.2s;
+    }
+
+    .item-menu-btn:hover {
+        background: #f8f9fa;
+        color: #495057;
+    }
+
+    .item-title {
+        font-size: 16px;
+        font-weight: 600;
+        color: #212529;
+        margin-bottom: 8px;
+        line-height: 1.4;
+    }
+
+    .item-description {
+        color: #6c757d;
+        font-size: 14px;
+        line-height: 1.5;
+        margin-bottom: 16px;
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .item-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .item-priority {
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: 500;
+    }
+
+    .priority-high {
+        background: #ffebee;
+        color: #d32f2f;
+    }
+
+    .priority-medium {
+        background: #fff3e0;
+        color: #f57c00;
+    }
+
+    .priority-low {
+        background: #e8f5e8;
+        color: #388e3c;
+    }
+
+    .item-status {
+        font-size: 12px;
+        color: #6c757d;
+        text-transform: uppercase;
+        font-weight: 500;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 80px 20px;
+        color: #6c757d;
+    }
+
+    .empty-icon {
+        font-size: 48px;
+        margin-bottom: 16px;
+        opacity: 0.5;
+    }
+
+    .empty-title {
+        font-size: 20px;
+        font-weight: 600;
+        margin-bottom: 8px;
+        color: #495057;
+    }
+
+    .empty-description {
+        font-size: 14px;
+        margin-bottom: 24px;
+        max-width: 400px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    /* Navigation between pages */
+    .nav-link {
+        color: #6c757d;
+        text-decoration: none;
+        font-weight: 500;
+        transition: all 0.2s;
+    }
+
+    .nav-link:hover {
+        color: #495057;
+        text-decoration: none;
+    }
+
+    /* Modals */
+    .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 1000;
+        align-items: center;
+        justify-content: center;
+        backdrop-filter: blur(5px);
+    }
+
+    .modal-content {
+        background: white;
+        border-radius: 12px;
+        padding: 24px;
+        width: 90%;
+        max-width: 500px;
+        max-height: 80vh;
+        overflow-y: auto;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+    }
+
+    .modal-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 20px;
+        padding-bottom: 16px;
+        border-bottom: 1px solid #e9ecef;
+    }
+
+    .modal-title {
+        font-size: 18px;
+        font-weight: 600;
+        color: #212529;
+    }
+
+    .close-btn {
+        background: none;
+        border: none;
+        font-size: 20px;
+        color: #6c757d;
+        cursor: pointer;
+        padding: 4px;
+        border-radius: 4px;
+        transition: all 0.2s;
+    }
+
+    .close-btn:hover {
+        background: #f8f9fa;
+        color: #495057;
+    }
+
+    .form-group {
+        margin-bottom: 16px;
+    }
+
+    .form-label {
+        display: block;
+        margin-bottom: 6px;
+        font-weight: 500;
+        color: #495057;
+    }
+
+    .form-input,
+    .form-select,
+    .form-textarea {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid #e9ecef;
+        border-radius: 6px;
+        font-size: 14px;
+        transition: all 0.2s;
+        box-sizing: border-box;
+    }
+
+    .form-input:focus,
+    .form-select:focus,
+    .form-textarea:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .form-textarea {
+        resize: vertical;
+        min-height: 80px;
+    }
+
+    .modal-footer {
+        display: flex;
+        gap: 12px;
+        justify-content: flex-end;
+        margin-top: 24px;
+        padding-top: 16px;
+        border-top: 1px solid #e9ecef;
+    }
+</style>
+
+<style>
+/* VS Code-inspired Workspace Design */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    background: #1e1e1e;
+    color: #cccccc;
+    height: 100vh;
+    overflow: hidden;
+}
+
+.workspace-container {
+    display: flex;
+    height: 100vh;
+    background: #1e1e1e;
+}
+
+/* Activity Bar */
+.activity-bar {
+    width: 48px;
+    background: #333333;
+    border-right: 1px solid #2d2d2d;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0.5rem 0;
+}
+
+.activity-item {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 0.5rem;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: #a0a0a0;
+    position: relative;
+}
+
+.activity-item:hover {
+    background: #2a2d2e;
+    color: #ffffff;
+}
+
+.activity-item.active {
+    background: #007acc;
+    color: #ffffff;
+}
+
+.activity-item.active::before {
+    content: '';
+    position: absolute;
+    left: -12px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 2px;
+    height: 24px;
+    background: #007acc;
+}
+
+.activity-spacer {
+    flex: 1;
+}
+
+.user-menu {
+    position: relative;
+}
+
+.user-avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #007acc, #005a9e);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #ffffff;
+    cursor: pointer;
+}
+
+/* Sidebar */
+.sidebar {
+    width: 300px;
+    background: #252526;
+    border-right: 1px solid #2d2d2d;
+    display: flex;
+    flex-direction: column;
+    transition: width 0.3s ease;
+}
+
+.sidebar.collapsed {
+    width: 0;
+    overflow: hidden;
+}
+
+.sidebar-header {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid #2d2d2d;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.sidebar-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #cccccc;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.sidebar-actions {
+    display: flex;
+    gap: 0.25rem;
+}
+
+.sidebar-action {
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 2px;
+    cursor: pointer;
+    color: #a0a0a0;
+    transition: all 0.2s ease;
+}
+
+.sidebar-action:hover {
+    background: #2a2d2e;
+    color: #ffffff;
+}
+
+.sidebar-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0.5rem 0;
+}
+
+/* Explorer Tree */
+.tree-item {
+    position: relative;
+    cursor: pointer;
+    user-select: none;
+}
+
+.tree-item-content {
+    display: flex;
+    align-items: center;
+    padding: 0.25rem 0.5rem;
+    margin: 0 0.5rem;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.tree-item-content:hover {
+    background: #2a2d2e;
+}
+
+.tree-item.selected .tree-item-content {
+    background: #094771;
+    color: #ffffff;
+}
+
+.tree-expand {
+    width: 16px;
+    height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 0.25rem;
+    font-size: 0.7rem;
+    transition: transform 0.2s ease;
+}
+
+.tree-item.expanded .tree-expand {
+    transform: rotate(90deg);
+}
+
+.tree-icon {
+    width: 16px;
+    height: 16px;
+    margin-right: 0.5rem;
+    font-size: 0.8rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.tree-label {
+    flex: 1;
+    font-size: 0.85rem;
+    line-height: 1.4;
+}
+
+.tree-badge {
+    background: #007acc;
+    color: #ffffff;
+    font-size: 0.7rem;
+    padding: 0.1rem 0.4rem;
+    border-radius: 10px;
+    margin-left: 0.5rem;
+}
+
+.tree-children {
+    padding-left: 1rem;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+}
+
+.tree-item:not(.expanded) .tree-children {
+    max-height: 0;
+}
+
+.tree-item.expanded .tree-children {
+    max-height: 1000px;
+}
+
+/* Context Menu */
+.context-menu {
+    position: absolute;
+    background: #2d2d2d;
+    border: 1px solid #3e3e3e;
+    border-radius: 4px;
+    padding: 0.25rem 0;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    z-index: 1000;
+    min-width: 160px;
+}
+
+.context-item {
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.context-item:hover {
+    background: #094771;
+    color: #ffffff;
+}
+
+.context-separator {
+    height: 1px;
+    background: #3e3e3e;
+    margin: 0.25rem 0;
+}
+
+/* Main Content */
+.main-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: #1e1e1e;
+}
+
+.tab-bar {
+    background: #2d2d2d;
+    border-bottom: 1px solid #2d2d2d;
+    display: flex;
+    align-items: center;
+    min-height: 35px;
+    overflow-x: auto;
+}
+
+.tab {
+    display: flex;
+    align-items: center;
+    padding: 0.5rem 1rem;
+    border-right: 1px solid #2d2d2d;
+    cursor: pointer;
+    font-size: 0.85rem;
+    background: #2d2d2d;
+    color: #a0a0a0;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.tab:hover {
+    background: #2a2d2e;
+    color: #ffffff;
+}
+
+.tab.active {
+    background: #1e1e1e;
+    color: #ffffff;
+    border-bottom: 2px solid #007acc;
+}
+
+.tab-icon {
+    margin-right: 0.5rem;
+    font-size: 0.8rem;
+}
+
+.tab-close {
+    margin-left: 0.5rem;
+    width: 16px;
+    height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 2px;
+    opacity: 0;
+    transition: all 0.2s ease;
+}
+
+.tab:hover .tab-close {
+    opacity: 1;
+}
+
+.tab-close:hover {
+    background: #e81123;
+    color: #ffffff;
+}
+
+.editor-area {
+    flex: 1;
+    background: #1e1e1e;
+    position: relative;
+    overflow: hidden;
+}
+
+.welcome-screen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    text-align: center;
+    padding: 2rem;
+}
+
+.welcome-logo {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+    background: linear-gradient(135deg, #007acc, #005a9e);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.welcome-title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #ffffff;
+    margin-bottom: 0.5rem;
+}
+
+.welcome-subtitle {
+    font-size: 1.2rem;
+    color: #a0a0a0;
+    margin-bottom: 2rem;
+    max-width: 500px;
+    line-height: 1.6;
+}
+
+.welcome-actions {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.action-card {
+    background: #252526;
+    border: 1px solid #2d2d2d;
+    border-radius: 8px;
+    padding: 1.5rem;
+    width: 200px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    color: inherit;
+}
+
+.action-card:hover {
+    background: #2a2d2e;
+    border-color: #007acc;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0, 122, 204, 0.2);
+}
+
+.action-icon {
+    font-size: 2rem;
+    color: #007acc;
+    margin-bottom: 1rem;
+}
+
+.action-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #ffffff;
+    margin-bottom: 0.5rem;
+}
+
+.action-description {
+    font-size: 0.85rem;
+    color: #a0a0a0;
+    line-height: 1.4;
+}
+
+/* Status Bar */
+.status-bar {
+    height: 22px;
+    background: #007acc;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 1rem;
+    font-size: 0.75rem;
+}
+
+.status-left {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.status-right {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.status-item {
+    cursor: pointer;
+    padding: 0 0.25rem;
+    border-radius: 2px;
+    transition: background 0.2s ease;
+}
+
+.status-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+/* Workspace specific styles */
+.workspace-type-personal { color: #28a745; }
+.workspace-type-team { color: #007acc; }
+.workspace-type-project { color: #ffc107; }
+.workspace-type-scenario { color: #dc3545; }
+
+/* Modal Styles */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+}
+
+.modal-content {
+    background: #2d2d2d;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 500px;
+    max-height: 80vh;
+    overflow: hidden;
+    border: 1px solid #404040;
+}
+
+.modal-header {
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid #404040;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.modal-header h3 {
+    color: #ffffff;
+    margin: 0;
+    font-size: 1.1rem;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    color: #a0a0a0;
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-close:hover {
+    color: #ffffff;
+}
+
+.modal-body {
+    padding: 1.5rem;
+    max-height: 60vh;
+    overflow-y: auto;
+}
+
+.modal-footer {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid #404040;
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+}
+
+.form-group {
+    margin-bottom: 1rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: #cccccc;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    width: 100%;
+    padding: 0.75rem;
+    background: #1e1e1e;
+    border: 1px solid #404040;
+    border-radius: 4px;
+    color: #ffffff;
+    font-size: 0.9rem;
+    transition: border-color 0.3s ease;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: #007acc;
+}
+
+.form-row {
+    display: flex;
+    gap: 1rem;
+}
+
+.form-row .form-group {
+    flex: 1;
+}
+
+.btn {
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.btn-primary {
+    background: #007acc;
+    color: #ffffff;
+}
+
+.btn-primary:hover {
+    background: #005a9e;
+}
+
+.btn-secondary {
+    background: #404040;
+    color: #cccccc;
+}
+
+.btn-secondary:hover {
+    background: #4a4a4a;
+}
+
+.btn-danger {
+    background: #dc3545;
+    color: #ffffff;
+}
+
+.btn-danger:hover {
+    background: #c82333;
+}
+
+.btn-small {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.8rem;
+}
+
+/* Item Detail Panel */
+.item-detail-panel {
+    position: fixed;
+    right: 0;
+    top: 0;
+    width: 300px;
+    height: 100vh;
+    background: #252526;
+    border-left: 1px solid #2d2d2d;
+    z-index: 1500;
+    display: flex;
+    flex-direction: column;
+    transform: translateX(100%);
+    transition: transform 0.3s ease;
+}
+
+.item-detail-panel.open {
+    transform: translateX(0);
+}
+
+.panel-header {
+    padding: 1rem;
+    border-bottom: 1px solid #2d2d2d;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.panel-header h4 {
+    color: #ffffff;
+    margin: 0;
+    font-size: 1rem;
+}
+
+.panel-close {
+    background: none;
+    border: none;
+    color: #a0a0a0;
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 0;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.panel-close:hover {
+    color: #ffffff;
+}
+
+.panel-content {
+    flex: 1;
+    padding: 1rem;
+    overflow-y: auto;
+}
+
+.item-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.item-type,
+.item-priority,
+.item-status {
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.item-type {
+    background: #007acc;
+    color: #ffffff;
+}
+
+.item-priority {
+    background: #ffc107;
+    color: #000000;
+}
+
+.item-status {
+    background: #28a745;
+    color: #ffffff;
+}
+
+.item-description {
+    color: #cccccc;
+    line-height: 1.6;
+    margin-bottom: 1.5rem;
+    white-space: pre-wrap;
+}
+
+.item-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+/* Loading state */
+.loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    color: #a0a0a0;
+}
+
+.loading:before {
+    content: '';
+    width: 20px;
+    height: 20px;
+    border: 2px solid #404040;
+    border-top: 2px solid #007acc;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-right: 0.5rem;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .activity-bar {
+        width: 40px;
+    }
+    
+    .sidebar {
+        width: 250px;
+    }
+    
+    .welcome-actions {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .action-card {
+        width: 100%;
+        max-width: 300px;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="workspace-container">
+    <!-- Activity Bar -->
+    <div class="activity-bar">
+        <div class="activity-item active" title="Explorer" data-view="explorer">
+            <i class="fas fa-folder"></i>
+        </div>
+        <div class="activity-item" title="Search" data-view="search">
+            <i class="fas fa-search"></i>
+        </div>
+        <div class="activity-item" title="Source Control" data-view="git">
+            <i class="fas fa-code-branch"></i>
+        </div>
+        <div class="activity-item" title="Run and Debug" data-view="debug">
+            <i class="fas fa-play"></i>
+        </div>
+        <div class="activity-item" title="Extensions" data-view="extensions">
+            <i class="fas fa-th-large"></i>
+        </div>
+        <div class="activity-item" title="Scenarios" data-view="scenarios">
+            <i class="fas fa-theater-masks"></i>
+        </div>
+        
+        <div class="activity-spacer"></div>
+        
+        <div class="user-menu">
+            <div class="user-avatar" title="{{ current_user.first_name }} {{ current_user.last_name }}">
+                {{ current_user.first_name[0].upper() }}{{ current_user.last_name[0].upper() }}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-title">Explorer</div>
+            <div class="sidebar-actions">
+                <div class="sidebar-action" title="New File">
+                    <i class="fas fa-plus"></i>
+                </div>
+                <div class="sidebar-action" title="New Folder">
+                    <i class="fas fa-folder-plus"></i>
+                </div>
+                <div class="sidebar-action" title="Refresh">
+                    <i class="fas fa-sync"></i>
+                </div>
+                <div class="sidebar-action" title="Collapse All">
+                    <i class="fas fa-angle-up"></i>
+                </div>
+            </div>
+        </div>
+        
+        <div class="sidebar-content">
+            <!-- Workspace Tree -->
+            <div class="tree-item expanded" data-type="workspace">
+                <div class="tree-item-content">
+                    <div class="tree-expand">
+                        <i class="fas fa-chevron-right"></i>
+                    </div>
+                    <div class="tree-icon workspace-type-personal">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="tree-label">{{ current_user.first_name }}'s Workspace</div>
+                    <div class="tree-badge">12</div>
+                </div>
+                <div class="tree-children">
+                    <!-- Personal Items -->
+                    <div class="tree-item" data-type="folder">
+                        <div class="tree-item-content">
+                            <div class="tree-expand">
+                                <i class="fas fa-chevron-right"></i>
+                            </div>
+                            <div class="tree-icon">
+                                <i class="fas fa-folder"></i>
+                            </div>
+                            <div class="tree-label">📋 Todo Lists</div>
+                            <div class="tree-badge">5</div>
+                        </div>
+                        <div class="tree-children">
+                            <div class="tree-item" data-type="file">
+                                <div class="tree-item-content">
+                                    <div class="tree-expand"></div>
+                                    <div class="tree-icon">
+                                        <i class="fas fa-check-square"></i>
+                                    </div>
+                                    <div class="tree-label">Daily Tasks</div>
+                                </div>
+                            </div>
+                            <div class="tree-item" data-type="file">
+                                <div class="tree-item-content">
+                                    <div class="tree-expand"></div>
+                                    <div class="tree-icon">
+                                        <i class="fas fa-calendar-week"></i>
+                                    </div>
+                                    <div class="tree-label">Weekly Goals</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="tree-item" data-type="folder">
+                        <div class="tree-item-content">
+                            <div class="tree-expand">
+                                <i class="fas fa-chevron-right"></i>
+                            </div>
+                            <div class="tree-icon">
+                                <i class="fas fa-sticky-note"></i>
+                            </div>
+                            <div class="tree-label">📝 Notes</div>
+                            <div class="tree-badge">7</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Team Workspaces -->
+            <div class="tree-item" data-type="workspace">
+                <div class="tree-item-content">
+                    <div class="tree-expand">
+                        <i class="fas fa-chevron-right"></i>
+                    </div>
+                    <div class="tree-icon workspace-type-team">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="tree-label">🏢 Development Team</div>
+                    <div class="tree-badge">8</div>
+                </div>
+            </div>
+            
+            <!-- Project Workspaces -->
+            <div class="tree-item" data-type="workspace">
+                <div class="tree-item-content">
+                    <div class="tree-expand">
+                        <i class="fas fa-chevron-right"></i>
+                    </div>
+                    <div class="tree-icon workspace-type-project">
+                        <i class="fas fa-project-diagram"></i>
+                    </div>
+                    <div class="tree-label">🚀 Fun Work Hub</div>
+                    <div class="tree-badge">15</div>
+                </div>
+            </div>
+            
+            <!-- Scenario Workspaces -->
+            <div class="tree-item" data-type="workspace">
+                <div class="tree-item-content">
+                    <div class="tree-expand">
+                        <i class="fas fa-chevron-right"></i>
+                    </div>
+                    <div class="tree-icon workspace-type-scenario">
+                        <i class="fas fa-theater-masks"></i>
+                    </div>
+                    <div class="tree-label">🎭 Marketing Campaign</div>
+                    <div class="tree-badge">6</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Tab Bar -->
+        <div class="tab-bar">
+            <div class="tab active">
+                <div class="tab-icon">
+                    <i class="fas fa-home"></i>
+                </div>
+                <span>Welcome</span>
+                <div class="tab-close">
+                    <i class="fas fa-times"></i>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Editor Area -->
+        <div class="editor-area">
+            <div class="welcome-screen">
+                <div class="welcome-logo">🚀</div>
+                <h1 class="welcome-title">Chào mừng đến Fun Work Hub</h1>
+                <p class="welcome-subtitle">
+                    Workspace thông minh giúp bạn tổ chức công việc hiệu quả với hệ thống phân lớp và kênh liên kết mạnh mẽ
+                </p>
+                
+                <div class="welcome-actions">
+                    <a href="#" class="action-card" onclick="createNewItem('todo')">
+                        <div class="action-icon">
+                            <i class="fas fa-plus"></i>
+                        </div>
+                        <div class="action-title">Tạo Todo mới</div>
+                        <div class="action-description">
+                            Thêm nhiệm vụ và theo dõi tiến độ công việc
+                        </div>
+                    </a>
+                    
+                    <a href="#" class="action-card" onclick="createNewItem('note')">
+                        <div class="action-icon">
+                            <i class="fas fa-edit"></i>
+                        </div>
+                        <div class="action-title">Tạo Note mới</div>
+                        <div class="action-description">
+                            Ghi chú ý tưởng và lưu trữ thông tin
+                        </div>
+                    </a>
+                    
+                    <a href="#" class="action-card" onclick="createWorkspace()">
+                        <div class="action-icon">
+                            <i class="fas fa-layer-group"></i>
+                        </div>
+                        <div class="action-title">Tạo Workspace</div>
+                        <div class="action-description">
+                            Khởi tạo không gian làm việc mới
+                        </div>
+                    </a>
+                    
+                    <a href="#" class="action-card" onclick="openScenarios()">
+                        <div class="action-icon">
+                            <i class="fas fa-theater-masks"></i>
+                        </div>
+                        <div class="action-title">Quản lý Scenarios</div>
+                        <div class="action-description">
+                            Tạo và điều phối các kịch bản làm việc
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Status Bar -->
+        <div class="status-bar">
+            <div class="status-left">
+                <div class="status-item">
+                    <i class="fas fa-code-branch"></i>
+                    main
+                </div>
+                <div class="status-item">
+                    <i class="fas fa-sync"></i>
+                    Synced
+                </div>
+                <div class="status-item">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    0 problems
+                </div>
+            </div>
+            <div class="status-right">
+                <div class="status-item">
+                    {{ current_user.email }}
+                </div>
+                <div class="status-item">
+                    <i class="fas fa-wifi"></i>
+                    Online
+                </div>
+                <div class="status-item">
+                    <i class="fas fa-bell"></i>
+                    3
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Context Menu (Hidden by default) -->
+<div class="context-menu" id="contextMenu" style="display: none;">
+    <div class="context-item" onclick="contextAction('new-file')">
+        <i class="fas fa-file"></i>
+        New Todo
+    </div>
+    <div class="context-item" onclick="contextAction('new-folder')">
+        <i class="fas fa-sticky-note"></i>
+        New Note
+    </div>
+    <div class="context-separator"></div>
+    <div class="context-item" onclick="contextAction('rename')">
+        <i class="fas fa-edit"></i>
+        Rename
+    </div>
+    <div class="context-item" onclick="contextAction('delete')">
+        <i class="fas fa-trash"></i>
+        Delete
+    </div>
+</div>
+
+<!-- Create Item Modal -->
+<div class="modal" id="createItemModal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="modalTitle">Create New Item</h3>
+            <span class="modal-close" onclick="closeModal('createItemModal')">&times;</span>
+        </div>
+        <div class="modal-body">
+            <form id="itemForm">
+                <div class="form-group">
+                    <label for="itemTitle">Title *</label>
+                    <input type="text" id="itemTitle" name="title" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="itemDescription">Description</label>
+                    <textarea id="itemDescription" name="description" rows="3"></textarea>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="itemType">Type</label>
+                        <select id="itemType" name="type">
+                            <option value="task">Task</option>
+                            <option value="note">Note</option>
+                            <option value="reminder">Reminder</option>
+                            <option value="idea">Idea</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="itemPriority">Priority</label>
+                        <select id="itemPriority" name="priority">
+                            <option value="low">Low</option>
+                            <option value="medium" selected>Medium</option>
+                            <option value="high">High</option>
+                            <option value="urgent">Urgent</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="itemStatus">Status</label>
+                    <select id="itemStatus" name="status">
+                        <option value="todo" selected>To Do</option>
+                        <option value="in-progress">In Progress</option>
+                        <option value="done">Done</option>
+                        <option value="archived">Archived</option>
+                    </select>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="closeModal('createItemModal')">Cancel</button>
+            <button type="button" class="btn btn-primary" onclick="saveItem()">Save</button>
+        </div>
+    </div>
+</div>
+
+<!-- Create Workspace Modal -->
+<div class="modal" id="createWorkspaceModal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Create New Workspace</h3>
+            <span class="modal-close" onclick="closeModal('createWorkspaceModal')">&times;</span>
+        </div>
+        <div class="modal-body">
+            <form id="workspaceForm">
+                <div class="form-group">
+                    <label for="workspaceName">Workspace Name *</label>
+                    <input type="text" id="workspaceName" name="name" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="workspaceType">Type</label>
+                    <select id="workspaceType" name="type">
+                        <option value="personal">Personal</option>
+                        <option value="team">Team</option>
+                        <option value="project">Project</option>
+                        <option value="scenario">Scenario</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="workspaceDescription">Description</label>
+                    <textarea id="workspaceDescription" name="description" rows="3"></textarea>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="closeModal('createWorkspaceModal')">Cancel</button>
+            <button type="button" class="btn btn-primary" onclick="saveWorkspace()">Create Workspace</button>
+        </div>
+    </div>
+</div>
+
+<!-- Item Detail Panel -->
+<div class="item-detail-panel" id="itemDetailPanel" style="display: none;">
+    <div class="panel-header">
+        <h4 id="itemDetailTitle">Item Details</h4>
+        <button class="panel-close" onclick="closeItemDetail()">&times;</button>
+    </div>
+    <div class="panel-content">
+        <div class="item-meta">
+            <span class="item-type" id="itemDetailType">Task</span>
+            <span class="item-priority" id="itemDetailPriority">Medium</span>
+            <span class="item-status" id="itemDetailStatus">To Do</span>
+        </div>
+        <div class="item-description" id="itemDetailDescription">
+            No description available
+        </div>
+        <div class="item-actions">
+            <button class="btn btn-small btn-primary" onclick="editCurrentItem()">
+                <i class="fas fa-edit"></i> Edit
+            </button>
+            <button class="btn btn-small btn-danger" onclick="deleteCurrentItem()">
+                <i class="fas fa-trash"></i> Delete
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Global variables
+let currentWorkspaceId = 1; // Default to first workspace
+let currentEditingItem = null;
+let workspaces = [];
+let workspaceItems = {};
+
+// Initialize workspace
+document.addEventListener('DOMContentLoaded', function() {
+    loadWorkspaces();
+});
+
+// API Functions
+async function loadWorkspaces() {
+    try {
+        const response = await fetch('/api/workspaces');
+        workspaces = await response.json();
+        updateWorkspaceTree();
+        
+        if (workspaces.length > 0) {
+            loadWorkspaceItems(workspaces[0].id);
+        }
+    } catch (error) {
+        console.error('Error loading workspaces:', error);
+        showNotification('Error loading workspaces', 'error');
+    }
+}
+
+async function loadWorkspaceItems(workspaceId) {
+    try {
+        currentWorkspaceId = workspaceId;
+        const response = await fetch(`/api/workspace/${workspaceId}/items`);
+        const items = await response.json();
+        workspaceItems[workspaceId] = items;
+        updateWorkspaceItemsDisplay(items);
+    } catch (error) {
+        console.error('Error loading workspace items:', error);
+        showNotification('Error loading items', 'error');
+    }
+}
+
+function updateWorkspaceTree() {
+    // This would update the tree structure in the sidebar
+    // For now, we'll keep the static structure
+}
+
+function updateWorkspaceItemsDisplay(items) {
+    // Update the workspace tree to show actual items
+    const personalWorkspace = document.querySelector('[data-type="workspace"]');
+    if (personalWorkspace) {
+        const badge = personalWorkspace.querySelector('.tree-badge');
+        if (badge) {
+            badge.textContent = items.length;
+        }
+    }
+}
+
+// Modal Functions
+function openModal(modalId) {
+    document.getElementById(modalId).style.display = 'flex';
+}
+
+function closeModal(modalId) {
+    document.getElementById(modalId).style.display = 'none';
+    resetForm(modalId);
+}
+
+function resetForm(modalId) {
+    const form = document.querySelector(`#${modalId} form`);
+    if (form) {
+        form.reset();
+    }
+    currentEditingItem = null;
+}
+
+// Item Management
+async function saveItem() {
+    const form = document.getElementById('itemForm');
+    const formData = new FormData(form);
+    const data = Object.fromEntries(formData);
+    
+    if (!data.title.trim()) {
+        showNotification('Title is required', 'error');
+        return;
+    }
+    
+    try {
+        let response;
+        if (currentEditingItem) {
+            // Update existing item
+            response = await fetch(`/api/items/${currentEditingItem.id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data)
+            });
+        } else {
+            // Create new item
+            response = await fetch(`/api/workspace/${currentWorkspaceId}/items`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data)
+            });
+        }
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showNotification(result.message, 'success');
+            closeModal('createItemModal');
+            loadWorkspaceItems(currentWorkspaceId); // Refresh items
+        } else {
+            showNotification(result.message, 'error');
+        }
+    } catch (error) {
+        console.error('Error saving item:', error);
+        showNotification('Error saving item', 'error');
+    }
+}
+
+async function deleteItem(itemId) {
+    if (!confirm('Are you sure you want to delete this item?')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api/items/${itemId}`, {
+            method: 'DELETE'
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showNotification(result.message, 'success');
+            loadWorkspaceItems(currentWorkspaceId); // Refresh items
+            closeItemDetail();
+        } else {
+            showNotification(result.message, 'error');
+        }
+    } catch (error) {
+        console.error('Error deleting item:', error);
+        showNotification('Error deleting item', 'error');
+    }
+}
+
+// Workspace Management
+async function saveWorkspace() {
+    const form = document.getElementById('workspaceForm');
+    const formData = new FormData(form);
+    const data = Object.fromEntries(formData);
+    
+    if (!data.name.trim()) {
+        showNotification('Workspace name is required', 'error');
+        return;
+    }
+    
+    try {
+        const response = await fetch('/api/workspace', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showNotification(result.message, 'success');
+            closeModal('createWorkspaceModal');
+            loadWorkspaces(); // Refresh workspaces
+        } else {
+            showNotification(result.message, 'error');
+        }
+    } catch (error) {
+        console.error('Error creating workspace:', error);
+        showNotification('Error creating workspace', 'error');
+    }
+}
+
+// Item Detail Panel
+function showItemDetail(item) {
+    currentEditingItem = item;
+    
+    document.getElementById('itemDetailTitle').textContent = item.title;
+    document.getElementById('itemDetailType').textContent = item.type;
+    document.getElementById('itemDetailPriority').textContent = item.priority;
+    document.getElementById('itemDetailStatus').textContent = item.status;
+    document.getElementById('itemDetailDescription').textContent = item.description || 'No description available';
+    
+    const panel = document.getElementById('itemDetailPanel');
+    panel.style.display = 'flex';
+    panel.classList.add('open');
+}
+
+function closeItemDetail() {
+    const panel = document.getElementById('itemDetailPanel');
+    panel.classList.remove('open');
+    setTimeout(() => {
+        panel.style.display = 'none';
+    }, 300);
+    currentEditingItem = null;
+}
+
+function editCurrentItem() {
+    if (currentEditingItem) {
+        // Populate form with current item data
+        document.getElementById('itemTitle').value = currentEditingItem.title;
+        document.getElementById('itemDescription').value = currentEditingItem.description || '';
+        document.getElementById('itemType').value = currentEditingItem.type;
+        document.getElementById('itemPriority').value = currentEditingItem.priority;
+        document.getElementById('itemStatus').value = currentEditingItem.status;
+        
+        document.getElementById('modalTitle').textContent = 'Edit Item';
+        openModal('createItemModal');
+        closeItemDetail();
+    }
+}
+
+function deleteCurrentItem() {
+    if (currentEditingItem) {
+        deleteItem(currentEditingItem.id);
+    }
+}
+
+// Tree navigation
+document.querySelectorAll('.tree-item').forEach(item => {
+    const content = item.querySelector('.tree-item-content');
+    const expand = item.querySelector('.tree-expand');
+    
+    if (expand && content) {
+        content.addEventListener('click', (e) => {
+            e.stopPropagation();
+            item.classList.toggle('expanded');
+        });
+    }
+    
+    // Right-click context menu
+    content.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        showContextMenu(e.pageX, e.pageY);
+    });
+    
+    // Selection
+    content.addEventListener('click', (e) => {
+        if (!expand || !expand.contains(e.target)) {
+            document.querySelectorAll('.tree-item').forEach(i => i.classList.remove('selected'));
+            item.classList.add('selected');
+        }
+    });
+});
+
+// Activity bar switching
+document.querySelectorAll('.activity-item[data-view]').forEach(item => {
+    item.addEventListener('click', () => {
+        document.querySelectorAll('.activity-item').forEach(i => i.classList.remove('active'));
+        item.classList.add('active');
+        
+        const view = item.dataset.view;
+        switchSidebarView(view);
+    });
+});
+
+function switchSidebarView(view) {
+    const sidebarTitle = document.querySelector('.sidebar-title');
+    const sidebarContent = document.querySelector('.sidebar-content');
+    
+    switch(view) {
+        case 'explorer':
+            sidebarTitle.textContent = 'EXPLORER';
+            break;
+        case 'search':
+            sidebarTitle.textContent = 'SEARCH';
+            break;
+        case 'git':
+            sidebarTitle.textContent = 'SOURCE CONTROL';
+            break;
+        case 'debug':
+            sidebarTitle.textContent = 'RUN AND DEBUG';
+            break;
+        case 'extensions':
+            sidebarTitle.textContent = 'EXTENSIONS';
+            break;
+        case 'scenarios':
+            sidebarTitle.textContent = 'SCENARIOS';
+            break;
+    }
+}
+
+// Context menu
+function showContextMenu(x, y) {
+    const contextMenu = document.getElementById('contextMenu');
+    contextMenu.style.display = 'block';
+    contextMenu.style.left = x + 'px';
+    contextMenu.style.top = y + 'px';
+}
+
+function hideContextMenu() {
+    document.getElementById('contextMenu').style.display = 'none';
+}
+
+document.addEventListener('click', hideContextMenu);
+
+function contextAction(action) {
+    hideContextMenu();
+    
+    switch(action) {
+        case 'new-file':
+            document.getElementById('itemType').value = 'task';
+            document.getElementById('modalTitle').textContent = 'Create New Todo';
+            openModal('createItemModal');
+            break;
+        case 'new-folder':
+            document.getElementById('itemType').value = 'note';
+            document.getElementById('modalTitle').textContent = 'Create New Note';
+            openModal('createItemModal');
+            break;
+        case 'rename':
+            if (currentEditingItem) {
+                editCurrentItem();
+            }
+            break;
+        case 'delete':
+            if (currentEditingItem) {
+                deleteCurrentItem();
+            }
+            break;
+    }
+}
+
+// Welcome screen actions
+function createNewItem(type) {
+    document.getElementById('itemType').value = type;
+    document.getElementById('modalTitle').textContent = `Create New ${type.charAt(0).toUpperCase() + type.slice(1)}`;
+    openModal('createItemModal');
+}
+
+function createWorkspace() {
+    openModal('createWorkspaceModal');
+}
+
+function openScenarios() {
+    // Switch to scenarios view
+    document.querySelector('[data-view="scenarios"]').click();
+}
+
+// Tab management
+document.querySelectorAll('.tab-close').forEach(close => {
+    close.addEventListener('click', (e) => {
+        e.stopPropagation();
+        e.target.closest('.tab').remove();
+    });
+});
+
+// Notifications
+function showNotification(message, type = 'info') {
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.className = `notification notification-${type}`;
+    notification.textContent = message;
+    
+    // Style the notification
+    Object.assign(notification.style, {
+        position: 'fixed',
+        top: '20px',
+        right: '20px',
+        padding: '12px 16px',
+        borderRadius: '4px',
+        color: '#ffffff',
+        fontSize: '14px',
+        fontWeight: '500',
+        zIndex: '3000',
+        maxWidth: '300px',
+        wordWrap: 'break-word',
+        backgroundColor: type === 'success' ? '#28a745' : type === 'error' ? '#dc3545' : '#007acc',
+        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
+        transform: 'translateX(100%)',
+        transition: 'transform 0.3s ease'
+    });
+    
+    document.body.appendChild(notification);
+    
+    // Animate in
+    setTimeout(() => {
+        notification.style.transform = 'translateX(0)';
+    }, 100);
+    
+    // Auto remove after 3 seconds
+    setTimeout(() => {
+        notification.style.transform = 'translateX(100%)';
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.parentNode.removeChild(notification);
+            }
+        }, 300);
+    }, 3000);
+}
+
+// Sidebar toggle
+let sidebarCollapsed = false;
+document.addEventListener('keydown', (e) => {
+    if (e.ctrlKey && e.key === 'b') {
+        e.preventDefault();
+        sidebarCollapsed = !sidebarCollapsed;
+        document.getElementById('sidebar').classList.toggle('collapsed', sidebarCollapsed);
+    }
+});
+
+// Close modals on escape key
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        const modals = document.querySelectorAll('.modal[style*="flex"]');
+        modals.forEach(modal => {
+            modal.style.display = 'none';
+        });
+        closeItemDetail();
+    }
+});
+</script>
+{% endblock %}

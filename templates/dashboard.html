@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Fun Work Hub</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="dashboard">
+        <div class="header">
+            <h1>🎉 Chào mừng đến với Dashboard!</h1>
+            <p>Xin chào <strong>{{ user }}</strong> ({{ role }})</p>
+        </div>
+        
+        <div class="dashboard-content">
+            <h2>🎊 Bạn đã đăng nhập thành công!</h2>
+            <p>Đây là trang dashboard của Fun Work Hub</p>
+            
+            <div class="actions">
+                <a href="{{ url_for('logout') }}" class="btn-logout">Đăng xuất</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

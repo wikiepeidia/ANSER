@@ -1,0 +1,2237 @@
+{% extends "base.html" %}
+
+{% block title %}Workflow Builder - Workflow Automation for Retail{% endblock %}
+
+{% block styles %}
+<style>
+    body {
+        margin: 0;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        background: #1a1a1a;
+        height: 100vh;
+        overflow: hidden;
+        color: #fff;
+    }
+
+    .builder-container {
+        display: flex;
+        height: 100vh;
+        background: #1a1a1a;
+    }
+
+    /* Sidebar với tools */
+    .tools-sidebar {
+        width: 280px;
+        background: #2d2d2d;
+        border-right: 1px solid #404040;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+    .sidebar-header {
+        padding: 20px;
+        border-bottom: 1px solid #404040;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        position: relative;
+    }
+
+    .sidebar-title {
+        font-size: 18px;
+        font-weight: 600;
+        margin-bottom: 8px;
+    }
+
+    .user-menu {
+        position: absolute;
+        top: 15px;
+        right: 20px;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+
+    .user-avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: linear-gradient(45deg, #8B5CF6, #06B6D4);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 500;
+        font-size: 14px;
+    }
+
+    .logout-btn {
+        background: rgba(255, 255, 255, 0.1);
+        color: white;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 12px;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .logout-btn:hover {
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+        text-decoration: none;
+    }
+
+    .search-box {
+        position: relative;
+        margin-top: 12px;
+    }
+
+    .search-input {
+        width: 100%;
+        padding: 10px 40px 10px 12px;
+        border: none;
+        border-radius: 6px;
+        background: rgba(255, 255, 255, 0.15);
+        color: white;
+        font-size: 14px;
+        backdrop-filter: blur(10px);
+        box-sizing: border-box;
+    }
+
+    .search-input::placeholder {
+        color: rgba(255, 255, 255, 0.8);
+    }
+
+    .search-input:focus {
+        outline: none;
+        background: rgba(255, 255, 255, 0.25);
+    }
+
+    .search-icon {
+        position: absolute;
+        right: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: rgba(255, 255, 255, 0.8);
+    }
+
+    .tools-section {
+        flex: 1;
+        overflow-y: auto;
+        padding: 20px;
+    }
+
+    .tools-category {
+        margin-bottom: 24px;
+    }
+
+    .category-title {
+        color: #999;
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 12px;
+        padding-left: 4px;
+    }
+
+    .tool-item {
+        display: flex;
+        align-items: center;
+        padding: 12px 16px;
+        margin-bottom: 8px;
+        border-radius: 8px;
+        cursor: grab;
+        transition: all 0.2s;
+        background: #3a3a3a;
+        border: 1px solid #4a4a4a;
+        /* Ensure draggable works */
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+    }
+
+    .tool-item:hover {
+        background: #4a4a4a;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+
+    .tool-item:active,
+    .tool-item.dragging {
+        cursor: grabbing;
+        opacity: 0.5;
+        transform: scale(0.95);
+    }
+
+    .tool-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 12px;
+        font-size: 16px;
+        color: white;
+    }
+
+    .tool-icon.flow-control {
+        background: #8bc34a;
+    }
+
+    .tool-icon.google-sheets {
+        background: #0f9d58;
+    }
+
+    .tool-icon.tools {
+        background: #ff9800;
+    }
+
+    .tool-icon.openai {
+        background: #00a67e;
+    }
+
+    .tool-icon.webhooks {
+        background: #f44336;
+    }
+
+    .tool-icon.http {
+        background: #2196f3;
+    }
+
+    .tool-icon.airtable {
+        background: #ffb300;
+    }
+
+    .tool-info {
+        flex: 1;
+    }
+
+    .tool-name {
+        font-weight: 500;
+        color: #fff;
+        margin-bottom: 2px;
+    }
+
+    .tool-description {
+        font-size: 12px;
+        color: #999;
+    }
+
+    /* Main canvas area */
+    .canvas-area {
+        flex: 1;
+        position: relative;
+        background: #2a2a2a;
+        background-image:
+            linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+        background-size: 20px 20px;
+        overflow: hidden;
+        min-height: 100vh;
+    }
+
+    .canvas-header {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 60px;
+        background: rgba(45, 45, 45, 0.95);
+        backdrop-filter: blur(10px);
+        border-bottom: 1px solid #404040;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 24px;
+        z-index: 100;
+    }
+
+    .canvas-title {
+        font-size: 18px;
+        font-weight: 600;
+        color: #fff;
+    }
+
+    .canvas-actions {
+        display: flex;
+        gap: 12px;
+    }
+
+    .btn {
+        padding: 8px 16px;
+        border-radius: 6px;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        border: none;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-secondary {
+        background: #3a3a3a;
+        color: #ccc;
+        border: 1px solid #4a4a4a;
+    }
+
+    .btn-secondary:hover {
+        background: #4a4a4a;
+        color: #fff;
+    }
+
+    .workflow-canvas {
+        position: absolute;
+        top: 60px;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        padding: 20px;
+        overflow: auto;
+        min-height: calc(100vh - 60px);
+        pointer-events: auto;
+    }
+
+    /* Drop zone */
+    .drop-zone {
+        min-height: 300px;
+        border: 2px dashed #555;
+        border-radius: 12px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        color: #999;
+        transition: all 0.3s;
+        padding: 40px;
+        text-align: center;
+        pointer-events: auto;
+        position: relative;
+        z-index: 10;
+        margin: 20px;
+        background: rgba(255, 255, 255, 0.02);
+    }
+
+    .drop-zone.active {
+        border-color: #667eea;
+        background: rgba(102, 126, 234, 0.1);
+        color: #667eea;
+        border-width: 3px;
+    }
+
+    .drop-zone-icon {
+        font-size: 48px;
+        margin-bottom: 16px;
+        opacity: 0.7;
+        color: #999;
+    }
+
+    .drop-zone-title {
+        font-size: 18px;
+        font-weight: 600;
+        margin-bottom: 8px;
+        color: #ccc;
+    }
+
+    .drop-zone-description {
+        font-size: 14px;
+        max-width: 300px;
+        color: #999;
+        line-height: 1.5;
+    }
+
+    /* Workflow nodes */
+    .workflow-node {
+        position: absolute;
+        background: #3a3a3a;
+        border: 2px solid #4a4a4a;
+        border-radius: 12px;
+        padding: 16px;
+        min-width: 200px;
+        cursor: move;
+        transition: all 0.2s;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        z-index: 100;
+        /* Ensure visibility */
+        color: #fff;
+        font-family: inherit;
+    }
+
+    .workflow-node:hover {
+        border-color: #667eea;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    }
+
+    .workflow-node.selected {
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.3);
+    }
+
+    .node-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 12px;
+    }
+
+    .node-icon {
+        width: 24px;
+        height: 24px;
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 8px;
+        font-size: 12px;
+        color: white;
+    }
+
+    .node-title {
+        font-weight: 600;
+        color: #fff;
+        flex: 1;
+    }
+
+    .node-menu {
+        cursor: pointer;
+        color: #999;
+        padding: 4px;
+        border-radius: 4px;
+        transition: all 0.2s;
+    }
+
+    .node-menu:hover {
+        background: #4a4a4a;
+        color: #fff;
+    }
+
+    .node-content {
+        color: #ccc;
+        font-size: 14px;
+        line-height: 1.4;
+    }
+
+    .node-connections {
+        margin-top: 12px;
+        display: flex;
+        justify-content: space-between;
+    }
+
+    /* SVG for connections */
+    .connections-svg {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 50;
+    }
+
+    .connection-line {
+        stroke: #667eea;
+        stroke-width: 2;
+        fill: none;
+        filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+    }
+
+    .connection-line.temp {
+        stroke: #999;
+        stroke-dasharray: 5, 5;
+    }
+
+    /* Enhanced connection points */
+    .connection-point {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: #666;
+        border: 2px solid #4a4a4a;
+        cursor: pointer;
+        transition: all 0.2s;
+        position: relative;
+        z-index: 100;
+    }
+
+    .connection-point:hover {
+        background: #667eea;
+        border-color: #667eea;
+        transform: scale(1.3);
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.3);
+    }
+
+    .connection-point.active {
+        background: #28a745;
+        border-color: #28a745;
+        animation: pulse 1s infinite;
+    }
+
+    .connection-point.connecting {
+        background: #ffc107;
+        border-color: #ffc107;
+    }
+
+    @keyframes pulse {
+        0% {
+            box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.7);
+        }
+
+        70% {
+            box-shadow: 0 0 0 10px rgba(40, 167, 69, 0);
+        }
+
+        100% {
+            box-shadow: 0 0 0 0 rgba(40, 167, 69, 0);
+        }
+    }
+
+    .connection-point.input {
+        margin-left: -6px;
+    }
+
+    .connection-point.output {
+        margin-right: -6px;
+    }
+
+    /* Navigation breadcrumb */
+    .nav-breadcrumb {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 16px;
+    }
+
+    .nav-link {
+        color: #999;
+        text-decoration: none;
+        transition: all 0.2s;
+    }
+
+    .nav-link:hover {
+        color: #667eea;
+    }
+
+    .nav-separator {
+        color: #666;
+    }
+
+    /* Property panel */
+    .property-panel {
+        position: absolute;
+        top: 60px;
+        right: 0;
+        width: 300px;
+        height: calc(100vh - 60px);
+        background: #2d2d2d;
+        border-left: 1px solid #404040;
+        padding: 20px;
+        overflow-y: auto;
+        transform: translateX(100%);
+        transition: transform 0.3s;
+        z-index: 200;
+    }
+
+    .property-panel.open {
+        transform: translateX(0);
+    }
+
+    .property-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 20px;
+    }
+
+    .property-title {
+        font-size: 16px;
+        font-weight: 600;
+        color: #fff;
+    }
+
+    .close-panel {
+        cursor: pointer;
+        color: #999;
+        padding: 4px;
+        border-radius: 4px;
+        transition: all 0.2s;
+    }
+
+    .close-panel:hover {
+        background: #3a3a3a;
+        color: #fff;
+    }
+
+    .form-group {
+        margin-bottom: 16px;
+    }
+
+    .form-label {
+        display: block;
+        margin-bottom: 6px;
+        font-weight: 500;
+        color: #ccc;
+        font-size: 14px;
+    }
+
+    .form-input,
+    .form-select,
+    .form-textarea {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid #4a4a4a;
+        border-radius: 6px;
+        font-size: 14px;
+        transition: all 0.2s;
+        box-sizing: border-box;
+        background: #3a3a3a;
+        color: #fff;
+    }
+
+    .form-input:focus,
+    .form-select:focus,
+    .form-textarea:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .form-textarea {
+        resize: vertical;
+        min-height: 80px;
+    }
+
+    /* Floating toolbar */
+    .floating-toolbar {
+        position: absolute;
+        bottom: 30px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(45, 45, 45, 0.95);
+        backdrop-filter: blur(10px);
+        border: 1px solid #404040;
+        border-radius: 12px;
+        padding: 12px 20px;
+        display: flex;
+        gap: 16px;
+        z-index: 150;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    }
+
+    .toolbar-btn {
+        background: none;
+        border: none;
+        color: #ccc;
+        cursor: pointer;
+        padding: 8px;
+        border-radius: 6px;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 14px;
+    }
+
+    .toolbar-btn:hover {
+        background: #4a4a4a;
+        color: #fff;
+    }
+
+    .toolbar-btn.active {
+        background: #667eea;
+        color: #fff;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="builder-container">
+    <!-- Tools Sidebar -->
+    <div class="tools-sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-title">Workspace Builder</div>
+            <div class="user-menu">
+                <div class="user-avatar">{{ user.username[0].upper() if user.username else 'U' }}</div>
+                <a href="{{ url_for('logout') }}" class="logout-btn">
+                    <i class="fas fa-sign-out-alt"></i>
+                    Logout
+                </a>
+            </div>
+            <div class="search-box">
+                <input type="text" class="search-input" placeholder="Search tools..." id="searchTools">
+                <i class="fas fa-search search-icon"></i>
+            </div>
+        </div>
+
+        <div class="tools-section">
+            <div class="nav-breadcrumb">
+                <a href="{{ url_for('workspace') }}" class="nav-link">
+                    <i class="fas fa-arrow-left"></i> Back to Workspace
+                </a>
+            </div>
+
+            <div class="tools-category">
+                <div class="category-title">Flow Control</div>
+                <div class="tool-item" draggable="true" data-tool="flow-control">
+                    <div class="tool-icon flow-control">
+                        <i class="fas fa-play"></i>
+                    </div>
+                    <div class="tool-info">
+                        <div class="tool-name">Flow Control</div>
+                        <div class="tool-description">Start, stop, and control flow</div>
+                    </div>
+                </div>
+
+                <div class="tool-item" draggable="true" data-tool="condition">
+                    <div class="tool-icon flow-control">
+                        <i class="fas fa-code-branch"></i>
+                    </div>
+                    <div class="tool-info">
+                        <div class="tool-name">Condition</div>
+                        <div class="tool-description">If/then logic branches</div>
+                    </div>
+                </div>
+
+                <div class="tool-item" draggable="true" data-tool="loop">
+                    <div class="tool-icon flow-control">
+                        <i class="fas fa-redo"></i>
+                    </div>
+                    <div class="tool-info">
+                        <div class="tool-name">Loop</div>
+                        <div class="tool-description">Repeat actions</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tools-category">
+                <div class="category-title">Data Sources</div>
+                <div class="tool-item" draggable="true" data-tool="google-sheets">
+                    <div class="tool-icon google-sheets">
+                        <i class="fab fa-google"></i>
+                    </div>
+                    <div class="tool-info">
+                        <div class="tool-name">Google Sheets</div>
+                        <div class="tool-description">Read and write spreadsheets</div>
+                    </div>
+                </div>
+
+                <div class="tool-item" draggable="true" data-tool="airtable">
+                    <div class="tool-icon airtable">
+                        <i class="fas fa-table"></i>
+                    </div>
+                    <div class="tool-info">
+                        <div class="tool-name">Airtable</div>
+                        <div class="tool-description">Database operations</div>
+                    </div>
+                </div>
+
+                <div class="tool-item" draggable="true" data-tool="csv">
+                    <div class="tool-icon tools">
+                        <i class="fas fa-file-csv"></i>
+                    </div>
+                    <div class="tool-info">
+                        <div class="tool-name">CSV Parser</div>
+                        <div class="tool-description">Parse CSV files</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tools-category">
+                <div class="category-title">AI & Processing</div>
+                <div class="tool-item" draggable="true" data-tool="openai">
+                    <div class="tool-icon openai">
+                        <i class="fas fa-brain"></i>
+                    </div>
+                    <div class="tool-info">
+                        <div class="tool-name">OpenAI</div>
+                        <div class="tool-description">ChatGPT, Whisper, DALL-E</div>
+                    </div>
+                </div>
+
+                <div class="tool-item" draggable="true" data-tool="text-processing">
+                    <div class="tool-icon tools">
+                        <i class="fas fa-text-width"></i>
+                    </div>
+                    <div class="tool-info">
+                        <div class="tool-name">Text Processing</div>
+                        <div class="tool-description">Format and transform text</div>
+                    </div>
+                </div>
+
+                <div class="tool-item" draggable="true" data-tool="image-processing">
+                    <div class="tool-icon tools">
+                        <i class="fas fa-image"></i>
+                    </div>
+                    <div class="tool-info">
+                        <div class="tool-name">Image Processing</div>
+                        <div class="tool-description">Resize, crop, filter images</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tools-category">
+                <div class="category-title">Data Processing</div>
+                <div class="tool-item" draggable="true" data-tool="filter">
+                    <div class="tool-icon tools">
+                        <i class="fas fa-filter"></i>
+                    </div>
+                    <div class="tool-info">
+                        <div class="tool-name">Filter</div>
+                        <div class="tool-description">Filter data based on conditions</div>
+                    </div>
+                </div>
+
+                <div class="tool-item" draggable="true" data-tool="aggregator">
+                    <div class="tool-icon tools">
+                        <i class="fas fa-calculator"></i>
+                    </div>
+                    <div class="tool-info">
+                        <div class="tool-name">Aggregator</div>
+                        <div class="tool-description">Sum, count, average data</div>
+                    </div>
+                </div>
+
+                <div class="tool-item" draggable="true" data-tool="transformer">
+                    <div class="tool-icon tools">
+                        <i class="fas fa-exchange-alt"></i>
+                    </div>
+                    <div class="tool-info">
+                        <div class="tool-name">Transformer</div>
+                        <div class="tool-description">Transform data format</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tools-category">
+                <div class="category-title">Storage & Database</div>
+                <div class="tool-item" draggable="true" data-tool="mysql">
+                    <div class="tool-icon airtable">
+                        <i class="fas fa-database"></i>
+                    </div>
+                    <div class="tool-info">
+                        <div class="tool-name">MySQL</div>
+                        <div class="tool-description">Database operations</div>
+                    </div>
+                </div>
+
+                <div class="tool-item" draggable="true" data-tool="mongodb">
+                    <div class="tool-icon google-sheets">
+                        <i class="fas fa-leaf"></i>
+                    </div>
+                    <div class="tool-info">
+                        <div class="tool-name">MongoDB</div>
+                        <div class="tool-description">NoSQL database</div>
+                    </div>
+                </div>
+
+                <div class="tool-item" draggable="true" data-tool="cloud-storage">
+                    <div class="tool-icon http">
+                        <i class="fas fa-cloud"></i>
+                    </div>
+                    <div class="tool-info">
+                        <div class="tool-name">Cloud Storage</div>
+                        <div class="tool-description">File storage operations</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tools-category">
+                <div class="category-title">Scheduling & Events</div>
+                <div class="tool-item" draggable="true" data-tool="scheduler">
+                    <div class="tool-icon flow-control">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="tool-info">
+                        <div class="tool-name">Scheduler</div>
+                        <div class="tool-description">Run on schedule</div>
+                    </div>
+                </div>
+
+                <div class="tool-item" draggable="true" data-tool="event-listener">
+                    <div class="tool-icon webhooks">
+                        <i class="fas fa-ear-listen"></i>
+                    </div>
+                    <div class="tool-info">
+                        <div class="tool-name">Event Listener</div>
+                        <div class="tool-description">Listen for events</div>
+                    </div>
+                </div>
+
+                <div class="tool-item" draggable="true" data-tool="delay">
+                    <div class="tool-icon flow-control">
+                        <i class="fas fa-pause"></i>
+                    </div>
+                    <div class="tool-info">
+                        <div class="tool-name">Delay</div>
+                        <div class="tool-description">Wait before continuing</div>
+                    </div>
+                </div>
+            </div>
+            <div class="tool-item" draggable="true" data-tool="webhooks">
+                <div class="tool-icon webhooks">
+                    <i class="fas fa-bolt"></i>
+                </div>
+                <div class="tool-info">
+                    <div class="tool-name">Webhooks</div>
+                    <div class="tool-description">Trigger external services</div>
+                </div>
+            </div>
+
+            <div class="tool-item" draggable="true" data-tool="http">
+                <div class="tool-icon http">
+                    <i class="fas fa-globe"></i>
+                </div>
+                <div class="tool-info">
+                    <div class="tool-name">HTTP Request</div>
+                    <div class="tool-description">Make API calls</div>
+                </div>
+            </div>
+
+            <div class="tool-item" draggable="true" data-tool="email">
+                <div class="tool-icon webhooks">
+                    <i class="fas fa-envelope"></i>
+                </div>
+                <div class="tool-info">
+                    <div class="tool-name">Email</div>
+                    <div class="tool-description">Send notifications</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Main Canvas -->
+<div class="canvas-area">
+    <div class="canvas-header">
+        <div class="canvas-title">Untitled Workflow</div>
+        <div class="canvas-actions">
+            <button class="btn btn-secondary" onclick="clearCanvas()">
+                <i class="fas fa-trash"></i>
+                Clear
+            </button>
+            <button class="btn btn-secondary" onclick="testDragDrop()">
+                <i class="fas fa-vial"></i>
+                Test
+            </button>
+            <button class="btn btn-secondary" onclick="saveWorkflow()">
+                <i class="fas fa-save"></i>
+                Save
+            </button>
+            <button class="btn btn-primary" onclick="runWorkflow()">
+                <i class="fas fa-play"></i>
+                Run
+            </button>
+        </div>
+    </div>
+
+    <div class="workflow-canvas" id="workflowCanvas">
+        <!-- SVG for drawing connections -->
+        <svg class="connections-svg" id="connectionsSvg">
+            <defs>
+                <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+                    <polygon points="0 0, 10 3.5, 0 7" fill="#667eea" />
+                </marker>
+            </defs>
+        </svg>
+
+        <div class="drop-zone" id="dropZone">
+            <div class="drop-zone-icon">
+                <i class="fas fa-plus-circle"></i>
+            </div>
+            <div class="drop-zone-title">Start Building Your Workflow</div>
+            <div class="drop-zone-description">
+                <strong>Drag tools</strong> from the sidebar to create your automated workflow.<br>
+                <strong>Double-click tools</strong> to add them quickly.<br>
+                Connect them together to build powerful automations.
+            </div>
+            <button onclick="testDragDrop()" style="
+                    margin-top: 20px;
+                    padding: 12px 24px;
+                    background: #667eea;
+                    color: white;
+                    border: none;
+                    border-radius: 6px;
+                    cursor: pointer;
+                    font-size: 14px;
+                    font-weight: 500;
+                ">
+                <i class="fas fa-vial"></i>
+                Create Test Node
+            </button>
+        </div>
+    </div>
+
+    <!-- Floating Toolbar -->
+    <div class="floating-toolbar">
+        <button class="toolbar-btn" onclick="loadWorkflow()">
+            <i class="fas fa-folder-open"></i>
+            Load
+        </button>
+        <button class="toolbar-btn" onclick="zoomIn()">
+            <i class="fas fa-search-plus"></i>
+            Zoom In
+        </button>
+        <button class="toolbar-btn" onclick="zoomOut()">
+            <i class="fas fa-search-minus"></i>
+            Zoom Out
+        </button>
+        <button class="toolbar-btn" onclick="fitToScreen()">
+            <i class="fas fa-expand-arrows-alt"></i>
+            Fit
+        </button>
+        <button class="toolbar-btn" onclick="toggleGrid()">
+            <i class="fas fa-border-all"></i>
+            Grid
+        </button>
+        <button class="toolbar-btn" onclick="editWorkflowName()">
+            <i class="fas fa-edit"></i>
+            Rename
+        </button>
+    </div>
+
+    <!-- Property Panel -->
+    <div class="property-panel" id="propertyPanel">
+        <div class="property-header">
+            <div class="property-title">Node Properties</div>
+            <div class="close-panel" onclick="closePropertyPanel()">
+                <i class="fas fa-times"></i>
+            </div>
+        </div>
+
+        <div id="propertyContent">
+            <div class="form-group">
+                <label class="form-label">Node Name</label>
+                <input type="text" class="form-input" id="nodeName" placeholder="Enter node name">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Description</label>
+                <textarea class="form-textarea" id="nodeDescription"
+                    placeholder="Describe what this node does"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Configuration</label>
+                <textarea class="form-textarea" id="nodeConfig" placeholder="JSON configuration"></textarea>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Global variables
+    let selectedNode = null;
+    let draggedTool = null;
+    let nodeCounter = 0;
+    let nodes = [];
+    let connections = [];
+    let canvas = null;
+    let svgCanvas = null;
+    let isDragging = false;
+    let dragOffset = { x: 0, y: 0 };
+    let isConnecting = false;
+    let connectionStart = null;
+    let tempLine = null;
+    let workflowName = "Untitled Workflow";
+
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', function () {
+        console.log('DOM loaded, initializing...');
+
+        canvas = document.getElementById('workflowCanvas');
+        svgCanvas = document.getElementById('connectionsSvg');
+
+        if (!canvas) {
+            console.error('Canvas element not found!');
+            return;
+        }
+
+        console.log('Canvas found:', canvas);
+
+        // Simple drag and drop setup
+        setupSimpleDragDrop();
+        initializeCanvas();
+        initializeConnections();
+
+        // Show initial help
+        setTimeout(() => {
+            showNotification('Tip: Double-click any tool to add it to canvas!', 'info');
+
+            // Debug info
+            console.log('=== INITIALIZATION COMPLETE ===');
+            console.log('Canvas element:', canvas);
+            console.log('Canvas children:', canvas.children.length);
+            console.log('SVG canvas:', svgCanvas);
+            console.log('Nodes array:', nodes);
+            console.log('You can now test by calling testDragDrop() in console');
+
+            // Debug DOM elements
+            debugElements();
+        }, 1000);
+    });
+
+    // Simplified drag and drop
+    function setupSimpleDragDrop() {
+        const toolItems = document.querySelectorAll('.tool-item');
+        console.log('Found tool items:', toolItems.length);
+
+        toolItems.forEach((tool, index) => {
+            console.log(`Setting up tool ${index}:`, tool.dataset.tool);
+
+            // Make sure it's draggable
+            tool.setAttribute('draggable', 'true');
+
+            // Mouse events as backup
+            let isMouseDown = false;
+            let startPos = { x: 0, y: 0 };
+
+            tool.addEventListener('mousedown', function (e) {
+                isMouseDown = true;
+                startPos = { x: e.clientX, y: e.clientY };
+                console.log('Mouse down on tool');
+            });
+
+            document.addEventListener('mousemove', function (e) {
+                if (isMouseDown) {
+                    const distance = Math.sqrt(
+                        Math.pow(e.clientX - startPos.x, 2) +
+                        Math.pow(e.clientY - startPos.y, 2)
+                    );
+
+                    if (distance > 10) {
+                        // Start drag visual feedback
+                        tool.style.opacity = '0.5';
+                        console.log('Mouse drag detected');
+                    }
+                }
+            });
+
+            document.addEventListener('mouseup', function (e) {
+                if (isMouseDown) {
+                    isMouseDown = false;
+                    tool.style.opacity = '1';
+
+                    // Check if dropped on canvas
+                    const canvasRect = canvas.getBoundingClientRect();
+                    if (e.clientX >= canvasRect.left && e.clientX <= canvasRect.right &&
+                        e.clientY >= canvasRect.top && e.clientY <= canvasRect.bottom) {
+
+                        console.log('Mouse dropped on canvas!');
+
+                        const toolData = {
+                            type: tool.dataset.tool,
+                            name: tool.querySelector('.tool-name').textContent,
+                            description: tool.querySelector('.tool-description').textContent,
+                            icon: tool.querySelector('.tool-icon').innerHTML
+                        };
+
+                        const x = e.clientX - canvasRect.left - 100;
+                        const y = e.clientY - canvasRect.top - 100;
+
+                        addToolToCanvas(toolData, Math.max(20, x), Math.max(20, y));
+                    }
+                }
+            });
+
+            // Double click fallback - works 100%
+            tool.addEventListener('dblclick', function (e) {
+                e.preventDefault();
+                console.log('Double clicked:', this.dataset.tool);
+
+                const toolData = {
+                    type: this.dataset.tool,
+                    name: this.querySelector('.tool-name').textContent,
+                    description: this.querySelector('.tool-description').textContent,
+                    icon: this.querySelector('.tool-icon').innerHTML
+                };
+
+                // Add to canvas center
+                addToolToCanvas(toolData, 200 + (nodeCounter * 50), 150 + (nodeCounter * 50));
+            });
+
+            // HTML5 Drag API
+            tool.addEventListener('dragstart', function (e) {
+                console.log('Dragstart triggered for:', this.dataset.tool);
+
+                draggedTool = {
+                    type: this.dataset.tool,
+                    name: this.querySelector('.tool-name').textContent,
+                    description: this.querySelector('.tool-description').textContent,
+                    icon: this.querySelector('.tool-icon').innerHTML
+                };
+
+                // Set transfer data
+                e.dataTransfer.effectAllowed = 'copy';
+                e.dataTransfer.setData('text/plain', this.dataset.tool);
+
+                // Visual feedback
+                this.style.opacity = '0.5';
+                console.log('Drag data set:', draggedTool);
+            });
+
+            tool.addEventListener('dragend', function (e) {
+                this.style.opacity = '1';
+                console.log('Drag ended');
+            });
+        });
+
+        // Canvas drop setup - much simpler
+        setupCanvasDrop();
+    }
+
+    function setupCanvasDrop() {
+        console.log('Setting up canvas drop on:', canvas);
+
+        // Allow drop
+        canvas.addEventListener('dragover', function (e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'copy';
+
+            // Visual feedback
+            canvas.style.backgroundColor = 'rgba(102, 126, 234, 0.1)';
+
+            const dropZone = document.getElementById('dropZone');
+            if (dropZone) {
+                dropZone.classList.add('active');
+            }
+
+            console.log('Drag over canvas');
+        });
+
+        canvas.addEventListener('dragleave', function (e) {
+            canvas.style.backgroundColor = '';
+
+            const dropZone = document.getElementById('dropZone');
+            if (dropZone) {
+                dropZone.classList.remove('active');
+            }
+        });
+
+        canvas.addEventListener('drop', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            console.log('DROP EVENT TRIGGERED!', e);
+
+            // Reset visual
+            canvas.style.backgroundColor = '';
+            const dropZone = document.getElementById('dropZone');
+            if (dropZone) {
+                dropZone.classList.remove('active');
+            }
+
+            if (draggedTool) {
+                console.log('Processing drop with tool:', draggedTool);
+
+                // Get drop position relative to canvas
+                const rect = canvas.getBoundingClientRect();
+                const x = e.clientX - rect.left - 100;
+                const y = e.clientY - rect.top - 100;
+
+                console.log('Drop position:', { x, y });
+
+                addToolToCanvas(draggedTool, Math.max(20, x), Math.max(20, y));
+
+                // Reset
+                draggedTool = null;
+            } else {
+                console.log('No dragged tool found!');
+                showNotification('Drop failed - try double-clicking the tool instead', 'warning');
+            }
+        });
+
+        // Also listen on document for backup
+        document.addEventListener('drop', function (e) {
+            console.log('Document drop event:', e.target);
+        });
+    }
+
+    function addToolToCanvas(toolData, x, y) {
+        console.log('=== ADD TOOL TO CANVAS ===');
+        console.log('Tool data:', toolData);
+        console.log('Position:', { x, y });
+        console.log('Canvas element:', canvas);
+        console.log('Canvas ID:', canvas?.id);
+
+        try {
+            console.log('Calling createNode...');
+            createNode(toolData, x, y);
+
+            console.log('Node created successfully');
+            hideDropZone();
+            showNotification(`Added ${toolData.name} to workflow!`, 'success');
+
+            // Double check if node was added
+            setTimeout(() => {
+                console.log('Canvas children after creation:', canvas.children.length);
+                console.log('Nodes array length:', nodes.length);
+            }, 100);
+
+        } catch (error) {
+            console.error('=== ERROR CREATING NODE ===');
+            console.error('Error details:', error);
+            console.error('Stack trace:', error.stack);
+            showNotification('Error adding tool to canvas: ' + error.message, 'error');
+        }
+    }
+
+    // Canvas initialization
+    function initializeCanvas() {
+        canvas.addEventListener('click', function (e) {
+            if (e.target === canvas || e.target.id === 'dropZone') {
+                deselectAllNodes();
+                closePropertyPanel();
+            }
+        });
+    }
+
+    // Create workflow node
+    function createNode(tool, x, y) {
+        nodeCounter++;
+        const nodeId = `node-${nodeCounter}`;
+
+        const node = {
+            id: nodeId,
+            type: tool.type,
+            name: tool.name,
+            description: tool.description,
+            x: x,
+            y: y,
+            config: {},
+            inputs: [],
+            outputs: []
+        };
+
+        nodes.push(node);
+
+        const nodeElement = document.createElement('div');
+        nodeElement.className = 'workflow-node';
+        nodeElement.id = nodeId;
+        nodeElement.style.left = x + 'px';
+        nodeElement.style.top = y + 'px';
+
+        nodeElement.innerHTML = `
+        <div class="node-header">
+            <div class="node-icon ${getIconClass(tool.type)}">${tool.icon}</div>
+            <div class="node-title">${tool.name}</div>
+            <div class="node-menu" onclick="showNodeMenu('${nodeId}')">
+                <i class="fas fa-ellipsis-v"></i>
+            </div>
+        </div>
+        <div class="node-content">${tool.description}</div>
+        <div class="node-connections">
+            <div class="connection-point input" data-type="input" data-node="${nodeId}" onclick="startConnection(this)"></div>
+            <div class="connection-point output" data-type="output" data-node="${nodeId}" onclick="startConnection(this)"></div>
+        </div>
+    `;
+
+        // Add event listeners
+        nodeElement.addEventListener('click', function (e) {
+            e.stopPropagation();
+            selectNode(nodeId);
+        });
+
+        nodeElement.addEventListener('mousedown', function (e) {
+            if (e.target.closest('.node-menu') || e.target.closest('.connection-point')) return;
+            startNodeDrag(e, nodeId);
+        });
+
+        canvas.appendChild(nodeElement);
+        updateConnections();
+
+        console.log('Node created and added to canvas:', nodeId, nodeElement);
+        console.log('Canvas children count:', canvas.children.length);
+    }
+
+    // Connection functionality
+    function initializeConnections() {
+        // Mouse move for temporary connection line
+        canvas.addEventListener('mousemove', function (e) {
+            if (isConnecting && connectionStart && tempLine) {
+                const rect = canvas.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+
+                updateTempLine(connectionStart.x, connectionStart.y, x, y);
+            }
+        });
+
+        // Click to cancel connection
+        canvas.addEventListener('click', function (e) {
+            if (isConnecting && !e.target.closest('.connection-point')) {
+                cancelConnection();
+            }
+        });
+    }
+
+    function startConnection(connectionPoint) {
+        event.stopPropagation();
+
+        if (!isConnecting) {
+            // Start new connection
+            isConnecting = true;
+            connectionStart = {
+                node: connectionPoint.dataset.node,
+                type: connectionPoint.dataset.type,
+                element: connectionPoint,
+                x: connectionPoint.getBoundingClientRect().left + 6 - canvas.getBoundingClientRect().left,
+                y: connectionPoint.getBoundingClientRect().top + 6 - canvas.getBoundingClientRect().top
+            };
+
+            connectionPoint.classList.add('connecting');
+            createTempLine(connectionStart.x, connectionStart.y);
+
+        } else {
+            // Complete connection
+            const endPoint = {
+                node: connectionPoint.dataset.node,
+                type: connectionPoint.dataset.type,
+                element: connectionPoint
+            };
+
+            // Check if valid connection (output to input, different nodes)
+            if (connectionStart.type !== endPoint.type &&
+                connectionStart.node !== endPoint.node) {
+
+                // Determine source and target
+                const sourceNode = connectionStart.type === 'output' ? connectionStart.node : endPoint.node;
+                const targetNode = connectionStart.type === 'output' ? endPoint.node : connectionStart.node;
+
+                // Check if connection already exists
+                const existingConnection = connections.find(conn =>
+                    conn.source === sourceNode && conn.target === targetNode
+                );
+
+                if (!existingConnection) {
+                    // Create connection
+                    const connection = {
+                        id: `conn-${Date.now()}`,
+                        source: sourceNode,
+                        target: targetNode,
+                        sourceType: 'output',
+                        targetType: 'input'
+                    };
+
+                    connections.push(connection);
+
+                    // Update node data
+                    const sourceNodeData = nodes.find(n => n.id === sourceNode);
+                    const targetNodeData = nodes.find(n => n.id === targetNode);
+
+                    if (sourceNodeData && targetNodeData) {
+                        sourceNodeData.outputs.push(targetNode);
+                        targetNodeData.inputs.push(sourceNode);
+                    }
+
+                    updateConnections();
+                    showNotification('Connection created successfully!', 'success');
+                } else {
+                    showNotification('Connection already exists!', 'warning');
+                }
+            } else {
+                showNotification('Invalid connection!', 'error');
+            }
+
+            cancelConnection();
+        }
+    }
+
+    function cancelConnection() {
+        isConnecting = false;
+        if (connectionStart) {
+            connectionStart.element.classList.remove('connecting');
+            connectionStart = null;
+        }
+        if (tempLine) {
+            tempLine.remove();
+            tempLine = null;
+        }
+    }
+
+    function createTempLine(x, y) {
+        tempLine = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        tempLine.classList.add('connection-line', 'temp');
+        tempLine.setAttribute('d', `M ${x} ${y} Q ${x + 50} ${y} ${x + 100} ${y}`);
+        svgCanvas.appendChild(tempLine);
+    }
+
+    function updateTempLine(x1, y1, x2, y2) {
+        if (tempLine) {
+            const d = createCurvePath(x1, y1, x2, y2);
+            tempLine.setAttribute('d', d);
+        }
+    }
+
+    function updateConnections() {
+        // Clear existing connection lines
+        const existingLines = svgCanvas.querySelectorAll('.connection-line:not(.temp)');
+        existingLines.forEach(line => line.remove());
+
+        // Redraw all connections
+        connections.forEach(connection => {
+            drawConnection(connection);
+        });
+    }
+
+    function drawConnection(connection) {
+        const sourceNode = document.getElementById(connection.source);
+        const targetNode = document.getElementById(connection.target);
+
+        if (sourceNode && targetNode) {
+            const sourceOutput = sourceNode.querySelector('.connection-point.output');
+            const targetInput = targetNode.querySelector('.connection-point.input');
+
+            const sourceRect = sourceOutput.getBoundingClientRect();
+            const targetRect = targetInput.getBoundingClientRect();
+            const canvasRect = canvas.getBoundingClientRect();
+
+            const x1 = sourceRect.left + 6 - canvasRect.left;
+            const y1 = sourceRect.top + 6 - canvasRect.top;
+            const x2 = targetRect.left + 6 - canvasRect.left;
+            const y2 = targetRect.top + 6 - canvasRect.top;
+
+            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            path.classList.add('connection-line');
+            path.setAttribute('d', createCurvePath(x1, y1, x2, y2));
+            path.setAttribute('marker-end', 'url(#arrowhead)');
+            path.setAttribute('data-connection', connection.id);
+
+            // Add click handler to select/delete connection
+            path.addEventListener('click', function (e) {
+                e.stopPropagation();
+                selectConnection(connection.id);
+            });
+
+            svgCanvas.appendChild(path);
+        }
+    }
+
+    function createCurvePath(x1, y1, x2, y2) {
+        const dx = x2 - x1;
+        const dy = y2 - y1;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+
+        // Control points for smooth curve
+        const cp1x = x1 + Math.min(100, distance / 3);
+        const cp1y = y1;
+        const cp2x = x2 - Math.min(100, distance / 3);
+        const cp2y = y2;
+
+        return `M ${x1} ${y1} C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${x2} ${y2}`;
+    }
+
+    function selectConnection(connectionId) {
+        if (confirm('Delete this connection?')) {
+            // Remove from connections array
+            connections = connections.filter(conn => conn.id !== connectionId);
+
+            // Update node data
+            const connection = connections.find(conn => conn.id === connectionId);
+            if (connection) {
+                const sourceNode = nodes.find(n => n.id === connection.source);
+                const targetNode = nodes.find(n => n.id === connection.target);
+
+                if (sourceNode) {
+                    sourceNode.outputs = sourceNode.outputs.filter(id => id !== connection.target);
+                }
+                if (targetNode) {
+                    targetNode.inputs = targetNode.inputs.filter(id => id !== connection.source);
+                }
+            }
+
+            updateConnections();
+            showNotification('Connection deleted!', 'info');
+        }
+    }
+
+    // Node selection
+    function selectNode(nodeId) {
+        deselectAllNodes();
+        const nodeElement = document.getElementById(nodeId);
+        nodeElement.classList.add('selected');
+        selectedNode = nodeId;
+        showPropertyPanel(nodeId);
+    }
+
+    function deselectAllNodes() {
+        document.querySelectorAll('.workflow-node').forEach(node => {
+            node.classList.remove('selected');
+        });
+        selectedNode = null;
+    }
+
+    // Node dragging
+    function startNodeDrag(e, nodeId) {
+        e.preventDefault();
+        isDragging = true;
+        const nodeElement = document.getElementById(nodeId);
+        const rect = nodeElement.getBoundingClientRect();
+        const canvasRect = canvas.getBoundingClientRect();
+
+        dragOffset = {
+            x: e.clientX - rect.left,
+            y: e.clientY - rect.top
+        };
+
+        function onMouseMove(e) {
+            if (isDragging) {
+                const x = e.clientX - canvasRect.left - dragOffset.x;
+                const y = e.clientY - canvasRect.top - dragOffset.y;
+
+                nodeElement.style.left = Math.max(0, x) + 'px';
+                nodeElement.style.top = Math.max(0, y) + 'px';
+
+                // Update node data
+                const node = nodes.find(n => n.id === nodeId);
+                if (node) {
+                    node.x = x;
+                    node.y = y;
+                }
+
+                // Update connections in real-time
+                updateConnections();
+            }
+        }
+
+        function onMouseUp() {
+            isDragging = false;
+            document.removeEventListener('mousemove', onMouseMove);
+            document.removeEventListener('mouseup', onMouseUp);
+        }
+
+        document.addEventListener('mousemove', onMouseMove);
+        document.addEventListener('mouseup', onMouseUp);
+    }
+
+    // Property panel
+    function showPropertyPanel(nodeId) {
+        const node = nodes.find(n => n.id === nodeId);
+        if (!node) return;
+
+        document.getElementById('nodeName').value = node.name;
+        document.getElementById('nodeDescription').value = node.description;
+        document.getElementById('nodeConfig').value = JSON.stringify(node.config, null, 2);
+
+        document.getElementById('propertyPanel').classList.add('open');
+    }
+
+    function closePropertyPanel() {
+        document.getElementById('propertyPanel').classList.remove('open');
+    }
+
+    // Utility functions
+    function getIconClass(type) {
+        const iconClasses = {
+            'flow-control': 'flow-control',
+            'condition': 'flow-control',
+            'loop': 'flow-control',
+            'google-sheets': 'google-sheets',
+            'airtable': 'airtable',
+            'csv': 'tools',
+            'openai': 'openai',
+            'text-processing': 'tools',
+            'image-processing': 'tools',
+            'webhooks': 'webhooks',
+            'http': 'http',
+            'email': 'webhooks',
+            'filter': 'tools',
+            'aggregator': 'tools',
+            'transformer': 'tools',
+            'mysql': 'airtable',
+            'mongodb': 'google-sheets',
+            'cloud-storage': 'http',
+            'scheduler': 'flow-control',
+            'event-listener': 'webhooks',
+            'delay': 'flow-control',
+            'test': 'tools'
+        };
+        console.log('Getting icon class for type:', type, '→', iconClasses[type] || 'tools');
+        return iconClasses[type] || 'tools';
+    }
+
+    function hideDropZone() {
+        const dropZone = document.getElementById('dropZone');
+        if (dropZone) {
+            dropZone.style.display = 'none';
+        }
+    }
+
+    // Debug function to test drag and drop
+    function testDragDrop() {
+        console.log('=== TESTING DRAG DROP ===');
+        const testTool = {
+            type: 'test',
+            name: 'Test Tool',
+            description: 'Test description',
+            icon: '<i class="fas fa-cog"></i>'
+        };
+
+        console.log('Test tool data:', testTool);
+        console.log('Canvas before test:', canvas);
+
+        addToolToCanvas(testTool, 100, 100);
+        showNotification('Test node created!', 'success');
+    }
+
+    // Add test button for debugging
+    window.testDragDrop = testDragDrop;
+
+    // Debug function to check elements
+    function debugElements() {
+        console.log('=== DEBUGGING ELEMENTS ===');
+
+        const canvasArea = document.querySelector('.canvas-area');
+        const workflowCanvas = document.getElementById('workflowCanvas');
+        const dropZone = document.getElementById('dropZone');
+
+        console.log('Canvas area:', canvasArea);
+        console.log('Canvas area computed style:', canvasArea ? window.getComputedStyle(canvasArea) : 'NOT FOUND');
+
+        console.log('Workflow canvas:', workflowCanvas);
+        console.log('Workflow canvas computed style:', workflowCanvas ? window.getComputedStyle(workflowCanvas) : 'NOT FOUND');
+
+        console.log('Drop zone:', dropZone);
+        console.log('Drop zone computed style:', dropZone ? window.getComputedStyle(dropZone) : 'NOT FOUND');
+
+        if (dropZone) {
+            console.log('Drop zone display:', window.getComputedStyle(dropZone).display);
+            console.log('Drop zone visibility:', window.getComputedStyle(dropZone).visibility);
+            console.log('Drop zone position:', window.getComputedStyle(dropZone).position);
+        }
+    }
+
+    // Toolbar functions
+    function clearCanvas() {
+        if (nodes.length > 0 && !confirm('Are you sure you want to clear the canvas? This will remove all nodes and connections.')) {
+            return;
+        }
+
+        nodes = [];
+        connections = [];
+        selectedNode = null;
+        nodeCounter = 0;
+
+        document.querySelectorAll('.workflow-node').forEach(node => node.remove());
+        document.querySelectorAll('.connection-line').forEach(line => line.remove());
+        document.getElementById('dropZone').style.display = 'flex';
+        closePropertyPanel();
+
+        // Reset workflow name
+        workflowName = "Untitled Workflow";
+        document.querySelector('.canvas-title').textContent = workflowName;
+
+        showNotification('Canvas cleared!', 'info');
+    }
+
+    function editWorkflowName() {
+        const newName = prompt('Enter workflow name:', workflowName);
+        if (newName && newName.trim()) {
+            workflowName = newName.trim();
+            document.querySelector('.canvas-title').textContent = workflowName;
+            showNotification('Workflow renamed!', 'success');
+        }
+    }
+
+    function runWorkflow() {
+        if (nodes.length === 0) {
+            showNotification('Please add some nodes to run the workflow', 'warning');
+            return;
+        }
+
+        // Find start nodes (nodes with no inputs)
+        const startNodes = nodes.filter(node => node.inputs.length === 0);
+
+        if (startNodes.length === 0) {
+            showNotification('No start nodes found. Add a trigger or flow control node.', 'warning');
+            return;
+        }
+
+        showNotification('Running workflow...', 'info');
+
+        // Simulate workflow execution with visual feedback
+        executeWorkflowVisual(startNodes);
+    }
+
+    function executeWorkflowVisual(startNodes) {
+        let executionQueue = [...startNodes];
+        let executedNodes = new Set();
+        let step = 0;
+
+        function executeNextStep() {
+            if (executionQueue.length === 0) {
+                showNotification('Workflow execution completed!', 'success');
+                // Remove all active states
+                document.querySelectorAll('.workflow-node').forEach(node => {
+                    node.classList.remove('executing');
+                });
+                return;
+            }
+
+            const currentNode = executionQueue.shift();
+            if (executedNodes.has(currentNode.id)) {
+                executeNextStep();
+                return;
+            }
+
+            // Highlight current node
+            const nodeElement = document.getElementById(currentNode.id);
+            nodeElement.classList.add('executing');
+
+            // Add executing state style
+            if (!document.querySelector('.executing-style')) {
+                const style = document.createElement('style');
+                style.className = 'executing-style';
+                style.textContent = `
+                .workflow-node.executing {
+                    border-color: #28a745 !important;
+                    box-shadow: 0 0 20px rgba(40, 167, 69, 0.5) !important;
+                    animation: executeGlow 1s ease-in-out;
+                }
+                @keyframes executeGlow {
+                    0%, 100% { box-shadow: 0 0 20px rgba(40, 167, 69, 0.5); }
+                    50% { box-shadow: 0 0 30px rgba(40, 167, 69, 0.8); }
+                }
+            `;
+                document.head.appendChild(style);
+            }
+
+            // Mark as executed
+            executedNodes.add(currentNode.id);
+
+            // Add connected nodes to queue
+            currentNode.outputs.forEach(outputNodeId => {
+                const outputNode = nodes.find(n => n.id === outputNodeId);
+                if (outputNode && !executedNodes.has(outputNode.id)) {
+                    executionQueue.push(outputNode);
+                }
+            });
+
+            // Continue to next step
+            setTimeout(() => {
+                nodeElement.classList.remove('executing');
+                executeNextStep();
+            }, 1000);
+        }
+
+        executeNextStep();
+    }
+
+    // Enhanced property panel
+    function showPropertyPanel(nodeId) {
+        const node = nodes.find(n => n.id === nodeId);
+        if (!node) return;
+
+        // Update form with node-specific fields
+        const propertyContent = document.getElementById('propertyContent');
+
+        let configFields = '';
+
+        // Generate configuration fields based on node type
+        switch (node.type) {
+            case 'google-sheets':
+                configFields = `
+                <div class="form-group">
+                    <label class="form-label">Spreadsheet ID</label>
+                    <input type="text" class="form-input" id="spreadsheetId" placeholder="1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Sheet Name</label>
+                    <input type="text" class="form-input" id="sheetName" placeholder="Sheet1">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Operation</label>
+                    <select class="form-select" id="operation">
+                        <option value="read">Read Data</option>
+                        <option value="write">Write Data</option>
+                        <option value="append">Append Data</option>
+                    </select>
+                </div>
+            `;
+                break;
+
+            case 'openai':
+                configFields = `
+                <div class="form-group">
+                    <label class="form-label">Model</label>
+                    <select class="form-select" id="model">
+                        <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+                        <option value="gpt-4">GPT-4</option>
+                        <option value="dall-e-3">DALL-E 3</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Prompt</label>
+                    <textarea class="form-textarea" id="prompt" placeholder="Enter your prompt here..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Max Tokens</label>
+                    <input type="number" class="form-input" id="maxTokens" value="150">
+                </div>
+            `;
+                break;
+
+            case 'http':
+                configFields = `
+                <div class="form-group">
+                    <label class="form-label">Method</label>
+                    <select class="form-select" id="method">
+                        <option value="GET">GET</option>
+                        <option value="POST">POST</option>
+                        <option value="PUT">PUT</option>
+                        <option value="DELETE">DELETE</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">URL</label>
+                    <input type="url" class="form-input" id="url" placeholder="https://api.example.com/endpoint">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Headers (JSON)</label>
+                    <textarea class="form-textarea" id="headers" placeholder='{"Content-Type": "application/json"}'></textarea>
+                </div>
+            `;
+                break;
+
+            default:
+                configFields = `
+                <div class="form-group">
+                    <label class="form-label">Configuration (JSON)</label>
+                    <textarea class="form-textarea" id="nodeConfig" placeholder='{"key": "value"}'></textarea>
+                </div>
+            `;
+        }
+
+        propertyContent.innerHTML = `
+        <div class="form-group">
+            <label class="form-label">Node Name</label>
+            <input type="text" class="form-input" id="nodeName" value="${node.name}">
+        </div>
+        
+        <div class="form-group">
+            <label class="form-label">Description</label>
+            <textarea class="form-textarea" id="nodeDescription" placeholder="Describe what this node does">${node.description}</textarea>
+        </div>
+        
+        ${configFields}
+        
+        <div class="form-group">
+            <button class="btn btn-primary" style="width: 100%; margin-top: 10px;" onclick="saveNodeProperties('${nodeId}')">
+                <i class="fas fa-save"></i>
+                Save Changes
+            </button>
+        </div>
+        
+        <div class="form-group">
+            <button class="btn btn-secondary" style="width: 100%; background: #dc3545; border-color: #dc3545;" onclick="deleteNode('${nodeId}')">
+                <i class="fas fa-trash"></i>
+                Delete Node
+            </button>
+        </div>
+    `;
+
+        document.getElementById('propertyPanel').classList.add('open');
+    }
+
+    function saveNodeProperties(nodeId) {
+        const node = nodes.find(n => n.id === nodeId);
+        if (!node) return;
+
+        // Update basic properties
+        const nameInput = document.getElementById('nodeName');
+        const descInput = document.getElementById('nodeDescription');
+
+        if (nameInput) {
+            node.name = nameInput.value;
+            document.querySelector(`#${nodeId} .node-title`).textContent = nameInput.value;
+        }
+
+        if (descInput) {
+            node.description = descInput.value;
+            document.querySelector(`#${nodeId} .node-content`).textContent = descInput.value;
+        }
+
+        // Update node-specific configuration
+        node.config = {};
+
+        // Collect all form inputs in property panel
+        const formInputs = document.querySelectorAll('#propertyContent input, #propertyContent select, #propertyContent textarea');
+        formInputs.forEach(input => {
+            if (input.id && input.id !== 'nodeName' && input.id !== 'nodeDescription') {
+                node.config[input.id] = input.value;
+            }
+        });
+
+        showNotification('Node properties saved!', 'success');
+    }
+
+    function deleteNode(nodeId) {
+        if (confirm('Are you sure you want to delete this node? All connections will be removed.')) {
+            // Remove connections
+            connections = connections.filter(conn =>
+                conn.source !== nodeId && conn.target !== nodeId
+            );
+
+            // Remove from nodes array
+            nodes = nodes.filter(n => n.id !== nodeId);
+
+            // Remove DOM element
+            const nodeElement = document.getElementById(nodeId);
+            if (nodeElement) {
+                nodeElement.remove();
+            }
+
+            // Update connections
+            updateConnections();
+
+            // Close property panel
+            closePropertyPanel();
+
+            // Show drop zone if no nodes left
+            if (nodes.length === 0) {
+                document.getElementById('dropZone').style.display = 'flex';
+            }
+
+            showNotification('Node deleted!', 'info');
+        }
+    }
+
+    function saveWorkflow() {
+        if (nodes.length === 0) {
+            showNotification('No nodes to save!', 'warning');
+            return;
+        }
+
+        const workflow = {
+            name: workflowName,
+            nodes: nodes,
+            connections: connections,
+            metadata: {
+                created: new Date().toISOString(),
+                nodeCount: nodes.length,
+                connectionCount: connections.length,
+                version: '1.0'
+            }
+        };
+
+        // Save to localStorage for demo (in real app, would send to backend)
+        const workflowId = `workflow_${Date.now()}`;
+        localStorage.setItem(workflowId, JSON.stringify(workflow));
+
+        // Also save to workflows list
+        const savedWorkflows = JSON.parse(localStorage.getItem('saved_workflows') || '[]');
+        savedWorkflows.push({
+            id: workflowId,
+            name: workflowName,
+            saved: new Date().toISOString(),
+            nodeCount: nodes.length
+        });
+        localStorage.setItem('saved_workflows', JSON.stringify(savedWorkflows));
+
+        showNotification(`Workflow "${workflowName}" saved successfully!`, 'success');
+    }
+
+    function loadWorkflow() {
+        const savedWorkflows = JSON.parse(localStorage.getItem('saved_workflows') || '[]');
+
+        if (savedWorkflows.length === 0) {
+            showNotification('No saved workflows found!', 'info');
+            return;
+        }
+
+        // Create simple selection dialog
+        let workflowList = 'Select workflow to load:\n\n';
+        savedWorkflows.forEach((wf, index) => {
+            workflowList += `${index + 1}. ${wf.name} (${wf.nodeCount} nodes)\n`;
+        });
+
+        const selection = prompt(workflowList + '\nEnter number:');
+        const selectedIndex = parseInt(selection) - 1;
+
+        if (selectedIndex >= 0 && selectedIndex < savedWorkflows.length) {
+            const workflowToLoad = savedWorkflows[selectedIndex];
+            const workflowData = JSON.parse(localStorage.getItem(workflowToLoad.id));
+
+            if (workflowData) {
+                loadWorkflowData(workflowData);
+                showNotification(`Workflow "${workflowData.name}" loaded successfully!`, 'success');
+            }
+        }
+    }
+
+    function loadWorkflowData(workflowData) {
+        // Clear current canvas
+        clearCanvas();
+
+        // Set workflow name
+        workflowName = workflowData.name;
+        document.querySelector('.canvas-title').textContent = workflowName;
+
+        // Load nodes
+        workflowData.nodes.forEach(nodeData => {
+            const tool = {
+                type: nodeData.type,
+                name: nodeData.name,
+                description: nodeData.description,
+                icon: getToolIcon(nodeData.type)
+            };
+
+            createNode(tool, nodeData.x, nodeData.y);
+
+            // Update the node with saved config
+            const node = nodes.find(n => n.id === nodeData.id);
+            if (node) {
+                node.config = nodeData.config;
+                node.inputs = nodeData.inputs || [];
+                node.outputs = nodeData.outputs || [];
+            }
+        });
+
+        // Load connections
+        connections = workflowData.connections || [];
+        updateConnections();
+
+        hideDropZone();
+    }
+
+    function getToolIcon(type) {
+        const iconMap = {
+            'flow-control': '<i class="fas fa-play"></i>',
+            'condition': '<i class="fas fa-code-branch"></i>',
+            'loop': '<i class="fas fa-redo"></i>',
+            'google-sheets': '<i class="fab fa-google"></i>',
+            'airtable': '<i class="fas fa-table"></i>',
+            'csv': '<i class="fas fa-file-csv"></i>',
+            'openai': '<i class="fas fa-brain"></i>',
+            'text-processing': '<i class="fas fa-text-width"></i>',
+            'image-processing': '<i class="fas fa-image"></i>',
+            'webhooks': '<i class="fas fa-bolt"></i>',
+            'http': '<i class="fas fa-globe"></i>',
+            'email': '<i class="fas fa-envelope"></i>',
+            'filter': '<i class="fas fa-filter"></i>',
+            'aggregator': '<i class="fas fa-calculator"></i>',
+            'transformer': '<i class="fas fa-exchange-alt"></i>',
+            'mysql': '<i class="fas fa-database"></i>',
+            'mongodb': '<i class="fas fa-leaf"></i>',
+            'cloud-storage': '<i class="fas fa-cloud"></i>',
+            'scheduler': '<i class="fas fa-clock"></i>',
+            'event-listener': '<i class="fas fa-ear-listen"></i>',
+            'delay': '<i class="fas fa-pause"></i>'
+        };
+        return iconMap[type] || '<i class="fas fa-cog"></i>';
+    }
+
+    function runWorkflow() {
+        if (nodes.length === 0) {
+            showNotification('Please add some nodes to run the workflow', 'warning');
+            return;
+        }
+
+        showNotification('Running workflow...', 'info');
+
+        // Simulate workflow execution
+        setTimeout(() => {
+            showNotification('Workflow executed successfully!', 'success');
+        }, 2000);
+    }
+
+    function zoomIn() {
+        // Implement zoom functionality
+        console.log('Zoom in');
+    }
+
+    function zoomOut() {
+        // Implement zoom functionality
+        console.log('Zoom out');
+    }
+
+    function fitToScreen() {
+        // Implement fit to screen
+        console.log('Fit to screen');
+    }
+
+    function toggleGrid() {
+        // Toggle grid visibility
+        console.log('Toggle grid');
+    }
+
+    function showNodeMenu(nodeId) {
+        // Show context menu for node
+        console.log('Show menu for node:', nodeId);
+    }
+
+    // Notifications
+    function showNotification(message, type = 'info') {
+        const notification = document.createElement('div');
+        notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 12px 16px;
+        border-radius: 6px;
+        color: white;
+        font-size: 14px;
+        font-weight: 500;
+        z-index: 3000;
+        max-width: 300px;
+        background: ${type === 'success' ? '#28a745' : type === 'error' ? '#dc3545' : type === 'warning' ? '#ffc107' : '#007acc'};
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        transform: translateX(100%);
+        transition: transform 0.3s ease;
+    `;
+
+        notification.textContent = message;
+        document.body.appendChild(notification);
+
+        setTimeout(() => {
+            notification.style.transform = 'translateX(0)';
+        }, 100);
+
+        setTimeout(() => {
+            notification.style.transform = 'translateX(100%)';
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.parentNode.removeChild(notification);
+                }
+            }, 300);
+        }, 3000);
+    }
+
+    // Search functionality
+    document.getElementById('searchTools').addEventListener('input', function (e) {
+        const searchTerm = e.target.value.toLowerCase();
+        const toolItems = document.querySelectorAll('.tool-item');
+
+        toolItems.forEach(tool => {
+            const name = tool.querySelector('.tool-name').textContent.toLowerCase();
+            const description = tool.querySelector('.tool-description').textContent.toLowerCase();
+
+            if (name.includes(searchTerm) || description.includes(searchTerm)) {
+                tool.style.display = 'flex';
+            } else {
+                tool.style.display = 'none';
+            }
+        });
+    });
+</script>
+{% endblock %}

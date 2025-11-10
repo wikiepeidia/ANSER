@@ -1,0 +1,1039 @@
+{% extends "base.html" %}
+
+{% block title %}Workflows - Workflow Automation for Retail{% endblock %}
+
+{% block styles %}
+<style>
+    body {
+        margin: 0;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        background: #f8f9fa;
+        height: 100vh;
+        overflow: hidden;
+    }
+
+    .workspace-container {
+        display: flex;
+        height: 100vh;
+        background: #f8f9fa;
+    }
+
+    .sidebar {
+        width: 280px;
+        background: white;
+        border-right: 1px solid #e9ecef;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 2px 0 10px rgba(0, 0, 0, 0.05);
+    }
+
+    .sidebar-header {
+        padding: 20px;
+        border-bottom: 1px solid #e9ecef;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        position: relative;
+    }
+
+    .sidebar-title {
+        font-size: 18px;
+        font-weight: 600;
+        margin-bottom: 8px;
+    }
+
+    .user-menu {
+        position: absolute;
+        top: 15px;
+        right: 20px;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+
+    .user-avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: linear-gradient(45deg, #8B5CF6, #06B6D4);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 500;
+        font-size: 14px;
+    }
+
+    .logout-btn {
+        background: rgba(255, 255, 255, 0.1);
+        color: white;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 12px;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .logout-btn:hover {
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+        text-decoration: none;
+    }
+
+    .search-box {
+        position: relative;
+        margin-top: 12px;
+    }
+
+    .search-input {
+        width: 100%;
+        padding: 10px 40px 10px 12px;
+        border: none;
+        border-radius: 6px;
+        background: rgba(255, 255, 255, 0.15);
+        color: white;
+        font-size: 14px;
+        backdrop-filter: blur(10px);
+        box-sizing: border-box;
+    }
+
+    .search-input::placeholder {
+        color: rgba(255, 255, 255, 0.8);
+    }
+
+    .search-input:focus {
+        outline: none;
+        background: rgba(255, 255, 255, 0.25);
+    }
+
+    .search-icon {
+        position: absolute;
+        right: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: rgba(255, 255, 255, 0.8);
+    }
+
+    .folders-section {
+        flex: 1;
+        overflow-y: auto;
+        padding: 20px;
+    }
+
+    .folder-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 16px;
+        color: #6c757d;
+        font-size: 14px;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .add-folder-btn {
+        background: none;
+        border: none;
+        color: #6c757d;
+        cursor: pointer;
+        padding: 4px;
+        border-radius: 4px;
+        transition: all 0.2s;
+    }
+
+    .add-folder-btn:hover {
+        background: #f8f9fa;
+        color: #495057;
+    }
+
+    .folder-item {
+        display: flex;
+        align-items: center;
+        padding: 12px 16px;
+        margin-bottom: 8px;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s;
+        position: relative;
+    }
+
+    .folder-item:hover {
+        background: #f8f9fa;
+    }
+
+    .folder-item.active {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+
+    .folder-icon {
+        margin-right: 12px;
+        font-size: 16px;
+    }
+
+    .folder-name {
+        flex: 1;
+        font-weight: 500;
+    }
+
+    .folder-count {
+        background: rgba(255, 255, 255, 0.2);
+        color: rgba(255, 255, 255, 0.9);
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 500;
+    }
+
+    .folder-item:not(.active) .folder-count {
+        background: #e9ecef;
+        color: #6c757d;
+    }
+
+    .main-content {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+    .top-bar {
+        height: 60px;
+        background: white;
+        border-bottom: 1px solid #e9ecef;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 24px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    }
+
+    .page-title {
+        font-size: 24px;
+        font-weight: 600;
+        color: #212529;
+    }
+
+    .top-actions {
+        display: flex;
+        gap: 12px;
+    }
+
+    .btn {
+        padding: 8px 16px;
+        border-radius: 6px;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        color: white;
+        text-decoration: none;
+    }
+
+    .btn-secondary {
+        background: white;
+        color: #6c757d;
+        border: 1px solid #e9ecef;
+    }
+
+    .btn-secondary:hover {
+        background: #f8f9fa;
+        color: #495057;
+        text-decoration: none;
+    }
+
+    .content-area {
+        flex: 1;
+        padding: 24px;
+        overflow-y: auto;
+    }
+
+    .content-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 24px;
+    }
+
+    .content-title {
+        font-size: 20px;
+        font-weight: 600;
+        color: #212529;
+    }
+
+    .filter-tabs {
+        display: flex;
+        gap: 8px;
+    }
+
+    .filter-tab {
+        padding: 8px 16px;
+        border-radius: 6px;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+        border: none;
+        background: none;
+        color: #6c757d;
+    }
+
+    .filter-tab.active {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+
+    .items-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 20px;
+    }
+
+    .item-card {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        border: 1px solid #e9ecef;
+        transition: all 0.2s;
+        cursor: pointer;
+    }
+
+    .item-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    }
+
+    .item-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 12px;
+    }
+
+    .item-type {
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 500;
+        text-transform: uppercase;
+    }
+
+    .item-type.task {
+        background: #e3f2fd;
+        color: #1976d2;
+    }
+
+    .item-type.note {
+        background: #f3e5f5;
+        color: #7b1fa2;
+    }
+
+    .item-type.bug {
+        background: #ffebee;
+        color: #d32f2f;
+    }
+
+    .item-menu {
+        position: relative;
+    }
+
+    .item-menu-btn {
+        background: none;
+        border: none;
+        color: #6c757d;
+        cursor: pointer;
+        padding: 4px;
+        border-radius: 4px;
+        transition: all 0.2s;
+    }
+
+    .item-menu-btn:hover {
+        background: #f8f9fa;
+        color: #495057;
+    }
+
+    .item-title {
+        font-size: 16px;
+        font-weight: 600;
+        color: #212529;
+        margin-bottom: 8px;
+        line-height: 1.4;
+    }
+
+    .item-description {
+        color: #6c757d;
+        font-size: 14px;
+        line-height: 1.5;
+        margin-bottom: 16px;
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .item-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .item-priority {
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: 500;
+    }
+
+    .priority-high {
+        background: #ffebee;
+        color: #d32f2f;
+    }
+
+    .priority-medium {
+        background: #fff3e0;
+        color: #f57c00;
+    }
+
+    .priority-low {
+        background: #e8f5e8;
+        color: #388e3c;
+    }
+
+    .item-status {
+        font-size: 12px;
+        color: #6c757d;
+        text-transform: uppercase;
+        font-weight: 500;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 80px 20px;
+        color: #6c757d;
+    }
+
+    .empty-icon {
+        font-size: 48px;
+        margin-bottom: 16px;
+        opacity: 0.5;
+    }
+
+    .empty-title {
+        font-size: 20px;
+        font-weight: 600;
+        margin-bottom: 8px;
+        color: #495057;
+    }
+
+    .empty-description {
+        font-size: 14px;
+        margin-bottom: 24px;
+        max-width: 400px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    /* Modals */
+    .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 1000;
+        align-items: center;
+        justify-content: center;
+        backdrop-filter: blur(5px);
+    }
+
+    .modal-content {
+        background: white;
+        border-radius: 12px;
+        padding: 24px;
+        width: 90%;
+        max-width: 500px;
+        max-height: 80vh;
+        overflow-y: auto;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+    }
+
+    .modal-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 20px;
+        padding-bottom: 16px;
+        border-bottom: 1px solid #e9ecef;
+    }
+
+    .modal-title {
+        font-size: 18px;
+        font-weight: 600;
+        color: #212529;
+    }
+
+    .close-btn {
+        background: none;
+        border: none;
+        font-size: 20px;
+        color: #6c757d;
+        cursor: pointer;
+        padding: 4px;
+        border-radius: 4px;
+        transition: all 0.2s;
+    }
+
+    .close-btn:hover {
+        background: #f8f9fa;
+        color: #495057;
+    }
+
+    .form-group {
+        margin-bottom: 16px;
+    }
+
+    .form-label {
+        display: block;
+        margin-bottom: 6px;
+        font-weight: 500;
+        color: #495057;
+    }
+
+    .form-input,
+    .form-select,
+    .form-textarea {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid #e9ecef;
+        border-radius: 6px;
+        font-size: 14px;
+        transition: all 0.2s;
+        box-sizing: border-box;
+    }
+
+    .form-input:focus,
+    .form-select:focus,
+    .form-textarea:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .form-textarea {
+        resize: vertical;
+        min-height: 80px;
+    }
+
+    .modal-footer {
+        display: flex;
+        gap: 12px;
+        justify-content: flex-end;
+        margin-top: 24px;
+        padding-top: 16px;
+        border-top: 1px solid #e9ecef;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="workspace-container">
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-title">Workspace</div>
+            <div class="user-menu">
+                <div class="user-avatar">{{ user.username[0].upper() if user.username else 'U' }}</div>
+                <a href="{{ url_for('logout') }}" class="logout-btn">
+                    <i class="fas fa-sign-out-alt"></i>
+                    Logout
+                </a>
+            </div>
+            <div class="search-box">
+                <input type="text" class="search-input" placeholder="Search items..." id="searchInput">
+                <i class="fas fa-search search-icon"></i>
+            </div>
+        </div>
+
+        <div class="folders-section">
+            <div class="folder-header">
+                <span>WORKSPACES</span>
+                <button class="add-folder-btn" onclick="openModal('createWorkspaceModal')">
+                    <i class="fas fa-plus"></i>
+                </button>
+            </div>
+
+            <div class="folder-item active" onclick="selectWorkspace('personal')">
+                <div class="folder-icon">
+                    <i class="fas fa-briefcase" style="color: #667eea;"></i>
+                </div>
+                <div class="folder-name">Personal Workspace</div>
+                <div class="folder-count" id="personalCount">0</div>
+            </div>
+
+            <div class="folder-item" onclick="selectWorkspace('team')">
+                <div class="folder-icon">
+                    <i class="fas fa-users" style="color: #28a745;"></i>
+                </div>
+                <div class="folder-name">Team Projects</div>
+                <div class="folder-count" id="teamCount">0</div>
+            </div>
+
+            <div class="folder-item" onclick="selectWorkspace('archived')">
+                <div class="folder-icon">
+                    <i class="fas fa-archive" style="color: #6c757d;"></i>
+                </div>
+                <div class="folder-name">Archived</div>
+                <div class="folder-count" id="archivedCount">0</div>
+            </div>
+
+            <div class="folder-header" style="margin-top: 24px;">
+                <span>QUICK ACTIONS</span>
+            </div>
+
+            <div class="folder-item" onclick="window.location.href='{{ url_for('scenarios') }}'">
+                <div class="folder-icon">
+                    <i class="fas fa-sitemap" style="color: #8B5CF6;"></i>
+                </div>
+                <div class="folder-name">Scenarios</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="top-bar">
+            <div class="page-title">Personal Workspace</div>
+            <div class="top-actions">
+                <button class="btn btn-secondary" onclick="openModal('createWorkspaceModal')">
+                    <i class="fas fa-folder-plus"></i>
+                    New Workspace
+                </button>
+                <a href="{{ url_for('workspace_builder') }}" class="btn btn-primary"
+                    style="text-decoration: none; color: white;">
+                    <i class="fas fa-magic"></i>
+                    Visual Builder
+                </a>
+                <button class="btn btn-primary" onclick="openModal('createItemModal')">
+                    <i class="fas fa-plus"></i>
+                    Create Item
+                </button>
+            </div>
+        </div>
+
+        <div class="content-area">
+            <div class="content-header">
+                <div class="content-title">All Items</div>
+                <div class="filter-tabs">
+                    <button class="filter-tab active" onclick="filterItems('all')">All</button>
+                    <button class="filter-tab" onclick="filterItems('task')">Tasks</button>
+                    <button class="filter-tab" onclick="filterItems('note')">Notes</button>
+                    <button class="filter-tab" onclick="filterItems('bug')">Bugs</button>
+                </div>
+            </div>
+
+            <div class="items-grid" id="itemsGrid">
+                <!-- Items will be loaded here -->
+            </div>
+
+            <div class="empty-state" id="emptyState" style="display: none;">
+                <div class="empty-icon">
+                    <i class="fas fa-clipboard-list"></i>
+                </div>
+                <div class="empty-title">No items yet</div>
+                <div class="empty-description">
+                    Create your first task, note, or bug report to get started with your workspace.
+                </div>
+                <button class="btn btn-primary" onclick="openModal('createItemModal')">
+                    <i class="fas fa-plus"></i>
+                    Create Your First Item
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Create Item Modal -->
+<div class="modal" id="createItemModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <div class="modal-title" id="modalTitle">Create New Item</div>
+            <button class="close-btn" onclick="closeModal('createItemModal')">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <form id="itemForm" onsubmit="saveItem(); return false;">
+            <div class="form-group">
+                <label class="form-label">Title</label>
+                <input type="text" class="form-input" id="itemTitle" name="title" required>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Description</label>
+                <textarea class="form-textarea" id="itemDescription" name="description" rows="4"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Type</label>
+                <select class="form-select" id="itemType" name="type" required>
+                    <option value="task">Task</option>
+                    <option value="note">Note</option>
+                    <option value="bug">Bug</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Priority</label>
+                <select class="form-select" id="itemPriority" name="priority" required>
+                    <option value="low">Low</option>
+                    <option value="medium">Medium</option>
+                    <option value="high">High</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Status</label>
+                <select class="form-select" id="itemStatus" name="status" required>
+                    <option value="todo">To Do</option>
+                    <option value="in_progress">In Progress</option>
+                    <option value="completed">Completed</option>
+                </select>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('createItemModal')">Cancel</button>
+                <button type="submit" class="btn btn-primary">Save Item</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Create Workspace Modal -->
+<div class="modal" id="createWorkspaceModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <div class="modal-title">Create New Workspace</div>
+            <button class="close-btn" onclick="closeModal('createWorkspaceModal')">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <form id="workspaceForm" onsubmit="saveWorkspace(); return false;">
+            <div class="form-group">
+                <label class="form-label">Workspace Name</label>
+                <input type="text" class="form-input" id="workspaceName" name="name" required>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Description</label>
+                <textarea class="form-textarea" id="workspaceDescription" name="description" rows="3"></textarea>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary"
+                    onclick="closeModal('createWorkspaceModal')">Cancel</button>
+                <button type="submit" class="btn btn-primary">Create Workspace</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Global variables
+    let currentWorkspaceId = 1;
+    let currentEditingItem = null;
+    let allItems = [];
+    let currentFilter = 'all';
+
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', function () {
+        loadWorkspaceItems();
+
+        // Search functionality
+        document.getElementById('searchInput').addEventListener('input', function (e) {
+            filterItemsBySearch(e.target.value);
+        });
+    });
+
+    // API Functions
+    async function loadWorkspaceItems() {
+        try {
+            const response = await fetch(`/api/workspace/${currentWorkspaceId}/items`);
+            allItems = await response.json();
+            renderItems();
+            updateCounts();
+        } catch (error) {
+            console.error('Error loading items:', error);
+            showNotification('Error loading items', 'error');
+        }
+    }
+
+    function renderItems() {
+        const itemsGrid = document.getElementById('itemsGrid');
+        const emptyState = document.getElementById('emptyState');
+
+        let filteredItems = allItems;
+
+        // Apply type filter
+        if (currentFilter !== 'all') {
+            filteredItems = allItems.filter(item => item.type === currentFilter);
+        }
+
+        // Apply search filter
+        const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+        if (searchTerm) {
+            filteredItems = filteredItems.filter(item =>
+                item.title.toLowerCase().includes(searchTerm) ||
+                (item.description && item.description.toLowerCase().includes(searchTerm))
+            );
+        }
+
+        if (filteredItems.length === 0) {
+            itemsGrid.style.display = 'none';
+            emptyState.style.display = 'block';
+        } else {
+            itemsGrid.style.display = 'grid';
+            emptyState.style.display = 'none';
+
+            itemsGrid.innerHTML = filteredItems.map(item => `
+            <div class="item-card" onclick="showItemDetail(${JSON.stringify(item).replace(/"/g, '&quot;')})">
+                <div class="item-header">
+                    <div class="item-type ${item.type}">${item.type}</div>
+                    <div class="item-menu">
+                        <button class="item-menu-btn" onclick="event.stopPropagation(); editItem(${JSON.stringify(item).replace(/"/g, '&quot;')})">
+                            <i class="fas fa-ellipsis-v"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="item-title">${item.title}</div>
+                <div class="item-description">${item.description || 'No description'}</div>
+                <div class="item-footer">
+                    <div class="item-priority priority-${item.priority}">${item.priority}</div>
+                    <div class="item-status">${item.status.replace('_', ' ')}</div>
+                </div>
+            </div>
+        `).join('');
+        }
+    }
+
+    function updateCounts() {
+        document.getElementById('personalCount').textContent = allItems.length;
+    }
+
+    // Modal Functions
+    function openModal(modalId) {
+        document.getElementById(modalId).style.display = 'flex';
+    }
+
+    function closeModal(modalId) {
+        document.getElementById(modalId).style.display = 'none';
+        resetForm(modalId);
+    }
+
+    function resetForm(modalId) {
+        const form = document.querySelector(`#${modalId} form`);
+        if (form) {
+            form.reset();
+        }
+        currentEditingItem = null;
+    }
+
+    // Item Management
+    async function saveItem() {
+        const form = document.getElementById('itemForm');
+        const formData = new FormData(form);
+        const data = Object.fromEntries(formData);
+
+        if (!data.title.trim()) {
+            showNotification('Title is required', 'error');
+            return;
+        }
+
+        try {
+            let response;
+            if (currentEditingItem) {
+                response = await fetch(`/api/items/${currentEditingItem.id}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+            } else {
+                response = await fetch(`/api/workspace/${currentWorkspaceId}/items`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+            }
+
+            const result = await response.json();
+
+            if (result.success) {
+                showNotification(result.message, 'success');
+                closeModal('createItemModal');
+                loadWorkspaceItems();
+            } else {
+                showNotification(result.message, 'error');
+            }
+        } catch (error) {
+            console.error('Error saving item:', error);
+            showNotification('Error saving item', 'error');
+        }
+    }
+
+    async function saveWorkspace() {
+        const form = document.getElementById('workspaceForm');
+        const formData = new FormData(form);
+        const data = Object.fromEntries(formData);
+
+        if (!data.name.trim()) {
+            showNotification('Workspace name is required', 'error');
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/workspace', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data)
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                showNotification(result.message, 'success');
+                closeModal('createWorkspaceModal');
+            } else {
+                showNotification(result.message, 'error');
+            }
+        } catch (error) {
+            console.error('Error creating workspace:', error);
+            showNotification('Error creating workspace', 'error');
+        }
+    }
+
+    function editItem(item) {
+        currentEditingItem = item;
+
+        document.getElementById('itemTitle').value = item.title;
+        document.getElementById('itemDescription').value = item.description || '';
+        document.getElementById('itemType').value = item.type;
+        document.getElementById('itemPriority').value = item.priority;
+        document.getElementById('itemStatus').value = item.status;
+
+        document.getElementById('modalTitle').textContent = 'Edit Item';
+        openModal('createItemModal');
+    }
+
+    function showItemDetail(item) {
+        editItem(item);
+    }
+
+    // Filter Functions
+    function filterItems(type) {
+        currentFilter = type;
+
+        // Update active tab
+        document.querySelectorAll('.filter-tab').forEach(tab => tab.classList.remove('active'));
+        event.target.classList.add('active');
+
+        renderItems();
+    }
+
+    function filterItemsBySearch(searchTerm) {
+        renderItems();
+    }
+
+    // Workspace Navigation
+    function selectWorkspace(workspace) {
+        document.querySelectorAll('.folder-item').forEach(item => item.classList.remove('active'));
+        event.target.classList.add('active');
+
+        const titles = {
+            'personal': 'Personal Workspace',
+            'team': 'Team Projects',
+            'archived': 'Archived Items'
+        };
+
+        document.querySelector('.page-title').textContent = titles[workspace] || 'Workspace';
+    }
+
+    // Notifications
+    function showNotification(message, type = 'info') {
+        const notification = document.createElement('div');
+        notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 12px 16px;
+        border-radius: 6px;
+        color: white;
+        font-size: 14px;
+        font-weight: 500;
+        z-index: 3000;
+        max-width: 300px;
+        background: ${type === 'success' ? '#28a745' : type === 'error' ? '#dc3545' : '#007acc'};
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        transform: translateX(100%);
+        transition: transform 0.3s ease;
+    `;
+
+        notification.textContent = message;
+        document.body.appendChild(notification);
+
+        setTimeout(() => {
+            notification.style.transform = 'translateX(0)';
+        }, 100);
+
+        setTimeout(() => {
+            notification.style.transform = 'translateX(100%)';
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.parentNode.removeChild(notification);
+                }
+            }, 300);
+        }, 3000);
+    }
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            const modals = document.querySelectorAll('.modal[style*="flex"]');
+            modals.forEach(modal => {
+                modal.style.display = 'none';
+            });
+        }
+    });
+</script>
+{% endblock %}
