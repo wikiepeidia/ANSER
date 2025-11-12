@@ -300,7 +300,7 @@ static/dist/
 static/build/
 *.bundle.js
 *.bundle.css
-
+fixer/
 # Workflow execution logs and cache
 workflow_logs/
 execution_cache/
