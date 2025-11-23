@@ -13,8 +13,6 @@ import json
 app = Flask(__name__, template_folder='ui/templates')
 app.secret_key = 'your-secret-key-here'
 
-from flask import Flask, render_template
-
 
 
 # Route mặc định (kept as internal helper) — not used as main index
