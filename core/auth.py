@@ -28,7 +28,7 @@ class AuthManager:
             }
         return None
     
-    def register_user(self, email, password, first_name, last_name):
+    def register_user(self, email, password, first_name, last_name, phone=''):
         conn = self.db.get_connection()
         c = conn.cursor()
         try:

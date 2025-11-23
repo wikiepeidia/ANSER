@@ -17,8 +17,8 @@ from flask import Flask, render_template
 
 
 
-# Route mặc định sẽ trỏ vào index.html
-@app.route('/')
+# Route mặc định (kept as internal helper) — not used as main index
+@app.route('/_home')
 def home():
     return render_template('index.html')
 
@@ -159,14 +159,17 @@ def workspace_builder():
 @login_required
 def get_workspaces():
     """Get all workspaces for current user"""
-    workspaces = auth_manager.get_user_workspaces(current_user.id)
-    return jsonify([{
-        'id': w[0],
-        'name': w[2],
-        'type': w[3],
-        'description': w[4],
-        'created_at': w[6]
-    } for w in workspaces])
+    try:
+        workspaces = auth_manager.get_user_workspaces(current_user.id)
+        return jsonify([{
+            'id': w[0],
+            'name': w[2],
+            'type': w[3],
+            'description': w[4],
+            'created_at': w[6]
+        } for w in workspaces])
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
 
 @app.route('/api/workspace/<int:workspace_id>/items')
 @login_required
@@ -174,19 +177,29 @@ def get_workspace_items(workspace_id):
     """Get all items in a workspace"""
     conn = db_manager.get_connection()
     c = conn.cursor()
-    c.execute('''SELECT * FROM items WHERE workspace_id = ? ORDER BY created_at DESC''', (workspace_id,))
-    items = c.fetchall()
-    conn.close()
     
-    return jsonify([{
-        'id': item[0],
-        'title': item[2],
-        'description': item[3],
-        'type': item[4],
-        'status': item[5],
-        'priority': item[6],
-        'created_at': item[9]
-    } for item in items])
+    try:
+        # Verify workspace exists and user has access
+        c.execute('SELECT id FROM workspaces WHERE id = ? AND user_id = ?', (workspace_id, current_user.id))
+        if not c.fetchone():
+            return jsonify({'success': False, 'message': 'Workspace not found or access denied'}), 403
+        
+        c.execute('''SELECT * FROM items WHERE workspace_id = ? ORDER BY created_at DESC''', (workspace_id,))
+        items = c.fetchall()
+        
+        return jsonify([{
+            'id': item[0],
+            'title': item[2],
+            'description': item[3],
+            'type': item[4],
+            'status': item[5],
+            'priority': item[6],
+            'created_at': item[9]
+        } for item in items])
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+    finally:
+        conn.close()
 
 @app.route('/api/workspace/<int:workspace_id>/items', methods=['POST'])
 @login_required
@@ -194,13 +207,25 @@ def create_item(workspace_id):
     """Create new item in workspace"""
     data = request.get_json()
     
+    # Validate required fields
+    if not data or 'title' not in data:
+        return jsonify({'success': False, 'message': 'Missing required field: title'}), 400
+    
+    if not data['title'].strip():
+        return jsonify({'success': False, 'message': 'Item title cannot be empty'}), 400
+    
     conn = db_manager.get_connection()
     c = conn.cursor()
     
     try:
+        # Verify workspace exists and user has access
+        c.execute('SELECT id FROM workspaces WHERE id = ? AND user_id = ?', (workspace_id, current_user.id))
+        if not c.fetchone():
+            return jsonify({'success': False, 'message': 'Workspace not found or access denied'}), 403
+        
         c.execute('''INSERT INTO items (workspace_id, title, description, type, status, priority, assignee_id)
                     VALUES (?, ?, ?, ?, ?, ?, ?)''',
-                 (workspace_id, data['title'], data.get('description', ''), 
+                 (workspace_id, data['title'].strip(), data.get('description', ''), 
                   data.get('type', 'task'), data.get('status', 'todo'),
                   data.get('priority', 'medium'), current_user.id))
         
@@ -220,13 +245,20 @@ def update_item(item_id):
     """Update existing item"""
     data = request.get_json()
     
+    # Validate required fields
+    if not data or 'title' not in data:
+        return jsonify({'success': False, 'message': 'Missing required field: title'}), 400
+    
+    if not data['title'].strip():
+        return jsonify({'success': False, 'message': 'Item title cannot be empty'}), 400
+    
     conn = db_manager.get_connection()
     c = conn.cursor()
     
     try:
         c.execute('''UPDATE items SET title = ?, description = ?, status = ?, priority = ?, updated_at = CURRENT_TIMESTAMP
                     WHERE id = ? AND assignee_id = ?''',
-                 (data['title'], data.get('description', ''), 
+                 (data['title'].strip(), data.get('description', ''), 
                   data.get('status', 'todo'), data.get('priority', 'medium'),
                   item_id, current_user.id))
         
@@ -269,13 +301,20 @@ def create_workspace():
     """Create new workspace"""
     data = request.get_json()
     
+    # Validate required fields
+    if not data or 'name' not in data or 'type' not in data:
+        return jsonify({'success': False, 'message': 'Missing required fields: name and type'}), 400
+    
+    if not data['name'].strip():
+        return jsonify({'success': False, 'message': 'Workspace name cannot be empty'}), 400
+    
     conn = db_manager.get_connection()
     c = conn.cursor()
     
     try:
         c.execute('''INSERT INTO workspaces (user_id, name, type, description)
                     VALUES (?, ?, ?, ?)''',
-                 (current_user.id, data['name'], data['type'], data.get('description', '')))
+                 (current_user.id, data['name'].strip(), data['type'], data.get('description', '')))
         
         workspace_id = c.lastrowid
         conn.commit()

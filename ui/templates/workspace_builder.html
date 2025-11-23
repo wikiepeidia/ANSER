@@ -155,7 +155,7 @@
             </div>
         </div>
 
-        <svg class="connections-svg" id="connectionLines" aria-hidden="true"></svg>
+        <svg class="connections-svg" id="connectionLines" width="100%" height="100%" aria-hidden="true"></svg>
 
         <div class="workflow-canvas" id="workflowCanvas">
             <div class="drop-zone" id="dropZone">
@@ -168,12 +168,12 @@
                 </div>
             </div>
 
-            <div class="workflow-node" style="top: 160px; left: 180px;" data-title="Trigger: New order">
+            <div class="workflow-node" style="top: 180px; left: 200px;" data-title="Trigger: New order">
                 <div class="node-header">
                     <div class="node-icon" style="background: #8bc34a;">
                         <i class="fas fa-shopping-basket"></i>
                     </div>
-                    <div class="node-title">Trigger: New order</div>
+                    <div class="node-title">New order</div>
                     <div class="node-menu">
                         <i class="fas fa-ellipsis-h"></i>
                     </div>
@@ -187,12 +187,31 @@
                 </div>
             </div>
 
-            <div class="workflow-node" style="top: 360px; left: 460px;" data-title="Slack notification">
+            <div class="workflow-node" style="top: 180px; left: 400px;" data-title="Webhook">
+                <div class="node-header">
+                    <div class="node-icon" style="background: #00bcd4;">
+                        <i class="fas fa-bolt"></i>
+                    </div>
+                    <div class="node-title">Webhook</div>
+                    <div class="node-menu">
+                        <i class="fas fa-ellipsis-h"></i>
+                    </div>
+                </div>
+                <div class="node-content">
+                    Receive events from the POS
+                </div>
+                <div class="node-connections">
+                    <div class="connection-point input"></div>
+                    <div class="connection-point output"></div>
+                </div>
+            </div>
+
+            <div class="workflow-node" style="top: 360px; left: 300px;" data-title="Slack notification">
                 <div class="node-header">
                     <div class="node-icon" style="background: #00a67e;">
                         <i class="fas fa-comments"></i>
                     </div>
-                    <div class="node-title">Slack notification</div>
+                    <div class="node-title">Slack notify</div>
                     <div class="node-menu">
                         <i class="fas fa-ellipsis-h"></i>
                     </div>
@@ -324,8 +343,17 @@
                 return;
             }
 
+            // Handle node menu clicks
+            const menuBtn = node.querySelector('.node-menu');
+            if (menuBtn) {
+                menuBtn.addEventListener('click', function (event) {
+                    event.stopPropagation();
+                    showNodeMenu(node, event);
+                });
+            }
+
             node.addEventListener('click', function (event) {
-                // Avoid treating drag gestures as clicks
+                // Avoid treating drag gestures as clicks or menu clicks
                 if (event.target.closest('.node-menu')) {
                     return;
                 }
@@ -333,6 +361,82 @@
             });
 
             enableNodeDragging(node);
+        }
+
+        // Show context menu for node
+        function showNodeMenu(node, event) {
+            // Remove existing menus
+            document.querySelectorAll('.node-context-menu').forEach(m => m.remove());
+            
+            const menu = document.createElement('div');
+            menu.className = 'node-context-menu';
+            menu.innerHTML = `
+                <div class="context-menu-item" data-action="edit">
+                    <i class="fas fa-edit"></i> Edit
+                </div>
+                <div class="context-menu-item" data-action="duplicate">
+                    <i class="fas fa-copy"></i> Duplicate
+                </div>
+                <div class="context-menu-item" data-action="delete">
+                    <i class="fas fa-trash"></i> Delete
+                </div>
+            `;
+            
+            document.body.appendChild(menu);
+            
+            // Position menu near the node
+            const nodeRect = node.getBoundingClientRect();
+            menu.style.top = `${nodeRect.top + 10}px`;
+            menu.style.left = `${nodeRect.right + 10}px`;
+            
+            // Handle menu item clicks
+            menu.querySelectorAll('.context-menu-item').forEach(item => {
+                item.addEventListener('click', function() {
+                    const action = this.dataset.action;
+                    handleNodeAction(node, action);
+                    menu.remove();
+                });
+            });
+            
+            // Close menu when clicking outside
+            setTimeout(() => {
+                document.addEventListener('click', function closeMenu(e) {
+                    if (!menu.contains(e.target)) {
+                        menu.remove();
+                        document.removeEventListener('click', closeMenu);
+                    }
+                });
+            }, 10);
+        }
+        
+        // Handle node actions
+        function handleNodeAction(node, action) {
+            switch(action) {
+                case 'edit':
+                    selectNode(node);
+                    showNotification('Edit mode activated', 'info');
+                    break;
+                case 'duplicate':
+                    const clone = node.cloneNode(true);
+                    clone.style.left = (parseInt(node.style.left) + 30) + 'px';
+                    clone.style.top = (parseInt(node.style.top) + 30) + 'px';
+                    canvas.appendChild(clone);
+                    attachNodeInteractions(clone);
+                    showNotification('Node duplicated', 'success');
+                    break;
+                case 'delete':
+                    if (confirm('Delete this node?')) {
+                        node.remove();
+                        showNotification('Node deleted', 'success');
+                        if (builderState.selectedNode === node) {
+                            builderState.selectedNode = null;
+                            if (propertyPanel) {
+                                propertyPanel.classList.remove('open');
+                            }
+                        }
+                    }
+                    break;
+            }
         }
 
         function enableNodeDragging(node) {
@@ -370,33 +474,6 @@
                 document.addEventListener('mousemove', onMouseMove);
                 document.addEventListener('mouseup', onMouseUp);
             });
-        }
-
-        function selectNode(node) {
-            if (!node) {
-                return;
-            }
-            document.querySelectorAll('.workflow-node').forEach(function (item) {
-                item.classList.remove('selected');
-            });
-            node.classList.add('selected');
-            builderState.selectedNode = node;
-
-            if (selectedNodeTitle) {
-                selectedNodeTitle.textContent = node.dataset.title || 'Node properties';
-            }
-
-            if (nodeNameInput) {
-                nodeNameInput.value = node.dataset.title || '';
-            }
-
-            if (nodeDescriptionInput) {
-                nodeDescriptionInput.value = node.querySelector('.node-content')?.textContent.trim() || '';
-            }
-
-            if (propertyPanel) {
-                propertyPanel.classList.add('open');
-            }
         }
 
         function bindPropertyInputs() {
@@ -527,14 +604,178 @@
             });
         }
 
+        // Toolbar button handlers with actual functionality
+        const builderMode = {
+            current: 'cursor',
+            scale: 1.0,
+            isConnecting: false,
+            connectionStart: null
+        };
+
         document.querySelectorAll('.toolbar-btn').forEach(function (btn) {
             btn.addEventListener('click', function () {
+                const action = this.dataset.action;
+                
                 document.querySelectorAll('.toolbar-btn').forEach(function (item) {
                     item.classList.remove('active');
                 });
-                btn.classList.add('active');
+                this.classList.add('active');
+                
+                // Handle different toolbar actions
+                builderMode.current = action;
+                
+                if (action === 'cursor') {
+                    canvas?.classList.remove('connect-mode', 'zoom-mode');
+                    canvas?.classList.add('cursor-mode');
+                    builderMode.isConnecting = false;
+                    builderMode.connectionStart = null;
+                    showNotification('Select mode activated - Click nodes to select and edit', 'info');
+                } else if (action === 'connect') {
+                    canvas?.classList.remove('cursor-mode', 'zoom-mode');
+                    canvas?.classList.add('connect-mode');
+                    builderMode.isConnecting = true;
+                    showNotification('Connect mode activated - Click nodes to connect them', 'info');
+                } else if (action === 'zoom') {
+                    canvas?.classList.remove('cursor-mode', 'connect-mode');
+                    canvas?.classList.add('zoom-mode');
+                    showNotification('Zoom mode activated - Use mouse wheel to zoom in/out', 'info');
+                }
             });
         });
+
+        // Implement zoom functionality
+        if (canvas) {
+            canvas.addEventListener('wheel', function(event) {
+                if (builderMode.current === 'zoom') {
+                    event.preventDefault();
+                    const delta = event.deltaY > 0 ? -0.1 : 0.1;
+                    builderMode.scale = Math.max(0.5, Math.min(2.0, builderMode.scale + delta));
+                    canvas.style.transform = `scale(${builderMode.scale})`;
+                    canvas.style.transformOrigin = 'center center';
+                }
+            });
+        }
+
+        // Implement connection mode
+        function handleConnectionMode(node) {
+            if (builderMode.current !== 'connect') return;
+            
+            if (!builderMode.connectionStart) {
+                builderMode.connectionStart = node;
+                node.classList.add('connection-source');
+                showNotification('Click another node to create connection', 'info');
+            } else {
+                if (builderMode.connectionStart !== node) {
+                    drawConnection(builderMode.connectionStart, node);
+                    showNotification('Connection created!', 'success');
+                }
+                builderMode.connectionStart.classList.remove('connection-source');
+                builderMode.connectionStart = null;
+            }
+        }
+
+        // Draw connection line between nodes
+        function drawConnection(sourceNode, targetNode) {
+            const svg = document.getElementById('connectionLines');
+            if (!svg) {
+                console.error('SVG element not found');
+                return;
+            }
+            
+            // Get absolute positions on the page
+            const sourceRect = sourceNode.getBoundingClientRect();
+            const targetRect = targetNode.getBoundingClientRect();
+            
+            // Calculate center points of nodes
+            const x1 = sourceRect.left + sourceRect.width / 2;
+            const y1 = sourceRect.bottom; // Bottom of source node
+            const x2 = targetRect.left + targetRect.width / 2;
+            const y2 = targetRect.top; // Top of target node
+            
+            console.log('Drawing connection from', {x1, y1}, 'to', {x2, y2});
+            
+            // Create curved path with control points
+            const cx1 = x1;
+            const cy1 = y1 + Math.abs(y2 - y1) * 0.5;
+            const cx2 = x2;
+            const cy2 = y1 + Math.abs(y2 - y1) * 0.5;
+            
+            const line = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            line.setAttribute('d', `M ${x1} ${y1} C ${cx1} ${cy1}, ${cx2} ${cy2}, ${x2} ${y2}`);
+            line.setAttribute('stroke', '#667eea');
+            line.setAttribute('stroke-width', '3');
+            line.setAttribute('fill', 'none');
+            line.setAttribute('stroke-linecap', 'round');
+            line.classList.add('connection-line');
+            
+            svg.appendChild(line);
+            
+            // Animate the line
+            const length = line.getTotalLength();
+            line.style.strokeDasharray = length;
+            line.style.strokeDashoffset = length;
+            
+            setTimeout(() => {
+                line.style.transition = 'stroke-dashoffset 0.6s ease';
+                line.style.strokeDashoffset = '0';
+            }, 50);
+        }
+        
+        function createArrowMarker(svg) {
+            const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+            const marker = document.createElementNS('http://www.w3.org/2000/svg', 'marker');
+            marker.setAttribute('id', 'arrowhead');
+            marker.setAttribute('markerWidth', '10');
+            marker.setAttribute('markerHeight', '10');
+            marker.setAttribute('refX', '9');
+            marker.setAttribute('refY', '3');
+            marker.setAttribute('orient', 'auto');
+            
+            const polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+            polygon.setAttribute('points', '0 0, 10 3, 0 6');
+            polygon.setAttribute('fill', '#667eea');
+            
+            marker.appendChild(polygon);
+            defs.appendChild(marker);
+            svg.appendChild(defs);
+            return defs;
+        }
+
+        // Update node click handler to support connection mode
+        function selectNode(node) {
+            if (!node) {
+                return;
+            }
+            
+            // Handle connection mode
+            if (builderMode.current === 'connect') {
+                handleConnectionMode(node);
+                return;
+            }
+            
+            // Regular selection mode
+            document.querySelectorAll('.workflow-node').forEach(function (item) {
+                item.classList.remove('selected');
+            });
+            node.classList.add('selected');
+            builderState.selectedNode = node;
+
+            if (selectedNodeTitle) {
+                selectedNodeTitle.textContent = node.dataset.title || 'Node properties';
+            }
+
+            if (nodeNameInput) {
+                nodeNameInput.value = node.dataset.title || '';
+            }
+
+            if (nodeDescriptionInput) {
+                nodeDescriptionInput.value = node.querySelector('.node-content')?.textContent.trim() || '';
+            }
+
+            if (propertyPanel) {
+                propertyPanel.classList.add('open');
+            }
+        }
 
         document.querySelectorAll('.workflow-node').forEach(function (node) {
             attachNodeInteractions(node);
