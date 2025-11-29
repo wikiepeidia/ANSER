@@ -20,7 +20,7 @@ app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'change_me_to_a_secure_r
 app.config['WTF_CSRF_ENABLED'] = True
 app.secret_key = app.config['SECRET_KEY']
 
-limiter = Limiter(get_remote_address, app=app, default_limits=["100 per day", "25 per hour"])
+limiter = Limiter(get_remote_address, app=app, default_limits=["100 per day", "66 per hour"])
 Talisman(app, force_https=False, content_security_policy=None)
 csrf = CSRFProtect(app)
 

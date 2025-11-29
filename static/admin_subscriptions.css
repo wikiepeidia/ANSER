@@ -6,13 +6,42 @@
     min-height: 100vh;
 }
 
+.subscriptions-page .card {
+    background: var(--surface-100);
+    border: 1px solid var(--border-soft);
+    border-radius: 16px;
+    box-shadow: 0 3px 18px rgba(15, 23, 42, 0.08);
+    transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.subscriptions-page .card:hover {
+    box-shadow: 0 12px 35px rgba(15, 23, 42, 0.12);
+}
+
+.subscriptions-page .card:not([class*='bg-']) .card-body,
+.subscriptions-page .card:not([class*='bg-']) .card-title,
+.subscriptions-page .card:not([class*='bg-']) .card-text {
+    color: var(--gray-900);
+}
+
+.subscriptions-page .card-title i {
+    color: inherit;
+}
+
 .plan-card {
     background: var(--surface-100);
     border-radius: 15px;
+    border: 1px solid var(--border-soft);
     overflow: hidden;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 2px 10px rgba(15, 23, 42, 0.08);
     transition: transform 0.3s ease, box-shadow 0.3s ease;
     position: relative;
+}
+
+.subscriptions-page .plan-card,
+.subscriptions-page .plan-price,
+.subscriptions-page .plan-features {
+    color: var(--gray-900);
 }
 
 .plan-card:hover {
@@ -62,7 +91,7 @@
 .amount {
     font-size: 36px;
     font-weight: 700;
-    color: #1a1a2e;
+    color: var(--gray-900);
 }
 
 .period {
@@ -113,13 +142,73 @@
     background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
 }
 
-.table thead th {
+.subscriptions-page .table {
+    color: var(--gray-900);
+    border-color: var(--border-soft);
+}
+
+.subscriptions-page .table thead th {
     text-transform: uppercase;
     font-size: 12px;
     letter-spacing: 0.5px;
-    color: var(--gray-500);
+    color: var(--table-header-color) !important;
+    font-weight: 700;
+    background: var(--surface-200);
+    border-bottom: 1px solid var(--border-soft);
 }
 
-.table tbody td {
+.subscriptions-page .table tbody td {
     vertical-align: middle;
+    border-top: 1px solid var(--border-soft);
+}
+
+.subscriptions-page .table tbody tr {
+    background: var(--surface-100);
+    transition: background 0.25s ease;
+}
+
+.subscriptions-page .table tbody tr:nth-child(even) {
+    background: var(--surface-200);
+}
+
+.subscriptions-page .table tbody tr:hover {
+    background: var(--surface-300);
+}
+
+.subscriptions-page .plan-card .plan-save,
+.subscriptions-page .plan-card .feature,
+.subscriptions-page .plan-card .period,
+.subscriptions-page .plan-card .amount {
+    color: inherit;
+}
+
+.subscriptions-page .plan-card .feature,
+.subscriptions-page .plan-card .period {
+    color: var(--gray-600);
+}
+
+.subscriptions-page .modal-content {
+    background: var(--surface-100);
+    color: var(--gray-900);
+    border: 1px solid var(--border-soft);
+}
+
+.subscriptions-page .modal-header,
+.subscriptions-page .modal-footer {
+    border-color: var(--border-soft);
+}
+
+.subscriptions-page .form-control,
+.subscriptions-page .form-select {
+    background: var(--surface-100);
+    border: 1px solid var(--border-soft);
+    color: var(--gray-900);
+}
+
+.subscriptions-page .form-control:focus,
+.subscriptions-page .form-select:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.25);
+    background: var(--surface-100);
+    color: var(--gray-900);
 }

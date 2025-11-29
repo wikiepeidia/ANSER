@@ -17,7 +17,7 @@
     <div class="row">
         {% include 'components/sidebar.html' %}
 
-        <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 main-content">
+        <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 main-content auto-import-page">
             <div
                 class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
                 <h1 class="h2"><i class="fas fa-sync-alt"></i> SE - Tự động nhập hàng</h1>
@@ -33,26 +33,26 @@
 
             <div class="row mb-3">
                 <div class="col-md-4">
-                    <div class="card border-primary">
+                    <div class="card text-white bg-primary">
                         <div class="card-body">
                             <h5 class="card-title"><i class="fas fa-robot"></i> Automation đang chạy</h5>
-                            <h2 class="text-primary" id="activeAutomations">0</h2>
+                            <h2 id="activeAutomations" class="text-white">0</h2>
                         </div>
                     </div>
                 </div>
                 <div class="col-md-4">
-                    <div class="card border-success">
+                    <div class="card text-white bg-success">
                         <div class="card-body">
                             <h5 class="card-title"><i class="fas fa-check-circle"></i> Đã thực hiện</h5>
-                            <h2 class="text-success" id="completedRuns">0</h2>
+                            <h2 id="completedRuns" class="text-white">0</h2>
                         </div>
                     </div>
                 </div>
                 <div class="col-md-4">
-                    <div class="card border-warning">
+                    <div class="card text-white bg-warning">
                         <div class="card-body">
                             <h5 class="card-title"><i class="fas fa-clock"></i> Lần chạy cuối</h5>
-                            <h5 class="text-warning" id="lastRun">Chưa có</h5>
+                            <h5 id="lastRun" class="text-white">Chưa có</h5>
                         </div>
                     </div>
                 </div>
@@ -86,7 +86,7 @@
             </div>
 
             <div class="card mt-3">
-                <div class="card-header bg-light">
+                <div class="card-header card-header-surface">
                     <h5><i class="fas fa-lightbulb"></i> Gợi ý Automation</h5>
                 </div>
                 <div class="card-body">

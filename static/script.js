@@ -90,6 +90,10 @@ function initializeTheme() {
         document.body.classList.toggle('dark-mode', effectiveTheme === 'dark');
         toggles.forEach((button) => updateToggleButton(button, normalizedPreference, effectiveTheme));
         syncPreferenceControls(normalizedPreference);
+        // Ensure table inline styles (if any) are rebuilt when theme changes
+        if (typeof syncAllTablesTheme === 'function') {
+            syncAllTablesTheme();
+        }
     };
 
     const setPreference = (nextPreference) => {
@@ -187,6 +191,33 @@ function initializeTheme() {
     closePanel();
     applyTheme(currentPreference);
 }
+
+/* Re-apply inline table backgrounds if any JS set them earlier and were based on CSS variables.
+   This keeps tables consistent on dynamic theme changes. Prefer CSS variables but keep JS as a safe fallback.
+*/
+function syncAllTablesTheme() {
+    const rootStyles = getComputedStyle(document.documentElement);
+    const bg = rootStyles.getPropertyValue('--surface-100') || '#ffffff';
+    const alt = rootStyles.getPropertyValue('--surface-200') || '#f8fafc';
+    document.querySelectorAll('.table').forEach(table => {
+        // Only adjust if there is an inline style or the computed style is white (bootstrap default)
+        const computed = getComputedStyle(table).backgroundColor || '';
+        // Note: computed is an rgb() string - we can't easily compare hex; however we still reapply
+        // because CSS variables now control colors. If the site uses inline background=white we override with CSS var
+        table.style.setProperty('background', bg.trim(), 'important');
+        [...table.querySelectorAll('tbody tr')].forEach((row, idx) => {
+            const color = (idx % 2 === 0) ? bg.trim() : alt.trim();
+            row.style.setProperty('background', color, 'important');
+        });
+    });
+}
+
+// Observe DOM attribute changes to the html `data-theme` to refresh table inline styles
+const _themeAttrObserver = new MutationObserver((mutations) => {
+    const changed = mutations.some(m => m.attributeName === 'data-theme');
+    if (changed) syncAllTablesTheme();
+});
+_themeAttrObserver.observe(document.documentElement, { attributes: true });
 
 /**
  * Form Handlers

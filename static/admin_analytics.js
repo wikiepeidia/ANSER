@@ -3,6 +3,7 @@
     let categoryChart;
     let accessChart;
     let usersChart;
+    let themeObserver;
 
     const DAYS = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
     const REVENUE_SERIES = [45000, 52000, 48000, 61000, 55000, 67000, 72000];
@@ -25,6 +26,25 @@
 
     const formatCurrency = (value) => value.toLocaleString('vi-VN');
 
+    const getThemeColors = () => {
+        const styles = getComputedStyle(document.documentElement);
+        return {
+            text: styles.getPropertyValue('--gray-900').trim() || '#0f172a',
+            muted: styles.getPropertyValue('--gray-600').trim() || '#64748b',
+            border: styles.getPropertyValue('--border-soft').trim() || 'rgba(15, 23, 42, 0.12)',
+            surface: styles.getPropertyValue('--surface-100').trim() || '#ffffff',
+            surfaceAlt: styles.getPropertyValue('--surface-200').trim() || '#f8fafc',
+        };
+    };
+
+    const applyChartDefaults = () => {
+        const colors = getThemeColors();
+        Chart.defaults.color = colors.text;
+        Chart.defaults.borderColor = colors.border;
+        Chart.defaults.font.family = 'Inter, "Segoe UI", sans-serif';
+        return colors;
+    };
+
     const updateMetrics = () => {
         document.getElementById(SELECTORS.totalRevenue).textContent = '245,500,000 đ';
         document.getElementById(SELECTORS.revenueChange).innerHTML = '<i class="fas fa-arrow-up"></i> +15.3%';
@@ -46,6 +66,17 @@
     };
 
     const buildCharts = () => {
+        const colors = applyChartDefaults();
+        const axisColor = colors.text;
+        const gridColor = colors.border;
+        const tooltipConfig = {
+            backgroundColor: colors.surfaceAlt,
+            borderColor: colors.border,
+            borderWidth: 1,
+            titleColor: axisColor,
+            bodyColor: axisColor,
+        };
+
         const revenueCtx = document.getElementById('revenueChart');
         teardownChart(revenueChart);
         revenueChart = new Chart(revenueCtx, {
@@ -74,8 +105,21 @@
             options: {
                 responsive: true,
                 maintainAspectRatio: true,
-                plugins: { legend: { display: true, position: 'top' } },
-                scales: { y: { beginAtZero: true } },
+                plugins: {
+                    legend: { display: true, position: 'top', labels: { color: axisColor } },
+                    tooltip: tooltipConfig,
+                },
+                scales: {
+                    x: {
+                        ticks: { color: axisColor },
+                        grid: { color: gridColor },
+                    },
+                    y: {
+                        beginAtZero: true,
+                        ticks: { color: axisColor },
+                        grid: { color: gridColor },
+                    },
+                },
             },
         });
 
@@ -95,7 +139,10 @@
             options: {
                 responsive: true,
                 maintainAspectRatio: true,
-                plugins: { legend: { display: true, position: 'bottom' } },
+                plugins: {
+                    legend: { display: true, position: 'bottom', labels: { color: axisColor } },
+                    tooltip: tooltipConfig,
+                },
             },
         });
 
@@ -116,8 +163,21 @@
             options: {
                 responsive: true,
                 maintainAspectRatio: true,
-                plugins: { legend: { display: false } },
-                scales: { y: { beginAtZero: true } },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: tooltipConfig,
+                },
+                scales: {
+                    x: {
+                        ticks: { color: axisColor },
+                        grid: { color: gridColor },
+                    },
+                    y: {
+                        beginAtZero: true,
+                        ticks: { color: axisColor },
+                        grid: { color: gridColor },
+                    },
+                },
             },
         });
 
@@ -141,10 +201,40 @@
             options: {
                 responsive: true,
                 maintainAspectRatio: true,
-                plugins: { legend: { display: false } },
-                scales: { y: { beginAtZero: true } },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: tooltipConfig,
+                },
+                scales: {
+                    x: {
+                        ticks: { color: axisColor },
+                        grid: { color: gridColor },
+                    },
+                    y: {
+                        beginAtZero: true,
+                        ticks: { color: axisColor },
+                        grid: { color: gridColor },
+                    },
+                },
             },
         });
+    };
+
+    const observeThemeChanges = () => {
+        const html = document.documentElement;
+        if (!html || typeof MutationObserver === 'undefined') {
+            return;
+        }
+
+        themeObserver?.disconnect();
+        themeObserver = new MutationObserver((mutations) => {
+            const hasThemeMutation = mutations.some((mutation) => mutation.attributeName === 'data-theme');
+            if (hasThemeMutation) {
+                buildCharts();
+            }
+        });
+
+        themeObserver.observe(html, { attributes: true, attributeFilter: ['data-theme'] });
     };
 
     const loadManagerPerformance = async () => {
@@ -270,5 +360,6 @@
     document.addEventListener('DOMContentLoaded', () => {
         wireEvents();
         loadAnalytics();
+        observeThemeChanges();
     });
 })();

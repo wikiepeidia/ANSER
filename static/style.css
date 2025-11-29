@@ -41,6 +41,29 @@
     --nav-blur-bg: rgba(255, 255, 255, 0.95);
     --nav-border: rgba(15, 23, 42, 0.1);
     --card-shadow-color: rgba(15, 23, 42, 0.15);
+    --sidebar-bg: linear-gradient(180deg, #ffffff 0%, #eef2ff 100%);
+    --sidebar-surface: rgba(15, 23, 42, 0.04);
+    --sidebar-border: rgba(15, 23, 42, 0.08);
+    --sidebar-card-bg: rgba(255, 255, 255, 0.9);
+    --sidebar-card-border: rgba(15, 23, 42, 0.08);
+    --sidebar-text: #0f172a;
+    --sidebar-subtext: rgba(15, 23, 42, 0.65);
+    --sidebar-muted: rgba(15, 23, 42, 0.45);
+    --sidebar-hover-bg: rgba(99, 102, 241, 0.12);
+    --sidebar-hover-border: rgba(99, 102, 241, 0.35);
+    --sidebar-scroll-track: rgba(15, 23, 42, 0.05);
+    --sidebar-scroll-thumb: rgba(15, 23, 42, 0.18);
+    --sidebar-scroll-thumb-hover: rgba(15, 23, 42, 0.28);
+    /* Bootstrap table CSS variables (use design system surface colors) */
+    --bs-table-bg: var(--surface-100);
+    --bs-table-striped-bg: var(--surface-200);
+    --bs-table-hover-bg: var(--surface-300);
+    --bs-table-color: var(--gray-900);
+     /* Table header color token — choose a color that reads well in light mode
+         while remaining inverted in dark mode (dark-mode override keeps white). */
+     --table-header-color: var(--gray-700);
+    /* A constant light text color for elements that should always appear light/white regardless of theme */
+    --light-text: #ffffff;
 }
 
 html[data-theme='dark'],
@@ -60,6 +83,24 @@ body.dark-mode {
     --nav-blur-bg: rgba(15, 23, 42, 0.9);
     --nav-border: rgba(148, 163, 184, 0.18);
     --card-shadow-color: rgba(0, 0, 0, 0.45);
+    --sidebar-bg: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+    --sidebar-surface: rgba(255, 255, 255, 0.04);
+    --sidebar-border: rgba(148, 163, 184, 0.15);
+    --sidebar-card-bg: rgba(17, 28, 50, 0.65);
+    --sidebar-card-border: rgba(148, 163, 184, 0.25);
+    --sidebar-text: rgba(248, 250, 252, 0.95);
+    --sidebar-subtext: rgba(226, 232, 240, 0.7);
+    --sidebar-muted: rgba(226, 232, 240, 0.5);
+    --sidebar-hover-bg: rgba(255, 255, 255, 0.08);
+    --sidebar-hover-border: rgba(99, 102, 241, 0.4);
+    --sidebar-scroll-track: rgba(248, 250, 252, 0.04);
+    --sidebar-scroll-thumb: rgba(248, 250, 252, 0.2);
+    --sidebar-scroll-thumb-hover: rgba(248, 250, 252, 0.3);
+    /* Bootstrap table CSS variables for dark mode */
+    --bs-table-bg: var(--surface-100);
+    --bs-table-striped-bg: var(--surface-200);
+    --bs-table-hover-bg: var(--surface-300);
+    --bs-table-color: var(--gray-900);
     --gray-100: #1f2937;
     --gray-200: #273449;
     --gray-300: #3b4b66;
@@ -69,6 +110,7 @@ body.dark-mode {
     --gray-700: #cbd5f5;
     --gray-800: #e2e8ff;
     --gray-900: #f8fafc;
+    --table-header-color: var(--gray-900);
 }
 
 html {
@@ -317,6 +359,259 @@ body.dark-mode .social-btn {
     margin-bottom: 0.5rem;
 }
 
+/* Sidebar component shared by dashboard/workspace layouts */
+.modern-sidebar {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 280px;
+    z-index: 100;
+    overflow-y: auto;
+    background: var(--sidebar-bg);
+    border-right: 1px solid var(--sidebar-border);
+    box-shadow: 4px 0 20px var(--card-shadow-color);
+    backdrop-filter: blur(12px);
+    color: var(--sidebar-text);
+    transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.modern-sidebar::-webkit-scrollbar {
+    width: 6px;
+}
+
+.modern-sidebar::-webkit-scrollbar-track {
+    background: var(--sidebar-scroll-track);
+}
+
+.modern-sidebar::-webkit-scrollbar-thumb {
+    background: var(--sidebar-scroll-thumb);
+    border-radius: 3px;
+}
+
+.modern-sidebar::-webkit-scrollbar-thumb:hover {
+    background: var(--sidebar-scroll-thumb-hover);
+}
+
+.sidebar-brand {
+    display: flex;
+    align-items: center;
+    padding: 24px 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-bottom: 3px solid rgba(255, 255, 255, 0.2);
+}
+
+.brand-icon {
+    width: 50px;
+    height: 50px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 12px;
+}
+
+.brand-icon i {
+    font-size: 24px;
+    color: #fff;
+}
+
+.brand-text h3 {
+    font-size: 18px;
+    font-weight: 700;
+    color: #fff;
+    margin: 0;
+}
+
+.brand-text p {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.8);
+    margin: 0;
+}
+
+.user-profile-card {
+    padding: 20px;
+    background: var(--sidebar-card-bg);
+    border-bottom: 1px solid var(--sidebar-card-border);
+    display: flex;
+    align-items: center;
+}
+
+.user-avatar-lg {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    font-weight: 700;
+    color: #fff;
+    margin-right: 12px;
+    flex-shrink: 0;
+}
+
+.user-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.user-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--sidebar-text);
+    margin-bottom: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.user-email {
+    font-size: 11px;
+    color: var(--sidebar-subtext);
+    margin-bottom: 6px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.role-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+.role-admin {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    color: #fff;
+}
+
+.role-manager {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    color: #fff;
+}
+
+.role-user {
+    background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+    color: #fff;
+}
+
+.menu-container {
+    padding: 16px 12px;
+}
+
+.menu-section {
+    margin-bottom: 24px;
+}
+
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    margin-bottom: 8px;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--sidebar-muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.section-title i {
+    font-size: 12px;
+}
+
+.menu-item {
+    display: flex;
+    align-items: center;
+    padding: 12px;
+    margin-bottom: 6px;
+    background: var(--sidebar-surface);
+    border-radius: 12px;
+    text-decoration: none;
+    border: 1px solid transparent;
+    transition: background 0.3s ease, border-color 0.3s ease, transform 0.2s ease;
+}
+
+.menu-item:hover {
+    background: var(--sidebar-hover-bg);
+    border-color: var(--sidebar-hover-border);
+    transform: translateX(4px);
+}
+
+.menu-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 12px;
+    flex-shrink: 0;
+}
+
+.menu-icon i {
+    font-size: 18px;
+    color: #fff;
+}
+
+.menu-label {
+    flex: 1;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--sidebar-text);
+}
+
+.menu-arrow {
+    color: var(--sidebar-muted);
+    font-size: 12px;
+    transition: color 0.3s ease, transform 0.2s ease;
+}
+
+.menu-item:hover .menu-arrow {
+    color: var(--sidebar-text);
+    transform: translateX(2px);
+}
+
+.menu-footer {
+    margin-top: 32px;
+    padding-top: 16px;
+    border-top: 1px solid var(--sidebar-border);
+}
+
+.logout-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 20px;
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    border-radius: 12px;
+    color: #fff;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 14px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.logout-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(245, 87, 108, 0.4);
+    color: #fff;
+}
+
+.logout-button i {
+    font-size: 16px;
+}
+
 /* Login Panel */
 .login-panel {
     padding: 3rem;
@@ -504,7 +799,7 @@ body.dark-mode .social-btn {
     padding: 0.875rem 1rem;
     border: 2px solid var(--gray-200);
     border-radius: 12px;
-    background: white;
+    background: var(--surface-100);
     color: var(--gray-700);
     font-weight: 500;
     cursor: pointer;
@@ -634,7 +929,7 @@ body.dark-mode .social-btn {
 }
 
 .notification {
-    background: white;
+    background: var(--surface-100);
     border-radius: 12px;
     padding: 0.85rem 1rem;
     box-shadow: 0 10px 40px rgba(0,0,0,0.15);
@@ -820,6 +1115,145 @@ html[data-theme='dark'] .notification-message {
 body.dark-mode .notification-close,
 html[data-theme='dark'] .notification-close {
     color: #94a3b8;
+}
+
+/* ===== GLOBAL TABLE THEME ===== */
+/* Ensure tables use the theme surfaces and gray variables across the site.
+   These override Bootstrap defaults and favor design system variables. */
+.table {
+    background: var(--surface-100);
+    color: var(--gray-900);
+    --bs-table-bg: var(--surface-100);
+    --bs-table-striped-bg: var(--surface-200);
+    --bs-table-hover-bg: var(--surface-300);
+    --bs-table-color: var(--gray-900);
+}
+.table thead th {
+    background: var(--surface-200);
+    color: var(--table-header-color) !important;
+    border-bottom: 1px solid var(--border-soft);
+    text-transform: uppercase;
+    font-size: 12px;
+     font-weight: 700;
+    letter-spacing: 0.5px;
+}
+.table tbody td {
+    vertical-align: middle;
+    border-top: 1px solid var(--border-soft);
+}
+.table tbody tr:nth-child(even) {
+    background: var(--surface-200);
+}
+.table tbody tr:hover {
+    background: var(--surface-300);
+}
+
+/* Card header surface: a theme-aware header background that inverts with theme tokens */
+.card-header.card-header-surface {
+    background: var(--surface-200);
+    color: var(--gray-900);
+    border-bottom: 1px solid var(--border-soft);
+}
+html[data-theme='dark'] .card-header.card-header-surface,
+body.dark-mode .card-header.card-header-surface {
+    background: var(--surface-200);
+    color: var(--gray-900);
+    border-bottom-color: var(--border-strong);
+}
+
+/* Global card surface rules (do not override colored bg-* cards) */
+.card:not([class*='bg-']) {
+    background: var(--surface-100);
+    border-color: var(--border-soft);
+    color: var(--gray-900);
+}
+html[data-theme='dark'] .card:not([class*='bg-']),
+body.dark-mode .card:not([class*='bg-']) {
+    background: var(--surface-100);
+    border-color: var(--border-strong);
+    color: var(--gray-900);
+}
+
+/* Ensure card body inherits the card's background and doesn't add white boxes */
+.card .card-body {
+    background: transparent;
+}
+
+/* Table responsive containers should not create white blocks inside dark-mode cards */
+.table-responsive {
+    background: transparent;
+}
+.card .table-responsive {
+    padding: 0;
+    background: transparent;
+}
+
+/* Modals and dropdowns should follow the theme surfaces */
+.modal-content,
+.dropdown-menu {
+    background: var(--surface-100);
+    color: var(--gray-900);
+    border: 1px solid var(--border-soft);
+}
+html[data-theme='dark'] .modal-content,
+body.dark-mode .modal-content,
+html[data-theme='dark'] .dropdown-menu,
+body.dark-mode .dropdown-menu {
+    background: var(--surface-100);
+    color: var(--gray-900);
+    border-color: var(--border-strong);
+}
+
+/* Inputs/selects/textarea use theme-aware variables */
+.form-control,
+.form-select,
+textarea,
+.input-wrapper input {
+    background: var(--input-bg);
+    color: var(--input-text);
+    border: 1px solid var(--input-border);
+}
+.form-control::placeholder,
+.input-wrapper input::placeholder,
+.form-select option {
+    color: var(--gray-600);
+}
+html[data-theme='dark'] .form-control,
+body.dark-mode .form-control,
+html[data-theme='dark'] .form-select,
+body.dark-mode .form-select,
+html[data-theme='dark'] textarea,
+body.dark-mode textarea,
+html[data-theme='dark'] .input-wrapper input,
+body.dark-mode .input-wrapper input {
+    background: var(--input-bg);
+    color: var(--input-text);
+    border-color: var(--input-border);
+}
+
+/* Make text-muted theme-aware and ensure it remains readable in both modes */
+.text-muted {
+    color: var(--gray-600) !important;
+}
+html[data-theme='dark'] .text-muted,
+body.dark-mode .text-muted {
+    color: var(--gray-400) !important;
+}
+
+html[data-theme='dark'] .table,
+body.dark-mode .table {
+    background: var(--surface-100);
+    color: var(--gray-900);
+    --bs-table-bg: var(--surface-100);
+    --bs-table-striped-bg: var(--surface-200);
+    --bs-table-hover-bg: var(--surface-300);
+    --bs-table-color: var(--gray-900);
+}
+html[data-theme='dark'] .table thead th,
+body.dark-mode .table thead th {
+    background: var(--surface-200);
+    color: var(--table-header-color) !important;
+    font-weight: 700;
 }
 
 /* Responsive */
@@ -1039,7 +1473,7 @@ body.dark-mode .social-btn {
     color: #ffffff;
     margin-bottom: 0.25rem;
     font-size: 1rem;
-    font-weight: 600;
+    font-weight: 700;
 }
 
 .benefit-content p {

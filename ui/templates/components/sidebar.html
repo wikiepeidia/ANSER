@@ -8,7 +8,7 @@
             <p>Smart Management</p>
         </div>
     </div>
-    
+
     <div class="user-profile-card">
         <div class="user-avatar-lg">
             {{ (user.first_name or user.email)[0]|upper }}
@@ -17,7 +17,8 @@
             <div class="user-name">{{ user.first_name }} {{ user.last_name }}</div>
             <div class="user-email">{{ user.email }}</div>
             <span class="role-badge role-{{ user.role }}">
-                <i class="fas fa-{{ 'crown' if user.role == 'admin' else 'user-shield' if user.role == 'manager' else 'user' }}"></i>
+                <i
+                    class="fas fa-{{ 'crown' if user.role == 'admin' else 'user-shield' if user.role == 'manager' else 'user' }}"></i>
                 {{ user.role|upper }}
             </span>
         </div>
@@ -32,22 +33,26 @@
                 <span>Quản trị hệ thống</span>
             </div>
             <a class="menu-item" href="{{ url_for('admin_analytics') }}">
-                <div class="menu-icon" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);"><i class="fas fa-chart-line"></i></div>
+                <div class="menu-icon" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);"><i
+                        class="fas fa-chart-line"></i></div>
                 <div class="menu-label">Thống kê & Báo cáo</div>
                 <div class="menu-arrow"><i class="fas fa-chevron-right"></i></div>
             </a>
             <a class="menu-item" href="{{ url_for('admin_subscriptions') }}">
-                <div class="menu-icon" style="background: linear-gradient(135deg, #ffd89b 0%, #ff8a00 100%);"><i class="fas fa-credit-card"></i></div>
+                <div class="menu-icon" style="background: linear-gradient(135deg, #ffd89b 0%, #ff8a00 100%);"><i
+                        class="fas fa-credit-card"></i></div>
                 <div class="menu-label">Quản lý Gói Manager</div>
                 <div class="menu-arrow"><i class="fas fa-chevron-right"></i></div>
             </a>
             <a class="menu-item" href="{{ url_for('admin_roles') }}">
-                <div class="menu-icon" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);"><i class="fas fa-user-shield"></i></div>
+                <div class="menu-icon" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);"><i
+                        class="fas fa-user-shield"></i></div>
                 <div class="menu-label">Quản lý Vai trò</div>
                 <div class="menu-arrow"><i class="fas fa-chevron-right"></i></div>
             </a>
             <a class="menu-item" href="{{ url_for('admin_managers') }}">
-                <div class="menu-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);"><i class="fas fa-user-tie"></i></div>
+                <div class="menu-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);"><i
+                        class="fas fa-user-tie"></i></div>
                 <div class="menu-label">Quản lý Manager</div>
                 <div class="menu-arrow"><i class="fas fa-chevron-right"></i></div>
             </a>
@@ -76,27 +81,31 @@
                 <span>Quản lý kinh doanh</span>
             </div>
             <a class="menu-item" href="{{ url_for('customers') }}">
-                <div class="menu-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);"><i class="fas fa-users"></i></div>
+                <div class="menu-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);"><i
+                        class="fas fa-users"></i></div>
                 <div class="menu-label">Khách hàng</div>
                 <div class="menu-arrow"><i class="fas fa-chevron-right"></i></div>
             </a>
             <a class="menu-item" href="{{ url_for('products') }}">
-                <div class="menu-icon" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);"><i class="fas fa-box"></i></div>
+                <div class="menu-icon" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);"><i
+                        class="fas fa-box"></i></div>
                 <div class="menu-label">Sản phẩm</div>
                 <div class="menu-arrow"><i class="fas fa-chevron-right"></i></div>
             </a>
             <a class="menu-item" href="{{ url_for('imports') }}">
-                <div class="menu-icon" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);"><i class="fas fa-download"></i></div>
+                <div class="menu-icon" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);"><i
+                        class="fas fa-download"></i></div>
                 <div class="menu-label">Nhập hàng</div>
                 <div class="menu-arrow"><i class="fas fa-chevron-right"></i></div>
             </a>
             <a class="menu-item" href="{{ url_for('exports') }}">
-                <div class="menu-icon" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);"><i class="fas fa-upload"></i></div>
+                <div class="menu-icon" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);"><i
+                        class="fas fa-upload"></i></div>
                 <div class="menu-label">Xuất hàng</div>
                 <div class="menu-arrow"><i class="fas fa-chevron-right"></i></div>
             </a>
         </div>
-        
+
         <!-- SE (Scenarios & Events) -->
         <div class="menu-section">
             <div class="section-title">
@@ -104,17 +113,19 @@
                 <span>Tự động hóa thông minh</span>
             </div>
             <a class="menu-item" href="{{ url_for('se_auto_import') }}">
-                <div class="menu-icon" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);"><i class="fas fa-sync-alt"></i></div>
+                <div class="menu-icon" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);"><i
+                        class="fas fa-sync-alt"></i></div>
                 <div class="menu-label">Tự động nhập hàng</div>
                 <div class="menu-arrow"><i class="fas fa-chevron-right"></i></div>
             </a>
             <a class="menu-item" href="{{ url_for('se_reports') }}">
-                <div class="menu-icon" style="background: linear-gradient(135deg, #30cfd0 0%, #330867 100%);"><i class="fas fa-chart-line"></i></div>
+                <div class="menu-icon" style="background: linear-gradient(135deg, #30cfd0 0%, #330867 100%);"><i
+                        class="fas fa-chart-line"></i></div>
                 <div class="menu-label">Báo cáo thu chi</div>
                 <div class="menu-arrow"><i class="fas fa-chevron-right"></i></div>
             </a>
         </div>
-        
+
         <!-- Workspace -->
         <div class="menu-section">
             <div class="section-title">
@@ -122,12 +133,13 @@
                 <span>Sáng tạo & Phát triển</span>
             </div>
             <a class="menu-item" href="{{ url_for('workspace') }}">
-                <div class="menu-icon" style="background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);"><i class="fas fa-paint-brush"></i></div>
+                <div class="menu-icon" style="background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);"><i
+                        class="fas fa-paint-brush"></i></div>
                 <div class="menu-label">Workspace</div>
                 <div class="menu-arrow"><i class="fas fa-chevron-right"></i></div>
             </a>
         </div>
-        
+
         <!-- Logout -->
         <div class="menu-footer">
             <a class="logout-button" href="{{ url_for('logout') }}">
@@ -137,254 +149,3 @@
         </div>
     </div>
 </nav>
-
-<style>
-.modern-sidebar {
-    position: fixed;
-    top: 0;
-    bottom: 0;
-    left: 0;
-    width: 280px;
-    z-index: 100;
-    overflow-y: auto;
-    background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
-    box-shadow: 4px 0 20px rgba(0,0,0,0.15);
-}
-
-.sidebar-brand {
-    display: flex;
-    align-items: center;
-    padding: 24px 20px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    border-bottom: 3px solid rgba(255,255,255,0.1);
-}
-
-.brand-icon {
-    width: 50px;
-    height: 50px;
-    background: rgba(255,255,255,0.2);
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-right: 12px;
-}
-
-.brand-icon i {
-    font-size: 24px;
-    color: #fff;
-}
-
-.brand-text h3 {
-    font-size: 18px;
-    font-weight: 700;
-    color: #fff;
-    margin: 0;
-}
-
-.brand-text p {
-    font-size: 12px;
-    color: rgba(255,255,255,0.8);
-    margin: 0;
-}
-
-.user-profile-card {
-    padding: 20px;
-    background: rgba(255,255,255,0.05);
-    border-bottom: 1px solid rgba(255,255,255,0.1);
-    display: flex;
-    align-items: center;
-}
-
-.user-avatar-lg {
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 20px;
-    font-weight: 700;
-    color: #fff;
-    margin-right: 12px;
-    flex-shrink: 0;
-}
-
-.user-info {
-    flex: 1;
-    min-width: 0;
-}
-
-.user-name {
-    font-size: 14px;
-    font-weight: 600;
-    color: #fff;
-    margin-bottom: 2px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.user-email {
-    font-size: 11px;
-    color: rgba(255,255,255,0.6);
-    margin-bottom: 6px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.role-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    padding: 3px 10px;
-    border-radius: 12px;
-    font-size: 10px;
-    font-weight: 600;
-    letter-spacing: 0.5px;
-}
-
-.role-admin {
-    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-    color: #fff;
-}
-
-.role-manager {
-    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-    color: #fff;
-}
-
-.role-user {
-    background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
-    color: #fff;
-}
-
-.menu-container {
-    padding: 16px 12px;
-}
-
-.menu-section {
-    margin-bottom: 24px;
-}
-
-.section-title {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 12px;
-    margin-bottom: 8px;
-    font-size: 11px;
-    font-weight: 700;
-    color: rgba(255,255,255,0.5);
-    text-transform: uppercase;
-    letter-spacing: 1px;
-}
-
-.section-title i {
-    font-size: 12px;
-}
-
-.menu-item {
-    display: flex;
-    align-items: center;
-    padding: 12px 12px;
-    margin-bottom: 6px;
-    background: rgba(255,255,255,0.03);
-    border-radius: 12px;
-    text-decoration: none;
-    transition: all 0.3s ease;
-    border: 1px solid transparent;
-}
-
-.menu-item:hover {
-    background: rgba(255,255,255,0.08);
-    border-color: rgba(102, 126, 234, 0.3);
-    transform: translateX(4px);
-}
-
-.menu-icon {
-    width: 40px;
-    height: 40px;
-    border-radius: 10px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-right: 12px;
-    flex-shrink: 0;
-}
-
-.menu-icon i {
-    font-size: 18px;
-    color: #fff;
-}
-
-.menu-label {
-    flex: 1;
-    font-size: 14px;
-    font-weight: 500;
-    color: rgba(255,255,255,0.9);
-}
-
-.menu-arrow {
-    color: rgba(255,255,255,0.3);
-    font-size: 12px;
-    transition: all 0.3s ease;
-}
-
-.menu-item:hover .menu-arrow {
-    color: rgba(255,255,255,0.7);
-    transform: translateX(2px);
-}
-
-.menu-footer {
-    margin-top: 32px;
-    padding-top: 16px;
-    border-top: 1px solid rgba(255,255,255,0.1);
-}
-
-.logout-button {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    padding: 12px 20px;
-    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-    border-radius: 12px;
-    color: #fff;
-    text-decoration: none;
-    font-weight: 600;
-    font-size: 14px;
-    transition: all 0.3s ease;
-}
-
-.logout-button:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(245, 87, 108, 0.4);
-    color: #fff;
-}
-
-.logout-button i {
-    font-size: 16px;
-}
-
-/* Scrollbar styling */
-.modern-sidebar::-webkit-scrollbar {
-    width: 6px;
-}
-
-.modern-sidebar::-webkit-scrollbar-track {
-    background: rgba(255,255,255,0.05);
-}
-
-.modern-sidebar::-webkit-scrollbar-thumb {
-    background: rgba(255,255,255,0.2);
-    border-radius: 3px;
-}
-
-.modern-sidebar::-webkit-scrollbar-thumb:hover {
-    background: rgba(255,255,255,0.3);
-}
-</style>

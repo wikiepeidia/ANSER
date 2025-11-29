@@ -13,57 +13,85 @@
 {% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-    <div class="row">
-        <!-- Sidebar -->
-        <nav class="col-md-3 col-lg-2 d-md-block bg-dark sidebar">
-            <div class="position-sticky pt-3">
-                <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
-                    <span>Manager</span>
-                </h6>
-                <ul class="nav flex-column">
-                    <li class="nav-item">
-                        <a class="nav-link active" href="{{ url_for('manager_permissions') }}">
-                            <i class="fas fa-user-shield"></i> Quản lý Quyền
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('workspace') }}">
-                            <i class="fas fa-briefcase"></i> Workspace
-                        </a>
-                    </li>
-                </ul>
-            </div>
-        </nav>
+<div class="manager-permissions-page">
+    {% include 'components/sidebar.html' %}
 
-        <!-- Main content -->
-        <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
-            <div
-                class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-                <h1 class="h2">Quản lý Quyền User</h1>
-                <div class="btn-toolbar mb-2 mb-md-0">
-                    <button class="btn btn-sm btn-outline-secondary" onclick="loadUsers()">
-                        <i class="fas fa-sync-alt"></i> Refresh
-                    </button>
+    <main class="permissions-main">
+        <header class="permissions-header">
+            <div>
+                <p class="eyebrow">Phân quyền thông minh</p>
+                <h1>Quản lý Quyền User</h1>
+                <p>Giữ quyền truy cập được kiểm soát chặt chẽ trong hệ thống Fun Work Hub.</p>
+            </div>
+            <div class="header-actions">
+                <button class="btn btn-outline-light" onclick="loadUsers()">
+                    <i class="fas fa-sync-alt"></i>
+                    Tải lại
+                </button>
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#grantPermissionModal">
+                    <i class="fas fa-plus"></i>
+                    Cấp quyền nhanh
+                </button>
+            </div>
+        </header>
+
+        <section class="permissions-summary">
+            <article class="summary-card">
+                <div>
+                    <p class="eyebrow">Cấp quyền nhanh</p>
+                    <h3>6 nhóm quyền chính</h3>
+                    <p>Mỗi nhóm quyền gắn với hành động cụ thể trong hệ thống. Chỉ định chính xác để đảm bảo bảo mật.
+                    </p>
+                </div>
+                <ul class="permission-pill-list">
+                    <li><i class="fas fa-upload"></i> export</li>
+                    <li><i class="fas fa-download"></i> import</li>
+                    <li><i class="fas fa-chart-bar"></i> view_reports</li>
+                    <li><i class="fas fa-database"></i> manage_data</li>
+                    <li><i class="fas fa-rocket"></i> create_scenarios</li>
+                    <li><i class="fas fa-ban"></i> delete_items</li>
+                </ul>
+            </article>
+            <article class="summary-card compact">
+                <p class="eyebrow">Trạng thái hệ thống</p>
+                <div class="status-row">
+                    <span>Người dùng đang theo dõi</span>
+                    <strong id="trackedUsers">--</strong>
+                </div>
+                <div class="status-row">
+                    <span>Quyền đã cấp</span>
+                    <strong id="grantedPermissions">--</strong>
+                </div>
+                <div class="status-row">
+                    <span>Phiên gần nhất</span>
+                    <strong id="lastUpdate">Đang cập nhật…</strong>
+                </div>
+            </article>
+        </section>
+
+        <section class="permissions-table-card">
+            <div class="table-header">
+                <div>
+                    <h2>Danh sách người dùng</h2>
+                    <p>Theo dõi vai trò, quyền hiện tại và thao tác cấp/thu hồi.</p>
+                </div>
+                <div class="table-tools">
+                    <div class="input-wrapper">
+                        <i class="fas fa-search"></i>
+                        <input id="userSearch" type="search" placeholder="Tìm theo tên hoặc email"
+                            oninput="filterUsers()">
+                    </div>
+                    <select id="roleFilter" class="form-select" onchange="filterUsers()">
+                        <option value="all">Tất cả vai trò</option>
+                        <option value="user">User</option>
+                        <option value="manager">Manager</option>
+                        <option value="admin">Admin</option>
+                    </select>
                 </div>
             </div>
 
-            <!-- Permission Types Info -->
-            <div class="alert alert-info">
-                <h6><i class="fas fa-info-circle"></i> Các loại quyền:</h6>
-                <ul class="mb-0">
-                    <li><strong>export</strong>: Xuất dữ liệu</li>
-                    <li><strong>import</strong>: Nhập dữ liệu</li>
-                    <li><strong>view_reports</strong>: Xem báo cáo</li>
-                    <li><strong>manage_data</strong>: Quản lý dữ liệu</li>
-                    <li><strong>create_scenarios</strong>: Tạo scenarios</li>
-                    <li><strong>delete_items</strong>: Xóa items</li>
-                </ul>
-            </div>
-
-            <!-- Users Table -->
-            <div class="table-responsive">
-                <table class="table table-striped table-hover">
+            <div class="table-responsive permissions-table">
+                <table>
                     <thead>
                         <tr>
                             <th>ID</th>
@@ -76,17 +104,18 @@
                     </thead>
                     <tbody id="usersTableBody">
                         <tr>
-                            <td colspan="6" class="text-center">
-                                <div class="spinner-border" role="status">
-                                    <span class="visually-hidden">Loading...</span>
+                            <td colspan="6">
+                                <div class="loading-state">
+                                    <span class="spinner-border" role="status" aria-hidden="true"></span>
+                                    <p>Đang tải danh sách user…</p>
                                 </div>
                             </td>
                         </tr>
                     </tbody>
                 </table>
             </div>
-        </main>
-    </div>
+        </section>
+    </main>
 </div>
 
 <!-- Modal: Grant Permission -->

@@ -3,6 +3,29 @@
     margin-left: 260px;
 }
 
+.imports-page.main-content, .main-content.imports-page {
+    padding: 30px;
+    background: var(--surface-200);
+    min-height: 100vh;
+}
+
+.imports-page .card:not([class*='bg-']) {
+    background: var(--surface-100);
+    border: 1px solid var(--border-soft);
+}
+
+.imports-page .card:not([class*='bg-']) .card-body,
+.imports-page .card:not([class*='bg-']) .card-title,
+.imports-page .card:not([class*='bg-']) .card-text {
+    color: var(--gray-900);
+}
+
+html[data-theme='dark'] .imports-page .card:not([class*='bg-']),
+body.dark-mode .imports-page .card:not([class*='bg-']) {
+    background: var(--surface-100);
+    border-color: var(--border-strong);
+}
+
 .card h2 {
     margin: 0;
     font-size: 2rem;

@@ -22,6 +22,7 @@ function renderProductsTable() {
 
     if (productsData.length === 0) {
         tbody.innerHTML = '<tr><td colspan="8" class="text-center">Chưa có sản phẩm nào</td></tr>';
+        syncProductsTableTheme();
         return;
     }
 
@@ -48,6 +49,8 @@ function renderProductsTable() {
     `
         )
         .join('');
+    // Re-apply inline row backgrounds to the new table rows
+    syncProductsTableTheme();
 }
 
 function openAddProductModal() {
@@ -162,3 +165,36 @@ function showAlert(type, message) {
 }
 
 document.addEventListener('DOMContentLoaded', loadProducts);
+
+// Fallback: apply inline table row backgrounds in case style overrides still force light backgrounds
+function syncProductsTableTheme() {
+    const table = document.querySelector('.products-page .table');
+    if (!table) return;
+    const styles = getComputedStyle(document.documentElement);
+    const bg = styles.getPropertyValue('--surface-100') || '#ffffff';
+    const altBg = styles.getPropertyValue('--surface-200') || '#f8fafc';
+    table.style.setProperty('background', bg.trim(), 'important');
+    [...table.querySelectorAll('tbody tr')].forEach((row, idx) => {
+        const color = (idx % 2 === 0) ? bg.trim() : altBg.trim();
+        row.style.setProperty('background', color, 'important');
+    });
+}
+
+const _prodThemeObserver = new MutationObserver((mutations) => {
+    const html = document.documentElement;
+    const changed = mutations.some(m => m.attributeName === 'data-theme');
+    if (changed) syncProductsTableTheme();
+});
+_prodThemeObserver.observe(document.documentElement, { attributes: true });
+document.addEventListener('DOMContentLoaded', syncProductsTableTheme);
+
+// Observe the tbody content so when rows are replaced dynamically we re-apply the inline theme styles
+const _productsTbodyObserver = new MutationObserver((mutations) => {
+    const changed = mutations.some(m => (m.addedNodes && m.addedNodes.length) || (m.removedNodes && m.removedNodes.length));
+    if (changed) syncProductsTableTheme();
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+    const tbody = document.querySelector('.products-page .table tbody');
+    if (tbody) _productsTbodyObserver.observe(tbody, { childList: true, subtree: false });
+});

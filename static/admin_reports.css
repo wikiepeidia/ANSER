@@ -2,7 +2,59 @@
     margin-left: 260px;
 }
 
+.reports-page.main-content, .main-content.reports-page {
+    padding: 30px;
+    background: var(--surface-200);
+    min-height: 100vh;
+}
+
+.reports-page .card:not([class*='bg-']) {
+    background: var(--surface-100);
+    border: 1px solid var(--border-soft);
+}
+
+.reports-page .card:not([class*='bg-']) .card-body,
+.reports-page .card:not([class*='bg-']) .card-title,
+.reports-page .card:not([class*='bg-']) .card-text {
+    color: var(--gray-900);
+}
+
+/* Ensure report template cards (colored ones) always show light text */
+.reports-page .card.text-white .card-title,
+.reports-page .card.text-white .card-text {
+    color: var(--light-text) !important;
+}
+
+/* In case a colored card doesn't include .text-white, ensure bg-* cards still show light text */
+.reports-page .card[class*='bg-'] .card-title,
+.reports-page .card[class*='bg-'] .card-text {
+    color: var(--light-text) !important;
+}
+
+html[data-theme='dark'] .reports-page .card:not([class*='bg-']),
+body.dark-mode .reports-page .card:not([class*='bg-']) {
+    background: var(--surface-100);
+    border-color: var(--border-strong);
+}
+
 .card h2 {
     margin: 0;
     font-size: 1.5rem;
+}
+
+/* Make forms and muted text theme-aware on reports page */
+.reports-page .form-control,
+.reports-page .form-select,
+.reports-page textarea,
+.reports-page .input-wrapper input {
+    background: var(--input-bg);
+    color: var(--input-text);
+    border: 1px solid var(--input-border);
+}
+.reports-page .text-muted {
+    color: var(--gray-600);
+}
+html[data-theme='dark'] .reports-page .text-muted,
+body.dark-mode .reports-page .text-muted {
+    color: var(--gray-400);
 }

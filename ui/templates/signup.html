@@ -2,6 +2,8 @@
 
 {% block title %}Sign Up - Fun Work Hub{% endblock %}
 
+{% block body_class %}auth-page{% endblock %}
+
 {% block styles %}
 {{ super() }}
 <link rel="stylesheet" href="{{ url_for('static', filename='auth_signup.css') }}">
@@ -102,13 +104,9 @@
         </div>
 
         <div class="social-login">
-            <a href="#" class="social-btn">
+            <a href="#" class="social-btn social-btn--google">
                 <i class="fab fa-google"></i>
                 Google
-            </a>
-            <a href="#" class="social-btn">
-                <i class="fab fa-github"></i>
-                GitHub
             </a>
         </div>
 

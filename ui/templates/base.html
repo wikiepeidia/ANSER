@@ -7,6 +7,34 @@
     <meta name="color-scheme" content="light dark">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{% block title %}Fun Work Hub - Smart Management{% endblock %}</title>
+    <script>
+        (function bootstrapThemePreference() {
+            try {
+                var preferenceKey = 'theme-preference';
+                var legacyKey = 'landing-theme';
+                var order = ['system', 'dark', 'light'];
+                var normalize = function (value) {
+                    return order.indexOf(value) >= 0 ? value : 'system';
+                };
+                if (!localStorage.getItem(preferenceKey)) {
+                    var legacy = localStorage.getItem(legacyKey);
+                    if (legacy) {
+                        localStorage.setItem(preferenceKey, normalize(legacy));
+                        localStorage.removeItem(legacyKey);
+                    }
+                }
+                var stored = normalize(localStorage.getItem(preferenceKey) || 'system');
+                var systemDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+                var effective = stored === 'dark' || (stored === 'system' && systemDark) ? 'dark' : 'light';
+                var html = document.documentElement;
+                html.setAttribute('data-theme', effective);
+                html.classList.toggle('theme-dark', effective === 'dark');
+                window.__themeSnapshot = { preference: stored, effective: effective };
+            } catch (error) {
+                console.warn('Theme bootstrap failed', error);
+            }
+        })();
+    </script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -16,6 +44,17 @@
 </head>
 
 <body class="{% block body_class %}{% endblock %}">
+    <script>
+        (function ensureBodyThemeClass() {
+            try {
+                if (document.documentElement.getAttribute('data-theme') === 'dark') {
+                    document.body.classList.add('dark-mode');
+                }
+            } catch (error) {
+                console.warn('Theme body sync failed', error);
+            }
+        })();
+    </script>
     <div id="flash-message-root" aria-hidden="true" hidden>
         {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}

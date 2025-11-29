@@ -77,7 +77,79 @@
     margin-bottom: 20px;
 }
 
-.card-title {
+.analytics-page .card {
+    background: var(--surface-100);
+    border: 1px solid var(--border-soft);
+    border-radius: 16px;
+    box-shadow: 0 4px 18px rgba(15, 23, 42, 0.08);
+    transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.analytics-page .card:hover {
+    box-shadow: 0 10px 35px rgba(15, 23, 42, 0.12);
+}
+
+.analytics-page .card:not([class*='bg-']) .card-body,
+.analytics-page .card:not([class*='bg-']) .card-title,
+.analytics-page .card:not([class*='bg-']) .card-text {
+    color: var(--gray-900);
+}
+
+.analytics-page .table {
+    color: var(--gray-900);
+    border-color: var(--border-soft);
+}
+
+.analytics-page .table thead th {
+    background: var(--surface-200);
+    border-bottom: 1px solid var(--border-soft);
+    color: var(--table-header-color) !important;
+    font-weight: 700;
+}
+
+.analytics-page .table tbody tr {
+    background: var(--surface-100);
+    transition: background 0.3s ease;
+}
+
+.analytics-page .table tbody tr:nth-child(even) {
+    background: var(--surface-200);
+}
+
+.analytics-page .table tbody tr:hover {
+    background: var(--surface-300);
+}
+
+.analytics-page .table tbody td {
+    border-top: 1px solid var(--border-soft);
+}
+
+.analytics-page .form-select {
+    background: var(--surface-100);
+    color: var(--gray-900);
+    border: 1px solid var(--border-soft);
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.12);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.analytics-page .form-select:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.25);
+    background: var(--surface-100);
+    color: var(--gray-900);
+}
+
+html[data-theme='dark'] .analytics-page .form-select,
+body.dark-mode .analytics-page .form-select {
+    border-color: var(--gray-400);
+}
+
+html[data-theme='dark'] .analytics-page .form-select:focus,
+body.dark-mode .analytics-page .form-select:focus {
+    border-color: var(--primary);
+}
+
+.analytics-page .card:not([class*='bg-']) .card-title {
     font-size: 18px;
     font-weight: 700;
     color: var(--gray-900);
