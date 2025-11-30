@@ -8,6 +8,7 @@ from core.database import Database
 from core.auth import AuthManager
 from core.config import Config
 from core.utils import Utils
+from datetime import datetime, timedelta
 import os
 import json
 import sqlite3
@@ -34,6 +35,21 @@ login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'auth.signin'
 
+
+@login_manager.unauthorized_handler
+def login_unauthorized():
+    """Return JSON 401 for api endpoints or redirect to signin for normal routes"""
+    try:
+        path = request.path or ''
+        accepts_json = 'application/json' in (request.headers.get('Accept') or '')
+    except Exception:
+        path = ''
+        accepts_json = False
+    if path.startswith('/api/') or accepts_json or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return jsonify({'success': False, 'message': 'Unauthorized - please login'}), 401
+    flash('Vui lòng đăng nhập để tiếp tục', 'error')
+    return redirect(url_for('auth.signin'))
+
 # Initialize core components
 db_manager = Database()
 db = db_manager  # Alias for convenience
@@ -43,6 +59,57 @@ utils = Utils()
 
 # Store database manager in app extensions for permission decorator
 app.extensions['database'] = db_manager
+
+# Central subscription plans (used in wallet/subscription logic)
+SUBSCRIPTION_PLANS = {
+    'monthly': {'name': 'Monthly', 'days': 30, 'amount': 500000, 'description': 'Gói hàng tháng'},
+    'quarterly': {'name': 'Quarterly', 'days': 90, 'amount': 1200000, 'description': 'Gói 3 tháng'},
+    'yearly': {'name': 'Yearly', 'days': 365, 'amount': 4000000, 'description': 'Gói hàng năm'}
+}
+
+def format_plan_dict(plan_key):
+    plan = SUBSCRIPTION_PLANS.get(plan_key)
+    if not plan:
+        return None
+    return {
+        'key': plan_key,
+        'name': plan['name'],
+        'amount': plan['amount'],
+        'days': plan['days'],
+        'description': plan.get('description', '')
+    }
+
+def parse_db_datetime(value):
+    if not value:
+        return None
+    if isinstance(value, (str,)):
+        # Try multiple formats
+        from datetime import datetime
+        for fmt in ('%Y-%m-%d %H:%M:%S.%f', '%Y-%m-%d %H:%M:%S', '%Y-%m-%dT%H:%M:%S'):
+            try:
+                return datetime.strptime(value, fmt)
+            except ValueError:
+                continue
+        try:
+            return datetime.fromisoformat(value)
+        except Exception:
+            return None
+    return None
+
+def format_display_datetime(value):
+    dt = parse_db_datetime(value)
+    return dt.strftime('%d/%m/%Y %H:%M') if dt else None
+
+def parse_metadata(raw_value):
+    if not raw_value:
+        return {}
+    if isinstance(raw_value, dict):
+        return raw_value
+    try:
+        return json.loads(raw_value)
+    except Exception:
+        return {}
+
 
 
 @app.context_processor
@@ -1106,6 +1173,285 @@ def api_check_expired_subscriptions():
             'message': f'Demoted {demoted_count} expired managers'
         })
         
+    except Exception as e:
+        conn.rollback()
+        return jsonify({'success': False, 'message': str(e)}), 500
+    finally:
+        conn.close()
+
+
+@app.route('/wallet')
+@login_required
+def wallet_dashboard():
+    return render_template('wallet.html', user=current_user)
+
+
+@app.route('/api/user/wallet')
+@login_required
+def api_get_wallet():
+    conn = db_manager.get_connection()
+    c = conn.cursor()
+    try:
+        # Ensure user has a wallet row
+        c.execute("INSERT OR IGNORE INTO wallets (user_id, balance, currency) VALUES (?, 0, 'VND')", (current_user.id,))
+        conn.commit()
+
+        # Get wallet
+        c.execute('SELECT balance, currency, updated_at FROM wallets WHERE user_id = ?', (current_user.id,))
+        wallet_row = c.fetchone()
+        wallet_data = {
+            'balance': wallet_row[0] if wallet_row else 0,
+            'currency': wallet_row[1] if wallet_row else 'VND',
+            'updated_at': format_display_datetime(wallet_row[2]) if wallet_row else None
+        }
+
+        # Get subscription
+        c.execute('''SELECT subscription_type, amount, start_date, end_date, status, auto_renew
+                     FROM manager_subscriptions WHERE user_id = ?''', (current_user.id,))
+        sub_row = c.fetchone()
+        subscription_data = None
+        if sub_row:
+            subscription_data = {
+                'subscription_type': sub_row[0],
+                'amount': sub_row[1],
+                'start_date': format_display_datetime(sub_row[2]),
+                'end_date': format_display_datetime(sub_row[3]),
+                'status': sub_row[4],
+                'auto_renew': sub_row[5]
+            }
+
+        # Recent transactions
+        c.execute('''SELECT id, amount, type, status, created_at
+                     FROM wallet_transactions
+                     WHERE user_id = ?
+                     ORDER BY created_at DESC
+                     LIMIT 10''', (current_user.id,))
+        transactions = [{
+            'id': row[0], 'amount': row[1], 'type': row[2], 'status': row[3], 'created_at': format_display_datetime(row[4])
+        } for row in c.fetchall()]
+
+        plans = {key: format_plan_dict(key) for key in SUBSCRIPTION_PLANS.keys()}
+
+        return jsonify({'success': True, 'wallet': wallet_data, 'subscription': subscription_data, 'transactions': transactions, 'plans': plans})
+    except Exception as e:
+        conn.rollback()
+        return jsonify({'success': False, 'message': str(e)}), 500
+    finally:
+        conn.close()
+
+
+@app.route('/api/session')
+def api_session():
+    """Return session status for the current client (used by JS to detect session expiration)."""
+    if not current_user.is_authenticated:
+        return jsonify({'authenticated': False})
+    return jsonify({'authenticated': True, 'user': {
+        'id': current_user.id,
+        'email': current_user.email,
+        'role': getattr(current_user, 'role', 'user')
+    }})
+
+
+@app.route('/api/user/wallet/topup', methods=['POST'])
+@login_required
+def api_topup_wallet():
+    data = request.get_json() or {}
+    try:
+        amount = float(data.get('amount', 0))
+    except (TypeError, ValueError):
+        amount = 0
+
+    if amount < 50000:
+        return jsonify({'success': False, 'message': 'Số tiền tối thiểu là 50.000đ'}), 400
+
+    method = (data.get('method') or 'bank_transfer').strip()
+    reference = (data.get('reference') or '').strip()[:120]
+    note = (data.get('note') or '').strip()[:200]
+
+    conn = db_manager.get_connection()
+    c = conn.cursor()
+    try:
+        c.execute("INSERT OR IGNORE INTO wallets (user_id, balance, currency) VALUES (?, 0, 'VND')", (current_user.id,))
+
+        metadata = json.dumps({'initiated_by': 'user', 'method': method, 'reference': reference})
+
+        c.execute('''INSERT INTO wallet_transactions
+                     (user_id, amount, currency, type, status, method, reference, notes, metadata)
+                     VALUES (?, ?, 'VND', ?, 'pending', ?, ?, ?, ?)''',
+                  (current_user.id, amount, 'topup', method, reference or None, note or None, metadata))
+        conn.commit()
+
+        return jsonify({'success': True, 'message': 'Đã gửi yêu cầu nạp tiền. Admin sẽ xác nhận sớm nhất.'})
+    except Exception as e:
+        conn.rollback()
+        return jsonify({'success': False, 'message': str(e)}), 500
+    finally:
+        conn.close()
+
+
+@app.route('/api/user/subscription/upgrade', methods=['POST'])
+@login_required
+def api_upgrade_subscription():
+    data = request.get_json() or {}
+    plan_key = data.get('plan')
+    if plan_key is None:
+        return jsonify({'success': False, 'message': 'Gói không hợp lệ'}), 400
+    plan_key = str(plan_key)
+    plan = SUBSCRIPTION_PLANS.get(plan_key)
+    if not plan:
+        return jsonify({'success': False, 'message': 'Gói không hợp lệ'}), 400
+
+    conn = db_manager.get_connection()
+    c = conn.cursor()
+    try:
+        c.execute("INSERT OR IGNORE INTO wallets (user_id, balance, currency) VALUES (?, 0, 'VND')", (current_user.id,))
+        c.execute('SELECT balance FROM wallets WHERE user_id = ?', (current_user.id,))
+        wallet_row = c.fetchone()
+        balance = wallet_row[0] if wallet_row else 0
+
+        if balance < plan['amount']:
+            conn.rollback()
+            return jsonify({'success': False, 'message': 'Số dư ví không đủ để nâng cấp gói này'}), 400
+
+        from datetime import datetime, timedelta
+        now = datetime.utcnow()
+        c.execute('SELECT subscription_type, amount, start_date, end_date, status, auto_renew FROM manager_subscriptions WHERE user_id = ?', (current_user.id,))
+        existing = c.fetchone()
+        current_end = parse_db_datetime(existing[3]) if existing else None
+        new_start = current_end if current_end and current_end > now else now
+        new_end = new_start + timedelta(days=plan['days'])
+        start_str = new_start.strftime('%Y-%m-%d %H:%M:%S')
+        end_str = new_end.strftime('%Y-%m-%d %H:%M:%S')
+
+        auto_renew = existing[5] if existing and existing[5] is not None else 0
+        if existing:
+            c.execute('''UPDATE manager_subscriptions
+                         SET subscription_type = ?, amount = ?, start_date = ?, end_date = ?, status = 'active', auto_renew = ?, updated_at = CURRENT_TIMESTAMP
+                         WHERE user_id = ?''', (plan_key, plan['amount'], start_str, end_str, auto_renew, current_user.id))
+        else:
+            c.execute('''INSERT INTO manager_subscriptions (user_id, subscription_type, amount, start_date, end_date, status, auto_renew)
+                         VALUES (?, ?, ?, ?, ?, 'active', ?)''', (current_user.id, plan_key, plan['amount'], start_str, end_str, auto_renew))
+
+        c.execute('''UPDATE users SET role = CASE WHEN role = 'admin' THEN role ELSE 'manager' END, subscription_expires_at = ? WHERE id = ?''', (end_str, current_user.id))
+
+        c.execute('''UPDATE wallets SET balance = balance - ?, updated_at = CURRENT_TIMESTAMP WHERE user_id = ?''', (plan['amount'], current_user.id))
+
+        txn_id = f"SUB-{current_user.id}-{int(datetime.utcnow().timestamp())}"
+        c.execute('''INSERT INTO subscription_history (user_id, subscription_type, amount, payment_method, transaction_id, status, notes)
+                     VALUES (?, ?, ?, 'wallet', ?, 'completed', ?)''', (current_user.id, plan_key, plan['amount'], txn_id, f'Upgrade to {plan["name"]}'))
+
+        metadata = json.dumps({'plan': plan_key, 'transaction_id': txn_id})
+        c.execute('''INSERT INTO wallet_transactions (user_id, amount, currency, type, status, method, reference, notes, metadata)
+                     VALUES (?, ?, 'VND', 'subscription', 'completed', 'wallet', ?, ?, ?)''', (current_user.id, -plan['amount'], txn_id, f'Upgrade {plan["name"]}', metadata))
+
+        conn.commit()
+
+        c.execute('SELECT balance FROM wallets WHERE user_id = ?', (current_user.id,))
+        new_balance = c.fetchone()[0]
+
+        return jsonify({'success': True, 'message': 'Nâng cấp thành công.', 'balance': new_balance, 'expires_at': format_display_datetime(end_str)})
+    except Exception as e:
+        conn.rollback()
+        return jsonify({'success': False, 'message': str(e)}), 500
+    finally:
+        conn.close()
+
+
+@app.route('/api/user/subscription/auto-renew', methods=['POST'])
+@login_required
+def api_toggle_auto_renew():
+    data = request.get_json() or {}
+    enabled = data.get('enabled')
+    if enabled is None:
+        return jsonify({'success': False, 'message': 'Tham số enabled không hợp lệ'}), 400
+
+    enabled_flag = 1 if bool(enabled) else 0
+
+    conn = db_manager.get_connection()
+    c = conn.cursor()
+    try:
+        c.execute('SELECT id FROM manager_subscriptions WHERE user_id = ?', (current_user.id,))
+        if not c.fetchone():
+            return jsonify({'success': False, 'message': 'Chưa có gói để bật/tắt tự động gia hạn'}), 400
+
+        c.execute('''UPDATE manager_subscriptions SET auto_renew = ?, updated_at = CURRENT_TIMESTAMP WHERE user_id = ?''', (enabled_flag, current_user.id))
+        conn.commit()
+
+        return jsonify({'success': True, 'message': 'Đã cập nhật tự động gia hạn'})
+    except Exception as e:
+        conn.rollback()
+        return jsonify({'success': False, 'message': str(e)}), 500
+    finally:
+        conn.close()
+
+
+@app.route('/api/admin/wallet/pending', methods=['GET'])
+@login_required
+def api_admin_pending_wallet_transactions():
+    if not hasattr(current_user, 'role') or current_user.role != 'admin':
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 403
+
+    conn = db_manager.get_connection()
+    conn.row_factory = sqlite3.Row
+    c = conn.cursor()
+    try:
+        c.execute('''SELECT wt.id, wt.user_id, wt.amount, wt.currency, wt.type, wt.status, wt.method, wt.reference, wt.notes, wt.metadata, wt.created_at, u.name AS user_name, u.email AS user_email
+                     FROM wallet_transactions wt
+                     JOIN users u ON wt.user_id = u.id
+                     WHERE wt.status = 'pending' ORDER BY wt.created_at ASC''')
+        rows = c.fetchall()
+        transactions = []
+        for row in rows:
+            metadata = parse_metadata(row['metadata'])
+            plan_hint = metadata.get('plan') or metadata.get('target_plan')
+            transactions.append({
+                'id': row['id'], 'user_id': row['user_id'], 'user_name': row['user_name'], 'user_email': row['user_email'], 'amount': row['amount'], 'currency': row['currency'], 'type': row['type'], 'status': row['status'], 'method': row['method'], 'reference': row['reference'], 'notes': row['notes'], 'metadata': metadata, 'plan_label': plan_hint, 'created_at': format_display_datetime(row['created_at'])
+            })
+        return jsonify({'success': True, 'transactions': transactions})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+    finally:
+        conn.close()
+
+
+@app.route('/api/admin/wallet/pending/<int:transaction_id>', methods=['POST'])
+@login_required
+def api_admin_process_wallet_transaction(transaction_id):
+    if not hasattr(current_user, 'role') or current_user.role != 'admin':
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 403
+
+    data = request.get_json() or {}
+    action = data.get('action')
+    note = (data.get('note') or '').strip()
+    if action not in ['approve', 'reject']:
+        return jsonify({'success': False, 'message': 'Hành động không hợp lệ'}), 400
+
+    conn = db_manager.get_connection()
+    c = conn.cursor()
+    try:
+        c.execute('SELECT id, user_id, amount, currency, type, status, metadata FROM wallet_transactions WHERE id = ?', (transaction_id,))
+        row = c.fetchone()
+        if not row:
+            return jsonify({'success': False, 'message': 'Không tìm thấy giao dịch'}), 404
+        if row[5] != 'pending':
+            return jsonify({'success': False, 'message': 'Giao dịch đã được xử lý'}), 400
+
+        metadata = parse_metadata(row[6])
+        metadata.update({'admin_id': current_user.id, 'admin_email': current_user.email, 'admin_action_at': datetime.utcnow().isoformat()})
+        if note:
+            metadata['admin_note'] = note
+
+        if action == 'approve':
+            c.execute("INSERT OR IGNORE INTO wallets (user_id, balance, currency) VALUES (?, 0, 'VND')", (row[1],))
+            if row[2] != 0:
+                c.execute('UPDATE wallets SET balance = balance + ?, updated_at = CURRENT_TIMESTAMP WHERE user_id = ?', (row[2], row[1]))
+            c.execute("UPDATE wallet_transactions SET status = 'completed', metadata = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?", (json.dumps(metadata), transaction_id))
+            conn.commit()
+            return jsonify({'success': True, 'message': 'Đã xác nhận và cộng tiền vào ví.'})
+        else:
+            c.execute("UPDATE wallet_transactions SET status = 'rejected', metadata = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?", (json.dumps(metadata), transaction_id))
+            conn.commit()
+            return jsonify({'success': True, 'message': 'Đã từ chối giao dịch.'})
     except Exception as e:
         conn.rollback()
         return jsonify({'success': False, 'message': str(e)}), 500

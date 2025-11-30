@@ -45,6 +45,40 @@
             </div>
         </section>
 
+        <section class="wallet-glance" id="walletGlanceSection">
+            <div class="glance-head">
+                <div>
+                    <p class="launch-eyebrow">Ví & Subscription</p>
+                    <h2>Tình trạng nâng cấp Manager</h2>
+                </div>
+                <div class="glance-actions">
+                    <button class="btn btn-outline-secondary" type="button" onclick="redirectToWallet()">
+                        <i class="fas fa-wallet"></i> Quản lý ví
+                    </button>
+                    <button class="btn btn-success" type="button" onclick="redirectToWallet('#planGrid')">
+                        <i class="fas fa-rocket"></i> Nâng cấp ngay
+                    </button>
+                </div>
+            </div>
+            <div class="glance-grid">
+                <div class="glance-card">
+                    <p>Ví khả dụng</p>
+                    <h3 id="glanceBalance">—</h3>
+                    <span id="glanceUpdatedAt" class="glance-subtext">Đang tải...</span>
+                </div>
+                <div class="glance-card">
+                    <p>Gói hiện tại</p>
+                    <h3 id="glancePlan">Chưa nâng cấp</h3>
+                    <span id="glanceRenew" class="glance-chip">Auto renew: —</span>
+                </div>
+                <div class="glance-card">
+                    <p>Thời hạn</p>
+                    <h3 id="glanceExpiry">—</h3>
+                    <span id="glanceStatus" class="glance-subtext">Đang kiểm tra...</span>
+                </div>
+            </div>
+        </section>
+
         <header class="scenario-topbar" id="scenarioTop">
             <div class="scenario-title">
                 <span class="scenario-chip">Scenario #FW-204</span>
@@ -52,10 +86,10 @@
                 <p>Luồng tự động đồng bộ dữ liệu đa nền tảng giống Make.com</p>
             </div>
             <div class="scenario-actions">
-                <button class="btn btn-outline-light" onclick="duplicateScenario()">
+                <button class="btn btn-outline-secondary" onclick="duplicateScenario()">
                     <i class="fas fa-clone"></i> Duplicate
                 </button>
-                <button class="btn btn-outline-light" onclick="scheduleScenario()">
+                <button class="btn btn-outline-secondary" onclick="scheduleScenario()">
                     <i class="far fa-clock"></i> Lịch chạy
                 </button>
                 <button class="btn btn-light" onclick="saveScenario()">
@@ -95,7 +129,7 @@
                 <div class="module-list" id="moduleLibrary"></div>
                 <div class="sidebar-footer">
                     <p class="text-muted small mb-1">Không tìm thấy ứng dụng?</p>
-                    <button class="btn btn-outline-light w-100 btn-sm" onclick="requestIntegration()">
+                    <button class="btn btn-outline-secondary w-100 btn-sm" onclick="requestIntegration()">
                         <i class="fas fa-plug"></i> Đề nghị tích hợp mới
                     </button>
                 </div>
@@ -130,7 +164,7 @@
                 <div class="scenario-run-console" id="runConsole">
                     <div class="console-header">
                         <h6><i class="fas fa-terminal"></i> Run console</h6>
-                        <button class="btn btn-sm btn-outline-light" onclick="clearConsole()"><i
+                        <button class="btn btn-sm btn-outline-secondary" onclick="clearConsole()"><i
                                 class="fas fa-broom"></i> Clear</button>
                     </div>
                     <pre id="consoleOutput">Ready. Waiting for run...</pre>
@@ -179,5 +213,13 @@
 {% block scripts %}
 {{ super() }}
 <script src="{{ url_for('static', filename='workspace_scenario.js') }}"></script>
+<script>
+    function redirectToWallet(hash) {
+        let url = '/wallet';
+        if (hash) url += hash;
+        window.location.href = url;
+    }
+</script>
+<script src="{{ url_for('static', filename='wallet.js') }}" defer></script>
 {% endblock %}
 {% endblock %}

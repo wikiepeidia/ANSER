@@ -199,6 +199,78 @@ class Database:
         )''')
         
         self._create_demo_data(c)
+        # Add optional subscription expiry column to users for subscription tracking
+        c.execute("PRAGMA table_info(users)")
+        columns = [col[1] for col in c.fetchall()]
+        if 'subscription_expires_at' not in columns:
+            try:
+                c.execute("ALTER TABLE users ADD COLUMN subscription_expires_at TIMESTAMP")
+            except sqlite3.OperationalError:
+                pass
+
+        # Manager subscriptions & history
+        c.execute('''CREATE TABLE IF NOT EXISTS manager_subscriptions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER UNIQUE NOT NULL,
+            subscription_type TEXT NOT NULL,
+            amount REAL NOT NULL,
+            start_date TIMESTAMP NOT NULL,
+            end_date TIMESTAMP NOT NULL,
+            status TEXT DEFAULT 'active',
+            payment_method TEXT,
+            transaction_id TEXT,
+            auto_renew INTEGER DEFAULT 0,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+        )''')
+
+        c.execute('''CREATE TABLE IF NOT EXISTS subscription_history (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            subscription_type TEXT NOT NULL,
+            amount REAL NOT NULL,
+            payment_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            payment_method TEXT,
+            transaction_id TEXT,
+            status TEXT DEFAULT 'completed',
+            notes TEXT,
+            FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+        )''')
+
+        # Wallets and wallet transactions
+        c.execute('''CREATE TABLE IF NOT EXISTS wallets (
+            user_id INTEGER PRIMARY KEY,
+            balance REAL DEFAULT 0,
+            currency TEXT DEFAULT 'VND',
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+        )''')
+
+        c.execute('''CREATE TABLE IF NOT EXISTS wallet_transactions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            amount REAL NOT NULL,
+            currency TEXT DEFAULT 'VND',
+            type TEXT NOT NULL,
+            status TEXT DEFAULT 'pending',
+            method TEXT,
+            reference TEXT,
+            notes TEXT,
+            metadata TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+        )''')
+
+        # Seed wallets for existing users
+        c.execute('''INSERT OR IGNORE INTO wallets (user_id, balance, currency)
+                     SELECT id, 0, 'VND' FROM users''')
+
+        # Ensure managers have expiry date set if missing
+        c.execute('''UPDATE users
+                     SET subscription_expires_at = COALESCE(subscription_expires_at, datetime('now', '+30 day'))
+                     WHERE role = 'manager' AND subscription_expires_at IS NULL''')
         conn.commit()
         conn.close()
     

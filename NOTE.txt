@@ -1,0 +1,12 @@
+Notes & next steps
+
+I changed many key inline color uses to variables and added JS to update the workspace glance consistently. There are still several rgba(...) usages across the CSS—some are used for subtle gradients and drop shadows; these are acceptable but if you want full variable-driven styling we can continue to refactor those to variables (e.g., define --shadow-lg as a color-specific token).
+I left the --primary-dark choice for wallet-card-value to ensure it stands out; if you prefer a different token like --primary or --light-text for contrast in dark mode, I can change it.
+I added wallet.js to workspace.html to centralize the code; if you’d prefer a smaller script or to only expose the glance update function to the workspace (instead of the whole wallet script), we can extract and make a smaller wallet-glance.js.
+Would you like me to:
+
+Replace the remaining rgba / linear-gradient uses across the entire CSS bundle with theme variables (full refactor)?
+Adjust the balance color to use --primary instead of --primary-dark, or revert to var(--input-text) for less emphasis?
+Add a small unit/integration test (or a manual test checklist) for auth/session keepalive + glance update?
+💡 Tip: After deploying, open the browser developer tools (Elements and Styles) and inspect .glance-card p and .wallet-card-value to confirm they use var(--input-text) or var(--primary-dark) and verify the variable values under :root or html[data-theme='dark'].
+sidebar lightmode not work, most background doesnt change to light mode

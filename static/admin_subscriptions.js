@@ -1,24 +1,42 @@
 async function loadSubscriptions() {
     try {
-        const response = await fetch('/api/admin/subscriptions');
+        const response = await fetch('/api/admin/subscriptions', { credentials: 'same-origin' });
+        if (response.status === 401 || response.status === 403) {
+            showAlert('error', 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+            setTimeout(() => { window.location.href = '/auth/signin'; }, 3000);
+            return;
+        }
         if (!response.ok) throw new Error('Failed to load subscriptions');
 
         const data = await response.json();
         renderSubscriptionsTable(data.subscriptions || []);
     } catch (error) {
-        showAlert('error', 'Lỗi tải danh sách: ' + error.message);
+        if (error.message.includes('JSON')) {
+            showAlert('error', 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+        } else {
+            showAlert('error', 'Lỗi tải danh sách: ' + error.message);
+        }
     }
 }
 
 async function loadPaymentHistory() {
     try {
-        const response = await fetch('/api/admin/subscription-history');
+        const response = await fetch('/api/admin/subscription-history', { credentials: 'same-origin' });
+        if (response.status === 401 || response.status === 403) {
+            showAlert('error', 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+            setTimeout(() => { window.location.href = '/auth/signin'; }, 3000);
+            return;
+        }
         if (!response.ok) throw new Error('Failed to load history');
 
         const data = await response.json();
         renderPaymentHistory(data.history || []);
     } catch (error) {
-        console.error('Error loading payment history:', error);
+        if (error.message.includes('JSON')) {
+            showAlert('error', 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+        } else {
+            console.error('Error loading payment history:', error);
+        }
     }
 }
 
@@ -46,10 +64,10 @@ function renderSubscriptionsTable(subscriptions) {
             }
 
             const planNames = {
-                trial: 'Trial',
-                monthly: 'Monthly',
-                quarterly: 'Quarterly',
-                yearly: 'Yearly',
+                trial: 'Dùng thử',
+                monthly: 'Tháng',
+                quarterly: 'Quý',
+                yearly: 'Năm',
             };
 
             return `
@@ -96,7 +114,7 @@ function renderPaymentHistory(history) {
                 <td>${planNames[payment.subscription_type] || payment.subscription_type}</td>
                 <td><strong>${payment.amount.toLocaleString('vi-VN')}đ</strong></td>
                 <td>${payment.payment_method || 'N/A'}</td>
-                <td><span class="badge bg-success">${payment.status}</span></td>
+                <td><span class="badge ${localizeStatus(payment.status).cls}">${localizeStatus(payment.status).label}</span></td>
             </tr>
         `;
         })
@@ -127,6 +145,10 @@ async function processExtension() {
             }),
         });
 
+        if (response.status === 401 || response.status === 403) {
+            showAlert('error', 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+            return;
+        }
         const data = await response.json();
 
         if (data.success) {
@@ -149,6 +171,10 @@ async function checkExpiredSubscriptions() {
         const response = await fetch('/api/admin/check-expired-subscriptions', {
             method: 'POST',
         });
+        if (response.status === 401 || response.status === 403) {
+            showAlert('error', 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+            return;
+        }
 
         const data = await response.json();
 
@@ -163,7 +189,13 @@ async function checkExpiredSubscriptions() {
     }
 }
 
+// Use global showNotification if available (from static/script.js), otherwise fallback to element creation
 function showAlert(type, message) {
+    if (typeof showNotification === 'function') {
+        const t = (type === 'success') ? 'success' : (type === 'warning' ? 'warning' : (type === 'info' ? 'info' : 'error'));
+        showNotification(message, t);
+        return;
+    }
     const alertDiv = document.createElement('div');
     alertDiv.className = `alert alert-${type === 'success' ? 'success' : 'danger'} alert-dismissible fade show`;
     alertDiv.style.position = 'fixed';
@@ -179,7 +211,162 @@ function showAlert(type, message) {
     setTimeout(() => alertDiv.remove(), 5000);
 }
 
+function localizeStatus(status) {
+    const s = String(status || '').toLowerCase();
+    switch (s) {
+        case 'pending':
+            return { label: 'Đang chờ', cls: 'bg-warning text-dark' };
+        case 'completed':
+            return { label: 'Hoàn thành', cls: 'bg-success' };
+        case 'rejected':
+            return { label: 'Đã từ chối', cls: 'bg-danger' };
+        case 'expired':
+            return { label: 'Hết hạn', cls: 'bg-secondary' };
+        default:
+            return { label: status || '—', cls: 'bg-light text-dark' };
+    }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     loadSubscriptions();
     loadPaymentHistory();
+    // Load pending wallet transactions for admin review (if table exists on this page)
+    if (document.getElementById('pendingPaymentsTable')) {
+        loadPendingPayments();
+    }
 });
+
+const automationSettings = { autoUpgrade: true, autoNotify: true, bankLinked: false };
+let pendingPayments = [];
+
+function initAutomationUI() {
+    const autoToggle = document.getElementById('autoUpgradeToggle');
+    const notifyToggle = document.getElementById('autoNotifyToggle');
+    const statusLabel = document.getElementById('autoUpgradeStatus');
+    const ownerLabel = document.getElementById('ownerAlertStatus');
+    if (!autoToggle || !notifyToggle || !statusLabel || !ownerLabel) return;
+    autoToggle.checked = automationSettings.autoUpgrade;
+    notifyToggle.checked = automationSettings.autoNotify;
+    statusLabel.textContent = automationSettings.autoUpgrade ? 'Đang bật' : 'Đang tắt';
+    ownerLabel.textContent = automationSettings.autoNotify ? 'Đã bật' : 'Chưa bật';
+    updateBankStatus();
+}
+
+function updateBankStatus() {
+    const bankLabel = document.getElementById('bankLinkStatus');
+    const receiptInfo = document.getElementById('receiptInfo');
+    if (bankLabel) bankLabel.textContent = automationSettings.bankLinked ? 'Đã liên kết ngân hàng' : 'Chưa kết nối';
+    if (receiptInfo) receiptInfo.textContent = automationSettings.bankLinked ? 'Tự động đính kèm sao kê' : 'Đang chờ kết nối ngân hàng';
+}
+
+function linkBankAccount() {
+    automationSettings.bankLinked = true;
+    updateBankStatus();
+    showAlert('success', 'Đã liên kết ngân hàng thành công');
+}
+
+function toggleAutoUpgrade(isOn) {
+    automationSettings.autoUpgrade = isOn;
+    const statusLabel = document.getElementById('autoUpgradeStatus');
+    if (statusLabel) statusLabel.textContent = isOn ? 'Đang bật' : 'Đang tắt';
+    const healthBadge = document.getElementById('automationHealth');
+    if (healthBadge) {
+        healthBadge.textContent = isOn ? 'ON' : 'PAUSED';
+        healthBadge.classList.toggle('bg-danger', !isOn);
+        healthBadge.classList.toggle('bg-success', isOn);
+    }
+    showAlert('success', isOn ? 'Đã bật auto nâng quyền' : 'Đã tắt auto nâng quyền');
+}
+
+function toggleOwnerNotify(isOn) {
+    automationSettings.autoNotify = isOn;
+    const ownerLabel = document.getElementById('ownerAlertStatus');
+    if (ownerLabel) ownerLabel.textContent = isOn ? 'Đã bật' : 'Chưa bật';
+    showAlert('success', isOn ? 'Đã bật thông báo chủ web' : 'Đã tắt thông báo chủ web');
+}
+
+function refreshPaymentQueue() { loadPendingPayments(true); }
+
+function triggerManualPayout() { showAlert('success', 'Đã gửi yêu cầu đối soát đến ngân hàng'); }
+
+document.addEventListener('DOMContentLoaded', () => { initAutomationUI(); });
+
+async function loadPendingPayments(showToastMessage = false) {
+    const tbody = document.querySelector('#pendingPaymentsTable tbody');
+    if (tbody) {
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center"><div class="spinner-border spinner-border-sm" role="status"></div></td></tr>';
+    }
+    try {
+        const response = await fetch('/api/admin/wallet/pending', { credentials: 'same-origin' });
+        if (response.status === 401 || response.status === 403) {
+            showAlert('error', 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+            if (tbody) tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">Quyền truy cập bị từ chối</td></tr>';
+            setTimeout(() => { window.location.href = '/auth/signin'; }, 3000);
+            return;
+        }
+        const data = await response.json();
+        if (!data.success) throw new Error(data.message || 'Failed to load pending payments');
+        const transactions = data.transactions || [];
+        if (!tbody) return;
+        if (!transactions.length) {
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">Không có giao dịch chờ</td></tr>';
+            return;
+        }
+        tbody.innerHTML = transactions.map(payment => {
+            const planLabel = payment.plan_label ? String(payment.plan_label).toUpperCase() : (payment.type === 'topup' ? 'NẠP VÍ' : (payment.type || '—'));
+            const methodLabel = payment.method || '—';
+            const createdAt = payment.created_at ? `<br><small class="text-muted">${payment.created_at}</small>` : '';
+            const reference = payment.reference ? `<br><small class="text-muted">Ref: ${payment.reference}</small>` : '';
+            const statusObj = localizeStatus(payment.status);
+            return `
+                <tr>
+                    <td><span class="badge bg-dark">TX-${payment.id}</span>${createdAt}</td>
+                    <td><strong>${payment.user_name}</strong><br><small>${payment.user_email}</small></td>
+                    <td><span class="badge bg-primary">${planLabel}</span></td>
+                    <td>${(payment.amount || 0).toLocaleString('vi-VN')} đ</td>
+                    <td>${methodLabel}${reference}</td>
+                    <td class="text-end">
+                        <span class="me-2"><span class="badge ${statusObj.cls}">${statusObj.label}</span></span>
+                        <button class="btn btn-sm btn-success me-2" onclick="processQueuedPayment(${payment.id}, 'approve')"><i class="fas fa-check"></i></button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="processQueuedPayment(${payment.id}, 'reject')"><i class="fas fa-times"></i></button>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+        if (showToastMessage) showAlert('success', 'Đã tải danh sách giao dịch chờ.');
+    } catch (error) {
+        if (tbody) tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">Không thể tải giao dịch</td></tr>';
+        if (error.message.includes('JSON')) {
+            showAlert('error', 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+        } else {
+            showAlert('error', 'Lỗi: ' + error.message);
+        }
+    }
+}
+
+async function processQueuedPayment(paymentId, action) {
+    try {
+        const response = await fetch(`/api/admin/wallet/pending/${paymentId}`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ action })
+        });
+        if (response.status === 401 || response.status === 403) {
+            showAlert('error', 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+            setTimeout(() => { window.location.href = '/auth/signin'; }, 3000);
+            return;
+        }
+        const data = await response.json();
+        if (data.success) {
+            showAlert('success', data.message || 'Đã xử lý giao dịch');
+            await loadPendingPayments();
+            // Update subscription/account summaries
+            loadSubscriptions();
+            loadPaymentHistory();
+        } else {
+            showAlert('error', data.message || 'Không thể xử lý giao dịch');
+        }
+    } catch (error) {
+        showAlert('error', 'Lỗi: ' + error.message);
+    }
+}

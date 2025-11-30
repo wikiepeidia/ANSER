@@ -1,6 +1,6 @@
 import hashlib
 from functools import wraps
-from flask import session, redirect, url_for, flash
+from flask import session, redirect, url_for, flash, request, jsonify
 
 class AuthManager:
     def __init__(self, database):
@@ -81,6 +81,18 @@ class AuthManager:
         @wraps(f)
         def decorated_function(*args, **kwargs):
             if 'user_id' not in session:
+                # If this is an API call, return a JSON 401 instead of HTML redirect
+                try:
+                    path = request.path or ''
+                    is_api = path.startswith('/api/')
+                    is_accepting_json = 'application/json' in (request.headers.get('Accept') or '')
+                except Exception:
+                    is_api = False
+                    is_accepting_json = False
+
+                if is_api or is_accepting_json or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return jsonify({'success': False, 'message': 'Unauthorized - please login'}), 401
+                # fallback to redirect for normal page loads
                 flash('Vui lòng đăng nhập để tiếp tục', 'error')
                 return redirect(url_for('auth.signin'))
             return f(*args, **kwargs)

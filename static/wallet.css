@@ -1,0 +1,140 @@
+/* Wallet Page Styles (extracted from wallet.html) */
+
+.main-content {
+    margin-left: 280px;
+    padding-bottom: 60px;
+}
+
+.wallet-header {
+    /* Theme-aware elevated surface for the wallet header */
+    background: var(--surface-elevated);
+    backdrop-filter: blur(18px);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+    color: var(--input-text);
+    border: 1px solid var(--border-soft);
+}
+
+/* theme-specific overrides removed to rely on global theme variables */
+
+.wallet-card {
+    background: var(--surface-elevated);
+    border-radius: 18px;
+    padding: 20px;
+    color: var(--input-text);
+    box-shadow: 0 15px 35px var(--card-shadow-color);
+    border: 1px solid var(--border-soft);
+}
+
+.wallet-card-label {
+    text-transform: uppercase;
+    font-size: 12px;
+    letter-spacing: 1px;
+    color: var(--input-text);
+}
+
+.wallet-card-value {
+    font-size: 32px;
+    font-weight: 700;
+    margin: 10px 0;
+    /* make it stand out and still theme aware */
+    color: var(--primary-dark);
+}
+
+.wallet-card-foot {
+    font-size: 13px;
+    color: var(--input-text);
+    opacity: 0.7;
+}
+
+.plan-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+}
+
+.plan-tile {
+    border: 1px solid var(--border-soft);
+    border-radius: 14px;
+    padding: 16px;
+    background: var(--surface-100);
+    color: var(--input-text);
+    cursor: pointer;
+    transition: transform 0.2s, border 0.2s, background 0.2s;
+}
+
+.plan-tile.active,
+.plan-tile:hover {
+    border-color: var(--primary);
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-md);
+}
+
+/* Override badge inside plan tile so it follows theme variables */
+.plan-tile .badge {
+    background: var(--surface-200) !important;
+    color: var(--input-text) !important;
+    border-radius: 999px;
+    padding: 0.2rem 0.5rem;
+}
+
+.plan-price {
+    font-size: 20px;
+    font-weight: 700;
+}
+
+.plan-duration {
+    font-size: 13px;
+    color: var(--input-text);
+    opacity: 0.6;
+}
+
+/* Ensure plan price remains emphasized and readable on dark mode */
+.plan-price {
+    color: var(--primary-dark);
+}
+
+/* txnCount badge: use theme-aware surface color */
+#txnCount {
+    background: var(--surface-200) !important;
+    color: var(--input-text) !important;
+    padding: 0.25rem 0.6rem;
+    border-radius: 999px;
+    font-weight: 600;
+}
+
+/* Adapt refresh / small action buttons in wallet header to theme variables */
+.wallet-actions .btn-outline-secondary {
+    color: var(--input-text);
+    border-color: var(--border-soft);
+    background: transparent;
+    transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.wallet-actions .btn-outline-secondary:hover,
+.wallet-actions .btn-outline-secondary:focus {
+    background: var(--primary);
+    color: var(--light-text);
+    border-color: var(--primary);
+    box-shadow: 0 6px 14px var(--card-shadow-color);
+}
+
+/* Make sure the icon inside button adapts as well */
+.wallet-actions .btn-outline-secondary i {
+    color: inherit;
+}
+
+.plan-actions {
+    margin-top: 12px;
+}
+
+.plan-actions button {
+    width: 100%;
+}
+
+.badge-status {
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+}

@@ -1,15 +1,15 @@
 :root {
-    --canvas-bg: #050915;
+    --canvas-bg: var(--body-bg);
     --canvas-grid: rgba(255,255,255,0.04);
-    --sidebar-bg: #0f172a;
-    --panel-bg: rgba(255,255,255,0.04);
-    --border-soft: rgba(255,255,255,0.08);
+    --sidebar-bg: var(--sidebar-bg);
+    --panel-bg: var(--surface-200);
+    --border-soft: var(--border-soft);
 }
 
 body {
     font-family: 'Inter', sans-serif;
-    background: #010314;
-    color: #e2e8f0;
+    background: var(--body-bg);
+    color: var(--input-text);
 }
 
 .scenario-wrapper {
@@ -25,7 +25,7 @@ body {
     min-height: 100vh;
     margin-left: 280px;
     padding: 0 40px 40px;
-    color: #e2e8f0;
+        color: var(--input-text);
 }
 
 .scenario-topbar {
@@ -34,8 +34,9 @@ body {
     gap: 30px;
     padding: 28px 10px 28px 10px;
     border-bottom: 1px solid var(--border-soft);
-    background: rgba(5, 9, 21, 0.85);
-    backdrop-filter: blur(18px);
+    /* Theme-aware elevated topbar surface */
+    background: var(--surface-elevated);
+    backdrop-filter: blur(12px);
 }
 
 .scenario-title {
@@ -58,8 +59,8 @@ body {
     gap: 6px;
     padding: 4px 10px;
     border-radius: 999px;
-    background: rgba(102, 126, 234, 0.2);
-    color: #8ab4ff;
+    background: rgba(102, 126, 234, 0.12);
+    color: var(--primary);
     font-size: 13px;
     margin-bottom: 6px;
 }
@@ -110,14 +111,14 @@ body {
     border-radius: 999px;
     padding: 6px 14px;
     background: transparent;
-    color: #94a3b8;
+    color: var(--sidebar-subtext);
     font-weight: 600;
 }
 
 .module-group.active {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     border-color: transparent;
-    color: #fff;
+    color: var(--light-text);
 }
 
 .module-list {
@@ -127,7 +128,7 @@ body {
 }
 
 .module-item {
-    background: rgba(255,255,255,0.02);
+    background: var(--surface-100);
     border: 1px solid var(--border-soft);
     border-radius: 16px;
     padding: 14px;
@@ -147,7 +148,7 @@ body {
 }
 
 .module-item small {
-    color: rgba(226, 232, 240, 0.6);
+    color: var(--gray-400);
 }
 
 .scenario-canvas-panel {
@@ -169,7 +170,7 @@ body {
     display: flex;
     align-items: center;
     gap: 16px;
-    color: rgba(226, 232, 240, 0.7);
+    color: var(--sidebar-subtext);
 }
 
 .status-dot {
@@ -187,7 +188,7 @@ body {
 .toolbar-divider {
     width: 1px;
     height: 18px;
-    background: rgba(255,255,255,0.1);
+    background: var(--border-soft);
 }
 
 .scenario-canvas {
@@ -230,10 +231,10 @@ body {
     width: 190px;
     padding: 18px;
     border-radius: 20px;
-    background: rgba(13, 26, 45, 0.95);
-    border: 1px solid rgba(255,255,255,0.08);
-    box-shadow: 0 15px 45px rgba(0,0,0,0.4);
-    color: #fff;
+    background: var(--surface-100);
+    border: 1px solid var(--border-soft);
+    box-shadow: 0 15px 45px rgba(0,0,0,0.2);
+    color: var(--input-text);
     cursor: pointer;
     transition: border 0.2s, transform 0.2s;
     user-select: none;
@@ -254,16 +255,16 @@ body {
     height: 26px;
     border-radius: 999px;
     border: none;
-    background: rgba(15,23,42,0.75);
-    color: rgba(226,232,240,0.85);
+    background: var(--surface-200);
+    color: var(--input-text);
     font-size: 12px;
     cursor: pointer;
     transition: background 0.2s, color 0.2s;
 }
 
 .node-action-btn:hover {
-    background: #ef4444;
-    color: #fff;
+    background: var(--error);
+    color: var(--light-text);
 }
 
 .scenario-node:hover {
@@ -294,13 +295,13 @@ body {
     padding: 4px 10px;
     border-radius: 999px;
     font-size: 11px;
-    background: rgba(255,255,255,0.08);
+    background: var(--surface-200);
 }
 
 .scenario-run-console {
-    border-top: 1px solid rgba(255,255,255,0.08);
+    border-top: 1px solid var(--border-soft);
     padding: 16px 24px;
-    background: rgba(5, 9, 21, 0.9);
+    background: var(--surface-elevated);
 }
 
 .console-header {
@@ -335,16 +336,16 @@ body {
 
 .inspector-tab {
     flex: 1;
-    background: rgba(255,255,255,0.04);
+    background: var(--surface-200);
     border: 1px solid var(--border-soft);
     padding: 8px 12px;
     border-radius: 999px;
-    color: #94a3b8;
+    color: var(--sidebar-subtext);
 }
 
 .inspector-tab.active {
     background: linear-gradient(135deg, #6366f1, #8b5cf6);
-    color: #fff;
+    color: var(--light-text);
     border-color: transparent;
 }
 
@@ -403,7 +404,7 @@ body {
     text-transform: uppercase;
     letter-spacing: 0.1em;
     font-size: 12px;
-    color: rgba(226, 232, 240, 0.65);
+    color: var(--gray-400);
 }
 
 .launch-grid {
@@ -416,8 +417,8 @@ body {
 .launch-card {
     border: none;
     border-radius: 18px;
-    background: rgba(255,255,255,0.05);
-    border: 1px solid rgba(255,255,255,0.08);
+    background: var(--surface-100);
+    border: 1px solid var(--border-soft);
     padding: 18px;
     display: flex;
     align-items: center;
@@ -464,8 +465,91 @@ body {
 
 .launch-card p {
     margin: 0;
-    color: rgba(226, 232, 240, 0.7);
+    color: var(--gray-400);
     font-size: 14px;
+}
+
+/* Workspace wallet glance / subscription widget */
+.wallet-glance {
+    margin: 10px 0 30px;
+    padding: 22px;
+    border: 1px solid var(--border-soft);
+    border-radius: 16px;
+    background: var(--surface-elevated);
+    color: var(--input-text);
+}
+
+.glance-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 12px;
+    color: var(--input-text);
+}
+
+.glance-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 12px;
+}
+
+.glance-card {
+    padding: 14px;
+    border-radius: 12px;
+    background: var(--surface-100);
+    border: 1px solid var(--border-soft);
+    min-height: 110px;
+    color: var(--input-text);
+}
+
+.glance-card p {
+    margin: 0;
+    font-size: 13px;
+    /* Use theme-aware input text for better contrast in both themes */
+    color: var(--input-text);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    opacity: 0.85;
+}
+
+.glance-card h3 {
+    margin: 10px 0 6px;
+    font-size: 22px;
+    color: var(--input-text);
+}
+
+.glance-subtext {
+    font-size: 13px;
+    /* Muted subtext that adapts across light/dark modes */
+    color: var(--sidebar-subtext);
+}
+
+.glance-chip {
+    display: inline-flex;
+    padding: 4px 12px;
+    border-radius: 999px;
+    background: var(--surface-200);
+    font-size: 12px;
+    color: var(--input-text);
+}
+
+.glance-actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.glance-actions .btn-outline-secondary {
+    color: var(--input-text);
+    border-color: var(--border-soft);
+    background: transparent;
+}
+.glance-actions .btn-outline-secondary:hover,
+.glance-actions .btn-outline-secondary:focus {
+    background: var(--primary);
+    color: var(--light-text);
+    border-color: var(--primary);
 }
 
 .coming-soon,
@@ -473,7 +557,7 @@ body {
     margin-left: auto;
     font-size: 13px;
     font-weight: 600;
-    color: #a5b4fc;
+    color: var(--primary);
 }
 
 .coming-soon {

@@ -54,7 +54,52 @@
         window.fetch = function (resource, config) {
             const nextConfig = Object.assign({}, config || {});
             nextConfig.headers = setHeader(nextConfig.headers || {}, headerName, token);
+            // Ensure cookies are sent for same-origin requests
+            nextConfig.credentials = nextConfig.credentials || 'same-origin';
             return originalFetch(resource, nextConfig);
         };
     }
+})();
+// Periodically check session status (keepalive/notify) to warn users
+;(function sessionKeepalive() {
+    if (typeof window.fetch !== 'function') return;
+    const check = async () => {
+        try {
+            const res = await fetch('/api/session', { credentials: 'same-origin' });
+            if (!res.ok) {
+                return;
+            }
+            const data = await res.json();
+            if (!data.authenticated) {
+                try { if (typeof showNotification === 'function') showNotification('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.', 'error'); } catch (e) {}
+                setTimeout(() => { window.location.href = '/auth/signin'; }, 3000);
+            }
+        } catch (e) {
+            // ignore connection errors
+        }
+    };
+    // Run immediately and schedule
+    check();
+    setInterval(check, 120000); // every 2 minutes
+})();
+// Add a global handler for unauthorized (401/403) responses so AJAX calls redirect to signin
+;(function attachUnauthorizedHandler() {
+    if (typeof window.fetch !== 'function' || window.__unauthorizedFetchPatched) return;
+    window.__unauthorizedFetchPatched = true;
+    const originalFetch = window.fetch.bind(window);
+    window.fetch = function(resource, config) {
+        return originalFetch(resource, config).then(res => {
+            if (res && (res.status === 401 || res.status === 403)) {
+                try {
+                    if (typeof showNotification === 'function') {
+                        showNotification('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.', 'error');
+                    }
+                } catch (e) {
+                    // ignore
+                }
+                setTimeout(() => window.location.href = '/auth/signin', 3000);
+            }
+            return res;
+        });
+    };
 })();

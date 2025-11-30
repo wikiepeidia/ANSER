@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+
+{% block title %}Ví & Gói Manager{% endblock %}
+
+{% block styles %}
+{{ super() }}
+<link rel="stylesheet" href="{{ url_for('static', filename='wallet.css') }}">
+{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        {% include 'components/sidebar.html' %}
+
+        <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 main-content">
+            <div
+                class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom wallet-header">
+                <div>
+                    <h1 class="h2"><i class="fas fa-wallet"></i> Ví của tôi</h1>
+                    <p class="text-muted mb-0">Nạp tiền, nâng cấp lên Manager và theo dõi lịch sử giao dịch</p>
+                </div>
+                <div class="btn-group wallet-actions">
+                    <button class="btn btn-primary" onclick="openTopupModal()"><i class="fas fa-plus"></i> Nạp
+                        tiền</button>
+                    <button class="btn btn-outline-secondary" onclick="loadWalletDashboard()"><i
+                            class="fas fa-sync"></i></button>
+                </div>
+            </div>
+
+            <div class="row g-3" id="walletMetrics">
+                <div class="col-lg-4">
+                    <div class="wallet-card">
+                        <div class="wallet-card-label">Số dư khả dụng</div>
+                        <div class="wallet-card-value" id="walletBalance">0đ</div>
+                        <div class="wallet-card-foot">
+                            <span id="walletUpdatedAt">Đang tải...</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4">
+                    <div class="wallet-card">
+                        <div class="wallet-card-label">Gói Manager</div>
+                        <div class="wallet-card-value" id="subscriptionStatus">Chưa đăng ký</div>
+                        <div class="wallet-card-foot">
+                            <span id="subscriptionExpiry">-</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4">
+                    <div class="wallet-card">
+                        <div class="wallet-card-label">Tự động gia hạn</div>
+                        <div class="wallet-card-value" id="autoRenewStatus">Tắt</div>
+                        <div class="wallet-card-foot">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="autoRenewToggle"
+                                    onchange="toggleAutoRenew(this.checked)" disabled>
+                                <label class="form-check-label" for="autoRenewToggle">Gia hạn khi đủ số dư</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mt-4">
+                <div class="col-lg-7 mb-4">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="card-title mb-0"><i class="fas fa-star"></i> Chọn gói nâng cấp</h5>
+                                <small class="text-muted">Thanh toán bằng số dư ví</small>
+                            </div>
+                            <div class="plan-grid" id="planGrid"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-5 mb-4">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="card-title mb-0"><i class="fas fa-history"></i> Lịch sử gần đây</h5>
+                                <span class="badge bg-light text-dark" id="txnCount">0 giao dịch</span>
+                            </div>
+                            <div class="table-responsive" style="max-height: 320px;">
+                                <table class="table table-sm table-hover align-middle">
+                                    <thead>
+                                        <tr>
+                                            <th>Mã</th>
+                                            <th>Số tiền</th>
+                                            <th>Loại</th>
+                                            <th>Trạng thái</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="txnTableBody">
+                                        <tr>
+                                            <td colspan="4" class="text-center text-muted">Đang tải...</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <p class="small text-muted mt-2">Mọi giao dịch cần admin duyệt sẽ hiển thị trạng thái
+                                <strong>Đang chờ</strong>.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<!-- Topup Modal -->
+<div class="modal fade" id="topupModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Nạp tiền vào ví</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Số tiền <span class="text-danger">*</span></label>
+                    <div class="input-group">
+                        <span class="input-group-text">đ</span>
+                        <input type="number" class="form-control" id="topupAmount" min="50000" step="50000"
+                            value="500000">
+                    </div>
+                    <small class="text-muted">Tối thiểu 50.000đ. Sau khi nạp, admin sẽ xác nhận và cộng vào ví.</small>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Phương thức thanh toán</label>
+                    <select class="form-select" id="topupMethod">
+                        <option value="bank_transfer">Chuyển khoản ngân hàng</option>
+                        <option value="momo">MoMo</option>
+                        <option value="vnpay">VNPay</option>
+                        <option value="cash">Tiền mặt</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Mã tham chiếu / ghi chú</label>
+                    <input type="text" class="form-control" id="topupReference" placeholder="VD: MOMO-123456">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-primary" onclick="submitTopup()"><i class="fas fa-paper-plane"></i>
+                    Gửi yêu cầu</button>
+            </div>
+        </div>
+    </div>
+
+</div>
+<!-- Wallet CSS moved to static/wallet.css -->
+
+
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script src="{{ url_for('static', filename='wallet.js') }}" defer></script>
+{% endblock %}

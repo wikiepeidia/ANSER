@@ -21,9 +21,137 @@
             <div
                 class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
                 <h1 class="h2"><i class="fas fa-credit-card"></i> Quản lý Gói Manager</h1>
-                <button class="btn btn-danger" onclick="checkExpiredSubscriptions()">
-                    <i class="fas fa-sync"></i> Kiểm tra hết hạn
-                </button>
+                <div class="btn-group">
+                    <button class="btn btn-danger" onclick="checkExpiredSubscriptions()">
+                        <i class="fas fa-sync"></i> Kiểm tra hết hạn
+                    </button>
+                    <a href="{{ url_for('wallet_dashboard') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-wallet"></i> Xem ví
+                    </a>
+                </div>
+            </div>
+
+            <div class="row g-3 mb-4" id="automationOverview">
+                <div class="col-md-4">
+                    <div class="auto-card">
+                        <div class="auto-card-icon bg-gradient-primary"><i class="fas fa-magic"></i></div>
+                        <div class="auto-card-body">
+                            <h6>Tự động nâng hạng</h6>
+                            <p class="auto-card-value" id="autoUpgradeStatus">Đang bật</p>
+                            <small>Mọi giao dịch hợp lệ sẽ tự nâng quyền Manager</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="auto-card">
+                        <div class="auto-card-icon bg-gradient-warning"><i class="fas fa-bell"></i></div>
+                        <div class="auto-card-body">
+                            <h6>Thông báo chủ web</h6>
+                            <p class="auto-card-value" id="ownerAlertStatus">Đã bật</p>
+                            <small>Gửi ping qua email + dashboard khi có thanh toán</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="auto-card">
+                        <div class="auto-card-icon bg-gradient-success"><i class="fas fa-university"></i></div>
+                        <div class="auto-card-body">
+                            <h6>Tài khoản ngân hàng</h6>
+                            <p class="auto-card-value" id="bankLinkStatus">Chưa kết nối</p>
+                            <button class="btn btn-sm btn-outline-primary mt-2" onclick="linkBankAccount()">Liên kết
+                                ngay</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mt-4">
+                <div class="col-lg-5 mb-4">
+                    <div class="card automation-panel">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="card-title mb-0"><i class="fas fa-robot"></i> Luồng tự động</h5>
+                                <span class="badge bg-success" id="automationHealth">ON</span>
+                            </div>
+                            <p class="text-muted small mb-3">Khi người dùng thanh toán thành công, hệ thống sẽ ghi nhận
+                                giao dịch, nâng quyền Manager và báo cho chủ web.</p>
+                            <ul class="timeline">
+                                <li>
+                                    <div class="timeline-icon bg-primary"><i class="fas fa-university"></i></div>
+                                    <div>
+                                        <h6>Nhận tiền</h6>
+                                        <small>Bank webhook / Ví điện tử</small>
+                                    </div>
+                                </li>
+                                <li>
+                                    <div class="timeline-icon bg-warning"><i class="fas fa-file-invoice-dollar"></i>
+                                    </div>
+                                    <div>
+                                        <h6>Tạo biên nhận + lưu chứng từ</h6>
+                                        <small id="receiptInfo">Chưa liên kết ngân hàng</small>
+                                    </div>
+                                </li>
+                                <li>
+                                    <div class="timeline-icon bg-success"><i class="fas fa-user-shield"></i></div>
+                                    <div>
+                                        <h6>Tự động nâng quyền Manager</h6>
+                                        <small>Kích hoạt tài khoản ngay</small>
+                                    </div>
+                                </li>
+                                <li>
+                                    <div class="timeline-icon bg-info"><i class="fas fa-paper-plane"></i></div>
+                                    <div>
+                                        <h6>Thông báo chủ web</h6>
+                                        <small>Email + Bảng điều khiển</small>
+                                    </div>
+                                </li>
+                            </ul>
+                            <div class="mt-3">
+                                <label class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="autoUpgradeToggle" checked
+                                        onchange="toggleAutoUpgrade(this.checked)">
+                                    <span class="form-check-label">Tự động nâng quyền khi nhận tiền</span>
+                                </label>
+                                <label class="form-check form-switch mt-2">
+                                    <input class="form-check-input" type="checkbox" id="autoNotifyToggle" checked
+                                        onchange="toggleOwnerNotify(this.checked)">
+                                    <span class="form-check-label">Tự động gửi thông báo chủ web</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-7">
+                    <div class="card automation-panel">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="card-title mb-0"><i class="fas fa-inbox"></i> Giao dịch chờ xác nhận</h5>
+                                <button class="btn btn-sm btn-outline-secondary" onclick="refreshPaymentQueue()"><i
+                                        class="fas fa-sync-alt"></i></button>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table table-align-middle mb-0" id="pendingPaymentsTable">
+                                    <thead>
+                                        <tr>
+                                            <th>Mã</th>
+                                            <th>Khách</th>
+                                            <th>Gói</th>
+                                            <th>Số tiền</th>
+                                            <th>Phương thức</th>
+                                            <th></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
+                            <div class="text-end mt-3">
+                                <button class="btn btn-sm btn-primary" onclick="triggerManualPayout()">
+                                    <i class="fas fa-paper-plane"></i> Gửi yêu cầu đối soát bank
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- Subscription Plans -->
