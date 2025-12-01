@@ -9,8 +9,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const canvas = document.getElementById('workflowCanvas');
     const dropZone = document.getElementById('dropZone');
     const builderState = {
-        nodeCounter: document.querySelectorAll('.workflow-node').length,
-        selectedNode: null
+        nodeCounter: 0,
+        selectedNode: null,
+        history: [],
+        redo: [],
+        connections: []
     };
     const categoryColors = {
         trigger: '#8bc34a',
@@ -19,6 +22,62 @@ document.addEventListener('DOMContentLoaded', () => {
         integration: '#9c27b0',
         custom: '#667eea'
     };
+
+    function pushHistory(action) {
+        builderState.history.push(action);
+        builderState.redo = [];
+    }
+
+    function undo() {
+        const last = builderState.history.pop();
+        if (!last) return;
+        builderState.redo.push(last);
+        switch (last.type) {
+            case 'create': {
+                const created = document.querySelector(`.workflow-node[data-node-id="${last.nodeId}"]`);
+                if (created) created.remove();
+                break;
+            }
+            case 'delete': {
+                const wrap = document.createElement('div');
+                wrap.innerHTML = last.snapshot;
+                const restored = wrap.firstElementChild;
+                canvas.appendChild(restored);
+                attachNodeInteractions(restored);
+                break;
+            }
+            case 'move': {
+                const moved = document.querySelector(`.workflow-node[data-node-id="${last.nodeId}"]`);
+                if (moved) {
+                    moved.style.left = `${last.from.left}px`;
+                    moved.style.top = `${last.from.top}px`;
+                }
+                break;
+            }
+            case 'edit': {
+                const edited = document.querySelector(`.workflow-node[data-node-id="${last.nodeId}"]`);
+                if (edited) {
+                    edited.dataset.title = last.from.title;
+                    edited.querySelector('.node-title').textContent = last.from.title;
+                    edited.querySelector('.node-content').textContent = last.from.description;
+                }
+                if (builderState.selectedNode && builderState.selectedNode.dataset.nodeId === last.nodeId) {
+                    nodeNameInput.value = last.from.title;
+                    nodeDescriptionInput.value = last.from.description;
+                }
+                break;
+            }
+            case 'connect': {
+                const svg = document.getElementById('connectionLines');
+                const toRemove = [...svg.querySelectorAll('.connection-line')].find((line) => line.dataset.source === last.source && line.dataset.target === last.target);
+                if (toRemove) toRemove.remove();
+                builderState.connections = builderState.connections.filter((c) => !(c.source === last.source && c.target === last.target));
+                break;
+            }
+            default:
+                break;
+        }
+    }
 
     if (toolSearch) {
         toolSearch.addEventListener('input', (event) => {
@@ -70,6 +129,17 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             selectNode(node);
         });
+
+        // Attach click handlers to connection points so connect mode acts on the exact point
+        const connectionPoints = node.querySelectorAll('.connection-point');
+        if (connectionPoints && connectionPoints.length) {
+            connectionPoints.forEach((cp) => {
+                cp.addEventListener('click', (ev) => {
+                    ev.stopPropagation();
+                    handleConnectionMode(node, cp);
+                });
+            });
+        }
 
         enableNodeDragging(node);
     }
@@ -132,7 +202,10 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             case 'delete':
                 if (confirm('Delete this node?')) {
+                    const nodeId = node.dataset.nodeId;
+                    const snapshot = node.outerHTML;
                     node.remove();
+                    pushHistory({ type: 'delete', nodeId, snapshot });
                     // showNotification('Node deleted', 'success');
                     if (builderState.selectedNode === node) {
                         builderState.selectedNode = null;
@@ -160,6 +233,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const nodeRect = node.getBoundingClientRect();
             const offsetX = event.clientX - nodeRect.left;
             const offsetY = event.clientY - nodeRect.top;
+            const startLeft = parseInt(node.style.left, 10) || 0;
+            const startTop = parseInt(node.style.top, 10) || 0;
 
             node.classList.add('dragging');
 
@@ -175,6 +250,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.removeEventListener('mousemove', onMouseMove);
                 document.removeEventListener('mouseup', onMouseUp);
                 node.classList.remove('dragging');
+                const endLeft = parseInt(node.style.left, 10) || 0;
+                const endTop = parseInt(node.style.top, 10) || 0;
+                if (startLeft !== endLeft || startTop !== endTop) {
+                    pushHistory({ type: 'move', nodeId: node.dataset.nodeId, from: { left: startLeft, top: startTop }, to: { left: endLeft, top: endTop } });
+                }
             }
 
             document.addEventListener('mousemove', onMouseMove);
@@ -244,9 +324,11 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
         `;
 
-        canvas.appendChild(node);
         builderState.nodeCounter += 1;
+        node.dataset.nodeId = `node-${builderState.nodeCounter}`;
+        canvas.appendChild(node);
         attachNodeInteractions(node);
+        pushHistory({ type: 'create', nodeId: node.dataset.nodeId });
         updateDropZoneVisibility();
         selectNode(node);
         return node;
@@ -318,13 +400,16 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     document.querySelectorAll('.toolbar-btn').forEach((btn) => {
+        btn.setAttribute('role', 'button');
+        btn.setAttribute('aria-pressed', 'false');
         btn.addEventListener('click', function () {
             const action = this.dataset.action;
-
             document.querySelectorAll('.toolbar-btn').forEach((item) => {
                 item.classList.remove('active');
+                item.setAttribute('aria-pressed', 'false');
             });
             this.classList.add('active');
+            this.setAttribute('aria-pressed', 'true');
             builderMode.current = action;
 
             if (action === 'cursor') {
@@ -342,9 +427,53 @@ document.addEventListener('DOMContentLoaded', () => {
                 canvas?.classList.remove('cursor-mode', 'connect-mode');
                 canvas?.classList.add('zoom-mode');
                 // showNotification('Zoom mode activated - Use mouse wheel to zoom in/out', 'info');
+                showZoomControls();
+            } else {
+                hideZoomControls();
             }
         });
     });
+
+    // Zoom control panel
+    function createZoomControls() {
+        const toolbar = document.querySelector('.floating-toolbar');
+        if (!toolbar) return null;
+        let wrapper = document.querySelector('.zoom-controls');
+        if (wrapper) return wrapper;
+        wrapper = document.createElement('div');
+        wrapper.className = 'zoom-controls';
+        wrapper.innerHTML = `
+            <button class="zoom-btn zoom-in" aria-label="Zoom in">+</button>
+            <button class="zoom-btn zoom-out" aria-label="Zoom out">−</button>
+            <button class="zoom-btn zoom-reset" aria-label="Reset zoom">Reset</button>
+        `;
+        toolbar.appendChild(wrapper);
+        wrapper.querySelector('.zoom-in').addEventListener('click', () => {
+            builderMode.scale = Math.min(2.0, builderMode.scale + 0.1);
+            canvas.style.transform = `scale(${builderMode.scale})`;
+            canvas.style.transformOrigin = 'center center';
+        });
+        wrapper.querySelector('.zoom-out').addEventListener('click', () => {
+            builderMode.scale = Math.max(0.5, builderMode.scale - 0.1);
+            canvas.style.transform = `scale(${builderMode.scale})`;
+            canvas.style.transformOrigin = 'center center';
+        });
+        wrapper.querySelector('.zoom-reset').addEventListener('click', () => {
+            builderMode.scale = 1.0;
+            canvas.style.transform = `scale(${builderMode.scale})`;
+        });
+        return wrapper;
+    }
+
+    function showZoomControls() {
+        const wrapper = createZoomControls();
+        if (wrapper) wrapper.style.display = 'flex';
+    }
+
+    function hideZoomControls() {
+        const wrapper = document.querySelector('.zoom-controls');
+        if (wrapper) wrapper.style.display = 'none';
+    }
 
     if (canvas) {
         canvas.addEventListener('wheel', (event) => {
@@ -358,21 +487,21 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    function handleConnectionMode(node) {
+    function handleConnectionMode(node, cp) {
         if (builderMode.current !== 'connect') {
             return;
         }
 
         if (!builderMode.connectionStart) {
-            builderMode.connectionStart = node;
+            builderMode.connectionStart = { node, cp };
             node.classList.add('connection-source');
             // showNotification('Click another node to create connection', 'info');
         } else {
-            if (builderMode.connectionStart !== node) {
-                drawConnection(builderMode.connectionStart, node);
+            if (builderMode.connectionStart.node !== node) {
+                drawConnection(builderMode.connectionStart.node, node);
                 // showNotification('Connection created!', 'success');
             }
-            builderMode.connectionStart.classList.remove('connection-source');
+            builderMode.connectionStart.node.classList.remove('connection-source');
             builderMode.connectionStart = null;
         }
     }
@@ -405,7 +534,16 @@ document.addEventListener('DOMContentLoaded', () => {
         line.setAttribute('stroke-linecap', 'round');
         line.classList.add('connection-line');
 
+        // Ensure arrow marker exists on the svg defs once
+        if (!svg.__arrowCreated) {
+            createArrowMarker(svg);
+            svg.__arrowCreated = true;
+        }
+        line.setAttribute('marker-end', 'url(#arrowhead)');
         svg.appendChild(line);
+        line.dataset.source = sourceNode.dataset.nodeId;
+        line.dataset.target = targetNode.dataset.nodeId;
+        builderState.connections.push({ source: line.dataset.source, target: line.dataset.target });
 
         const length = line.getTotalLength();
         line.style.strokeDasharray = length;
@@ -415,6 +553,43 @@ document.addEventListener('DOMContentLoaded', () => {
             line.style.transition = 'stroke-dashoffset 0.6s ease';
             line.style.strokeDashoffset = '0';
         }, 50);
+    }
+
+    // Bind undo and save workflow actions in canvas header
+    const headerUndoBtn = document.querySelector('.canvas-header .canvas-actions [data-action="undo"]');
+    const headerSaveBtn = document.querySelector('.canvas-header .canvas-actions [data-action="save-workflow"]');
+    if (headerUndoBtn) headerUndoBtn.addEventListener('click', () => undo());
+    if (headerSaveBtn) headerSaveBtn.addEventListener('click', () => saveWorkflow());
+
+    function saveWorkflow() {
+        const nodes = [];
+        document.querySelectorAll('.workflow-node').forEach((node) => {
+            nodes.push({
+                id: node.dataset.nodeId,
+                title: node.dataset.title,
+                category: node.dataset.category,
+                left: parseInt(node.style.left, 10) || 0,
+                top: parseInt(node.style.top, 10) || 0,
+                description: node.querySelector('.node-content')?.textContent.trim() || ''
+            });
+        });
+
+        const svg = document.getElementById('connectionLines');
+        const connections = [];
+        if (svg) {
+            svg.querySelectorAll('.connection-line').forEach((line) => {
+                connections.push({ source: line.dataset.source, target: line.dataset.target });
+            });
+        }
+
+        const payload = { nodes, connections };
+        // Show payload in console or show a notification for now.
+        console.log('Workflow to save:', payload);
+        if (typeof showNotification === 'function') {
+            showNotification('Workflow saved locally (client-side)', 'success');
+        } else {
+            alert('Workflow saved locally (check console).');
+        }
     }
 
     function createArrowMarker(svg) {
@@ -468,10 +643,40 @@ document.addEventListener('DOMContentLoaded', () => {
         propertyPanel?.classList.add('open');
     }
 
+    // Assign node IDs for static nodes loaded in HTML so they are part of the history and connections
     document.querySelectorAll('.workflow-node').forEach((node) => {
+        if (!node.dataset.nodeId) {
+            builderState.nodeCounter += 1;
+            node.dataset.nodeId = `node-${builderState.nodeCounter}`;
+        }
         attachNodeInteractions(node);
     });
 
     bindPropertyInputs();
+    // Save node properties from the property panel
+    const saveNodeBtn = document.getElementById('saveNodeBtn');
+    if (saveNodeBtn) {
+        saveNodeBtn.addEventListener('click', () => {
+            if (!builderState.selectedNode) {
+                if (typeof showNotification === 'function') showNotification('No node selected', 'warning');
+                return;
+            }
+            const node = builderState.selectedNode;
+            const oldTitle = node.dataset.title;
+            const oldDescription = node.querySelector('.node-content')?.textContent || '';
+            const newTitle = nodeNameInput.value || oldTitle;
+            const newDescription = nodeDescriptionInput.value || oldDescription;
+            node.dataset.title = newTitle;
+            const titleEl = node.querySelector('.node-title');
+            if (titleEl) titleEl.textContent = newTitle;
+            const contentEl = node.querySelector('.node-content');
+            if (contentEl) contentEl.textContent = newDescription;
+            pushHistory({ type: 'edit', nodeId: node.dataset.nodeId, from: { title: oldTitle, description: oldDescription }, to: { title: newTitle, description: newDescription } });
+            if (typeof showNotification === 'function') showNotification('Node updated', 'success');
+        });
+    }
+
+    // Initially hide zoom controls until user clicks zoom mode
+    hideZoomControls();
     updateDropZoneVisibility();
 });

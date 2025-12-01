@@ -316,6 +316,19 @@ body.builder-page {
     overflow: hidden;
 }
 
+.workflow-canvas.connect-mode .workflow-node {
+    cursor: crosshair;
+}
+.workflow-canvas.cursor-mode .workflow-node {
+    cursor: move;
+}
+.workflow-canvas.zoom-mode {
+    cursor: zoom-in;
+}
+.connection-point:hover {
+    transform: scale(1.2);
+}
+
 .connections-svg {
     position: absolute;
     top: 0;
@@ -380,6 +393,11 @@ body.builder-page {
 .workflow-node.selected {
     border-color: var(--builder-border-strong);
     box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.3);
+}
+
+.workflow-node.connection-source {
+    box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.25);
+    border-color: var(--builder-border-strong);
 }
 
 .node-header {
@@ -525,6 +543,26 @@ body.builder-page {
 }
 
 .toolbar-btn:hover {
+    transform: translateY(-2px);
+}
+
+.zoom-controls {
+    display: none;
+    gap: 8px;
+    margin-left: 8px;
+    align-items: center;
+}
+.zoom-controls .zoom-btn {
+    border-radius: 8px;
+    padding: 6px 8px;
+    border: 1px solid var(--builder-border);
+    background: var(--builder-panel);
+    color: var(--builder-text);
+    cursor: pointer;
+    font-weight: 700;
+    min-width: 40px;
+}
+.zoom-controls .zoom-btn:hover {
     transform: translateY(-2px);
 }
 

@@ -144,11 +144,11 @@
                 </div>
             </div>
             <div class="canvas-actions">
-                <button class="action-btn" type="button">
+                <button class="action-btn" type="button" data-action="undo" title="Undo last change">
                     <i class="fas fa-undo"></i>
                     Undo
                 </button>
-                <button class="action-btn primary" type="button">
+                <button class="action-btn primary" type="button" data-action="save-workflow" title="Save workflow">
                     <i class="fas fa-save"></i>
                     Save workflow
                 </button>
@@ -259,22 +259,23 @@
                 <input type="text" id="nodeCondition" class="form-input" placeholder="order.total &gt;= 5000000">
             </div>
 
-            <button class="action-btn primary full-width" type="button">
+            <button id="saveNodeBtn" class="action-btn primary full-width" type="button" data-action="save-node">
                 <i class="fas fa-save"></i>
                 Save changes
             </button>
         </aside>
 
         <div class="floating-toolbar">
-            <button class="toolbar-btn active" type="button" data-action="cursor">
+            <button class="toolbar-btn active" type="button" data-action="cursor" title="Select mode"
+                aria-pressed="true">
                 <i class="fas fa-mouse-pointer"></i>
                 Select
             </button>
-            <button class="toolbar-btn" type="button" data-action="connect">
+            <button class="toolbar-btn" type="button" data-action="connect" title="Connect nodes" aria-pressed="false">
                 <i class="fas fa-route"></i>
                 Connect
             </button>
-            <button class="toolbar-btn" type="button" data-action="zoom">
+            <button class="toolbar-btn" type="button" data-action="zoom" title="Zoom canvas" aria-pressed="false">
                 <i class="fas fa-search-plus"></i>
                 Zoom
             </button>
