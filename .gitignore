@@ -2,7 +2,10 @@
 __pycache__/
 *.py[codz]
 *$py.class
-
+# test folder
+test/
+tests/
+secrets/
 # C extensions
 *.so
 examples/

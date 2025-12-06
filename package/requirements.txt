@@ -12,13 +12,18 @@ pytesseract
 scikit-learn
 tensorflow
 torch
+google-api-python-client
+google-auth-httplib2
+google-auth-oauthlib
+requests
+flask
 
 
 werkzeug
 addict
 easydict
 easyocr
-flask
+
 numpy
 opencv-python
 pandas
