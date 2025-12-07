@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from flask_wtf.csrf import CSRFProtect, CSRFError, generate_csrf
+from flask_talisman import Talisman 
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from core.database import Database
@@ -8,9 +9,13 @@ from core.auth import AuthManager
 from core.config import Config
 from core.utils import Utils
 from datetime import datetime, timedelta
+from authlib.integrations.flask_client import OAuth
+import secrets
 import os
 import json
 import sqlite3
+import sys
+sys.stdout.reconfigure(encoding='utf-8')
 
 
 
@@ -19,6 +24,44 @@ app = Flask(__name__, template_folder='ui/templates')
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'change_me_to_a_secure_random_value')
 app.config['WTF_CSRF_ENABLED'] = True
 app.secret_key = app.config['SECRET_KEY']
+
+#OAuth2 configuration
+# Load secrets from file
+try:
+    with open('secrets/google_oauth.json') as f:
+        secrets = json.load(f)
+        app.config['GOOGLE_CLIENT_ID'] = secrets.get('GOOGLE_CLIENT_ID')
+        app.config['GOOGLE_CLIENT_SECRET'] = secrets.get('GOOGLE_CLIENT_SECRET')
+except FileNotFoundError:
+    print("Warning: secrets/google_oauth.json not found. OAuth will not work.")
+    app.config['GOOGLE_CLIENT_ID'] = os.environ.get('GOOGLE_CLIENT_ID')
+    app.config['GOOGLE_CLIENT_SECRET'] = os.environ.get('GOOGLE_CLIENT_SECRET')
+
+Talisman(app,
+         force_https=False,
+         content_security_policy={
+             'default-src': ["'self'","*"],
+             'script-src': ["'self'", "'unsafe-inline'", "'unsafe-eval'", "*"],
+                'style-src': ["'self'", "'unsafe-inline'", "*"],
+                'img-src': ["'self'", "data:", "*"],
+            'style-src': ["'self'", "'unsafe-inline'", "*"],
+            'font-src': ["'self'", "*"],
+            'object-src': ["'none'"],
+            'frame-ancestors': ["'none'"],
+         },
+         strict_transport_security=True,
+         frame_options='DENY',
+         x_content_type_options=True,
+         )
+
+oauth = OAuth(app)
+google = oauth.register(
+    name='google',
+    client_id=app.config['GOOGLE_CLIENT_ID'],
+    client_secret=app.config['GOOGLE_CLIENT_SECRET'],
+    server_metadata_url='https://accounts.google.com/.well-known/openid-configuration',
+    client_kwargs={'scope': 'openid email profile'}
+)
 
 # Session configuration - 30 minutes
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=30)
@@ -1419,7 +1462,7 @@ def api_session():
 def api_topup_wallet():
     data = request.get_json() or {}
     try:
-        amount = float(data.get('amount', 0))
+        amount = int(data.get('amount', 0))
     except (TypeError, ValueError):
         amount = 0
 
@@ -1461,7 +1504,7 @@ def api_admin_withdraw():
     
     data = request.get_json() or {}
     try:
-        amount = float(data.get('amount', 0))
+        amount = int(data.get('amount', 0))
     except (TypeError, ValueError):
         amount = 0
     
@@ -1681,6 +1724,83 @@ def api_admin_process_wallet_transaction(transaction_id):
         return jsonify({'success': False, 'message': str(e)}), 500
     finally:
         conn.close()
+
+# Routes OAuth2
+
+@app.route('/auth/login/google')
+def google_login():
+    # Redirect to Google signin
+    redirect_uri = url_for('google_authorize', _external=True)
+    return google.authorize_redirect(redirect_uri)
+
+@app.route('/auth/google/callback')
+def google_authorize():
+    try:
+        # Receive token from Google
+        token = google.authorize_access_token()
+        user_info = token['userinfo']  # Include email, name, picture
+        
+        email = user_info['email']
+        name = user_info.get('name', 'Google User')
+        
+        # Check user in database
+        conn = db_manager.get_connection()
+        c = conn.cursor()
+        c.execute("SELECT id, role FROM users WHERE email = ?", (email,))
+        user_row = c.fetchone()
+        
+        user_id = None
+        role = 'user'
+        
+        if user_row:
+            # User already exists -> Get ID
+            user_id = user_row[0]
+            role = user_row[1]
+        else:
+            # User does not exist -> Automatically register new
+            # Random password because Google login
+            random_password = secrets.token_hex(16)
+            from werkzeug.security import generate_password_hash
+            hashed_pw = generate_password_hash(random_password)
+            
+            # Separate full name (if any)
+            names = name.split(' ')
+            first_name = names[0]
+            last_name = ' '.join(names[1:]) if len(names) > 1 else ''
+            
+            c.execute('''INSERT INTO users (email, password, name, first_name, last_name, role, avatar) 
+                        VALUES (?, ?, ?, ?, ?, ?, ?)''',
+                     (email, hashed_pw, name, first_name, last_name, 'user', user_info.get('picture')))
+            user_id = c.lastrowid
+            conn.commit()
+            print(f"Đã tạo user mới từ Google: {email}")
+
+        conn.close()
+        
+        # Login to Flask-Login
+        # Need to get full information to create User object
+        user_data = auth_manager.get_user_by_id(user_id)
+        user_obj = User(
+            user_data['id'], 
+            user_data['email'], 
+            user_data['first_name'], 
+            user_data['last_name'],
+            user_data.get('role', 'user')
+        )
+        
+        login_user(user_obj, remember=True)
+        session.permanent = True
+        flash('Đăng nhập Google thành công!', 'success')
+        
+        # Redirect
+        if role == 'admin':
+            return redirect(url_for('admin_workspace'))
+        return redirect(url_for('workspace'))
+
+    except Exception as e:
+        print(f"Lỗi OAuth: {e}")
+        flash('Lỗi kết nối với Google. Vui lòng thử lại.', 'error')
+        return redirect(url_for('auth.signin'))
 
 if __name__ == '__main__':
     db_manager.init_database()

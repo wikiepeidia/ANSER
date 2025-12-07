@@ -129,7 +129,7 @@ function openTopupModal() {
 }
 
 async function submitTopup() {
-    const amount = parseFloat(document.getElementById('topupAmount').value || '0');
+    const amount = parseInt(document.getElementById('topupAmount').value || '0');
     const method = document.getElementById('topupMethod').value;
     const reference = document.getElementById('topupReference').value.trim();
 
