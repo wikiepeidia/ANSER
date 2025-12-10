@@ -1,0 +1,48 @@
+[MASTER]
+# Paths to ignore when running pylint
+ignore=
+    backup,
+    data,
+    saved_models,
+    uploads,
+    models,
+    static,
+    ui/dist,
+    tests,
+    test,
+    DOCUMENTS
+
+# Python code to analyze
+init-hook='import sys; sys.path.append(".")'
+
+[MESSAGES CONTROL]
+# Disable noisy rules that are not useful for this project by default
+disable=
+    C0114,  # missing-module-docstring
+    C0115,  # missing-class-docstring
+    C0116,  # missing-function-docstring
+    R0201,  # method could be a function (too noisy for small classes)
+    C0103,  # invalid-name (allows shorter variable names like id, db)
+    R0913,  # too-many-arguments (common in CLI/handler functions)
+    R0903,  # too-few-public-methods (common for small data classes)
+    W0511,  # fixme
+
+[REPORTS]
+# Turn off the score to avoid failing on minor style issues
+score=no
+
+[BASIC]
+# Allow short names for common patterns
+good-names=i,j,k,ex,Run,_,id,db,pk
+
+[FORMAT]
+# A more forgiving line-length for readability (120)
+max-line-length=120
+
+[LOGGING]
+# logger name style - keep flexible for imported libs
+logging-modules=logging
+
+[TYPECHECK]
+# optional: ignore missing imports from third-party libs not installed in the CI
+ignore-missing-imports=yes
