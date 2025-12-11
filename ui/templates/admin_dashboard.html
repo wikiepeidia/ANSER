@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Admin Dashboard - Fun Work Hub{% endblock %}
+{% block title %}Admin Dashboard - {{ project_name }}{% endblock %}
 
 {% block styles %}
 {{ super() }}
@@ -21,7 +21,7 @@
             <div class="dashboard-header">
                 <div class="header-title">
                     <h1><i class="fas fa-crown"></i> Admin Dashboard</h1>
-                    <p>Chào mừng đến với bảng điều khiển quản trị hệ thống</p>
+                    <p>Welcome to the admin dashboard</p>
                 </div>
             </div>
 
@@ -31,7 +31,7 @@
                         <div class="stat-icon"><i class="fas fa-users"></i></div>
                         <div class="stat-content">
                             <div class="stat-number" id="totalUsers">0</div>
-                            <div class="stat-label">Tổng người dùng</div>
+                            <div class="stat-label">Total users</div>
                         </div>
                     </div>
                 </div>
@@ -49,7 +49,7 @@
                         <div class="stat-icon"><i class="fas fa-box"></i></div>
                         <div class="stat-content">
                             <div class="stat-number" id="totalProducts">0</div>
-                            <div class="stat-label">Sản phẩm</div>
+                            <div class="stat-label">Products</div>
                         </div>
                     </div>
                 </div>
@@ -82,7 +82,7 @@
                     <a class="action-card action-roles" href="{{ url_for('admin_roles') }}">
                         <div class="action-icon"><i class="fas fa-user-shield"></i></div>
                         <div class="action-content">
-                            <h4>Quản lý Vai trò</h4>
+                            <h4>Manage Roles</h4>
                             <p>Nâng cấp/Hạ cấp tài khoản User ↔ Manager</p>
                         </div>
                         <div class="action-arrow"><i class="fas fa-arrow-right"></i></div>
@@ -92,8 +92,8 @@
                     <a class="action-card action-managers" href="{{ url_for('admin_managers') }}">
                         <div class="action-icon"><i class="fas fa-user-tie"></i></div>
                         <div class="action-content">
-                            <h4>Quản lý Manager</h4>
-                            <p>Tạo và quản lý tài khoản Manager</p>
+                            <h4>Manage Managers</h4>
+                            <p>Create and manage Manager accounts</p>
                         </div>
                         <div class="action-arrow"><i class="fas fa-arrow-right"></i></div>
                     </a>
@@ -102,7 +102,7 @@
 
             <div class="row mb-4">
                 <div class="col-12">
-                    <h3 class="section-title"><i class="fas fa-history"></i> Hoạt động gần đây</h3>
+                    <h3 class="section-title"><i class="fas fa-history"></i> Recent Activity</h3>
                 </div>
                 <div class="col-12">
                     <div class="activity-card">
@@ -138,11 +138,11 @@
                         <h4><i class="fas fa-shield-alt"></i> Bảo mật</h4>
                         <div class="info-item">
                             <span class="info-label">Xác thực:</span>
-                            <span class="info-value"><i class="fas fa-check-circle text-success"></i> Đã bật</span>
+                            <span class="info-value"><i class="fas fa-check-circle text-success"></i> Enabled</span>
                         </div>
                         <div class="info-item">
                             <span class="info-label">HTTPS:</span>
-                            <span class="info-value"><i class="fas fa-times-circle text-warning"></i> Chưa bật</span>
+                            <span class="info-value"><i class="fas fa-times-circle text-warning"></i> Disabled</span>
                         </div>
                         <div class="info-item">
                             <span class="info-label">Sao lưu tự động:</span>

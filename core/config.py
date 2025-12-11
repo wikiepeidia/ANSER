@@ -1,7 +1,15 @@
+import os
+
 # Core Configuration
 class Config:
-    SECRET_KEY = "fun-work-hub-secret-key-2025"
-    DATABASE_PATH = "fun_work_hub.db"
+    # Project/branding configuration
+    PROJECT_NAME = "Group Project AI-ML"
+
+    # Default secret key (override with environment variable in production)
+    SECRET_KEY = os.environ.get('SECRET_KEY', "change_me_random_key")
+
+    # Default database filename
+    DATABASE_PATH = os.environ.get('DATABASE_PATH', 'group_project_ai_ml.db')
     
     # UI Themes
     THEMES = {

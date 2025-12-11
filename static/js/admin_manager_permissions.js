@@ -65,7 +65,7 @@ function renderUsersTable(data = []) {
                     `
                               )
                               .join('')
-                        : '<span class="no-permission">Chưa có quyền</span>'
+                        : '<span class="no-permission">No permission</span>'
                 }
             </td>
             <td>

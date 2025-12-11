@@ -144,7 +144,7 @@
                     <div class="tree-icon workspace-type-project">
                         <i class="fas fa-project-diagram"></i>
                     </div>
-                    <div class="tree-label">Fun Work Hub</div>
+                    <div class="tree-label">{{ project_name }}</div>
                     <div class="tree-badge">15</div>
                 </div>
             </div>
@@ -183,13 +183,13 @@
         <!-- Editor Area -->
         <div class="editor-area">
             <div class="welcome-screen">
-                <div class="welcome-logo" aria-label="Fun Work Hub emblem">
+                <div class="welcome-logo" aria-label="{{ project_name }} emblem">
                     <i class="fas fa-rocket" aria-hidden="true"></i>
                 </div>
-                <h1 class="welcome-title">Chào mừng đến Fun Work Hub</h1>
+                <h1 class="welcome-title">Welcome to {{ project_name }}</h1>
                 <p class="welcome-subtitle">
-                    Workspace thông minh giúp bạn tổ chức công việc hiệu quả với hệ thống phân lớp và kênh liên kết mạnh
-                    mẽ
+                    An intelligent workspace to help you organize work efficiently with a layered structure and powerful
+                    connected channels.
                 </p>
 
                 <div class="welcome-actions">
@@ -197,9 +197,9 @@
                         <div class="action-icon">
                             <i class="fas fa-plus"></i>
                         </div>
-                        <div class="action-title">Tạo Todo mới</div>
+                        <div class="action-title">Create new Todo</div>
                         <div class="action-description">
-                            Thêm nhiệm vụ và theo dõi tiến độ công việc
+                            Add a task and track progress
                         </div>
                     </a>
 
@@ -207,9 +207,9 @@
                         <div class="action-icon">
                             <i class="fas fa-edit"></i>
                         </div>
-                        <div class="action-title">Tạo Note mới</div>
+                        <div class="action-title">Create new Note</div>
                         <div class="action-description">
-                            Ghi chú ý tưởng và lưu trữ thông tin
+                            Jot down ideas and save information
                         </div>
                     </a>
 
@@ -217,9 +217,9 @@
                         <div class="action-icon">
                             <i class="fas fa-layer-group"></i>
                         </div>
-                        <div class="action-title">Tạo Workspace</div>
+                        <div class="action-title">Create Workspace</div>
                         <div class="action-description">
-                            Khởi tạo không gian làm việc mới
+                            Initialize a new workspace
                         </div>
                     </a>
 
@@ -227,9 +227,9 @@
                         <div class="action-icon">
                             <i class="fas fa-theater-masks"></i>
                         </div>
-                        <div class="action-title">Quản lý Scenarios</div>
+                        <div class="action-title">Manage Scenarios</div>
                         <div class="action-description">
-                            Tạo và điều phối các kịch bản làm việc
+                            Create and orchestrate workflow scenarios
                         </div>
                     </a>
 
@@ -240,7 +240,7 @@
                         </div>
                         <div class="action-title">Paid Scenario (Manager/Admin)</div>
                         <div class="action-description">
-                            Đây là phần trả phí · Nhấn để chuyển sang trang đóng tiền trước khi cấp quyền
+                            This is a paid section · Click to go to the payment page before granting access
                         </div>
                     </a>
                 </div>

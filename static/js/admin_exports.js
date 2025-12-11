@@ -21,7 +21,7 @@ function renderExportsTable() {
     const tbody = document.getElementById('exportsTableBody');
 
     if (exportsData.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" class="text-center">Chưa có phiếu xuất nào</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center">No export orders found</td></tr>';
         return;
     }
 
@@ -29,9 +29,9 @@ function renderExportsTable() {
         <tr>
             <td><strong>${exp.code}</strong></td>
             <td>${exp.customer_name || 'Khách lẻ'}</td>
-            <td class="text-end"><strong>${Number(exp.total_amount).toLocaleString('vi-VN')}đ</strong></td>
+            <td class="text-end"><strong>${Number(exp.total_amount).toLocaleString('en-US')} VND</strong></td>
             <td><span class="badge bg-${exp.status === 'completed' ? 'success' : 'warning'}">${exp.status === 'completed' ? 'Hoàn thành' : 'Đang xử lý'}</span></td>
-            <td>${new Date(exp.created_at).toLocaleDateString('vi-VN')}</td>
+            <td>${new Date(exp.created_at).toLocaleDateString('en-US')}</td>
             <td>${exp.notes || '-'}</td>
             <td>
                 <button class="btn btn-sm btn-info" onclick="alert('Xem chi tiết: ' + '${exp.code}')">
@@ -48,7 +48,7 @@ function updateStats() {
     document.getElementById('completedExports').textContent = completed;
 
     const total = exportsData.reduce((sum, e) => sum + Number(e.total_amount), 0);
-    document.getElementById('totalRevenue').textContent = total.toLocaleString('vi-VN') + 'đ';
+    document.getElementById('totalRevenue').textContent = total.toLocaleString('en-US') + ' VND';
 }
 
 function showAlert(type, message) {

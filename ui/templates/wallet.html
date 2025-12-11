@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Ví & Gói Manager{% endblock %}
+{% block title %}Wallet & Manager Plans - {{ project_name }}{% endblock %}
 
 {% block styles %}
 {{ super() }}
@@ -15,12 +15,12 @@
             <div
                 class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom wallet-header">
                 <div>
-                    <h1 class="h2"><i class="fas fa-wallet"></i> Ví của tôi</h1>
-                    <p class="text-muted mb-0">Nạp tiền, nâng cấp lên Manager và theo dõi lịch sử giao dịch</p>
+                    <h1 class="h2"><i class="fas fa-wallet"></i> My Wallet</h1>
+                    <p class="text-muted mb-0">Top-up, upgrade to Manager and track transaction history</p>
                 </div>
                 <div class="btn-group wallet-actions">
-                    <button class="btn btn-primary" onclick="openTopupModal()"><i class="fas fa-plus"></i> Nạp
-                        tiền</button>
+                    <button class="btn btn-primary" onclick="openTopupModal()"><i class="fas fa-plus"></i> Top
+                        up</button>
                     <button class="btn btn-outline-secondary" onclick="loadWalletDashboard()"><i
                             class="fas fa-sync"></i></button>
                 </div>
@@ -29,18 +29,18 @@
             <div class="row g-3" id="walletMetrics">
                 <div class="col-lg-4">
                     <div class="wallet-card">
-                        <div class="wallet-card-label">Số dư khả dụng</div>
-                        <div class="wallet-card-value" id="walletBalance">0đ</div>
+                        <div class="wallet-card-label">Available balance</div>
+                        <div class="wallet-card-value" id="walletBalance">0 VND</div>
                         <div class="wallet-card-foot">
-                            <span id="walletUpdatedAt">Đang tải...</span>
+                            <span id="walletUpdatedAt">Loading...</span>
                         </div>
                     </div>
                 </div>
                 {% if user.role != 'admin' %}
                 <div class="col-lg-4">
                     <div class="wallet-card">
-                        <div class="wallet-card-label">Gói Manager</div>
-                        <div class="wallet-card-value" id="subscriptionStatus">Chưa đăng ký</div>
+                        <div class="wallet-card-label">Manager Plan</div>
+                        <div class="wallet-card-value" id="subscriptionStatus">Not subscribed</div>
                         <div class="wallet-card-foot">
                             <span id="subscriptionExpiry">-</span>
                         </div>
@@ -48,13 +48,14 @@
                 </div>
                 <div class="col-lg-4">
                     <div class="wallet-card">
-                        <div class="wallet-card-label">Tự động gia hạn</div>
-                        <div class="wallet-card-value" id="autoRenewStatus">Tắt</div>
+                        <div class="wallet-card-label">Auto renew</div>
+                        <div class="wallet-card-value" id="autoRenewStatus">Off</div>
                         <div class="wallet-card-foot">
                             <div class="form-check form-switch">
                                 <input class="form-check-input" type="checkbox" id="autoRenewToggle"
                                     onchange="toggleAutoRenew(this.checked)" disabled>
-                                <label class="form-check-label" for="autoRenewToggle">Gia hạn khi đủ số dư</label>
+                                <label class="form-check-label" for="autoRenewToggle">Auto-renew if sufficient
+                                    balance</label>
                             </div>
                         </div>
                     </div>
@@ -62,20 +63,20 @@
                 {% else %}
                 <div class="col-lg-4">
                     <div class="wallet-card" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
-                        <div class="wallet-card-label" style="color: rgba(255,255,255,0.9);">Tổng doanh thu</div>
-                        <div class="wallet-card-value" style="color: white;" id="totalRevenue">0đ</div>
+                        <div class="wallet-card-label" style="color: rgba(255,255,255,0.9);">Total revenue</div>
+                        <div class="wallet-card-value" style="color: white;" id="totalRevenue">0 VND</div>
                         <div class="wallet-card-foot" style="color: rgba(255,255,255,0.8);">
-                            <span>Từ các gói Manager</span>
+                            <span>From Manager plans</span>
                         </div>
                     </div>
                 </div>
                 <div class="col-lg-4">
                     <div class="wallet-card" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);">
-                        <div class="wallet-card-label" style="color: rgba(255,255,255,0.9);">Số Manager đang hoạt động
+                        <div class="wallet-card-label" style="color: rgba(255,255,255,0.9);">Active Managers
                         </div>
                         <div class="wallet-card-value" style="color: white;" id="activeManagers">0</div>
                         <div class="wallet-card-foot" style="color: rgba(255,255,255,0.8);">
-                            <span>Tài khoản VIP</span>
+                            <span>VIP Accounts</span>
                         </div>
                     </div>
                 </div>
@@ -88,8 +89,8 @@
                     <div class="card h-100">
                         <div class="card-body">
                             <div class="d-flex justify-content-between align-items-center mb-3">
-                                <h5 class="card-title mb-0"><i class="fas fa-star"></i> Chọn gói nâng cấp</h5>
-                                <small class="text-muted">Thanh toán bằng số dư ví</small>
+                                <h5 class="card-title mb-0"><i class="fas fa-star"></i> Choose upgrade plan</h5>
+                                <small class="text-muted">Pay using wallet balance</small>
                             </div>
                             <div class="plan-grid" id="planGrid"></div>
                         </div>
@@ -100,17 +101,18 @@
                     <div class="card h-100">
                         <div class="card-body">
                             <div class="d-flex justify-content-between align-items-center mb-3">
-                                <h5 class="card-title mb-0"><i class="fas fa-university"></i> Rút tiền về ngân hàng</h5>
-                                <small class="text-muted">Chuyển số dư về tài khoản ngân hàng</small>
+                                <h5 class="card-title mb-0"><i class="fas fa-university"></i> Withdraw to bank account
+                                </h5>
+                                <small class="text-muted">Transfer balance to bank account</small>
                             </div>
                             <div class="p-4 text-center">
                                 <div class="mb-4">
                                     <i class="fas fa-money-bill-wave" style="font-size: 3rem; color: #10b981;"></i>
-                                    <h4 class="mt-3">Rút tiền doanh thu</h4>
-                                    <p class="text-muted">Chuyển số dư từ ví về tài khoản ngân hàng của bạn</p>
+                                    <h4 class="mt-3">Withdraw revenue</h4>
+                                    <p class="text-muted">Transfer balance from wallet to your bank account</p>
                                 </div>
                                 <button class="btn btn-lg btn-success" onclick="openWithdrawModal()">
-                                    <i class="fas fa-hand-holding-usd"></i> Rút tiền ngay
+                                    <i class="fas fa-hand-holding-usd"></i> Withdraw now
                                 </button>
                             </div>
                         </div>
@@ -121,28 +123,28 @@
                     <div class="card h-100">
                         <div class="card-body">
                             <div class="d-flex justify-content-between align-items-center mb-3">
-                                <h5 class="card-title mb-0"><i class="fas fa-history"></i> Lịch sử gần đây</h5>
-                                <span class="badge bg-light text-dark" id="txnCount">0 giao dịch</span>
+                                <h5 class="card-title mb-0"><i class="fas fa-history"></i> Recent history</h5>
+                                <span class="badge bg-light text-dark" id="txnCount">0 transactions</span>
                             </div>
                             <div class="table-responsive" style="max-height: 320px;">
                                 <table class="table table-sm table-hover align-middle">
                                     <thead>
                                         <tr>
-                                            <th>Mã</th>
-                                            <th>Số tiền</th>
-                                            <th>Loại</th>
-                                            <th>Trạng thái</th>
+                                            <th>Ref</th>
+                                            <th>Amount</th>
+                                            <th>Type</th>
+                                            <th>Status</th>
                                         </tr>
                                     </thead>
                                     <tbody id="txnTableBody">
                                         <tr>
-                                            <td colspan="4" class="text-center text-muted">Đang tải...</td>
+                                            <td colspan="4" class="text-center text-muted">Loading...</td>
                                         </tr>
                                     </tbody>
                                 </table>
                             </div>
-                            <p class="small text-muted mt-2">Mọi giao dịch cần admin duyệt sẽ hiển thị trạng thái
-                                <strong>Đang chờ</strong>.
+                            <p class="small text-muted mt-2">All transactions requiring admin approval will be marked
+                                <strong>Pending</strong>.
                             </p>
                         </div>
                     </div>
@@ -157,37 +159,38 @@
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Nạp tiền vào ví</h5>
+                <h5 class="modal-title">Top up Wallet</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <div class="mb-3">
-                    <label class="form-label">Số tiền <span class="text-danger">*</span></label>
+                    <label class="form-label">Amount <span class="text-danger">*</span></label>
                     <div class="input-group">
-                        <span class="input-group-text">đ</span>
+                        <span class="input-group-text">VND</span>
                         <input type="number" class="form-control" id="topupAmount" min="50000" step="50000"
                             value="500000">
                     </div>
-                    <small class="text-muted">Tối thiểu 50.000đ. Sau khi nạp, admin sẽ xác nhận và cộng vào ví.</small>
+                    <small class="text-muted">Minimum 50,000 VND. After top-up, an admin will confirm and credit the
+                        wallet.</small>
                 </div>
                 <div class="mb-3">
-                    <label class="form-label">Phương thức thanh toán</label>
+                    <label class="form-label">Payment Method</label>
                     <select class="form-select" id="topupMethod">
-                        <option value="bank_transfer">Chuyển khoản ngân hàng</option>
+                        <option value="bank_transfer">Bank transfer</option>
                         <option value="momo">MoMo</option>
                         <option value="vnpay">VNPay</option>
-                        <option value="cash">Tiền mặt</option>
+                        <option value="cash">Cash</option>
                     </select>
                 </div>
                 <div class="mb-3">
-                    <label class="form-label">Mã tham chiếu / ghi chú</label>
+                    <label class="form-label">Reference / note</label>
                     <input type="text" class="form-control" id="topupReference" placeholder="VD: MOMO-123456">
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                 <button type="button" class="btn btn-primary" onclick="submitTopup()"><i class="fas fa-paper-plane"></i>
-                    Gửi yêu cầu</button>
+                    Submit request</button>
             </div>
         </div>
     </div>
@@ -200,44 +203,45 @@
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header bg-success text-white">
-                <h5 class="modal-title"><i class="fas fa-university"></i> Rút tiền về ngân hàng</h5>
+                <h5 class="modal-title"><i class="fas fa-university"></i> Withdraw to bank account</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <div class="alert alert-info">
-                    <i class="fas fa-info-circle"></i> Số dư khả dụng: <strong id="withdrawAvailableBalance">0đ</strong>
+                    <i class="fas fa-info-circle"></i> Available balance: <strong id="withdrawAvailableBalance">0
+                        VND</strong>
                 </div>
                 <div class="mb-3">
-                    <label class="form-label">Số tiền muốn rút <span class="text-danger">*</span></label>
+                    <label class="form-label">Amount to withdraw <span class="text-danger">*</span></label>
                     <div class="input-group">
-                        <span class="input-group-text">đ</span>
+                        <span class="input-group-text">VND</span>
                         <input type="number" class="form-control" id="withdrawAmount" min="100000" step="50000"
-                            placeholder="Nhập số tiền">
+                            placeholder="Enter amount">
                     </div>
-                    <small class="text-muted">Tối thiểu 100.000đ</small>
+                    <small class="text-muted">Minimum 100,000 VND</small>
                 </div>
                 <div class="mb-3">
-                    <label class="form-label">Tên ngân hàng <span class="text-danger">*</span></label>
+                    <label class="form-label">Bank name <span class="text-danger">*</span></label>
                     <input type="text" class="form-control" id="withdrawBankName" placeholder="VD: Vietcombank">
                 </div>
                 <div class="mb-3">
-                    <label class="form-label">Số tài khoản <span class="text-danger">*</span></label>
+                    <label class="form-label">Account number <span class="text-danger">*</span></label>
                     <input type="text" class="form-control" id="withdrawAccountNumber" placeholder="VD: 0123456789">
                 </div>
                 <div class="mb-3">
-                    <label class="form-label">Tên chủ tài khoản <span class="text-danger">*</span></label>
+                    <label class="form-label">Account holder name <span class="text-danger">*</span></label>
                     <input type="text" class="form-control" id="withdrawAccountName" placeholder="VD: NGUYEN VAN A">
                 </div>
                 <div class="mb-3">
-                    <label class="form-label">Ghi chú</label>
+                    <label class="form-label">Note</label>
                     <textarea class="form-control" id="withdrawNote" rows="2"
-                        placeholder="Ghi chú thêm (nếu có)"></textarea>
+                        placeholder="Optional note (if any)"></textarea>
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                 <button type="button" class="btn btn-success" onclick="submitWithdraw()">
-                    <i class="fas fa-check"></i> Xác nhận rút tiền
+                    <i class="fas fa-check"></i> Confirm withdraw
                 </button>
             </div>
         </div>

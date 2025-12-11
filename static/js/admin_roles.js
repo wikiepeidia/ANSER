@@ -12,7 +12,7 @@ async function loadUsers() {
         updateStatistics();
         renderUsersTable();
     } catch (error) {
-        showAlert('error', 'Lỗi tải danh sách: ' + error.message);
+        showAlert('error', 'Failed to load users: ' + error.message);
     }
 }
 
@@ -46,7 +46,7 @@ function renderUsersTable() {
     }
 
     if (filteredUsers.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" class="text-center">Không có tài khoản nào</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center">No accounts found</td></tr>';
         return;
     }
 
@@ -61,17 +61,17 @@ function renderUsersTable() {
             if (user.role === 'user') {
                 actionButtons = `
                 <button class="btn btn-action btn-success btn-sm" onclick="promoteToManager(${user.id}, '${user.email}')">
-                    <i class="fas fa-arrow-up"></i> Nâng lên Manager
+                    <i class="fas fa-arrow-up"></i> Promote to Manager
                 </button>
             `;
             } else if (user.role === 'manager') {
                 actionButtons = `
                 <button class="btn btn-action btn-warning btn-sm" onclick="demoteToUser(${user.id}, '${user.email}')">
-                    <i class="fas fa-arrow-down"></i> Hạ xuống User
+                    <i class="fas fa-arrow-down"></i> Demote to User
                 </button>
             `;
             } else {
-                actionButtons = '<span class="text-muted"><i class="fas fa-lock"></i> Không thể thay đổi</span>';
+                actionButtons = '<span class="text-muted"><i class="fas fa-lock"></i> Cannot change</span>';
             }
 
             return `
@@ -80,7 +80,7 @@ function renderUsersTable() {
                 <td>${user.name}</td>
                 <td>${user.email}</td>
                 <td><span class="badge ${badgeClass}">${roleText}</span></td>
-                <td>${new Date(user.created_at).toLocaleDateString('vi-VN')}</td>
+                <td>${new Date(user.created_at).toLocaleDateString('en-US')}</td>
                 <td>${actionButtons}</td>
             </tr>
         `;
@@ -89,7 +89,7 @@ function renderUsersTable() {
 }
 
 async function promoteToManager(userId, email) {
-    if (!confirm(`Bạn chắc chắn muốn nâng cấp "${email}" lên Manager?\n\nManager sẽ có quyền cấp phát quyền cho User khác.`)) {
+    if (!confirm(`Are you sure you want to promote "${email}" to Manager?\n\nManagers will be able to grant permissions to other users.`)) {
         return;
     }
 
@@ -103,10 +103,10 @@ async function promoteToManager(userId, email) {
         const data = await response.json();
 
         if (data.success) {
-            showAlert('success', `✅ Đã nâng cấp "${email}" lên Manager thành công!`);
+            showAlert('success', `✅ Promoted "${email}" to Manager successfully!`);
             loadUsers();
         } else {
-            showAlert('error', data.message || 'Lỗi nâng cấp');
+            showAlert('error', data.message || 'Upgrade failed');
         }
     } catch (error) {
         showAlert('error', 'Lỗi: ' + error.message);
@@ -114,7 +114,7 @@ async function promoteToManager(userId, email) {
 }
 
 async function demoteToUser(userId, email) {
-    if (!confirm(`Bạn chắc chắn muốn hạ cấp "${email}" xuống User?\n\nManager sẽ mất quyền cấp phát quyền cho User khác.`)) {
+    if (!confirm(`Are you sure you want to demote "${email}" to User?\n\nManagers will lose permission to grant permissions to other users.`)) {
         return;
     }
 
@@ -128,13 +128,13 @@ async function demoteToUser(userId, email) {
         const data = await response.json();
 
         if (data.success) {
-            showAlert('success', `✅ Đã hạ cấp "${email}" xuống User thành công!`);
+            showAlert('success', `✅ Demoted "${email}" to User successfully!`);
             loadUsers();
         } else {
-            showAlert('error', data.message || 'Lỗi hạ cấp');
+            showAlert('error', data.message || 'Demotion failed');
         }
     } catch (error) {
-        showAlert('error', 'Lỗi: ' + error.message);
+        showAlert('error', 'Error: ' + error.message);
     }
 }
 

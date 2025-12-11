@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Sign Up - Fun Work Hub{% endblock %}
+{% block title %}Sign Up - {{ project_name }}{% endblock %}
 
 {% block body_class %}auth-page{% endblock %}
 
@@ -20,15 +20,15 @@
         <div class="brand-logo">
             <i class="fas fa-rocket"></i>
         </div>
-        <h1 class="brand-title">Tham gia Fun Work Hub</h1>
+        <h1 class="brand-title">Join {{ project_name }}</h1>
         <p class="brand-subtitle">
-            Tạo tài khoản và bắt đầu quản lý công việc của bạn hiệu quả hơn
+            Create an account and start managing your work more effectively
         </p>
         <div class="benefit-list">
             <div class="benefit-item">
                 <div class="benefit-icon"><i class="fas fa-users"></i></div>
                 <div class="benefit-content">
-                    <h4>Quản lý toàn diện</h4>
+                    <h4>Comprehensive Management</h4>
                     <p>Khách hàng, sản phẩm, nhập xuất kho</p>
                 </div>
             </div>
@@ -52,7 +52,7 @@
     <div class="auth-right">
         <div class="auth-header">
             <h2 class="auth-title">Tạo tài khoản mới</h2>
-            <p class="auth-subtitle">Bắt đầu hành trình quản lý thông minh</p>
+            <p class="auth-subtitle">Start your smart management journey</p>
         </div>
 
         {% with messages = get_flashed_messages(with_categories=true) %}
@@ -69,13 +69,13 @@
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <div class="form-row">
                 <div class="form-group">
-                    <label for="first_name" class="form-label">Họ</label>
+                    <label for="first_name" class="form-label">First Name</label>
                     <input type="text" id="first_name" name="first_name" class="form-input" placeholder="Nguyễn Văn"
                         required>
                 </div>
 
                 <div class="form-group">
-                    <label for="last_name" class="form-label">Tên</label>
+                    <label for="last_name" class="form-label">Last Name</label>
                     <input type="text" id="last_name" name="last_name" class="form-input" placeholder="A" required>
                 </div>
             </div>
@@ -86,21 +86,21 @@
             </div>
 
             <div class="form-group full-width">
-                <label for="phone" class="form-label">Số điện thoại (tùy chọn)</label>
+                <label for="phone" class="form-label">Phone (optional)</label>
                 <input type="tel" id="phone" name="phone" class="form-input" placeholder="0123456789">
             </div>
 
             <div class="form-group full-width">
-                <label for="password" class="form-label">Mật khẩu</label>
-                <input type="password" id="password" name="password" class="form-input" placeholder="Ít nhất 6 ký tự"
-                    required minlength="6">
+                <label for="password" class="form-label">Password</label>
+                <input type="password" id="password" name="password" class="form-input"
+                    placeholder="At least 6 characters" required minlength="6">
             </div>
 
-            <button type="submit" class="auth-btn">Tạo tài khoản</button>
+            <button type="submit" class="auth-btn">Create account</button>
         </form>
 
         <div class="divider">
-            <span>hoặc đăng ký với</span>
+            <span>or sign up with</span>
         </div>
 
         <div class="social-login">
@@ -111,7 +111,7 @@
         </div>
 
         <div class="auth-switch">
-            Đã có tài khoản? <a href="{{ url_for('auth.signin') }}">Đăng nhập</a>
+            Already have an account? <a href="{{ url_for('auth.signin') }}">Sign in</a>
         </div>
     </div>
 </div>

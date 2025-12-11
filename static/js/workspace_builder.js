@@ -808,6 +808,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function runWorkflow() {
         showNotification('Executing workflow...', 'info');
+        if (window.ConsoleManager) window.ConsoleManager.log('Starting workflow execution...', 'system');
         
         const nodes = [];
         document.querySelectorAll('.workflow-node').forEach((node) => {
@@ -831,6 +832,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const payload = { nodes, edges };
         console.log("Executing Payload:", payload);
+        if (window.ConsoleManager) window.ConsoleManager.log(`Payload prepared: ${nodes.length} nodes, ${edges.length} edges`, 'debug');
 
         try {
             const response = await fetch('/api/workflow/execute', {
@@ -844,6 +846,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const result = await response.json();
             console.log("Execution Result:", result);
+            if (window.ConsoleManager) window.ConsoleManager.log(`Execution finished. Status: ${result.status}`, result.status === 'completed' ? 'success' : 'error');
+            if (window.ConsoleManager && result.logs) {
+                 result.logs.forEach(log => window.ConsoleManager.log(log, 'info'));
+            }
 
             if (result.status === 'completed') {
                 showNotification('Workflow completed successfully!', 'success');
@@ -1190,4 +1196,191 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initially hide zoom controls until user clicks zoom mode
     hideZoomControls();
     updateDropZoneVisibility();
+
+    // Console Manager Logic
+    const consolePanel = document.getElementById('consolePanel');
+    const consoleContent = document.getElementById('consoleContent');
+    const toggleConsoleBtn = document.getElementById('toggleConsole');
+    const clearConsoleBtn = document.getElementById('clearConsole');
+    const consoleResizer = document.getElementById('consoleResizer');
+    const consoleHeader = document.getElementById('consoleHeader');
+
+    const MINIMIZED_CONSOLE_HEIGHT = 48;
+    let consoleHeight = 320;
+    if (consolePanel && !consolePanel.classList.contains('minimized')) {
+        consoleHeight = consolePanel.getBoundingClientRect().height || consoleHeight;
+    }
+    // Track console position for drag; start bottom-left with an offset
+    let consolePos = { left: 16, top: (window.innerHeight - consoleHeight - 16) };
+    let isResizingConsole = false;
+    let resizeStartY = 0;
+    let resizeStartHeight = 0;
+    let isDraggingConsole = false;
+    let dragStartX = 0;
+    let dragStartY = 0;
+    let dragStartLeft = 0;
+    let dragStartTop = 0;
+
+    const clampConsolePosition = () => {
+        if (!consolePanel) return;
+        const rect = consolePanel.getBoundingClientRect();
+        const maxLeft = Math.max(8, window.innerWidth - rect.width - 8);
+        const maxTop = Math.max(8, window.innerHeight - rect.height - 8);
+        consolePos.left = Math.min(Math.max(8, consolePos.left), maxLeft);
+        consolePos.top = Math.min(Math.max(8, consolePos.top), maxTop);
+    };
+
+    const applyConsolePosition = () => {
+        if (!consolePanel) return;
+        clampConsolePosition();
+        consolePanel.style.left = `${consolePos.left}px`;
+        consolePanel.style.top = `${consolePos.top}px`;
+        consolePanel.style.bottom = 'auto';
+    };
+
+    const ConsoleManager = {
+        log: (message, type = 'info') => {
+            if (!consoleContent) return;
+            const line = document.createElement('div');
+            line.className = `console-line ${type}`;
+            const time = new Date().toLocaleTimeString();
+            // Escape HTML in message to prevent XSS if message comes from user input
+            const safeMessage = typeof message === 'string' ? message.replace(/</g, '&lt;').replace(/>/g, '&gt;') : JSON.stringify(message);
+            line.innerHTML = `<span class="timestamp">[${time}]</span> <span class="message">${safeMessage}</span>`;
+            consoleContent.appendChild(line);
+            consoleContent.scrollTop = consoleContent.scrollHeight;
+            
+            // Auto-open on error or start
+            if (type === 'error' || (typeof message === 'string' && message.includes('Executing workflow'))) {
+                if (consolePanel) {
+                    consolePanel.classList.remove('minimized');
+                    consolePanel.style.height = `${consoleHeight}px`;
+                    applyConsolePosition();
+                }
+                if (toggleConsoleBtn) toggleConsoleBtn.innerHTML = '<i class="fas fa-chevron-down"></i>';
+            }
+        },
+        clear: () => {
+            if (consoleContent) consoleContent.innerHTML = '<div class="console-line system">Console cleared.</div>';
+        },
+        toggle: () => {
+            if (consolePanel) {
+                const isMin = consolePanel.classList.contains('minimized');
+                if (isMin) {
+                    consolePanel.classList.remove('minimized');
+                    consolePanel.style.height = `${consoleHeight}px`;
+                    applyConsolePosition();
+                } else {
+                    consoleHeight = consolePanel.getBoundingClientRect().height || consoleHeight;
+                    consolePanel.style.height = `${MINIMIZED_CONSOLE_HEIGHT}px`;
+                    consolePanel.classList.add('minimized');
+                }
+                if (toggleConsoleBtn) toggleConsoleBtn.innerHTML = consolePanel.classList.contains('minimized') ? '<i class="fas fa-chevron-up"></i>' : '<i class="fas fa-chevron-down"></i>';
+            }
+        }
+    };
+
+    if (toggleConsoleBtn) toggleConsoleBtn.addEventListener('click', ConsoleManager.toggle);
+    if (clearConsoleBtn) clearConsoleBtn.addEventListener('click', ConsoleManager.clear);
+    if (consoleResizer && consolePanel) {
+        const handleConsoleResize = (event) => {
+            if (!isResizingConsole) return;
+            event.preventDefault();
+            const clientY = event.clientY ?? event.touches?.[0]?.clientY;
+            const delta = resizeStartY - clientY;
+            const maxHeight = Math.min(window.innerHeight * 0.8, window.innerHeight - 80);
+            let nextHeight = resizeStartHeight + delta;
+            nextHeight = Math.max(160, Math.min(maxHeight, nextHeight));
+            consoleHeight = nextHeight;
+            consolePanel.style.height = `${nextHeight}px`;
+            clampConsolePosition();
+        };
+
+        const stopConsoleResize = (event) => {
+            if (!isResizingConsole) return;
+            isResizingConsole = false;
+            consoleHeight = consolePanel.getBoundingClientRect().height || consoleHeight;
+            clampConsolePosition();
+            applyConsolePosition();
+            document.removeEventListener('pointermove', handleConsoleResize);
+            document.removeEventListener('pointerup', stopConsoleResize);
+            document.removeEventListener('pointercancel', stopConsoleResize);
+            if (event?.pointerId !== undefined) {
+                try { consoleResizer.releasePointerCapture(event.pointerId); } catch (err) {}
+            }
+        };
+
+        consoleResizer.addEventListener('pointerdown', (event) => {
+            if (consolePanel.classList.contains('minimized')) {
+                consolePanel.classList.remove('minimized');
+                consolePanel.style.height = `${consoleHeight}px`;
+                if (toggleConsoleBtn) toggleConsoleBtn.innerHTML = '<i class="fas fa-chevron-down"></i>';
+            }
+            event.preventDefault();
+            isResizingConsole = true;
+            resizeStartY = event.clientY;
+            resizeStartHeight = consolePanel.getBoundingClientRect().height;
+            if (event.pointerId !== undefined) {
+                try { consoleResizer.setPointerCapture(event.pointerId); } catch (err) {}
+            }
+            document.addEventListener('pointermove', handleConsoleResize);
+            document.addEventListener('pointerup', stopConsoleResize);
+            document.addEventListener('pointercancel', stopConsoleResize);
+        });
+    }
+
+    // Dragging the console via header
+    if (consoleHeader && consolePanel) {
+        const stopConsoleDrag = (event) => {
+            if (!isDraggingConsole) return;
+            isDraggingConsole = false;
+            document.removeEventListener('pointermove', handleConsoleDrag);
+            document.removeEventListener('pointerup', stopConsoleDrag);
+            document.removeEventListener('pointercancel', stopConsoleDrag);
+            if (event?.pointerId !== undefined) {
+                try { consoleHeader.releasePointerCapture(event.pointerId); } catch (err) {}
+            }
+        };
+
+        const handleConsoleDrag = (event) => {
+            if (!isDraggingConsole) return;
+            event.preventDefault();
+            const clientX = event.clientX ?? event.touches?.[0]?.clientX;
+            const clientY = event.clientY ?? event.touches?.[0]?.clientY;
+            const deltaX = clientX - dragStartX;
+            const deltaY = clientY - dragStartY;
+            consolePos.left = dragStartLeft + deltaX;
+            consolePos.top = dragStartTop + deltaY;
+            applyConsolePosition();
+        };
+
+        consoleHeader.addEventListener('pointerdown', (event) => {
+            // Skip drag when clicking action buttons
+            if (event.target.closest('.console-action-btn')) return;
+            event.preventDefault();
+            if (consolePanel.classList.contains('minimized')) {
+                consolePanel.classList.remove('minimized');
+                consolePanel.style.height = `${consoleHeight}px`;
+                if (toggleConsoleBtn) toggleConsoleBtn.innerHTML = '<i class="fas fa-chevron-down"></i>';
+            }
+            isDraggingConsole = true;
+            dragStartX = event.clientX;
+            dragStartY = event.clientY;
+            const rect = consolePanel.getBoundingClientRect();
+            dragStartLeft = rect.left;
+            dragStartTop = rect.top;
+            if (event.pointerId !== undefined) {
+                try { consoleHeader.setPointerCapture(event.pointerId); } catch (err) {}
+            }
+            document.addEventListener('pointermove', handleConsoleDrag);
+            document.addEventListener('pointerup', stopConsoleDrag);
+            document.addEventListener('pointercancel', stopConsoleDrag);
+        });
+    }
+
+    // Apply initial position
+    applyConsolePosition();
+    
+    // Make it available globally for runWorkflow
+    window.ConsoleManager = ConsoleManager;
 });

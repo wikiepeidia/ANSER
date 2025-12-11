@@ -86,7 +86,7 @@
                 if (!UNAUTHENTICATED_PAGES.some(p => currentPath === p || currentPath.startsWith(p))) {
                     try { 
                         if (typeof showNotification === 'function') {
-                            showNotification('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.', 'error'); 
+                            showNotification('Session expired. Please log in again.', 'error'); 
                         }
                     } catch (e) {}
                     
@@ -122,7 +122,7 @@
                 if (resource !== '/api/session') {
                     try {
                         if (typeof showNotification === 'function') {
-                            showNotification('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.', 'error');
+                            showNotification('Session expired. Please log in again.', 'error');
                         }
                     } catch (e) {
                         // ignore

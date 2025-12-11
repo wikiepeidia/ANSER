@@ -10,10 +10,10 @@ async function loadProducts() {
             productsData = data.products;
             renderProductsTable();
         } else {
-            showAlert('error', 'Lỗi tải dữ liệu');
+            showAlert('error', 'Failed to load data');
         }
     } catch (error) {
-        showAlert('error', 'Lỗi: ' + error.message);
+        showAlert('error', 'Error: ' + error.message);
     }
 }
 
@@ -21,7 +21,7 @@ function renderProductsTable() {
     const tbody = document.getElementById('productsTableBody');
 
     if (productsData.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="8" class="text-center">Chưa có sản phẩm nào</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8" class="text-center">No products found</td></tr>';
         syncProductsTableTheme();
         return;
     }
@@ -34,7 +34,7 @@ function renderProductsTable() {
             <td>${product.name}</td>
             <td>${product.category || '-'}</td>
             <td>${product.unit}</td>
-            <td>${Number(product.price).toLocaleString('vi-VN')}đ</td>
+            <td>${Number(product.price).toLocaleString('en-US')} VND</td>
             <td><span class="badge bg-${product.stock_quantity > 0 ? 'success' : 'danger'}">${product.stock_quantity}</span></td>
             <td>${product.description || '-'}</td>
             <td>
@@ -55,13 +55,13 @@ function renderProductsTable() {
 
 function openAddProductModal() {
     editingId = null;
-    document.getElementById('productModalTitle').textContent = 'Thêm Sản phẩm';
+    document.getElementById('productModalTitle').textContent = 'Add Product';
     document.getElementById('productId').value = '';
     document.getElementById('productCode').value = '';
     document.getElementById('productCode').disabled = false;
     document.getElementById('productName').value = '';
     document.getElementById('productCategory').value = '';
-    document.getElementById('productUnit').value = 'cái';
+    document.getElementById('productUnit').value = 'pcs';
     document.getElementById('productPrice').value = '0';
     document.getElementById('productStock').value = '0';
     document.getElementById('productDescription').value = '';
@@ -73,7 +73,7 @@ function editProduct(id) {
     if (!product) return;
 
     editingId = id;
-    document.getElementById('productModalTitle').textContent = 'Sửa Sản phẩm';
+    document.getElementById('productModalTitle').textContent = 'Edit Product';
     document.getElementById('productId').value = product.id;
     document.getElementById('productCode').value = product.code;
     document.getElementById('productCode').disabled = true;
@@ -96,7 +96,7 @@ async function saveProduct() {
     const description = document.getElementById('productDescription').value.trim();
 
     if (!code || !name) {
-        showAlert('error', 'Vui lòng điền đầy đủ thông tin bắt buộc');
+           showAlert('error', 'Please fill in the required fields');
         return;
     }
 
@@ -120,8 +120,8 @@ async function saveProduct() {
 
         const data = await response.json();
 
-        if (data.success) {
-            showAlert('success', editingId ? 'Cập nhật thành công!' : 'Thêm sản phẩm thành công!');
+            if (data.success) {
+                showAlert('success', editingId ? 'Update successful!' : 'Product added successfully!');
             bootstrap.Modal.getInstance(document.getElementById('productModal')).hide();
             loadProducts();
         } else {
@@ -133,7 +133,7 @@ async function saveProduct() {
 }
 
 async function deleteProduct(id, code) {
-    if (!confirm(`Bạn chắc chắn muốn xóa sản phẩm "${code}"?`)) return;
+    if (!confirm(`Are you sure you want to delete product "${code}"?`)) return;
 
     try {
         const response = await fetch(`/api/products/${id}`, {
@@ -143,13 +143,13 @@ async function deleteProduct(id, code) {
         const data = await response.json();
 
         if (data.success) {
-            showAlert('success', 'Xóa thành công!');
+            showAlert('success', 'Deleted successfully!');
             loadProducts();
         } else {
             showAlert('error', data.message);
         }
     } catch (error) {
-        showAlert('error', 'Lỗi: ' + error.message);
+        showAlert('error', 'Error: ' + error.message);
     }
 }
 

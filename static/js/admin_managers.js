@@ -7,7 +7,7 @@ async function loadManagers() {
         managersData = users.filter((u) => u.role === 'manager' || u.role === 'admin');
         renderManagersTable();
     } catch (error) {
-        showAlert('error', 'Lỗi tải danh sách: ' + error.message);
+        showAlert('error', 'Failed to load list: ' + error.message);
     }
 }
 
@@ -15,7 +15,7 @@ function renderManagersTable() {
     const tbody = document.getElementById('managersTableBody');
 
     if (managersData.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" class="text-center">Chưa có Manager nào</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center">No managers found</td></tr>';
         return;
     }
 
@@ -27,16 +27,16 @@ function renderManagersTable() {
             <td>${manager.name}</td>
             <td>${manager.email}</td>
             <td><span class="badge bg-${manager.role === 'admin' ? 'danger' : 'warning'}">${manager.role.toUpperCase()}</span></td>
-            <td>${new Date(manager.created_at).toLocaleDateString('vi-VN')}</td>
+            <td>${new Date(manager.created_at).toLocaleDateString('en-US')}</td>
             <td>
                 ${
                     manager.role !== 'admin'
                         ? `
                     <button class="btn btn-sm btn-danger" onclick="removeManager(${manager.id}, '${manager.email}')">
-                        <i class="fas fa-trash"></i> Xóa
+                        <i class="fas fa-trash"></i> Delete
                     </button>
                 `
-                        : '<span class="text-muted">Admin gốc</span>'
+                        : '<span class="text-muted">Root Admin</span>'
                 }
             </td>
         </tr>
@@ -46,7 +46,7 @@ function renderManagersTable() {
 }
 
 function openAddManagerModal() {
-    document.getElementById('managerModalTitle').textContent = 'Thêm Manager';
+    document.getElementById('managerModalTitle').textContent = 'Add Manager';
     document.getElementById('managerId').value = '';
     document.getElementById('managerEmail').value = '';
     document.getElementById('managerName').value = '';
@@ -61,12 +61,12 @@ async function saveManager() {
     const password = document.getElementById('managerPassword').value;
 
     if (!email || !name) {
-        showAlert('error', 'Vui lòng điền đầy đủ thông tin');
+        showAlert('error', 'Please fill in all required fields');
         return;
     }
 
     if (!password) {
-        showAlert('error', 'Vui lòng nhập mật khẩu');
+        showAlert('error', 'Please enter a password');
         return;
     }
 
@@ -80,7 +80,7 @@ async function saveManager() {
         const data = await response.json();
 
         if (data.success) {
-            showAlert('success', 'Tạo Manager thành công!');
+            showAlert('success', 'Manager created successfully!');
             bootstrap.Modal.getInstance(document.getElementById('managerModal')).hide();
             loadManagers();
         } else {
@@ -102,13 +102,13 @@ async function removeManager(managerId, email) {
         const data = await response.json();
 
         if (data.success) {
-            showAlert('success', 'Xóa Manager thành công!');
+            showAlert('success', 'Manager deleted successfully!');
             loadManagers();
         } else {
             showAlert('error', data.message);
         }
     } catch (error) {
-        showAlert('error', 'Lỗi: ' + error.message);
+        showAlert('error', 'Error: ' + error.message);
     }
 }
 

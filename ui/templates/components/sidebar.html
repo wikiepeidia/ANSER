@@ -4,7 +4,7 @@
             <i class="fas fa-rocket"></i>
         </div>
         <div class="brand-text">
-            <h3>Fun Work Hub</h3>
+            <h3>{{ project_name }}</h3>
             <p>Smart Management</p>
         </div>
     </div>
@@ -31,23 +31,23 @@
     </div>
 
     <div class="menu-container">
-        <!-- Admin Section: Quản trị hệ thống -->
+        <!-- Admin Section: System Administration -->
         {% if user.role == 'admin' %}
         <div class="menu-section">
             <div class="section-title">
                 <i class="fas fa-crown"></i>
-                <span>Quản trị hệ thống</span>
+                <span>System Admin</span>
             </div>
             <a class="menu-item" href="{{ url_for('admin_analytics') }}">
                 <div class="menu-icon" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);"><i
                         class="fas fa-chart-line"></i></div>
-                <div class="menu-label">Thống kê & Báo cáo</div>
+                <div class="menu-label">Analytics & Reports</div>
                 <div class="menu-arrow"><i class="fas fa-chevron-right"></i></div>
             </a>
             <a class="menu-item" href="{{ url_for('admin_subscriptions') }}">
                 <div class="menu-icon" style="background: linear-gradient(135deg, #ffd89b 0%, #ff8a00 100%);"><i
                         class="fas fa-credit-card"></i></div>
-                <div class="menu-label">Quản lý Gói Manager</div>
+                <div class="menu-label">Manage Subscriptions</div>
                 <div class="menu-arrow"><i class="fas fa-chevron-right"></i></div>
             </a>
         </div>
@@ -58,11 +58,11 @@
         <div class="menu-section">
             <div class="section-title">
                 <i class="fas fa-user-plus"></i>
-                <span>Quản lý User</span>
+                <span>User Management</span>
             </div>
             <a class="menu-item" href="{{ url_for('create_user_account') }}">
                 <div class="menu-icon"><i class="fas fa-user-plus"></i></div>
-                <div class="menu-label">Tạo tài khoản User</div>
+                <div class="menu-label">Create user account</div>
                 <div class="menu-arrow"><i class="fas fa-chevron-right"></i></div>
             </a>
         </div>
@@ -73,40 +73,40 @@
         <div class="menu-section">
             <div class="section-title">
                 <i class="fas fa-store"></i>
-                <span>Quản lý kinh doanh</span>
+                <span>Business Management</span>
             </div>
             <a class="menu-item" href="{{ url_for('dashboard') }}">
                 <div class="menu-icon" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);"><i
                         class="fas fa-chart-pie"></i></div>
-                <div class="menu-label">Dashboard (Kiếm tiền)</div>
+                <div class="menu-label">Business Dashboard</div>
                 <div class="menu-arrow"><i class="fas fa-chevron-right"></i></div>
             </a>
             <a class="menu-item" href="{{ url_for('customers') }}">
                 <div class="menu-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);"><i
                         class="fas fa-users"></i></div>
-                <div class="menu-label">Khách hàng</div>
+                <div class="menu-label">Customers</div>
                 <div class="menu-arrow"><i class="fas fa-chevron-right"></i></div>
             </a>
             <a class="menu-item" href="{{ url_for('wallet_dashboard') }}">
                 <div class="menu-icon" style="background: linear-gradient(135deg, #1f2937 0%, #111827 100%);"><i
                         class="fas fa-wallet"></i></div>
-                <div class="menu-label">Ví & Gói Manager</div>
+                <div class="menu-label">Wallet & Plans</div>
                 <div class="menu-arrow"><i class="fas fa-chevron-right"></i></div>
             </a>
         </div>
         {% endif %}
 
-        <!-- User Menu: Chức năng cơ bản -->
+        <!-- User Menu: Basic features -->
         {% if user.role == 'user' %}
         <div class="menu-section">
             <div class="section-title">
                 <i class="fas fa-store"></i>
-                <span>Quản lý kinh doanh</span>
+                <span>Business Management</span>
             </div>
             <a class="menu-item" href="{{ url_for('customers') }}">
                 <div class="menu-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);"><i
                         class="fas fa-users"></i></div>
-                <div class="menu-label">Khách hàng</div>
+                <div class="menu-label">Customers</div>
                 <div class="menu-arrow"><i class="fas fa-chevron-right"></i></div>
             </a>
         </div>
@@ -130,7 +130,7 @@
         <div class="menu-footer">
             <a class="logout-button" href="{{ url_for('logout') }}">
                 <i class="fas fa-sign-out-alt"></i>
-                <span>Đăng xuất</span>
+                <span>Logout</span>
             </a>
         </div>
     </div>

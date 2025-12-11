@@ -1,15 +1,19 @@
+// moduleCatalog replaced with English descriptions below
 const moduleCatalog = [
-    { id: 'shopify-new-order', name: 'Shopify - New Order', vendor: 'Shopify', group: 'trigger', color: '#ec4899', icon: 'fas fa-shopping-bag', info: 'Kích hoạt khi có đơn hàng mới' },
-    { id: 'stripe-payment', name: 'Stripe - Payment Succeeded', vendor: 'Stripe', group: 'trigger', color: '#6366f1', icon: 'fas fa-credit-card', info: 'Theo dõi thanh toán thành công' },
-    { id: 'gmail-send', name: 'Gmail - Send Email', vendor: 'Google', group: 'action', color: '#f97316', icon: 'fas fa-envelope', info: 'Gửi email cá nhân hóa' },
-    { id: 'notion-create', name: 'Notion - Create Record', vendor: 'Notion', group: 'action', color: '#14b8a6', icon: 'fas fa-book', info: 'Tạo bản ghi trong database' },
-    { id: 'slack-message', name: 'Slack - Post Message', vendor: 'Slack', group: 'action', color: '#a855f7', icon: 'fab fa-slack-hash', info: 'Thông báo cho channel' },
-    { id: 'google-sheets', name: 'Google Sheets - Append Row', vendor: 'Google', group: 'data', color: '#22d3ee', icon: 'fas fa-table', info: 'Ghi dữ liệu vào Sheet' },
-    { id: 'airtable-sync', name: 'Airtable - Sync', vendor: 'Airtable', group: 'data', color: '#f59e0b', icon: 'fas fa-database', info: 'Đồng bộ bảng CRM' }
+    { id: 'shopify-new-order', name: 'Shopify - New Order', vendor: 'Shopify', group: 'trigger', color: '#ec4899', icon: 'fas fa-shopping-bag', info: 'Triggered when a new order is created' },
+    { id: 'stripe-payment', name: 'Stripe - Payment Succeeded', vendor: 'Stripe', group: 'trigger', color: '#6366f1', icon: 'fas fa-credit-card', info: 'Track successful payments' },
+    { id: 'gmail-send', name: 'Gmail - Send Email', vendor: 'Google', group: 'action', color: '#f97316', icon: 'fas fa-envelope', info: 'Send personalized email' },
+    { id: 'notion-create', name: 'Notion - Create Record', vendor: 'Notion', group: 'action', color: '#14b8a6', icon: 'fas fa-book', info: 'Create a record in database' },
+    { id: 'slack-message', name: 'Slack - Post Message', vendor: 'Slack', group: 'action', color: '#a855f7', icon: 'fab fa-slack-hash', info: 'Notify a channel' },
+    { id: 'google-sheets', name: 'Google Sheets - Append Row', vendor: 'Google', group: 'data', color: '#22d3ee', icon: 'fas fa-table', info: 'Append data to Google Sheet' },
+    { id: 'airtable-sync', name: 'Airtable - Sync', vendor: 'Airtable', group: 'data', color: '#f59e0b', icon: 'fas fa-database', info: 'Sync CRM table' }
 ];
 
+const APP_CONFIG = window.APP_CONFIG || { projectName: (document.body && document.body.dataset && document.body.dataset.projectName) || 'Project Store', locale: 'en-US', currency: 'VND' };
+const PROJECT_NAME = APP_CONFIG.projectName || 'Project Store';
+
 let scenarioNodes = [
-    { id: 'node-1', module: 'shopify-new-order', x: 140, y: 180, status: 'trigger', config: { store: 'Fun Store', events: ['paid'] } },
+    { id: 'node-1', module: 'shopify-new-order', x: 140, y: 180, status: 'trigger', config: { store: PROJECT_NAME, events: ['paid'] } },
     { id: 'node-2', module: 'google-sheets', x: 420, y: 80, status: 'action', config: { sheet: 'CRM Orders' } },
     { id: 'node-3', module: 'notion-create', x: 700, y: 220, status: 'action', config: { database: 'VIP Customers' } },
     { id: 'node-4', module: 'slack-message', x: 980, y: 160, status: 'action', config: { channel: '#sales-alerts' } }
@@ -89,7 +93,7 @@ function addModuleToCanvas(moduleId, options = {}) {
         x: typeof options.x === 'number' ? options.x : (lastNode?.x || 120) + 260,
         y: typeof options.y === 'number' ? options.y : ((scenarioNodes.length % 2 === 0) ? 200 : 80),
         status: 'action',
-        config: { note: 'Chưa cấu hình' }
+        config: { note: 'Not configured' }
     };
     scenarioNodes.push(newNode);
     const connectFrom = options.connectFromId ? scenarioNodes.find(n => n.id === options.connectFromId) : (lastNode || null);
@@ -99,7 +103,7 @@ function addModuleToCanvas(moduleId, options = {}) {
     selectedNodeId = newNode.id;
     renderCanvas();
     renderInspector();
-    showToast(`${module.name} đã được thêm vào scenario`);
+    showToast(`${module.name} was added to the scenario`);
 }
 
 function handleModuleDragStart(event, moduleId) {
@@ -151,22 +155,22 @@ function deleteNode(nodeId) {
     }
     renderCanvas();
     renderInspector();
-    showToast('Đã xóa module khỏi canvas', 'info');
+    showToast('Module removed from canvas', 'info');
 }
 
 function clearAllNodes() {
     if (!scenarioNodes.length) {
-        showToast('Canvas đang trống', 'info');
+        showToast('Canvas is empty', 'info');
         return;
     }
-    if (!confirm('Bạn có chắc chắn muốn xóa tất cả module?')) return;
+    if (!confirm('Are you sure you want to delete all modules?')) return;
     scenarioNodes = [];
     scenarioConnections = [];
     selectedNodeId = null;
     nodeCounter = 0;
     renderCanvas();
     renderInspector();
-    showToast('Đã xóa toàn bộ module khỏi canvas', 'info');
+    showToast('All modules removed from canvas', 'info');
 }
 
 function drawConnections() {
@@ -223,7 +227,11 @@ function renderCanvas() {
 
         nodeEl.innerHTML = `
             <div class="node-actions">
-                <button type="button" class="node-action-btn" title="Xóa module" onclick="event.stopPropagation(); deleteNode('${node.id}')">
+                <button type="button" class="node-action-btn" title="Delete module" onclick="event.stopPropagation(); deleteNode('${node.id}')">
+                        showToast('Module removed from canvas', 'info');
+                        showToast('Canvas is empty', 'info');
+                        if (!confirm('Are you sure you want to delete all modules?')) return;
+                        showToast('All modules removed from canvas', 'info');
                     <i class="fas fa-times"></i>
                 </button>
             </div>
@@ -316,7 +324,8 @@ function renderInspector(tab = 'properties') {
     const module = moduleCatalog.find(m => m.id === node?.module);
 
     if (!node) {
-        panel.innerHTML = '<p class="text-muted">Chọn một module để xem chi tiết cấu hình.</p>';
+        panel.innerHTML = '<p class="text-muted">Select a module to view configuration details.</p>';
+            panel.innerHTML = '<p class="text-muted">Select a module to view configuration details.</p>';
         return;
     }
 
@@ -325,15 +334,18 @@ function renderInspector(tab = 'properties') {
             <h5>${module?.name}</h5>
             <p class="text-muted">${module?.info}</p>
             <div class="mb-3">
-                <label class="form-label">Tên hiển thị</label>
+                <label class="form-label">Display name</label>
+                            <label class="form-label">Display name</label>
                 <input type="text" class="form-control form-control-sm" value="${module?.name}" readonly>
             </div>
             <div class="mb-3">
-                <label class="form-label">Ghi chú cấu hình</label>
+                <label class="form-label">Config note</label>
+                            <label class="form-label">Config note</label>
                 <textarea class="form-control" rows="4" onchange="updateNodeNote('${node.id}', this.value)">${node.config?.note || ''}</textarea>
             </div>
             <div class="mb-3">
-                <label class="form-label">Điều kiện</label>
+                <label class="form-label">Conditions</label>
+                            <label class="form-label">Conditions</label>
                 <select class="form-select form-select-sm">
                     <option>Run everytime</option>
                     <option>Only if payment > 5M</option>
@@ -349,7 +361,7 @@ function renderInspector(tab = 'properties') {
         panel.innerHTML = `
             <h5>Versions</h5>
             <ul class="list-unstyled small">
-                <li>v1.4-draft · 2 phút trước · Bạn</li>
+                <li>v1.4-draft · 2 minutes ago · You</li>
                 <li>v1.3 · 1 ngày trước · Jenny</li>
             </ul>
         `;
@@ -373,7 +385,7 @@ function renderRunHistory() {
     if (!list || !badge) return;
     badge.textContent = `${runHistory.length} runs`;
     if (!runHistory.length) {
-        list.innerHTML = '<li class="text-muted">Chưa có lần chạy nào</li>';
+        list.innerHTML = '<li class="text-muted">No runs yet</li>';
         return;
     }
     list.innerHTML = runHistory.map(run => `
@@ -394,12 +406,13 @@ function runScenarioNow() {
     const end = new Date();
     const duration = ((end - start) / 1000).toFixed(2) + 's';
     logToConsole(`[DONE] Scenario completed in ${duration}`);
-    const stamp = start.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+    const stamp = start.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+        const stamp = start.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
     runHistory.unshift({ time: stamp, status: 'success', duration });
     document.getElementById('lastRunTime').textContent = stamp;
     document.getElementById('dataProcessed').textContent = `${Math.floor(Math.random() * 50) + 12} records`;
     renderRunHistory();
-    showToast('Scenario chạy thành công', 'success');
+    showToast('Scenario run successful', 'success');
 }
 
 function logToConsole(message) {
@@ -414,19 +427,19 @@ function clearConsole() {
 }
 
 function saveScenario() {
-    showToast('Scenario đã được lưu nháp', 'success');
+    showToast('Scenario saved (draft)', 'success');
 }
 
 function duplicateScenario() {
-    showToast('Đã tạo bản sao: CRM Sync (copy)', 'info');
+    showToast('Duplicated scenario: CRM Sync (copy)', 'info');
 }
 
 function scheduleScenario() {
-    showToast('Scheduler mở — chọn lịch chạy mong muốn', 'info');
+    showToast('Scheduler opened — choose a desired schedule', 'info');
 }
 
 function requestIntegration() {
-    showToast('Đã ghi nhận yêu cầu tích hợp mới', 'info');
+    showToast('Integration request received', 'info');
 }
 
 function zoomCanvas(direction) {

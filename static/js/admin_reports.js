@@ -17,8 +17,8 @@ window.openScheduleReportModal = function openScheduleReportModal() {
 
 // Populate default mock statistics until backend data is wired up
 window.addEventListener('DOMContentLoaded', () => {
-    setReportMetric('monthRevenue', '0đ');
-    setReportMetric('monthExpense', '0đ');
-    setReportMetric('monthProfit', '0đ');
+    setReportMetric('monthRevenue', '0 VND');
+    setReportMetric('monthExpense', '0 VND');
+    setReportMetric('monthProfit', '0 VND');
     setReportMetric('reportsSent', '0');
 });

@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Sign In - Fun Work Hub{% endblock %}
+{% block title %}Sign In - {{ project_name }}{% endblock %}
 
 {% block body_class %}auth-page{% endblock %}
 
@@ -20,35 +20,35 @@
         <div class="brand-logo">
             <i class="fas fa-rocket"></i>
         </div>
-        <h1 class="brand-title">Fun Work Hub</h1>
+        <h1 class="brand-title">{{ project_name }}</h1>
         <p class="brand-subtitle">
-            Hệ thống quản lý thông minh giúp bạn tổ chức công việc hiệu quả với hệ thống phân lớp và kênh liên kết mạnh
-            mẽ
+            Intelligent management system to help organize work efficiently with layered structure and powerful
+            connected channels.
         </p>
         <div class="feature-list">
             <div class="feature-item">
                 <div class="feature-icon"><i class="fas fa-users"></i></div>
-                <span>Quản lý khách hàng</span>
+                <span>Customer Management</span>
             </div>
             <div class="feature-item">
                 <div class="feature-icon"><i class="fas fa-box"></i></div>
-                <span>Quản lý sản phẩm & kho</span>
+                <span>Product & Inventory Management</span>
             </div>
             <div class="feature-item">
                 <div class="feature-icon"><i class="fas fa-magic"></i></div>
-                <span>Tự động hóa thông minh</span>
+                <span>Intelligent Automation</span>
             </div>
             <div class="feature-item">
                 <div class="feature-icon"><i class="fas fa-chart-line"></i></div>
-                <span>Báo cáo & thống kê</span>
+                <span>Reports & Analytics</span>
             </div>
         </div>
     </div>
 
     <div class="auth-right">
         <div class="auth-header">
-            <h2 class="auth-title">Chào mừng trở lại!</h2>
-            <p class="auth-subtitle">Đăng nhập để tiếp tục sử dụng workspace</p>
+            <h2 class="auth-title">Welcome back!</h2>
+            <p class="auth-subtitle">Sign in to continue using the workspace</p>
         </div>
 
         {% with messages = get_flashed_messages(with_categories=true) %}
@@ -65,21 +65,21 @@
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <div class="form-group">
                 <label for="email" class="form-label">Email</label>
-                <input type="email" id="email" name="email" class="form-input" placeholder="Nhập địa chỉ email"
+                <input type="email" id="email" name="email" class="form-input" placeholder="Enter your email address"
                     required>
             </div>
 
             <div class="form-group">
-                <label for="password" class="form-label">Mật khẩu</label>
-                <input type="password" id="password" name="password" class="form-input" placeholder="Nhập mật khẩu"
+                <label for="password" class="form-label">Password</label>
+                <input type="password" id="password" name="password" class="form-input" placeholder="Enter password"
                     required>
             </div>
 
-            <button type="submit" class="auth-btn">Đăng nhập</button>
+            <button type="submit" class="auth-btn">Sign In</button>
         </form>
 
         <div class="divider">
-            <span>hoặc tiếp tục với</span>
+            <span>or continue with</span>
         </div>
 
         <div class="social-login">
@@ -90,13 +90,13 @@
         </div>
 
         <div class="auth-switch">
-            Chưa có tài khoản? <a href="{{ url_for('auth.signup') }}">Tạo tài khoản</a>
+            Don't have an account? <a href="{{ url_for('auth.signup') }}">Create account</a>
         </div>
 
         <div class="demo-section">
             <div class="demo-title">
                 <i class="fas fa-gamepad"></i>
-                Thử ngay với tài khoản demo
+                Try demo accounts
             </div>
             <div class="demo-accounts">
                 <div class="demo-account" data-demo-email="admin@fun.com" data-demo-password="admin123">

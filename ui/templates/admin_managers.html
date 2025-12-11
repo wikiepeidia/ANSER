@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Quản lý Manager - Chủ Web{% endblock %}
+{% block title %}Manage Managers - Site Owner{% endblock %}
 
 {% block styles %}
 {{ super() }}
@@ -20,7 +20,7 @@
         <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 main-content managers-page">
             <div
                 class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-                <h1 class="h2 page-title"><i class="fas fa-crown"></i><span>Quản lý Manager</span></h1>
+                <h1 class="h2 page-title"><i class="fas fa-crown"></i><span>Manage Managers</span></h1>
                 <button class="btn btn-primary" onclick="openAddManagerModal()">
                     <i class="fas fa-plus"></i> Thêm Manager
                 </button>
@@ -29,8 +29,8 @@
             <div class="row mb-3">
                 <div class="col-md-12">
                     <div class="alert alert-info">
-                        <i class="fas fa-info-circle"></i> <strong>Chú ý:</strong> Manager có quyền cấp phát quyền cho
-                        User. Chỉ Admin (Chủ Web) mới có thể quản lý Manager.
+                        <i class="fas fa-info-circle"></i> <strong>Note:</strong> Managers can grant permissions to
+                        Only admin (Site owner) can manage managers.
                     </div>
                 </div>
             </div>
@@ -90,7 +90,7 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                 <button type="button" class="btn btn-primary" onclick="saveManager()">Lưu</button>
             </div>
         </div>

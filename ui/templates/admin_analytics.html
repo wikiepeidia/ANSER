@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Thống kê & Báo cáo - Admin{% endblock %}
+{% block title %}Analytics & Reports - Admin{% endblock %}
 
 {% block styles %}
 {{ super() }}
@@ -21,13 +21,13 @@
         <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 main-content analytics-page">
             <div
                 class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-                <h1 class="h2"><i class="fas fa-chart-line"></i> Thống kê & Báo cáo</h1>
+                <h1 class="h2"><i class="fas fa-chart-line"></i> Analytics & Reports</h1>
                 <div class="btn-toolbar mb-2 mb-md-0">
                     <select class="form-select" id="timeRangeFilter">
-                        <option value="today">Hôm nay</option>
-                        <option value="week" selected>7 ngày qua</option>
-                        <option value="month">30 ngày qua</option>
-                        <option value="year">Năm nay</option>
+                        <option value="today">Today</option>
+                        <option value="week" selected>Last 7 days</option>
+                        <option value="month">Last 30 days</option>
+                        <option value="year">This year</option>
                     </select>
                 </div>
             </div>
@@ -40,8 +40,8 @@
                             <i class="fas fa-dollar-sign"></i>
                         </div>
                         <div class="metric-content">
-                            <div class="metric-label">TỔNG DOANH THU</div>
-                            <div class="metric-value" id="totalRevenue">0 đ</div>
+                            <div class="metric-label">TOTAL REVENUE</div>
+                            <div class="metric-value" id="totalRevenue">0 VND</div>
                             <div class="metric-change positive" id="revenueChange">
                                 <i class="fas fa-arrow-up"></i> +0%
                             </div>
@@ -54,7 +54,7 @@
                             <i class="fas fa-users"></i>
                         </div>
                         <div class="metric-content">
-                            <div class="metric-label">LƯỢT TRUY CẬP</div>
+                            <div class="metric-label">VISITS</div>
                             <div class="metric-value" id="totalVisits">0</div>
                             <div class="metric-change positive" id="visitsChange">
                                 <i class="fas fa-arrow-up"></i> +0%
@@ -68,7 +68,7 @@
                             <i class="fas fa-shopping-cart"></i>
                         </div>
                         <div class="metric-content">
-                            <div class="metric-label">ĐON HÀNG</div>
+                            <div class="metric-label">ORDERS</div>
                             <div class="metric-value" id="totalOrders">0</div>
                             <div class="metric-change positive" id="ordersChange">
                                 <i class="fas fa-arrow-up"></i> +0%
@@ -82,8 +82,8 @@
                             <i class="fas fa-chart-pie"></i>
                         </div>
                         <div class="metric-content">
-                            <div class="metric-label">LỢI NHUẬN</div>
-                            <div class="metric-value" id="totalProfit">0 đ</div>
+                            <div class="metric-label">PROFIT</div>
+                            <div class="metric-value" id="totalProfit">0 VND</div>
                             <div class="metric-change positive" id="profitChange">
                                 <i class="fas fa-arrow-up"></i> +0%
                             </div>
@@ -97,7 +97,7 @@
                 <div class="col-md-8">
                     <div class="chart-card">
                         <h5 class="card-title">
-                            <i class="fas fa-chart-area"></i> Biểu đồ Doanh thu & Lợi nhuận
+                            <i class="fas fa-chart-area"></i> Revenue & Profit Chart
                         </h5>
                         <canvas id="revenueChart"></canvas>
                     </div>
@@ -105,7 +105,7 @@
                 <div class="col-md-4">
                     <div class="chart-card">
                         <h5 class="card-title">
-                            <i class="fas fa-chart-pie"></i> Phân bổ Doanh thu
+                            <i class="fas fa-chart-pie"></i> Revenue Distribution
                         </h5>
                         <canvas id="categoryChart"></canvas>
                     </div>
@@ -117,7 +117,7 @@
                 <div class="col-md-6">
                     <div class="chart-card">
                         <h5 class="card-title">
-                            <i class="fas fa-eye"></i> Lượng truy cập theo giờ
+                            <i class="fas fa-eye"></i> Hourly Visits
                         </h5>
                         <canvas id="accessChart"></canvas>
                     </div>
@@ -125,7 +125,7 @@
                 <div class="col-md-6">
                     <div class="chart-card">
                         <h5 class="card-title">
-                            <i class="fas fa-user-friends"></i> Người dùng hoạt động
+                            <i class="fas fa-user-friends"></i> Active Users
                         </h5>
                         <canvas id="usersChart"></canvas>
                     </div>
@@ -138,7 +138,7 @@
                     <div class="card">
                         <div class="card-body">
                             <h5 class="card-title">
-                                <i class="fas fa-user-tie"></i> Hiệu suất Manager
+                                <i class="fas fa-user-tie"></i> Manager Performance
                             </h5>
                             <div class="table-responsive">
                                 <table class="table table-hover">
@@ -146,10 +146,10 @@
                                         <tr>
                                             <th>Manager</th>
                                             <th>Email</th>
-                                            <th>User quản lý</th>
-                                            <th>Quyền đã cấp</th>
-                                            <th>Doanh thu phụ trách</th>
-                                            <th>Trạng thái</th>
+                                            <th>Managed Users</th>
+                                            <th>Assigned Roles</th>
+                                            <th>Revenue (managed)</th>
+                                            <th>Status</th>
                                         </tr>
                                     </thead>
                                     <tbody id="managerPerformanceTable">
@@ -172,7 +172,7 @@
                     <div class="card">
                         <div class="card-body">
                             <h5 class="card-title">
-                                <i class="fas fa-crown"></i> Top 5 Khách hàng VIP
+                                <i class="fas fa-crown"></i> Top 5 VIP Customers
                             </h5>
                             <div id="topCustomers">
                                 <div class="text-center py-3">

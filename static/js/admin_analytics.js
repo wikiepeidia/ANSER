@@ -5,7 +5,7 @@
     let usersChart;
     let themeObserver;
 
-    const DAYS = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+    const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     const REVENUE_SERIES = [45000, 52000, 48000, 61000, 55000, 67000, 72000];
     const PROFIT_SERIES = [12000, 15000, 13000, 18000, 16000, 20000, 22000];
 
@@ -24,7 +24,7 @@
         topCustomers: 'topCustomers',
     };
 
-    const formatCurrency = (value) => value.toLocaleString('vi-VN');
+    const formatCurrency = (value) => value.toLocaleString('en-US');
 
     const getThemeColors = () => {
         const styles = getComputedStyle(document.documentElement);
@@ -46,7 +46,7 @@
     };
 
     const updateMetrics = () => {
-        document.getElementById(SELECTORS.totalRevenue).textContent = '245,500,000 đ';
+        document.getElementById(SELECTORS.totalRevenue).textContent = '245,500,000 VND';
         document.getElementById(SELECTORS.revenueChange).innerHTML = '<i class="fas fa-arrow-up"></i> +15.3%';
 
         document.getElementById(SELECTORS.totalVisits).textContent = '12,458';
@@ -55,7 +55,7 @@
         document.getElementById(SELECTORS.totalOrders).textContent = '1,234';
         document.getElementById(SELECTORS.ordersChange).innerHTML = '<i class="fas fa-arrow-up"></i> +12.5%';
 
-        document.getElementById(SELECTORS.totalProfit).textContent = '98,200,000 đ';
+        document.getElementById(SELECTORS.totalProfit).textContent = '98,200,000 VND';
         document.getElementById(SELECTORS.profitChange).innerHTML = '<i class="fas fa-arrow-up"></i> +18.2%';
     };
 
@@ -85,7 +85,7 @@
                 labels: DAYS,
                 datasets: [
                     {
-                        label: 'Doanh thu (1000đ)',
+                        label: 'Revenue (×1000 VND)',
                         data: REVENUE_SERIES,
                         borderColor: '#667eea',
                         backgroundColor: 'rgba(102, 126, 234, 0.1)',
@@ -93,7 +93,7 @@
                         fill: true,
                     },
                     {
-                        label: 'Lợi nhuận (1000đ)',
+                        label: 'Profit (×1000 VND)',
                         data: PROFIT_SERIES,
                         borderColor: '#43e97b',
                         backgroundColor: 'rgba(67, 233, 123, 0.1)',
@@ -128,7 +128,7 @@
         categoryChart = new Chart(categoryCtx, {
             type: 'doughnut',
             data: {
-                labels: ['Nhập hàng', 'Xuất hàng', 'Dịch vụ', 'Khác'],
+                labels: ['Imports', 'Exports', 'Services', 'Other'],
                 datasets: [
                     {
                         data: [120000, 85000, 30000, 10000],
@@ -154,7 +154,7 @@
                 labels: ['0h', '4h', '8h', '12h', '16h', '20h'],
                 datasets: [
                     {
-                        label: 'Lượt truy cập',
+                        label: 'Visits',
                         data: [120, 80, 450, 890, 1200, 650],
                         backgroundColor: 'rgba(102, 126, 234, 0.8)',
                     },
@@ -189,7 +189,7 @@
                 labels: DAYS,
                 datasets: [
                     {
-                        label: 'Người dùng hoạt động',
+                        label: 'Active users',
                         data: [45, 52, 48, 61, 55, 67, 72],
                         borderColor: '#f093fb',
                         backgroundColor: 'rgba(240, 147, 251, 0.1)',
@@ -252,8 +252,8 @@
                 return;
             }
 
-            if (managers.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" class="text-center">Chưa có Manager nào</td></tr>';
+                if (managers.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center">No managers found</td></tr>';
                 return;
             }
 
@@ -269,8 +269,8 @@
                             <td>${manager.email}</td>
                             <td><span class="badge bg-primary">${usersManaged} users</span></td>
                             <td><span class="badge bg-info">${permissionsGranted} quyền</span></td>
-                            <td><strong style="color: #43e97b;">${formatCurrency(revenue)} đ</strong></td>
-                            <td><span class="badge bg-success">Hoạt động</span></td>
+                            <td><strong style="color: #43e97b;">${formatCurrency(revenue)} VND</strong></td>
+                            <td><span class="badge bg-success">Active</span></td>
                         </tr>
                     `;
                 })
@@ -302,9 +302,9 @@
                         <div class="item-rank ${rankClass}">${idx + 1}</div>
                         <div class="item-info">
                             <div class="item-name">${product.name}</div>
-                            <div class="item-detail">Đã bán: ${product.sold} sản phẩm</div>
+                            <div class="item-detail">Sold: ${product.sold} units</div>
                         </div>
-                        <div class="item-value">${(product.revenue / 1_000_000).toFixed(1)}M đ</div>
+                        <div class="item-value">${(product.revenue / 1_000_000).toFixed(1)}M VND</div>
                     </div>
                 `;
             })
@@ -333,9 +333,9 @@
                         <div class="item-rank ${rankClass}">${idx + 1}</div>
                         <div class="item-info">
                             <div class="item-name">${customer.name}</div>
-                            <div class="item-detail">${customer.orders} đơn hàng</div>
+                            <div class="item-detail">${customer.orders} orders</div>
                         </div>
-                        <div class="item-value">${(customer.revenue / 1_000_000).toFixed(1)}M đ</div>
+                        <div class="item-value">${(customer.revenue / 1_000_000).toFixed(1)}M VND</div>
                     </div>
                 `;
             })

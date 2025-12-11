@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Dashboard - Fun Work Hub{% endblock %}
+{% block title %}Dashboard - {{ project_name }}{% endblock %}
 
 {% block styles %}
 {{ super() }}
@@ -10,13 +10,13 @@
 {% block content %}
 <div class="scenario-wrapper">
     {% include 'components/sidebar.html' %}
-    
+
     <main class="scenario-main">
         <!-- Header / Launchpad -->
         <div class="workspace-launchpad">
             <div>
                 <p class="launch-eyebrow">Dashboard</p>
-                <h2>Xin chào, {{ user.name or user.email.split('@')[0] }}</h2>
+                <h2>Hello, {{ user.name or user.email.split('@')[0] }}</h2>
             </div>
             <div class="launch-cta">
                 <a href="{{ url_for('workspace_builder') }}" class="btn btn-primary rounded-pill">
@@ -64,7 +64,7 @@
                         </div>
                         <div class="collection-body">
                             <h4>Workspace Builder</h4>
-                            <p>Thiết kế và quản lý không gian làm việc</p>
+                            <p>Design and manage your workspace</p>
                         </div>
                         <div class="collection-cta">Open <i class="fas fa-arrow-right ms-1"></i></div>
                     </a>

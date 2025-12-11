@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Quản lý Gói Manager - Admin{% endblock %}
+{% block title %}Manager Subscription Management - Admin{% endblock %}
 
 {% block styles %}
 {{ super() }}
@@ -20,13 +20,13 @@
         <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 main-content subscriptions-page">
             <div
                 class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-                <h1 class="h2"><i class="fas fa-credit-card"></i> Quản lý Gói Manager</h1>
+                <h1 class="h2"><i class="fas fa-credit-card"></i> Manager Subscription Management</h1>
                 <div class="btn-group">
                     <button class="btn btn-danger" onclick="checkExpiredSubscriptions()">
-                        <i class="fas fa-sync"></i> Kiểm tra hết hạn
+                        <i class="fas fa-sync"></i> Check Expirations
                     </button>
                     <a href="{{ url_for('wallet_dashboard') }}" class="btn btn-outline-secondary">
-                        <i class="fas fa-wallet"></i> Xem ví
+                        <i class="fas fa-wallet"></i> View Wallet
                     </a>
                 </div>
             </div>
@@ -36,9 +36,9 @@
                     <div class="auto-card">
                         <div class="auto-card-icon bg-gradient-primary"><i class="fas fa-magic"></i></div>
                         <div class="auto-card-body">
-                            <h6>Tự động nâng hạng</h6>
-                            <p class="auto-card-value" id="autoUpgradeStatus">Đang bật</p>
-                            <small>Mọi giao dịch hợp lệ sẽ tự nâng quyền Manager</small>
+                            <h6>Auto Upgrade</h6>
+                            <p class="auto-card-value" id="autoUpgradeStatus">On</p>
+                            <small>Valid transactions automatically upgrade the Manager role</small>
                         </div>
                     </div>
                 </div>
@@ -46,9 +46,9 @@
                     <div class="auto-card">
                         <div class="auto-card-icon bg-gradient-warning"><i class="fas fa-bell"></i></div>
                         <div class="auto-card-body">
-                            <h6>Thông báo chủ web</h6>
-                            <p class="auto-card-value" id="ownerAlertStatus">Đã bật</p>
-                            <small>Gửi ping qua email + dashboard khi có thanh toán</small>
+                            <h6>Owner Notifications</h6>
+                            <p class="auto-card-value" id="ownerAlertStatus">On</p>
+                            <small>Send email and dashboard alerts on successful payments</small>
                         </div>
                     </div>
                 </div>
@@ -56,10 +56,10 @@
                     <div class="auto-card">
                         <div class="auto-card-icon bg-gradient-success"><i class="fas fa-university"></i></div>
                         <div class="auto-card-body">
-                            <h6>Tài khoản ngân hàng</h6>
-                            <p class="auto-card-value" id="bankLinkStatus">Chưa kết nối</p>
-                            <button class="btn btn-sm btn-outline-primary mt-2" onclick="linkBankAccount()">Liên kết
-                                ngay</button>
+                            <h6>Bank Account</h6>
+                            <p class="auto-card-value" id="bankLinkStatus">Not linked</p>
+                            <button class="btn btn-sm btn-outline-primary mt-2" onclick="linkBankAccount()">Link
+                                now</button>
                         </div>
                     </div>
                 </div>
@@ -70,39 +70,39 @@
                     <div class="card automation-panel">
                         <div class="card-body">
                             <div class="d-flex justify-content-between align-items-center mb-3">
-                                <h5 class="card-title mb-0"><i class="fas fa-robot"></i> Luồng tự động</h5>
+                                <h5 class="card-title mb-0"><i class="fas fa-robot"></i> Automation Flow</h5>
                                 <span class="badge bg-success" id="automationHealth">ON</span>
                             </div>
-                            <p class="text-muted small mb-3">Khi người dùng thanh toán thành công, hệ thống sẽ ghi nhận
-                                giao dịch, nâng quyền Manager và báo cho chủ web.</p>
+                            <p class="text-muted small mb-3">When a user completes payment, the system logs the
+                                transaction, upgrades the Manager role and notifies the owner.</p>
                             <ul class="timeline">
                                 <li>
                                     <div class="timeline-icon bg-primary"><i class="fas fa-university"></i></div>
                                     <div>
-                                        <h6>Nhận tiền</h6>
-                                        <small>Bank webhook / Ví điện tử</small>
+                                        <h6>Receive Payment</h6>
+                                        <small>Bank webhook / E-wallet</small>
                                     </div>
                                 </li>
                                 <li>
                                     <div class="timeline-icon bg-warning"><i class="fas fa-file-invoice-dollar"></i>
                                     </div>
                                     <div>
-                                        <h6>Tạo biên nhận + lưu chứng từ</h6>
-                                        <small id="receiptInfo">Chưa liên kết ngân hàng</small>
+                                        <h6>Create receipt + store proof</h6>
+                                        <small id="receiptInfo">Bank not linked</small>
                                     </div>
                                 </li>
                                 <li>
                                     <div class="timeline-icon bg-success"><i class="fas fa-user-shield"></i></div>
                                     <div>
-                                        <h6>Tự động nâng quyền Manager</h6>
-                                        <small>Kích hoạt tài khoản ngay</small>
+                                        <h6>Auto-upgrade to Manager</h6>
+                                        <small>Activate account immediately</small>
                                     </div>
                                 </li>
                                 <li>
                                     <div class="timeline-icon bg-info"><i class="fas fa-paper-plane"></i></div>
                                     <div>
-                                        <h6>Thông báo chủ web</h6>
-                                        <small>Email + Bảng điều khiển</small>
+                                        <h6>Notify Owner</h6>
+                                        <small>Email + Dashboard</small>
                                     </div>
                                 </li>
                             </ul>
@@ -110,12 +110,12 @@
                                 <label class="form-check form-switch">
                                     <input class="form-check-input" type="checkbox" id="autoUpgradeToggle" checked
                                         onchange="toggleAutoUpgrade(this.checked)">
-                                    <span class="form-check-label">Tự động nâng quyền khi nhận tiền</span>
+                                    <span class="form-check-label">Auto-upgrade upon payment</span>
                                 </label>
                                 <label class="form-check form-switch mt-2">
                                     <input class="form-check-input" type="checkbox" id="autoNotifyToggle" checked
                                         onchange="toggleOwnerNotify(this.checked)">
-                                    <span class="form-check-label">Tự động gửi thông báo chủ web</span>
+                                    <span class="form-check-label">Auto-notify owner</span>
                                 </label>
                             </div>
                         </div>
@@ -125,7 +125,7 @@
                     <div class="card automation-panel">
                         <div class="card-body">
                             <div class="d-flex justify-content-between align-items-center mb-3">
-                                <h5 class="card-title mb-0"><i class="fas fa-inbox"></i> Giao dịch chờ xác nhận</h5>
+                                <h5 class="card-title mb-0"><i class="fas fa-inbox"></i> Pending Transactions</h5>
                                 <button class="btn btn-sm btn-outline-secondary" onclick="refreshPaymentQueue()"><i
                                         class="fas fa-sync-alt"></i></button>
                             </div>
@@ -133,11 +133,11 @@
                                 <table class="table table-align-middle mb-0" id="pendingPaymentsTable">
                                     <thead>
                                         <tr>
-                                            <th>Mã</th>
-                                            <th>Khách</th>
-                                            <th>Gói</th>
-                                            <th>Số tiền</th>
-                                            <th>Phương thức</th>
+                                            <th>Ref</th>
+                                            <th>Customer</th>
+                                            <th>Plan</th>
+                                            <th>Amount</th>
+                                            <th>Method</th>
                                             <th></th>
                                         </tr>
                                     </thead>
@@ -146,7 +146,7 @@
                             </div>
                             <div class="text-end mt-3">
                                 <button class="btn btn-sm btn-primary" onclick="triggerManualPayout()">
-                                    <i class="fas fa-paper-plane"></i> Gửi yêu cầu đối soát bank
+                                    <i class="fas fa-paper-plane"></i> Send manual bank reconciliation
                                 </button>
                             </div>
                         </div>
@@ -163,13 +163,13 @@
                             <h4>Trial</h4>
                         </div>
                         <div class="plan-price">
-                            <span class="amount">0đ</span>
-                            <span class="period">/30 ngày</span>
+                            <span class="amount">0 VND</span>
+                            <span class="period">/30 days</span>
                         </div>
                         <div class="plan-features">
-                            <div class="feature"><i class="fas fa-check"></i> Dùng thử miễn phí</div>
-                            <div class="feature"><i class="fas fa-check"></i> Đầy đủ quyền Manager</div>
-                            <div class="feature"><i class="fas fa-check"></i> Hỗ trợ cơ bản</div>
+                            <div class="feature"><i class="fas fa-check"></i> Free trial</div>
+                            <div class="feature"><i class="fas fa-check"></i> Full Manager access</div>
+                            <div class="feature"><i class="fas fa-check"></i> Basic support</div>
                         </div>
                     </div>
                 </div>
@@ -181,30 +181,30 @@
                         </div>
                         <div class="plan-price">
                             <span class="amount">500K</span>
-                            <span class="period">/tháng</span>
+                            <span class="period">/month</span>
                         </div>
                         <div class="plan-features">
-                            <div class="feature"><i class="fas fa-check"></i> Gia hạn linh hoạt</div>
-                            <div class="feature"><i class="fas fa-check"></i> Đầy đủ quyền Manager</div>
+                            <div class="feature"><i class="fas fa-check"></i> Flexible renewals</div>
+                            <div class="feature"><i class="fas fa-check"></i> Full Manager access</div>
                             <div class="feature"><i class="fas fa-check"></i> Hỗ trợ ưu tiên</div>
                         </div>
                     </div>
                 </div>
                 <div class="col-md-3">
                     <div class="plan-card popular">
-                        <div class="plan-badge">PHỔ BIẾN</div>
+                        <div class="plan-badge">POPULAR</div>
                         <div class="plan-header bg-warning">
                             <i class="fas fa-calendar-alt"></i>
                             <h4>Quarterly</h4>
                         </div>
                         <div class="plan-price">
                             <span class="amount">1.2M</span>
-                            <span class="period">/3 tháng</span>
-                            <div class="plan-save">Tiết kiệm 300K</div>
+                            <span class="period">/3 months</span>
+                            <div class="plan-save">Save 300K VND</div>
                         </div>
                         <div class="plan-features">
-                            <div class="feature"><i class="fas fa-check"></i> Giảm 20%</div>
-                            <div class="feature"><i class="fas fa-check"></i> Đầy đủ quyền Manager</div>
+                            <div class="feature"><i class="fas fa-check"></i> Save 20%</div>
+                            <div class="feature"><i class="fas fa-check"></i> Full Manager access</div>
                             <div class="feature"><i class="fas fa-check"></i> Hỗ trợ VIP</div>
                         </div>
                     </div>
@@ -217,12 +217,12 @@
                         </div>
                         <div class="plan-price">
                             <span class="amount">4M</span>
-                            <span class="period">/năm</span>
-                            <div class="plan-save">Tiết kiệm 2M</div>
+                            <span class="period">/year</span>
+                            <div class="plan-save">Save 2M VND</div>
                         </div>
                         <div class="plan-features">
-                            <div class="feature"><i class="fas fa-check"></i> Giảm 33%</div>
-                            <div class="feature"><i class="fas fa-check"></i> Đầy đủ quyền Manager</div>
+                            <div class="feature"><i class="fas fa-check"></i> Save 33%</div>
+                            <div class="feature"><i class="fas fa-check"></i> Full Manager access</div>
                             <div class="feature"><i class="fas fa-check"></i> Hỗ trợ 24/7</div>
                         </div>
                     </div>
@@ -233,7 +233,7 @@
             <div class="card mb-4">
                 <div class="card-body">
                     <h5 class="card-title">
-                        <i class="fas fa-users"></i> Manager đang hoạt động
+                        <i class="fas fa-users"></i> Active Managers
                     </h5>
                     <div class="table-responsive">
                         <table class="table table-hover">
@@ -241,12 +241,12 @@
                                 <tr>
                                     <th>Manager</th>
                                     <th>Email</th>
-                                    <th>Gói hiện tại</th>
-                                    <th>Ngày bắt đầu</th>
+                                    <th>Current Plan</th>
+                                    <th>Start Date</th>
                                     <th>Ngày hết hạn</th>
-                                    <th>Trạng thái</th>
-                                    <th>Gia hạn tự động</th>
-                                    <th>Hành động</th>
+                                    <th>Status</th>
+                                    <th>Auto Renew</th>
+                                    <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody id="subscriptionsTable">
@@ -265,7 +265,7 @@
             <div class="card">
                 <div class="card-body">
                     <h5 class="card-title">
-                        <i class="fas fa-history"></i> Lịch sử thanh toán
+                        <i class="fas fa-history"></i> Payment History
                     </h5>
                     <div class="table-responsive">
                         <table class="table table-sm">
@@ -274,8 +274,8 @@
                                     <th>Ngày</th>
                                     <th>Manager</th>
                                     <th>Gói</th>
-                                    <th>Số tiền</th>
-                                    <th>Phương thức</th>
+                                    <th>Amount</th>
+                                    <th>Method</th>
                                     <th>Trạng thái</th>
                                 </tr>
                             </thead>
@@ -299,7 +299,7 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Gia hạn gói Manager</h5>
+                <h5 class="modal-title">Extend Manager Subscription</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
@@ -309,31 +309,31 @@
                     <input type="text" class="form-control" id="extendUserName" readonly>
                 </div>
                 <div class="mb-3">
-                    <label class="form-label">Gói gia hạn <span class="text-danger">*</span></label>
+                    <label class="form-label">Extension Plan <span class="text-danger">*</span></label>
                     <select class="form-select" id="extendPlan">
-                        <option value="monthly">Monthly - 500,000đ (30 ngày)</option>
-                        <option value="quarterly" selected>Quarterly - 1,200,000đ (90 ngày)</option>
-                        <option value="yearly">Yearly - 4,000,000đ (365 ngày)</option>
+                        <option value="monthly">Monthly - 500,000 VND (30 days)</option>
+                        <option value="quarterly" selected>Quarterly - 1,200,000 VND (90 days)</option>
+                        <option value="yearly">Yearly - 4,000,000 VND (365 days)</option>
                     </select>
                 </div>
                 <div class="mb-3">
-                    <label class="form-label">Phương thức thanh toán</label>
+                    <label class="form-label">Payment Method</label>
                     <select class="form-select" id="paymentMethod">
-                        <option value="bank_transfer">Chuyển khoản</option>
-                        <option value="cash">Tiền mặt</option>
+                        <option value="bank_transfer">Bank transfer</option>
+                        <option value="cash">Cash</option>
                         <option value="momo">MoMo</option>
                         <option value="vnpay">VNPay</option>
                     </select>
                 </div>
                 <div class="mb-3">
-                    <label class="form-label">Mã giao dịch (tùy chọn)</label>
+                    <label class="form-label">Transaction ID (optional)</label>
                     <input type="text" class="form-control" id="transactionId" placeholder="VD: TXN123456">
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                 <button type="button" class="btn btn-primary" onclick="processExtension()">
-                    <i class="fas fa-check"></i> Xác nhận gia hạn
+                    <i class="fas fa-check"></i> Confirm Extension
                 </button>
             </div>
         </div>

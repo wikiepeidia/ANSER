@@ -2,7 +2,7 @@ async function loadSubscriptions() {
     try {
         const response = await fetch('/api/admin/subscriptions', { credentials: 'same-origin' });
         if (response.status === 401 || response.status === 403) {
-            showAlert('error', 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+            showAlert('error', 'Session expired. Please log in again.');
             setTimeout(() => { window.location.href = '/auth/signin'; }, 3000);
             return;
         }
@@ -10,11 +10,11 @@ async function loadSubscriptions() {
 
         const data = await response.json();
         renderSubscriptionsTable(data.subscriptions || []);
-    } catch (error) {
+        } catch (error) {
         if (error.message.includes('JSON')) {
-            showAlert('error', 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+            showAlert('error', 'Session expired. Please log in again.');
         } else {
-            showAlert('error', 'Lỗi tải danh sách: ' + error.message);
+            showAlert('error', 'Error loading list: ' + error.message);
         }
     }
 }
@@ -23,7 +23,7 @@ async function loadPaymentHistory() {
     try {
         const response = await fetch('/api/admin/subscription-history', { credentials: 'same-origin' });
         if (response.status === 401 || response.status === 403) {
-            showAlert('error', 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+            showAlert('error', 'Session expired. Please log in again.');
             setTimeout(() => { window.location.href = '/auth/signin'; }, 3000);
             return;
         }
@@ -33,7 +33,7 @@ async function loadPaymentHistory() {
         renderPaymentHistory(data.history || []);
     } catch (error) {
         if (error.message.includes('JSON')) {
-            showAlert('error', 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+            showAlert('error', 'Session expired. Please log in again.');
         } else {
             console.error('Error loading payment history:', error);
         }
@@ -44,7 +44,7 @@ function renderSubscriptionsTable(subscriptions) {
     const tbody = document.getElementById('subscriptionsTable');
 
     if (subscriptions.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="8" class="text-center">Chưa có Manager nào</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8" class="text-center">No managers found</td></tr>';
         return;
     }
 
@@ -56,18 +56,18 @@ function renderSubscriptionsTable(subscriptions) {
 
             let statusBadge = '';
             if (sub.status === 'expired') {
-                statusBadge = '<span class="badge badge-expired">Hết hạn</span>';
+                statusBadge = '<span class="badge badge-expired">Expired</span>';
             } else if (daysLeft <= 7) {
-                statusBadge = `<span class="badge badge-expiring">Còn ${daysLeft} ngày</span>`;
+                statusBadge = `<span class="badge badge-expiring">Expires in ${daysLeft} days</span>`;
             } else {
-                statusBadge = `<span class="badge bg-success">Hoạt động (${daysLeft} ngày)</span>`;
+                statusBadge = `<span class="badge bg-success">Active (${daysLeft} days)</span>`;
             }
 
             const planNames = {
-                trial: 'Dùng thử',
-                monthly: 'Tháng',
-                quarterly: 'Quý',
-                yearly: 'Năm',
+                trial: 'Trial',
+                monthly: 'Monthly',
+                quarterly: 'Quarterly',
+                yearly: 'Yearly',
             };
             
             // Auto-renew toggle
@@ -80,21 +80,21 @@ function renderSubscriptionsTable(subscriptions) {
                 <td><strong>${sub.user_name}</strong></td>
                 <td>${sub.user_email}</td>
                 <td><span class="badge bg-primary">${planNames[sub.subscription_type] || sub.subscription_type}</span></td>
-                <td>${new Date(sub.start_date).toLocaleDateString('vi-VN')}</td>
-                <td>${endDate.toLocaleDateString('vi-VN')}</td>
+                <td>${new Date(sub.start_date).toLocaleDateString('en-US')}</td>
+                <td>${endDate.toLocaleDateString('en-US')}</td>
                 <td>${statusBadge}</td>
                 <td>
                     <div class="form-check form-switch">
                         <input class="form-check-input" type="checkbox" id="autoRenew${sub.user_id}" ${toggleChecked} 
                                onchange="toggleAutoRenew(${sub.user_id}, this.checked)">
                         <label class="form-check-label" for="autoRenew${sub.user_id}">
-                            <span class="badge ${toggleClass}">${autoRenew ? 'BẬT' : 'TẮT'}</span>
+                            <span class="badge ${toggleClass}">${autoRenew ? 'ON' : 'OFF'}</span>
                         </label>
                     </div>
                 </td>
                 <td>
                     <button class="btn btn-sm btn-success" onclick="openExtendModal(${sub.user_id}, '${sub.user_name.replace(/'/g, "&apos;")}')">
-                        <i class="fas fa-plus"></i> Gia hạn
+                        <i class="fas fa-plus"></i> Extend
                     </button>
                 </td>
             </tr>
@@ -107,7 +107,7 @@ function renderPaymentHistory(history) {
     const tbody = document.getElementById('paymentHistoryTable');
 
     if (history.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" class="text-center">Chưa có lịch sử thanh toán</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center">No payment history</td></tr>';
         return;
     }
 
@@ -123,10 +123,10 @@ function renderPaymentHistory(history) {
 
             return `
             <tr>
-                <td>${new Date(payment.payment_date).toLocaleDateString('vi-VN')}</td>
+                <td>${new Date(payment.payment_date).toLocaleDateString('en-US')}</td>
                 <td>${payment.user_name}</td>
                 <td>${planNames[payment.subscription_type] || payment.subscription_type}</td>
-                <td><strong>${payment.amount.toLocaleString('vi-VN')}đ</strong></td>
+                <td><strong>${payment.amount.toLocaleString('en-US')} VND</strong></td>
                 <td>${payment.payment_method || 'N/A'}</td>
                 <td><span class="badge ${localizeStatus(payment.status).cls}">${localizeStatus(payment.status).label}</span></td>
             </tr>
@@ -160,18 +160,18 @@ async function processExtension() {
         });
 
         if (response.status === 401 || response.status === 403) {
-            showAlert('error', 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+            showAlert('error', 'Session expired. Please log in again.');
             return;
         }
         const data = await response.json();
 
-        if (data.success) {
-            showAlert('success', '✅ Gia hạn thành công!');
+            if (data.success) {
+            showAlert('success', '✅ Extension successful!');
             bootstrap.Modal.getInstance(document.getElementById('extendModal')).hide();
             loadSubscriptions();
             loadPaymentHistory();
         } else {
-            showAlert('error', data.message || 'Lỗi gia hạn');
+            showAlert('error', data.message || 'Unable to extend subscription');
         }
     } catch (error) {
         showAlert('error', 'Lỗi: ' + error.message);
@@ -179,24 +179,24 @@ async function processExtension() {
 }
 
 async function checkExpiredSubscriptions() {
-    if (!confirm('Bạn có chắc muốn kiểm tra và hạ cấp các Manager hết hạn?')) return;
+    if (!confirm('Are you sure you want to check and demote expired Managers?')) return;
 
     try {
         const response = await fetch('/api/admin/check-expired-subscriptions', {
             method: 'POST',
         });
         if (response.status === 401 || response.status === 403) {
-            showAlert('error', 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+            showAlert('error', 'Session expired. Please log in again.');
             return;
         }
 
         const data = await response.json();
 
         if (data.success) {
-            showAlert('success', `✅ Đã hạ cấp ${data.demoted_count} Manager hết hạn!`);
+            showAlert('success', `✅ Demoted ${data.demoted_count} expired Manager(s)!`);
             loadSubscriptions();
         } else {
-            showAlert('error', data.message || 'Lỗi kiểm tra');
+            showAlert('error', data.message || 'Failed to check expirations');
         }
     } catch (error) {
         showAlert('error', 'Lỗi: ' + error.message);
@@ -229,13 +229,13 @@ function localizeStatus(status) {
     const s = String(status || '').toLowerCase();
     switch (s) {
         case 'pending':
-            return { label: 'Đang chờ', cls: 'bg-warning text-dark' };
+            return { label: 'Pending', cls: 'bg-warning text-dark' };
         case 'completed':
-            return { label: 'Hoàn thành', cls: 'bg-success' };
+            return { label: 'Completed', cls: 'bg-success' };
         case 'rejected':
-            return { label: 'Đã từ chối', cls: 'bg-danger' };
+            return { label: 'Rejected', cls: 'bg-danger' };
         case 'expired':
-            return { label: 'Hết hạn', cls: 'bg-secondary' };
+            return { label: 'Expired', cls: 'bg-secondary' };
         default:
             return { label: status || '—', cls: 'bg-light text-dark' };
     }
@@ -261,42 +261,42 @@ function initAutomationUI() {
     if (!autoToggle || !notifyToggle || !statusLabel || !ownerLabel) return;
     autoToggle.checked = automationSettings.autoUpgrade;
     notifyToggle.checked = automationSettings.autoNotify;
-    statusLabel.textContent = automationSettings.autoUpgrade ? 'Đang bật' : 'Đang tắt';
-    ownerLabel.textContent = automationSettings.autoNotify ? 'Đã bật' : 'Chưa bật';
+    statusLabel.textContent = automationSettings.autoUpgrade ? 'Enabled' : 'Disabled';
+    ownerLabel.textContent = automationSettings.autoNotify ? 'Enabled' : 'Disabled';
     updateBankStatus();
 }
 
 function updateBankStatus() {
     const bankLabel = document.getElementById('bankLinkStatus');
     const receiptInfo = document.getElementById('receiptInfo');
-    if (bankLabel) bankLabel.textContent = automationSettings.bankLinked ? 'Đã liên kết ngân hàng' : 'Chưa kết nối';
-    if (receiptInfo) receiptInfo.textContent = automationSettings.bankLinked ? 'Tự động đính kèm sao kê' : 'Đang chờ kết nối ngân hàng';
+    if (bankLabel) bankLabel.textContent = automationSettings.bankLinked ? 'Bank linked' : 'Not connected';
+    if (receiptInfo) receiptInfo.textContent = automationSettings.bankLinked ? 'Automatically attach statements' : 'Waiting for bank connection';
 }
 
 function linkBankAccount() {
     automationSettings.bankLinked = true;
     updateBankStatus();
-    showAlert('success', 'Đã liên kết ngân hàng thành công');
+    showAlert('success', 'Bank linked successfully');
 }
 
 function toggleAutoUpgrade(isOn) {
     automationSettings.autoUpgrade = isOn;
     const statusLabel = document.getElementById('autoUpgradeStatus');
-    if (statusLabel) statusLabel.textContent = isOn ? 'Đang bật' : 'Đang tắt';
+    if (statusLabel) statusLabel.textContent = isOn ? 'Enabled' : 'Disabled';
     const healthBadge = document.getElementById('automationHealth');
     if (healthBadge) {
         healthBadge.textContent = isOn ? 'ON' : 'PAUSED';
         healthBadge.classList.toggle('bg-danger', !isOn);
         healthBadge.classList.toggle('bg-success', isOn);
     }
-    showAlert('success', isOn ? 'Đã bật auto nâng quyền' : 'Đã tắt auto nâng quyền');
+    showAlert('success', isOn ? 'Auto-upgrade enabled' : 'Auto-upgrade disabled');
 }
 
 function toggleOwnerNotify(isOn) {
     automationSettings.autoNotify = isOn;
     const ownerLabel = document.getElementById('ownerAlertStatus');
-    if (ownerLabel) ownerLabel.textContent = isOn ? 'Đã bật' : 'Chưa bật';
-    showAlert('success', isOn ? 'Đã bật thông báo chủ web' : 'Đã tắt thông báo chủ web');
+    if (ownerLabel) ownerLabel.textContent = isOn ? 'Enabled' : 'Disabled';
+    showAlert('success', isOn ? 'Owner notifications enabled' : 'Owner notifications disabled');
 }
 
 function refreshPaymentQueue() { loadPendingPayments(true); }
@@ -313,8 +313,8 @@ async function loadPendingPayments(showToastMessage = false) {
     try {
         const response = await fetch('/api/admin/wallet/pending', { credentials: 'same-origin' });
         if (response.status === 401 || response.status === 403) {
-            showAlert('error', 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
-            if (tbody) tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">Quyền truy cập bị từ chối</td></tr>';
+            showAlert('error', 'Session expired. Please log in again.');
+            if (tbody) tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">Access denied</td></tr>';
             setTimeout(() => { window.location.href = '/auth/signin'; }, 3000);
             return;
         }
@@ -322,12 +322,12 @@ async function loadPendingPayments(showToastMessage = false) {
         if (!data.success) throw new Error(data.message || 'Failed to load pending payments');
         const transactions = data.transactions || [];
         if (!tbody) return;
-        if (!transactions.length) {
-            tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">Không có giao dịch chờ</td></tr>';
+            if (!transactions.length) {
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">No pending transactions</td></tr>';
             return;
         }
         tbody.innerHTML = transactions.map(payment => {
-            const planLabel = payment.plan_label ? String(payment.plan_label).toUpperCase() : (payment.type === 'topup' ? 'NẠP VÍ' : (payment.type || '—'));
+            const planLabel = payment.plan_label ? String(payment.plan_label).toUpperCase() : (payment.type === 'topup' ? 'TOPUP' : (payment.type || '—'));
             const methodLabel = payment.method || '—';
             const createdAt = payment.created_at ? `<br><small class="text-muted">${payment.created_at}</small>` : '';
             const reference = payment.reference ? `<br><small class="text-muted">Ref: ${payment.reference}</small>` : '';
@@ -337,7 +337,7 @@ async function loadPendingPayments(showToastMessage = false) {
                     <td><span class="badge bg-dark">TX-${payment.id}</span>${createdAt}</td>
                     <td><strong>${payment.user_name}</strong><br><small>${payment.user_email}</small></td>
                     <td><span class="badge bg-primary">${planLabel}</span></td>
-                    <td>${(payment.amount || 0).toLocaleString('vi-VN')} đ</td>
+                    <td>${(payment.amount || 0).toLocaleString('en-US')} VND</td>
                     <td>${methodLabel}${reference}</td>
                     <td class="text-end">
                         <span class="me-2"><span class="badge ${statusObj.cls}">${statusObj.label}</span></span>
@@ -347,13 +347,13 @@ async function loadPendingPayments(showToastMessage = false) {
                 </tr>
             `;
         }).join('');
-        if (showToastMessage) showAlert('success', 'Đã tải danh sách giao dịch chờ.');
+        if (showToastMessage) showAlert('success', 'Loaded pending transactions.');
     } catch (error) {
-        if (tbody) tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">Không thể tải giao dịch</td></tr>';
+        if (tbody) tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">Unable to load transactions</td></tr>';
         if (error.message.includes('JSON')) {
-            showAlert('error', 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+            showAlert('error', 'Session expired. Please log in again.');
         } else {
-            showAlert('error', 'Lỗi: ' + error.message);
+            showAlert('error', 'Error: ' + error.message);
         }
     }
 }
@@ -366,22 +366,22 @@ async function processQueuedPayment(paymentId, action) {
             body: JSON.stringify({ action })
         });
         if (response.status === 401 || response.status === 403) {
-            showAlert('error', 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+            showAlert('error', 'Session expired. Please log in again.');
             setTimeout(() => { window.location.href = '/auth/signin'; }, 3000);
             return;
         }
         const data = await response.json();
         if (data.success) {
-            showAlert('success', data.message || 'Đã xử lý giao dịch');
+            showAlert('success', data.message || 'Transaction processed');
             await loadPendingPayments();
             // Update subscription/account summaries
             loadSubscriptions();
             loadPaymentHistory();
         } else {
-            showAlert('error', data.message || 'Không thể xử lý giao dịch');
+            showAlert('error', data.message || 'Unable to process transaction');
         }
     } catch (error) {
-        showAlert('error', 'Lỗi: ' + error.message);
+            showAlert('error', 'Error: ' + error.message);
     }
 }
 
@@ -396,23 +396,23 @@ async function toggleAutoRenew(userId, enabled) {
         });
 
         if (response.status === 401 || response.status === 403) {
-            showAlert('error', 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+            showAlert('error', 'Session expired. Please log in again.');
             setTimeout(() => { window.location.href = '/auth/signin'; }, 3000);
             return;
         }
 
         const data = await response.json();
         if (data.success) {
-            showAlert('success', enabled ? 'Đã bật gia hạn tự động' : 'Đã tắt gia hạn tự động');
-            // Reload để cập nhật badge
+            showAlert('success', enabled ? 'Auto renew enabled' : 'Auto renew disabled');
+            // Reload to update badge
             loadSubscriptions();
         } else {
-            showAlert('error', data.message || 'Không thể cập nhật');
+            showAlert('error', data.message || 'Unable to update');
             // Revert checkbox
             document.getElementById(`autoRenew${userId}`).checked = !enabled;
         }
     } catch (error) {
-        showAlert('error', 'Lỗi: ' + error.message);
+        showAlert('error', 'Error: ' + error.message);
         // Revert checkbox
         document.getElementById(`autoRenew${userId}`).checked = !enabled;
     }

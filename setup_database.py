@@ -11,7 +11,7 @@ import os
 from datetime import datetime, timedelta
 
 # Configuration
-DB_PATH = 'fun_work_hub.db'
+DB_PATH = os.environ.get('DATABASE_PATH', 'group_project_ai_ml.db')
 
 def setup_database():
     print(f"🔧 Setting up database: {DB_PATH}")

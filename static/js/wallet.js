@@ -11,12 +11,12 @@ async function loadWalletDashboard() {
         const response = await fetch('/api/user/wallet', { credentials: 'same-origin' });
             // If not authenticated, server will return 401/403 with JSON; handle proactively
             if (response.status === 401 || response.status === 403) {
-                showNotification('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.', 'error');
+                showNotification('Session expired. Please log in again.', 'error');
                 return;
             }
         const data = await response.json();
         if (!data.success) {
-            showNotification(data.message || 'Không thể tải dữ liệu ví', 'error');
+            showNotification(data.message || 'Could not load wallet data', 'error');
             return;
         }
         walletState.wallet = data.wallet;
@@ -26,9 +26,9 @@ async function loadWalletDashboard() {
         renderWalletDashboard();
     } catch (error) {
         if (error.message.includes('JSON')) {
-            showNotification('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.', 'error');
+            showNotification('Session expired. Please log in again.', 'error');
         } else {
-            showNotification('Lỗi tải dữ liệu: ' + error.message, 'error');
+            showNotification('Error loading data: ' + error.message, 'error');
         }
     }
 }
@@ -46,20 +46,20 @@ function renderWalletDashboard() {
     }
 
     balanceEl.textContent = formatCurrency(walletState.wallet?.balance || 0);
-    updatedEl.textContent = walletState.wallet?.updated_at ? `Cập nhật ${walletState.wallet.updated_at}` : '';
+    updatedEl.textContent = walletState.wallet?.updated_at ? `Updated ${walletState.wallet.updated_at}` : '';
 
     if (walletState.subscription) {
         subStatusEl.textContent = `${walletState.subscription.subscription_type?.toUpperCase()} · ${formatCurrency(walletState.subscription.amount)}`;
-        subExpiryEl.textContent = `Hết hạn: ${walletState.subscription.end_date || '-'}`;
+        subExpiryEl.textContent = `Expires: ${walletState.subscription.end_date || '-'}`;
         autoToggle.disabled = false;
         autoToggle.checked = walletState.subscription.auto_renew === 1;
-        autoStatus.textContent = walletState.subscription.auto_renew ? 'Bật' : 'Tắt';
+        autoStatus.textContent = walletState.subscription.auto_renew ? 'On' : 'Off';
     } else {
-        subStatusEl.textContent = 'Chưa đăng ký';
+        subStatusEl.textContent = 'Not subscribed';
         subExpiryEl.textContent = '—';
         autoToggle.checked = false;
         autoToggle.disabled = true;
-        autoStatus.textContent = 'Tắt';
+        autoStatus.textContent = 'Off';
     }
 
     renderPlanCards();
@@ -73,13 +73,13 @@ function renderPlanCards() {
         <div class="plan-tile ${activePlan === key ? 'active' : ''}">
             <div class="d-flex justify-content-between align-items-center mb-2">
                 <strong>${plan.name}</strong>
-                <span class="badge bg-light text-dark">${plan.days} ngày</span>
+                <span class="badge bg-light text-dark">${plan.days} days</span>
             </div>
             <div class="plan-price">${formatCurrency(plan.amount)}</div>
             <div class="plan-duration">${plan.description}</div>
             <div class="plan-actions">
                 <button class="btn btn-sm btn-primary" onclick="upgradePlan('${key}')">
-                    <i class="fas fa-level-up-alt"></i> Nâng cấp
+                    <i class="fas fa-level-up-alt"></i> Upgrade
                 </button>
             </div>
         </div>
@@ -90,13 +90,13 @@ function localizeStatus(status) {
     const s = String(status || '').toLowerCase();
     switch (s) {
         case 'pending':
-            return { label: 'Đang chờ', cls: 'bg-warning text-dark' };
+            return { label: 'Pending', cls: 'bg-warning text-dark' };
         case 'completed':
-            return { label: 'Hoàn thành', cls: 'bg-success' };
+            return { label: 'Completed', cls: 'bg-success' };
         case 'rejected':
-            return { label: 'Đã từ chối', cls: 'bg-danger' };
+            return { label: 'Rejected', cls: 'bg-danger' };
         case 'expired':
-            return { label: 'Hết hạn', cls: 'bg-secondary' };
+            return { label: 'Expired', cls: 'bg-secondary' };
         default:
             return { label: status || '—', cls: 'bg-light text-dark' };
     }
@@ -106,14 +106,14 @@ function renderTransactions() {
     const tbody = document.getElementById('txnTableBody');
     const countEl = document.getElementById('txnCount');
     if (!walletState.transactions || !walletState.transactions.length) {
-        tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">Chưa có giao dịch</td></tr>';
-        countEl.textContent = '0 giao dịch';
+        tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">No transactions</td></tr>';
+        countEl.textContent = '0 transactions';
         return;
     }
-    countEl.textContent = `${walletState.transactions.length} giao dịch`;
+    countEl.textContent = `${walletState.transactions.length} transactions`;
     tbody.innerHTML = walletState.transactions.map(txn => {
         const st = localizeStatus(txn.status);
-        const typeLabel = (txn.type || '').toLowerCase() === 'topup' ? 'Nạp ví' : (txn.type || '—');
+        const typeLabel = (txn.type || '').toLowerCase() === 'topup' ? 'Top up' : (txn.type || '—');
         return `
         <tr>
             <td><span class="badge bg-dark">TX-${txn.id}</span><br><small>${txn.created_at}</small></td>
@@ -134,7 +134,7 @@ async function submitTopup() {
     const reference = document.getElementById('topupReference').value.trim();
 
     if (amount < 50000) {
-        showNotification('Vui lòng nhập số tiền tối thiểu 50.000đ', 'error');
+        showNotification('Please enter a minimum amount of 50,000 VND', 'error');
         return;
     }
 
@@ -146,30 +146,30 @@ async function submitTopup() {
             credentials: 'same-origin'
         });
         if (response.status === 401 || response.status === 403) {
-            showNotification('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.', 'error');
+            showNotification('Session expired. Please log in again.', 'error');
             setTimeout(() => { window.location.href = '/auth/signin'; }, 3000);
             return;
         }
         const data = await response.json();
         if (data.success) {
             bootstrap.Modal.getInstance(document.getElementById('topupModal')).hide();
-            showNotification(data.message || 'Đã gửi yêu cầu nạp tiền. Admin sẽ xác nhận sớm nhất.', 'success');
+            showNotification(data.message || 'Top-up request submitted. Admin will confirm shortly.', 'success');
             loadWalletDashboard();
         } else {
-            showNotification(data.message || 'Không thể gửi yêu cầu', 'error');
+            showNotification(data.message || 'Unable to submit request', 'error');
         }
     } catch (error) {
-        showNotification('Lỗi: ' + error.message, 'error');
+        showNotification('Error: ' + error.message, 'error');
     }
 }
 
 async function upgradePlan(planKey) {
     const plan = walletState.plans[planKey];
     if (!plan) {
-        showNotification('Gói không hợp lệ', 'error');
+        showNotification('Invalid plan', 'error');
         return;
     }
-    if (!confirm(`Xác nhận trừ ${formatCurrency(plan.amount)} để nâng cấp gói ${plan.name}?`)) return;
+    if (!confirm(`Confirm charge of ${formatCurrency(plan.amount)} to upgrade to ${plan.name}?`)) return;
     try {
         const response = await fetch('/api/user/subscription/upgrade', {
             method: 'POST',
@@ -178,19 +178,19 @@ async function upgradePlan(planKey) {
             credentials: 'same-origin'
         });
         if (response.status === 401 || response.status === 403) {
-            showNotification('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.', 'error');
+            showNotification('Session expired. Please log in again.', 'error');
             setTimeout(() => { window.location.href = '/auth/signin'; }, 3000);
             return;
         }
         const data = await response.json();
         if (data.success) {
-            showNotification(data.message || 'Nâng cấp thành công!', 'success');
+            showNotification(data.message || 'Upgrade successful!', 'success');
             loadWalletDashboard();
         } else {
-            showNotification(data.message || 'Không thể nâng cấp', 'error');
+            showNotification(data.message || 'Unable to upgrade', 'error');
         }
     } catch (error) {
-        showNotification('Lỗi nâng cấp: ' + error.message, 'error');
+        showNotification('Upgrade error: ' + error.message, 'error');
     }
 }
 
@@ -204,17 +204,17 @@ async function toggleAutoRenew(isEnabled) {
             credentials: 'same-origin'
         });
         if (response.status === 401 || response.status === 403) {
-            showNotification('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.', 'error');
+            showNotification('Session expired. Please log in again.', 'error');
             document.getElementById('autoRenewToggle').checked = !isEnabled;
             setTimeout(() => { window.location.href = '/auth/signin'; }, 3000);
             return;
         }
         const data = await response.json();
         if (data.success) {
-            showNotification(data.message || 'Đã cập nhật tự động gia hạn', 'success');
+            showNotification(data.message || 'Auto-renew updated', 'success');
             loadWalletDashboard();
         } else {
-            showNotification(data.message || 'Không thể cập nhật', 'error');
+            showNotification(data.message || 'Unable to update', 'error');
             document.getElementById('autoRenewToggle').checked = !isEnabled;
         }
     } catch (error) {
@@ -224,7 +224,7 @@ async function toggleAutoRenew(isEnabled) {
 }
 
 function formatCurrency(amount) {
-    return (amount || 0).toLocaleString('vi-VN', { style: 'currency', currency: 'VND' });
+    return (amount || 0).toLocaleString('en-US', { style: 'currency', currency: 'VND' });
 }
 
 // Polling to refresh
@@ -256,9 +256,9 @@ async function initWalletGlance() {
         const renewEl = document.getElementById('glanceRenew');
         const statusEl = document.getElementById('glanceStatus');
         if (balanceEl) balanceEl.textContent = formatCurrency(w.balance || 0);
-        if (planEl) planEl.textContent = s ? s.subscription_type : 'Chưa nâng cấp';
+        if (planEl) planEl.textContent = s ? s.subscription_type : 'Not upgraded';
         if (expiryEl) expiryEl.textContent = s ? (s.end_date || '—') : '—';
-        if (updatedEl) updatedEl.textContent = w.updated_at ? `Cập nhật ${w.updated_at}` : '';
+        if (updatedEl) updatedEl.textContent = w.updated_at ? `Updated ${w.updated_at}` : '';
         if (renewEl) renewEl.textContent = s ? (s.auto_renew ? 'Auto renew: On' : 'Auto renew: Off') : 'Auto renew: —';
         if (statusEl && s) statusEl.textContent = s.status || '—';
     } catch (e) {
@@ -289,18 +289,18 @@ async function submitWithdraw() {
     const note = document.getElementById('withdrawNote').value.trim();
 
     if (!amount || amount < 100000) {
-        showNotification('Số tiền rút tối thiểu là 100.000đ', 'error');
+        showNotification('Minimum withdrawal amount is 100,000 VND', 'error');
         return;
     }
 
     if (!bankName || !accountNumber || !accountName) {
-        showNotification('Vui lòng điền đầy đủ thông tin ngân hàng', 'error');
+        showNotification('Please provide complete bank information', 'error');
         return;
     }
 
     const balance = walletState.wallet?.balance || 0;
     if (amount > balance) {
-        showNotification('Số dư không đủ để rút', 'error');
+        showNotification('Insufficient balance for withdrawal', 'error');
         return;
     }
 
@@ -324,7 +324,7 @@ async function submitWithdraw() {
             bootstrap.Modal.getInstance(document.getElementById('withdrawModal')).hide();
             loadWalletDashboard();
         } else {
-            showNotification(data.message || 'Không thể rút tiền', 'error');
+            showNotification(data.message || 'Unable to withdraw funds', 'error');
         }
     } catch (error) {
         showNotification('Lỗi: ' + error.message, 'error');

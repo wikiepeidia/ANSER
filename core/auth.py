@@ -12,25 +12,31 @@ class AuthManager:
     
     def verify_user(self, email, password):
         conn = self.db.get_connection()
-        c = conn.cursor()
-        hashed_pw = AuthManager.hash_password(password)
-        # Check if google_token column exists (it should, but for safety in query)
-        # We assume schema is updated.
-        c.execute('SELECT id, email, name, avatar, role, google_token FROM users WHERE email = ? AND password = ?', 
-                 (email, hashed_pw))
-        user = c.fetchone()
-        conn.close()
-        if user:
-            return {
-                'id': user[0],
-                'email': user[1], 
-                'first_name': user[2].split()[0] if user[2] else '',
-                'last_name': user[2].split()[1] if len(user[2].split()) > 1 else '',
-                'avatar': user[3],
-                'role': user[4],
-                'google_token': user[5]
-            }
-        return None
+        try:
+            c = conn.cursor()
+            hashed_pw = AuthManager.hash_password(password)
+            # Check if google_token column exists (it should, but for safety in query)
+            # We assume schema is updated.
+            c.execute('SELECT id, email, name, avatar, role, google_token FROM users WHERE email = ? AND password = ?', 
+                     (email, hashed_pw))
+            user = c.fetchone()
+            
+            if user:
+                return {
+                    'id': user[0],
+                    'email': user[1], 
+                    'first_name': user[2].split()[0] if user[2] else '',
+                    'last_name': ' '.join(user[2].split()[1:]) if user[2] and len(user[2].split()) > 1 else '',
+                    'avatar': user[3],
+                    'role': user[4],
+                    'google_token': user[5]
+                }
+            return None
+        except Exception as e:
+            print(f"Error verifying user: {e}")
+            return None
+        finally:
+            conn.close()
     
     def register_user(self, email, password, first_name, last_name, phone=''):
         conn = self.db.get_connection()
@@ -58,21 +64,27 @@ class AuthManager:
     
     def get_user_by_id(self, user_id):
         conn = self.db.get_connection()
-        c = conn.cursor()
-        c.execute('SELECT id, email, name, avatar, role, google_token FROM users WHERE id = ?', (user_id,))
-        user = c.fetchone()
-        conn.close()
-        if user:
-            return {
-                'id': user[0],
-                'email': user[1], 
-                'first_name': user[2].split()[0] if user[2] else '',
-                'last_name': user[2].split()[1] if len(user[2].split()) > 1 else '',
-                'avatar': user[3],
-                'role': user[4],
-                'google_token': user[5]
-            }
-        return None
+        try:
+            c = conn.cursor()
+            c.execute('SELECT id, email, name, avatar, role, google_token FROM users WHERE id = ?', (user_id,))
+            user = c.fetchone()
+            
+            if user:
+                return {
+                    'id': user[0],
+                    'email': user[1], 
+                    'first_name': user[2].split()[0] if user[2] else '',
+                    'last_name': ' '.join(user[2].split()[1:]) if user[2] and len(user[2].split()) > 1 else '',
+                    'avatar': user[3],
+                    'role': user[4],
+                    'google_token': user[5]
+                }
+            return None
+        except Exception as e:
+            print(f"Error getting user by id: {e}")
+            return None
+        finally:
+            conn.close()
     
     def get_user_workspaces(self, user_id):
         conn = self.db.get_connection()

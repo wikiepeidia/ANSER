@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - Fun Work Hub</title>
+    <title>Dashboard - {{ project_name }}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 
@@ -17,7 +17,7 @@
 
         <div class="dashboard-content">
             <h2>You're signed in successfully.</h2>
-            <p>This is the Fun Work Hub dashboard.</p>
+            <p>This is the {{ project_name }} dashboard.</p>
 
             <div class="actions">
                 <a href="{{ url_for('logout') }}" class="btn-logout">Sign out</a>

@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Tạo Tài khoản User{% endblock %}
+{% block title %}Create User Account - {{ project_name }}{% endblock %}
 
 {% block styles %}
 {{ super() }}
@@ -10,30 +10,30 @@
         min-height: 100vh;
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     }
-    
+
     .create-user-main {
         flex: 1;
         padding: 40px;
         overflow-y: auto;
     }
-    
+
     .create-user-header {
         max-width: 800px;
         margin: 0 auto 30px;
         color: white;
     }
-    
+
     .create-user-header h1 {
         font-size: 2.5rem;
         font-weight: 700;
         margin-bottom: 10px;
     }
-    
+
     .create-user-header p {
         font-size: 1.1rem;
         opacity: 0.9;
     }
-    
+
     .create-user-card {
         max-width: 800px;
         margin: 0 auto;
@@ -42,29 +42,29 @@
         padding: 40px;
         box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
     }
-    
+
     .form-section {
         margin-bottom: 30px;
     }
-    
+
     .form-section h3 {
         font-size: 1.3rem;
         font-weight: 600;
         margin-bottom: 15px;
         color: #1f2937;
     }
-    
+
     .form-group {
         margin-bottom: 20px;
     }
-    
+
     .form-group label {
         display: block;
         font-weight: 500;
         margin-bottom: 8px;
         color: #374151;
     }
-    
+
     .form-group input,
     .form-group select {
         width: 100%;
@@ -74,14 +74,14 @@
         font-size: 1rem;
         transition: all 0.3s;
     }
-    
+
     .form-group input:focus,
     .form-group select:focus {
         outline: none;
         border-color: #667eea;
         box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
     }
-    
+
     .form-actions {
         display: flex;
         gap: 15px;
@@ -90,7 +90,7 @@
         padding-top: 30px;
         border-top: 2px solid #f3f4f6;
     }
-    
+
     .btn {
         padding: 12px 30px;
         border-radius: 8px;
@@ -100,26 +100,26 @@
         cursor: pointer;
         transition: all 0.3s;
     }
-    
+
     .btn-primary {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: white;
     }
-    
+
     .btn-primary:hover {
         transform: translateY(-2px);
         box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
     }
-    
+
     .btn-secondary {
         background: #f3f4f6;
         color: #374151;
     }
-    
+
     .btn-secondary:hover {
         background: #e5e7eb;
     }
-    
+
     .info-box {
         background: #eff6ff;
         border-left: 4px solid #3b82f6;
@@ -127,7 +127,7 @@
         border-radius: 8px;
         margin-bottom: 25px;
     }
-    
+
     .info-box p {
         margin: 0;
         color: #1e40af;
@@ -142,60 +142,64 @@
 
     <main class="create-user-main">
         <header class="create-user-header">
-            <h1>Tạo Tài khoản User</h1>
-            <p>Tạo tài khoản mới cho nhân viên với quyền hạn cơ bản</p>
+            <h1>Create User Account</h1>
+            <p>Create a new staff account with basic permissions</p>
         </header>
 
         <div class="create-user-card">
             <div class="info-box">
-                <p><i class="fas fa-info-circle"></i> <strong>Quyền hạn User:</strong> Tài khoản User có quyền truy cập đầy đủ các chức năng cơ bản (Khách hàng, Sản phẩm, Nhập/Xuất hàng). Không có quyền vào các tính năng VIP dành cho Manager (Phân tích, Báo cáo thông minh, Scenario nâng cao).</p>
+                <p><i class="fas fa-info-circle"></i> <strong>User Permissions:</strong> User accounts have access
+                    to core features (Customers, Products, Import/Export). Does not have access to
+                    VIP dành cho Manager (Phân tích, Báo cáo thông minh, Scenario nâng cao).</p>
             </div>
 
             <form id="createUserForm" method="POST" action="/api/create-user">
                 <div class="form-section">
                     <h3><i class="fas fa-user"></i> Thông tin cơ bản</h3>
-                    
+
                     <div class="form-group">
                         <label for="email">Email <span style="color: #ef4444;">*</span></label>
                         <input type="email" id="email" name="email" required placeholder="user@example.com">
                     </div>
-                    
+
                     <div class="form-group">
-                        <label for="password">Mật khẩu <span style="color: #ef4444;">*</span></label>
-                        <input type="password" id="password" name="password" required placeholder="Tối thiểu 8 ký tự">
+                        <label for="password">Password <span style="color: #ef4444;">*</span></label>
+                        <input type="password" id="password" name="password" required
+                            placeholder="At least 8 characters">
                     </div>
-                    
+
                     <div class="form-group">
-                        <label for="first_name">Tên</label>
+                        <label for="first_name">First name</label>
                         <input type="text" id="first_name" name="first_name" placeholder="Nguyễn Văn">
                     </div>
-                    
+
                     <div class="form-group">
-                        <label for="last_name">Họ</label>
+                        <label for="last_name">Last name</label>
                         <input type="text" id="last_name" name="last_name" placeholder="A">
                     </div>
                 </div>
 
                 <div class="form-section">
-                    <h3><i class="fas fa-shield-alt"></i> Phân quyền</h3>
-                    
+                    <h3><i class="fas fa-shield-alt"></i> Role & Permissions</h3>
+
                     <div class="form-group">
-                        <label for="role">Vai trò</label>
+                        <label for="role">Role</label>
                         <select id="role" name="role" disabled>
                             <option value="user" selected>User (Đầy đủ chức năng cơ bản)</option>
                         </select>
                         <small style="color: #6b7280; display: block; margin-top: 5px;">
-                            User có quyền: Khách hàng, Sản phẩm, Nhập/Xuất hàng. Không có: Phân tích Manager, Báo cáo VIP
+                            Default user role: Customers, Products, Imports/Exports. No Manager analytics or VIP
+                            reports.
                         </small>
                     </div>
                 </div>
 
                 <div class="form-actions">
                     <button type="button" class="btn btn-secondary" onclick="window.history.back()">
-                        <i class="fas fa-times"></i> Hủy
+                        <i class="fas fa-times"></i> Cancel
                     </button>
                     <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-check"></i> Tạo tài khoản
+                        <i class="fas fa-check"></i> Create account
                     </button>
                 </div>
             </form>
@@ -203,14 +207,15 @@
 
         <div class="create-user-card" style="margin-top: 30px;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
-                <h2 style="margin: 0;"><i class="fas fa-users"></i> Danh sách User</h2>
+                <h2 style="margin: 0;"><i class="fas fa-users"></i> User list</h2>
                 <button class="btn btn-secondary" onclick="loadUserList()">
-                    <i class="fas fa-sync-alt"></i> Tải lại
+                    <i class="fas fa-sync-alt"></i> Reload
                 </button>
             </div>
 
             <div style="margin-bottom: 20px;">
-                <input type="text" id="searchUser" placeholder="Tìm kiếm theo email hoặc tên..." style="width: 100%; padding: 12px 16px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 1rem;">
+                <input type="text" id="searchUser" placeholder="Search by email or name..."
+                    style="width: 100%; padding: 12px 16px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 1rem;">
             </div>
 
             <div style="overflow-x: auto;">
@@ -218,7 +223,7 @@
                     <thead>
                         <tr style="background: #f3f4f6; border-bottom: 2px solid #e5e7eb;">
                             <th style="padding: 12px; text-align: left; font-weight: 600;">Email</th>
-                            <th style="padding: 12px; text-align: left; font-weight: 600;">Họ tên</th>
+                            <th style="padding: 12px; text-align: left; font-weight: 600;">Full name</th>
                             <th style="padding: 12px; text-align: center; font-weight: 600;">Vai trò</th>
                             <th style="padding: 12px; text-align: center; font-weight: 600;">Trạng thái</th>
                             <th style="padding: 12px; text-align: center; font-weight: 600;">Thao tác</th>
@@ -228,7 +233,7 @@
                         <tr>
                             <td colspan="5" style="padding: 40px; text-align: center; color: #6b7280;">
                                 <i class="fas fa-spinner fa-spin" style="font-size: 2rem; margin-bottom: 10px;"></i>
-                                <p>Đang tải danh sách...</p>
+                                <p>Loading list...</p>
                             </td>
                         </tr>
                     </tbody>
@@ -239,60 +244,60 @@
 </div>
 
 <script>
-// Tạo tài khoản mới
-document.getElementById('createUserForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    
-    const formData = new FormData(e.target);
-    const data = {
-        email: formData.get('email'),
-        password: formData.get('password'),
-        first_name: formData.get('first_name'),
-        last_name: formData.get('last_name'),
-        role: 'user' // Force user role
-    };
-    
-    try {
-        const response = await fetch('/api/create-user', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(data)
-        });
-        
-        const result = await response.json();
-        
-        if (response.ok) {
-            alert('✓ Tạo tài khoản thành công!');
-            e.target.reset();
-            loadUserList(); // Reload user list
-        } else {
-            alert('✗ Lỗi: ' + (result.message || 'Không thể tạo tài khoản'));
-        }
-    } catch (error) {
-        alert('✗ Lỗi kết nối: ' + error.message);
-    }
-});
+    // Tạo tài khoản mới
+    document.getElementById('createUserForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
 
-// Load danh sách user
-async function loadUserList() {
-    const tbody = document.getElementById('userListBody');
-    tbody.innerHTML = `
+        const formData = new FormData(e.target);
+        const data = {
+            email: formData.get('email'),
+            password: formData.get('password'),
+            first_name: formData.get('first_name'),
+            last_name: formData.get('last_name'),
+            role: 'user' // Force user role
+        };
+
+        try {
+            const response = await fetch('/api/create-user', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data)
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                alert('✓ Account created successfully!');
+                e.target.reset();
+                loadUserList(); // Reload user list
+            } else {
+                alert('✗ Error: ' + (result.message || 'Unable to create account'));
+            }
+        } catch (error) {
+            alert('✗ Connection error: ' + error.message);
+        }
+    });
+
+    // Load danh sách user
+    async function loadUserList() {
+        const tbody = document.getElementById('userListBody');
+        tbody.innerHTML = `
         <tr>
             <td colspan="5" style="padding: 40px; text-align: center; color: #6b7280;">
                 <i class="fas fa-spinner fa-spin" style="font-size: 2rem; margin-bottom: 10px;"></i>
-                <p>Đang tải danh sách...</p>
+                                <p>Loading list...</p>
             </td>
         </tr>
     `;
-    
-    try {
-        const response = await fetch('/api/users?role=user');
-        const result = await response.json();
-        
-        if (response.ok && result.users && result.users.length > 0) {
-            tbody.innerHTML = result.users.map(user => `
+
+        try {
+            const response = await fetch('/api/users?role=user');
+            const result = await response.json();
+
+            if (response.ok && result.users && result.users.length > 0) {
+                tbody.innerHTML = result.users.map(user => `
                 <tr style="border-bottom: 1px solid #e5e7eb;">
                     <td style="padding: 12px;">${user.email}</td>
                     <td style="padding: 12px;">${user.first_name || ''} ${user.last_name || ''}</td>
@@ -303,14 +308,14 @@ async function loadUserList() {
                     </td>
                     <td style="padding: 12px; text-align: center;">
                         <span style="background: #d1fae5; color: #065f46; padding: 4px 12px; border-radius: 12px; font-size: 0.85rem; font-weight: 600;">
-                            <i class="fas fa-check-circle"></i> Hoạt động
+                            <i class="fas fa-check-circle"></i> Active
                         </span>
                     </td>
                     <td style="padding: 12px; text-align: center;">
                         <button class="btn-action btn-edit" onclick="editUser(${user.id})" title="Chỉnh sửa">
                             <i class="fas fa-edit"></i>
                         </button>
-                        <button class="btn-action btn-reset" onclick="resetPassword(${user.id}, '${user.email}')" title="Reset mật khẩu">
+                        <button class="btn-action btn-reset" onclick="resetPassword(${user.id}, '${user.email}')" title="Reset password">
                             <i class="fas fa-key"></i>
                         </button>
                         <button class="btn-action btn-delete" onclick="deleteUser(${user.id}, '${user.email}')" title="Xóa">
@@ -319,18 +324,18 @@ async function loadUserList() {
                     </td>
                 </tr>
             `).join('');
-        } else {
-            tbody.innerHTML = `
+            } else {
+                tbody.innerHTML = `
                 <tr>
                     <td colspan="5" style="padding: 40px; text-align: center; color: #6b7280;">
                         <i class="fas fa-users" style="font-size: 2rem; margin-bottom: 10px; opacity: 0.3;"></i>
-                        <p>Chưa có user nào được tạo</p>
+                        <p>No users have been created</p>
                     </td>
                 </tr>
             `;
-        }
-    } catch (error) {
-        tbody.innerHTML = `
+            }
+        } catch (error) {
+            tbody.innerHTML = `
             <tr>
                 <td colspan="5" style="padding: 40px; text-align: center; color: #ef4444;">
                     <i class="fas fa-exclamation-circle" style="font-size: 2rem; margin-bottom: 10px;"></i>
@@ -338,131 +343,131 @@ async function loadUserList() {
                 </td>
             </tr>
         `;
+        }
     }
-}
 
-// Tìm kiếm user
-document.getElementById('searchUser').addEventListener('input', (e) => {
-    const searchTerm = e.target.value.toLowerCase();
-    const rows = document.querySelectorAll('#userListBody tr');
-    
-    rows.forEach(row => {
-        const text = row.textContent.toLowerCase();
-        row.style.display = text.includes(searchTerm) ? '' : 'none';
+    // Tìm kiếm user
+    document.getElementById('searchUser').addEventListener('input', (e) => {
+        const searchTerm = e.target.value.toLowerCase();
+        const rows = document.querySelectorAll('#userListBody tr');
+
+        rows.forEach(row => {
+            const text = row.textContent.toLowerCase();
+            row.style.display = text.includes(searchTerm) ? '' : 'none';
+        });
     });
-});
 
-// Chỉnh sửa user
-function editUser(userId) {
-    alert('Chức năng chỉnh sửa đang được phát triển. User ID: ' + userId);
-    // TODO: Implement edit user functionality
-}
-
-// Reset mật khẩu
-async function resetPassword(userId, email) {
-    const newPassword = prompt(`Reset mật khẩu cho user: ${email}\n\nNhập mật khẩu mới (tối thiểu 8 ký tự):`);
-    
-    if (!newPassword) return;
-    
-    if (newPassword.length < 8) {
-        alert('Mật khẩu phải có ít nhất 8 ký tự!');
-        return;
+    // Chỉnh sửa user
+    function editUser(userId) {
+        alert('Chức năng chỉnh sửa đang được phát triển. User ID: ' + userId);
+        // TODO: Implement edit user functionality
     }
-    
-    if (!confirm(`Xác nhận reset mật khẩu cho ${email}?`)) return;
-    
-    try {
-        const response = await fetch(`/api/users/${userId}/reset-password`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ password: newPassword })
-        });
-        
-        const result = await response.json();
-        
-        if (response.ok) {
-            alert('✓ Reset mật khẩu thành công!');
-        } else {
-            alert('✗ Lỗi: ' + (result.message || 'Không thể reset mật khẩu'));
+
+    // Reset mật khẩu
+    async function resetPassword(userId, email) {
+        const newPassword = prompt(`Reset password for user: ${email}\n\nEnter new password (at least 8 characters):`);
+
+        if (!newPassword) return;
+
+        if (newPassword.length < 8) {
+            alert('Mật khẩu phải có ít nhất 8 ký tự!');
+            return;
         }
-    } catch (error) {
-        alert('✗ Lỗi kết nối: ' + error.message);
-    }
-}
 
-// Xóa user
-async function deleteUser(userId, email) {
-    if (!confirm(`Xác nhận xóa user: ${email}?\n\nHành động này không thể hoàn tác!`)) return;
-    
-    try {
-        const response = await fetch(`/api/users/${userId}`, {
-            method: 'DELETE'
-        });
-        
-        const result = await response.json();
-        
-        if (response.ok) {
-            alert('✓ Xóa user thành công!');
-            loadUserList(); // Reload list
-        } else {
-            alert('✗ Lỗi: ' + (result.message || 'Không thể xóa user'));
+        if (!confirm(`Confirm password reset for ${email}?`)) return;
+
+        try {
+            const response = await fetch(`/api/users/${userId}/reset-password`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ password: newPassword })
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                alert('✓ Password reset successfully!');
+            } else {
+                alert('✗ Error: ' + (result.message || 'Unable to reset password'));
+            }
+        } catch (error) {
+            alert('✗ Lỗi kết nối: ' + error.message);
         }
-    } catch (error) {
-        alert('✗ Lỗi kết nối: ' + error.message);
     }
-}
 
-// Load user list on page load
-window.addEventListener('DOMContentLoaded', () => {
-    loadUserList();
-});
+    // Xóa user
+    async function deleteUser(userId, email) {
+        if (!confirm(`Xác nhận xóa user: ${email}?\n\nHành động này không thể hoàn tác!`)) return;
+
+        try {
+            const response = await fetch(`/api/users/${userId}`, {
+                method: 'DELETE'
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                alert('✓ Xóa user thành công!');
+                loadUserList(); // Reload list
+            } else {
+                alert('✗ Lỗi: ' + (result.message || 'Không thể xóa user'));
+            }
+        } catch (error) {
+            alert('✗ Lỗi kết nối: ' + error.message);
+        }
+    }
+
+    // Load user list on page load
+    window.addEventListener('DOMContentLoaded', () => {
+        loadUserList();
+    });
 </script>
 <style>
-.btn-action {
-    background: none;
-    border: none;
-    padding: 8px 10px;
-    margin: 0 3px;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: all 0.3s;
-    font-size: 0.95rem;
-}
+    .btn-action {
+        background: none;
+        border: none;
+        padding: 8px 10px;
+        margin: 0 3px;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.3s;
+        font-size: 0.95rem;
+    }
 
-.btn-action:hover {
-    transform: translateY(-2px);
-}
+    .btn-action:hover {
+        transform: translateY(-2px);
+    }
 
-.btn-edit {
-    color: #3b82f6;
-    background: #dbeafe;
-}
+    .btn-edit {
+        color: #3b82f6;
+        background: #dbeafe;
+    }
 
-.btn-edit:hover {
-    background: #3b82f6;
-    color: white;
-}
+    .btn-edit:hover {
+        background: #3b82f6;
+        color: white;
+    }
 
-.btn-reset {
-    color: #f59e0b;
-    background: #fef3c7;
-}
+    .btn-reset {
+        color: #f59e0b;
+        background: #fef3c7;
+    }
 
-.btn-reset:hover {
-    background: #f59e0b;
-    color: white;
-}
+    .btn-reset:hover {
+        background: #f59e0b;
+        color: white;
+    }
 
-.btn-delete {
-    color: #ef4444;
-    background: #fee2e2;
-}
+    .btn-delete {
+        color: #ef4444;
+        background: #fee2e2;
+    }
 
-.btn-delete:hover {
-    background: #ef4444;
-    color: white;
-}
+    .btn-delete:hover {
+        background: #ef4444;
+        color: white;
+    }
 </style>
 {% endblock %}

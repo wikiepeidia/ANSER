@@ -264,7 +264,7 @@ function formatScenarioDate(dateValue) {
         if (Number.isNaN(date.getTime())) {
             return 'Not run yet';
         }
-        return date.toLocaleString('vi-VN', {
+        return date.toLocaleString('en-US', {
             dateStyle: 'medium',
             timeStyle: 'short'
         });

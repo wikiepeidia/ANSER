@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="color-scheme" content="light dark">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>{% block title %}Fun Work Hub - Smart Management{% endblock %}</title>
+    <title>{% block title %}{{ project_name }} - Smart Management{% endblock %}</title>
     <script>
         (function bootstrapThemePreference() {
             try {
@@ -43,7 +43,7 @@
     {% block styles %}{% endblock %}
 </head>
 
-<body class="{% block body_class %}{% endblock %}">
+<body class="{% block body_class %}{% endblock %}" data-project-name="{{ project_name | e }}">
     <script>
         (function ensureBodyThemeClass() {
             try {
@@ -105,6 +105,14 @@
     </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script>
+        // Global runtime config exposed to all static scripts
+        window.APP_CONFIG = window.APP_CONFIG || {
+            projectName: "{{ project_name | e }}",
+            locale: "en-US",
+            currency: "VND"
+        };
+    </script>
     <script defer src="{{ url_for('static', filename='js/base_theme.js') }}"></script>
     <script defer src="{{ url_for('static', filename='js/script.js') }}"></script>
     {% block scripts %}{% endblock %}

@@ -155,6 +155,27 @@
                 <div class="drop-text">Drag and drop tools here</div>
             </div>
         </div>
+
+        <!-- Console Panel -->
+        <div id="consolePanel" class="console-panel minimized">
+            <div class="console-header" id="consoleHeader">
+                <div class="console-title">
+                    <i class="fas fa-terminal"></i> Console Output
+                </div>
+                <div class="console-actions">
+                    <button id="clearConsole" class="console-action-btn" title="Clear Console">
+                        <i class="fas fa-ban"></i>
+                    </button>
+                    <button id="toggleConsole" class="console-action-btn" title="Toggle Console">
+                        <i class="fas fa-chevron-up"></i>
+                    </button>
+                </div>
+            </div>
+            <div id="consoleContent" class="console-content">
+                <div class="console-line system">System ready. Waiting for workflow execution...</div>
+            </div>
+            <div id="consoleResizer" class="console-resizer" title="Drag to resize console"></div>
+        </div>
     </div>
 
     <!-- Property Panel -->

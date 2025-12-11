@@ -52,8 +52,19 @@ def get_google_service(service_name, version, token_info=None):
     # If there are no (valid) credentials available, let the user log in.
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
-            creds.refresh(Request())
-        else:
+            try:
+                creds.refresh(Request())
+            except Exception as e:
+                print(f"[Google] Token refresh failed: {e}")
+                creds = None
+
+        # If still not valid (refresh failed or didn't exist)
+        if not creds or not creds.valid:
+            # If we were trying to use a specific user token (token_info), do NOT fallback to interactive login
+            if token_info:
+                print("[Google] User token is invalid or expired and could not be refreshed.")
+                return None
+
             # Only try interactive login if we are NOT using a passed token (which implies server context)
             # and if we are in a local environment where we can open a browser.
             # For now, we keep the old logic as fallback for local testing.

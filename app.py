@@ -97,7 +97,7 @@ def login_unauthorized():
         accepts_json = False
     if path.startswith('/api/') or accepts_json or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         return jsonify({'success': False, 'message': 'Unauthorized - please login'}), 401
-    flash('Vui lòng đăng nhập để tiếp tục', 'error')
+    flash('Please log in to continue', 'error')
     return redirect(url_for('auth.signin'))
 
 # Initialize core components
@@ -127,6 +127,19 @@ def format_plan_dict(plan_key):
         'amount': plan['amount'],
         'days': plan['days'],
         'description': plan.get('description', '')
+    }
+
+
+# Inject project-wide variables into templates
+@app.context_processor
+def inject_project_config():
+    try:
+        project_name = getattr(config, 'PROJECT_NAME', 'Group Project AI-ML')
+    except Exception:
+        project_name = 'Group Project AI-ML'
+    return {
+        'project_name': project_name,
+        'project_config': config
     }
 
 def parse_db_datetime(value):
@@ -193,18 +206,20 @@ class User(UserMixin):
 
 @login_manager.user_loader
 def load_user(user_id):
-    user_data = auth_manager.get_user_by_id(int(user_id))
-    if user_data:
-        return User(
-            user_data['id'], 
-            user_data['email'], 
-            user_data['first_name'], 
-            user_data['last_name'],
-            user_data.get('role','user'), 
-            user_data.get('google_token'),
-            user_data.get('avatar')
-        )
-
+    try:
+        user_data = auth_manager.get_user_by_id(int(user_id))
+        if user_data:
+            return User(
+                user_data['id'], 
+                user_data['email'], 
+                user_data['first_name'], 
+                user_data['last_name'],
+                user_data.get('role', 'user'), 
+                user_data.get('google_token'),
+                user_data.get('avatar')
+            )
+    except Exception as e:
+        print(f"Error loading user {user_id}: {e}")
     return None
 
 # Auth Blueprint
@@ -215,25 +230,31 @@ auth_bp = Blueprint('auth', __name__)
 @limiter.limit("5 per minute", methods=['POST'], error_message="Too many login attempts. Please try again later.")
 def signin():
     if request.method == 'POST':
-        email = request.form['email']
-        password = request.form['password']
-        
-        user_data = auth_manager.verify_user(email, password)
-        if user_data:
-            user = User(user_data['id'], user_data['email'], user_data['first_name'], 
-                        user_data['last_name'],user_data.get('role','user'), user_data.get('google_token'))
-            print(">>> Đăng nhập:", user.email, "role =", user.role)
-            login_user(user, remember=True)  # Remember user to extend session
-            session.permanent = True  # Set session to use PERMANENT_SESSION_LIFETIME
-            flash('Login Successful!', 'success')
+        try:
+            email = request.form['email']
+            password = request.form['password']
             
-            # Redirect based on role
-            if user.role == 'admin':
-                return redirect(url_for('admin_workspace'))
+            user_data = auth_manager.verify_user(email, password)
+            if user_data:
+                user = User(user_data['id'], user_data['email'], user_data['first_name'], 
+                            user_data['last_name'],user_data.get('role','user'), user_data.get('google_token'))
+                print(">>> Đăng nhập:", user.email, "role =", user.role)
+                login_user(user, remember=True)  # Remember user to extend session
+                session.permanent = True  # Set session to use PERMANENT_SESSION_LIFETIME
+                flash('Login Successful!', 'success')
+                
+                # Redirect based on role
+                if user.role == 'admin':
+                    return redirect(url_for('admin_workspace'))
+                else:
+                    return redirect(url_for('workspace'))
             else:
-                return redirect(url_for('workspace'))
-        else:
-            flash('Email hoặc mật khẩu không đúng!', 'error')
+                flash('Invalid email or password!', 'error')
+        except Exception as e:
+            print(f"Login Error: {e}")
+            import traceback
+            traceback.print_exc()
+            flash('An unexpected error occurred. Please try again later.', 'error')
     
     return render_template('signin.html')
 
@@ -249,7 +270,7 @@ def signup():
         
         success, message = auth_manager.register_user(email, password, first_name, last_name, phone)
         if success:
-            flash('Đăng ký thành công! Vui lòng đăng nhập.', 'success')
+            flash('Registration successful! Please log in.', 'success')
             return redirect(url_for('auth.signin'))
         else:
             flash(message, 'error')
@@ -277,7 +298,7 @@ def index():
 def admin_dashboard():
     # Check admin permission
     if not hasattr(current_user, 'role') or current_user.role != 'admin':
-        flash('Bạn không có quyền truy cập trang này', 'error')
+        flash('You do not have permission to access this page', 'error')
         return redirect(url_for('workspace'))
     return render_template('admin_dashboard.html', user=current_user)
 
@@ -1251,7 +1272,7 @@ def api_toggle_auto_renew():
         conn.commit()
         conn.close()
         
-        return jsonify({'success': True, 'message': 'Đã cập nhật gia hạn tự động'})
+        return jsonify({'success': True, 'message': 'Auto-renew updated'})
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
 
@@ -1507,7 +1528,7 @@ def api_topup_wallet():
         amount = 0
 
     if amount < 50000:
-        return jsonify({'success': False, 'message': 'Số tiền tối thiểu là 50.000đ'}), 400
+        return jsonify({'success': False, 'message': 'Minimum amount is 50,000 VND'}), 400
 
     method = (data.get('method') or 'bank_transfer').strip()
     reference = (data.get('reference') or '').strip()[:120]
@@ -1526,7 +1547,7 @@ def api_topup_wallet():
                   (current_user.id, amount, 'topup', method, reference or None, note or None, metadata))
         conn.commit()
 
-        return jsonify({'success': True, 'message': 'Đã gửi yêu cầu nạp tiền. Admin sẽ xác nhận sớm nhất.'})
+        return jsonify({'success': True, 'message': 'Top-up request submitted. Admin will confirm shortly.'})
     except Exception as e:
         conn.rollback()
         return jsonify({'success': False, 'message': str(e)}), 500
@@ -1549,7 +1570,7 @@ def api_admin_withdraw():
         amount = 0
     
     if amount < 100000:
-        return jsonify({'success': False, 'message': 'Số tiền rút tối thiểu là 100.000đ'}), 400
+        return jsonify({'success': False, 'message': 'Minimum withdrawal amount is 100,000 VND'}), 400
     
     bank_name = (data.get('bank_name') or '').strip()
     account_number = (data.get('account_number') or '').strip()
@@ -1557,7 +1578,7 @@ def api_admin_withdraw():
     note = (data.get('note') or '').strip()
     
     if not bank_name or not account_number or not account_name:
-        return jsonify({'success': False, 'message': 'Vui lòng điền đầy đủ thông tin ngân hàng'}), 400
+        return jsonify({'success': False, 'message': 'Please provide complete bank information'}), 400
     
     conn = db_manager.get_connection()
     c = conn.cursor()
@@ -1568,7 +1589,7 @@ def api_admin_withdraw():
         balance = float(row[0]) if row else 0
         
         if amount > balance:
-            return jsonify({'success': False, 'message': 'Số dư không đủ'}), 400
+            return jsonify({'success': False, 'message': 'Insufficient balance'}), 400
         
         # Deduct balance
         c.execute('UPDATE wallets SET balance = balance - ?, updated_at = CURRENT_TIMESTAMP WHERE user_id = ?',
@@ -1588,7 +1609,7 @@ def api_admin_withdraw():
                   (current_user.id, -amount, f'Rút về {bank_name} - {account_number}', metadata))
         
         conn.commit()
-        return jsonify({'success': True, 'message': 'Yêu cầu rút tiền thành công. Tiền sẽ được chuyển trong 1-2 ngày làm việc.'})
+        return jsonify({'success': True, 'message': 'Withdrawal request submitted. Funds will be transferred within 1-2 business days.'})
     except Exception as e:
         conn.rollback()
         return jsonify({'success': False, 'message': str(e)}), 500
@@ -1602,11 +1623,11 @@ def api_upgrade_subscription():
     data = request.get_json() or {}
     plan_key = data.get('plan')
     if plan_key is None:
-        return jsonify({'success': False, 'message': 'Gói không hợp lệ'}), 400
+        return jsonify({'success': False, 'message': 'Invalid plan'}), 400
     plan_key = str(plan_key)
     plan = SUBSCRIPTION_PLANS.get(plan_key)
     if not plan:
-        return jsonify({'success': False, 'message': 'Gói không hợp lệ'}), 400
+        return jsonify({'success': False, 'message': 'Invalid plan'}), 400
 
     conn = db_manager.get_connection()
     c = conn.cursor()
@@ -1618,7 +1639,7 @@ def api_upgrade_subscription():
 
         if balance < plan['amount']:
             conn.rollback()
-            return jsonify({'success': False, 'message': 'Số dư ví không đủ để nâng cấp gói này'}), 400
+            return jsonify({'success': False, 'message': 'Insufficient wallet balance to upgrade this plan'}), 400
 
         from datetime import datetime, timedelta
         now = datetime.utcnow()
@@ -1656,7 +1677,7 @@ def api_upgrade_subscription():
         c.execute('SELECT balance FROM wallets WHERE user_id = ?', (current_user.id,))
         new_balance = c.fetchone()[0]
 
-        return jsonify({'success': True, 'message': 'Nâng cấp thành công.', 'balance': new_balance, 'expires_at': format_display_datetime(end_str)})
+        return jsonify({'success': True, 'message': 'Upgrade successful.', 'balance': new_balance, 'expires_at': format_display_datetime(end_str)})
     except Exception as e:
         conn.rollback()
         return jsonify({'success': False, 'message': str(e)}), 500
@@ -1670,7 +1691,7 @@ def api_user_toggle_auto_renew():
     data = request.get_json() or {}
     enabled = data.get('enabled')
     if enabled is None:
-        return jsonify({'success': False, 'message': 'Tham số enabled không hợp lệ'}), 400
+        return jsonify({'success': False, 'message': 'Invalid parameter: enabled'}), 400
 
     enabled_flag = 1 if bool(enabled) else 0
 
@@ -1679,12 +1700,12 @@ def api_user_toggle_auto_renew():
     try:
         c.execute('SELECT id FROM manager_subscriptions WHERE user_id = ?', (current_user.id,))
         if not c.fetchone():
-            return jsonify({'success': False, 'message': 'Chưa có gói để bật/tắt tự động gia hạn'}), 400
+            return jsonify({'success': False, 'message': 'No subscription found to toggle auto-renew'}), 400
 
         c.execute('''UPDATE manager_subscriptions SET auto_renew = ?, updated_at = CURRENT_TIMESTAMP WHERE user_id = ?''', (enabled_flag, current_user.id))
         conn.commit()
 
-        return jsonify({'success': True, 'message': 'Đã cập nhật tự động gia hạn'})
+        return jsonify({'success': True, 'message': 'Auto-renew updated'})
     except Exception as e:
         conn.rollback()
         return jsonify({'success': False, 'message': str(e)}), 500
@@ -1741,7 +1762,7 @@ def api_admin_process_wallet_transaction(transaction_id):
         if not row:
             return jsonify({'success': False, 'message': 'Không tìm thấy giao dịch'}), 404
         if row[5] != 'pending':
-            return jsonify({'success': False, 'message': 'Giao dịch đã được xử lý'}), 400
+            return jsonify({'success': False, 'message': 'Transaction has already been processed'}), 400
 
         metadata = parse_metadata(row[6])
         metadata.update({'admin_id': current_user.id, 'admin_email': current_user.email, 'admin_action_at': datetime.utcnow().isoformat()})
@@ -1754,11 +1775,11 @@ def api_admin_process_wallet_transaction(transaction_id):
                 c.execute('UPDATE wallets SET balance = balance + ?, updated_at = CURRENT_TIMESTAMP WHERE user_id = ?', (row[2], row[1]))
             c.execute("UPDATE wallet_transactions SET status = 'completed', metadata = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?", (json.dumps(metadata), transaction_id))
             conn.commit()
-            return jsonify({'success': True, 'message': 'Đã xác nhận và cộng tiền vào ví.'})
+            return jsonify({'success': True, 'message': 'Transaction approved and wallet updated.'})
         else:
             c.execute("UPDATE wallet_transactions SET status = 'rejected', metadata = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?", (json.dumps(metadata), transaction_id))
             conn.commit()
-            return jsonify({'success': True, 'message': 'Đã từ chối giao dịch.'})
+            return jsonify({'success': True, 'message': 'Transaction rejected.'})
     except Exception as e:
         conn.rollback()
         return jsonify({'success': False, 'message': str(e)}), 500
@@ -1819,13 +1840,17 @@ def google_authorize():
                      (email, hashed_pw, name, first_name, last_name, 'user', user_info.get('picture'), token_json))
             user_id = c.lastrowid
             conn.commit()
-            print(f"Đã tạo user mới từ Google: {email}")
+            print(f"Created new user from Google: {email}")
 
         conn.close()
         
         # Login to Flask-Login
         # Need to get full information to create User object
         user_data = auth_manager.get_user_by_id(user_id)
+        
+        if not user_data:
+            raise Exception("Could not retrieve user data from database")
+
         user_obj = User(
             user_data['id'], 
             user_data['email'], 
@@ -1838,7 +1863,7 @@ def google_authorize():
         
         login_user(user_obj, remember=True)
         session.permanent = True
-        flash('Đăng nhập Google thành công!', 'success')
+        flash('Google login successful!', 'success')
         
         # Redirect
         if role == 'admin':
@@ -1849,7 +1874,7 @@ def google_authorize():
         print(f"Lỗi OAuth: {e}")
         import traceback
         traceback.print_exc()
-        flash(f'Lỗi kết nối với Google: {str(e)}', 'error')
+        flash(f'Google login failed. Please try again. ({str(e)})', 'error')
         return redirect(url_for('auth.signin'))
 
 # Workflow API Routes

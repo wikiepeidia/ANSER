@@ -10,10 +10,10 @@ async function loadCustomers() {
             customersData = data.customers;
             renderCustomersTable();
         } else {
-            showAlert('error', 'Lỗi tải dữ liệu');
+            showAlert('error', 'Failed to load data');
         }
     } catch (error) {
-        showAlert('error', 'Lỗi: ' + error.message);
+        showAlert('error', 'Error: ' + error.message);
     }
 }
 
@@ -21,7 +21,7 @@ function renderCustomersTable() {
     const tbody = document.getElementById('customersTableBody');
 
     if (customersData.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" class="text-center">Chưa có khách hàng nào</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center">No customers found</td></tr>';
         return;
     }
 
@@ -47,7 +47,7 @@ function renderCustomersTable() {
 
 function openAddCustomerModal() {
     editingId = null;
-    document.getElementById('customerModalTitle').textContent = 'Thêm Khách hàng';
+    document.getElementById('customerModalTitle').textContent = 'Add Customer';
     document.getElementById('customerId').value = '';
     document.getElementById('customerCode').value = '';
     document.getElementById('customerCode').disabled = false;
@@ -64,7 +64,7 @@ function editCustomer(id) {
     if (!customer) return;
 
     editingId = id;
-    document.getElementById('customerModalTitle').textContent = 'Sửa Khách hàng';
+    document.getElementById('customerModalTitle').textContent = 'Edit Customer';
     document.getElementById('customerId').value = customer.id;
     document.getElementById('customerCode').value = customer.code;
     document.getElementById('customerCode').disabled = true;
@@ -85,7 +85,7 @@ async function saveCustomer() {
     const notes = document.getElementById('customerNotes').value.trim();
 
     if (!code || !name) {
-        showAlert('error', 'Vui lòng điền đầy đủ thông tin bắt buộc');
+        showAlert('error', 'Please fill in the required fields');
         return;
     }
 
@@ -110,7 +110,7 @@ async function saveCustomer() {
         const data = await response.json();
 
         if (data.success) {
-            showAlert('success', editingId ? 'Cập nhật thành công!' : 'Thêm khách hàng thành công!');
+            showAlert('success', editingId ? 'Update successful!' : 'Customer added successfully!');
             bootstrap.Modal.getInstance(document.getElementById('customerModal')).hide();
             loadCustomers();
         } else {
@@ -122,7 +122,7 @@ async function saveCustomer() {
 }
 
 async function deleteCustomer(id, code) {
-    if (!confirm(`Bạn chắc chắn muốn xóa khách hàng "${code}"?`)) return;
+    if (!confirm(`Are you sure you want to delete customer "${code}"?`)) return;
 
     try {
         const response = await fetch(`/api/customers/${id}`, {
@@ -132,13 +132,13 @@ async function deleteCustomer(id, code) {
         const data = await response.json();
 
         if (data.success) {
-            showAlert('success', 'Xóa thành công!');
+            showAlert('success', 'Deleted successfully!');
             loadCustomers();
         } else {
             showAlert('error', data.message);
         }
     } catch (error) {
-        showAlert('error', 'Lỗi: ' + error.message);
+        showAlert('error', 'Error: ' + error.message);
     }
 }
 
