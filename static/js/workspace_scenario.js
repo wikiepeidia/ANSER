@@ -407,7 +407,6 @@ function runScenarioNow() {
     const duration = ((end - start) / 1000).toFixed(2) + 's';
     logToConsole(`[DONE] Scenario completed in ${duration}`);
     const stamp = start.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-        const stamp = start.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
     runHistory.unshift({ time: stamp, status: 'success', duration });
     document.getElementById('lastRunTime').textContent = stamp;
     document.getElementById('dataProcessed').textContent = `${Math.floor(Math.random() * 50) + 12} records`;

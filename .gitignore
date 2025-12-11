@@ -354,9 +354,9 @@ Desktop.ini
 models/checkpoints/
 models/weights/
 trained_models/
-
+data/layout_dataset/
 model_cache/
-
+saved_models/
 # Retail-specific data files (if storing test data)
 test_inventory/
 test_orders/
