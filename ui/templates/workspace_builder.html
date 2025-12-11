@@ -7,7 +7,7 @@
 {% endblock %}
 
 {% block content %}
-<div class="builder-container" data-google-connected="{{ 'true' if current_user.google_token else 'false' }}">
+<div class="builder-container">
     <!-- Sidebar -->
     <div class="tools-sidebar">
         <div class="sidebar-header">
@@ -36,9 +36,10 @@
                     <i class="fas fa-check-circle"></i> Google Connected
                 </div>
                 {% else %}
-                <div style="font-size: 0.75rem; color: #9aa0a6; display: flex; align-items: center; gap: 5px;">
-                    <i class="fas fa-exclamation-circle"></i> Google not connected
-                </div>
+                <a href="{{ url_for('google_login') }}"
+                    style="font-size: 0.75rem; color: #EA4335; text-decoration: none; display: flex; align-items: center; gap: 5px;">
+                    <i class="fas fa-exclamation-circle"></i> Connect Google
+                </a>
                 {% endif %}
             </div>
             <div

@@ -15,8 +15,6 @@ document.addEventListener('DOMContentLoaded', () => {
         redo: [],
         connections: []
     };
-    const googleConnected = document.querySelector('.builder-container')?.dataset.googleConnected === 'true';
-    let googleWarningShown = false;
     const categoryColors = {
         trigger: '#8bc34a',
         ai: '#00bcd4',
@@ -27,17 +25,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Notification function for workspace builder
     // Uses global showNotification from script.js
-
-    function isGoogleNodeType(type) {
-        return ['google_sheet_read', 'google_sheet_write', 'google_doc_read', 'gmail_send'].includes(type);
-    }
-
-    function warnIfGoogleNode(type) {
-        if (!googleConnected && isGoogleNodeType(type) && !googleWarningShown) {
-            showNotification('Google login required: connect your account to run this node.', 'warning');
-            googleWarningShown = true;
-        }
-    }
 
 
     function pushHistory(action) {
@@ -368,7 +355,6 @@ document.addEventListener('DOMContentLoaded', () => {
         pushHistory({ type: 'create', nodeId: node.dataset.nodeId });
         updateDropZoneVisibility();
         selectNode(node);
-        warnIfGoogleNode(toolData.type);
         return node;
     }
 
@@ -1080,7 +1066,6 @@ document.addEventListener('DOMContentLoaded', () => {
             settingsContainer.innerHTML = ''; // Clear previous settings
             const type = node.dataset.type;
             const config = node.dataset.config ? JSON.parse(node.dataset.config) : {};
-            warnIfGoogleNode(type);
 
             let html = '';
             
