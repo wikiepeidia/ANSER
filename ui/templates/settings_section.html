@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% block title %}{{ section_meta.title }} - Settings{% endblock %}
+
+{% block styles %}
+{{ super() }}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/settings.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="app-layout">
+    {% include 'components/sidebar.html' %}
+
+    <main class="app-content">
+        <div class="container-fluid py-4">
+            <div class="d-flex align-items-center mb-4 gap-3">
+                <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('settings') }}">
+                    <i class="fas fa-arrow-left"></i> Back
+                </a>
+                <div class="d-flex align-items-center">
+                    <div class="settings-header-icon me-3" style="background: {{ section_meta.gradient }};">
+                        <i class="fas {{ section_meta.icon }}"></i>
+                    </div>
+                    <div>
+                        <p class="text-muted mb-0">Configuration</p>
+                        <h3 class="mb-0">{{ section_meta.title }}</h3>
+                        <small class="text-muted">{{ section_meta.description }}</small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-4">
+                <div class="col-lg-8">
+                    <div class="card shadow-sm h-100">
+                        <div class="card-body">
+                            <h5 class="mb-3">Primary Actions</h5>
+                            <p class="text-muted">Core operations for this module.</p>
+                            <ul class="list-group list-group-flush">
+                                <li class="list-group-item d-flex align-items-start justify-content-between">
+                                    <div>
+                                        <strong>Edit Configuration</strong>
+                                        <div class="text-muted small">Adjust information or rules.</div>
+                                    </div>
+                                    <button class="btn btn-outline-primary btn-sm" type="button">Open editor</button>
+                                </li>
+                                <li class="list-group-item d-flex align-items-start justify-content-between">
+                                    <div>
+                                        <strong>Sync Data</strong>
+                                        <div class="text-muted small">Ensure data is up to date.</div>
+                                    </div>
+                                    <button class="btn btn-outline-primary btn-sm" type="button">Sync now</button>
+                                </li>
+                                <li class="list-group-item d-flex align-items-start justify-content-between">
+                                    <div>
+                                        <strong>Workflow Guide</strong>
+                                        <div class="text-muted small">View operational guide.</div>
+                                    </div>
+                                    <button class="btn btn-outline-primary btn-sm" type="button">View guide</button>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4">
+                    <div class="card shadow-sm mb-3">
+                        <div class="card-body">
+                            <h6 class="mb-2">Related Links</h6>
+                            {% if related_links %}
+                            <div class="list-group list-group-flush">
+                                {% for link in related_links %}
+                                <a class="list-group-item list-group-item-action" href="{{ link.url }}">
+                                    {{ link.label }}
+                                    <span class="float-end"><i class="fas fa-arrow-right"></i></span>
+                                </a>
+                                {% endfor %}
+                            </div>
+                            {% else %}
+                            <p class="text-muted mb-0 small">No links available yet.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="card shadow-sm">
+                        <div class="card-body">
+                            <h6 class="mb-2">Status</h6>
+                            <div class="d-flex align-items-center justify-content-between mb-2">
+                                <span>Active</span>
+                                <div class="form-check form-switch mb-0">
+                                    <input class="form-check-input" type="checkbox" checked>
+                                </div>
+                            </div>
+                            <div class="d-flex align-items-center justify-content-between mb-2">
+                                <span>Automation</span>
+                                <div class="form-check form-switch mb-0">
+                                    <input class="form-check-input" type="checkbox">
+                                </div>
+                            </div>
+                            <small class="text-muted d-block mt-2" style="font-size: 0.75rem;">Switches are for
+                                demonstration. Logic will be connected in integration.</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+{% endblock %}

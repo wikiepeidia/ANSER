@@ -1,0 +1,71 @@
+.settings-header-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    display: grid;
+    place-items: center;
+    color: #0f172a;
+}
+
+.settings-card {
+    border: 1px solid var(--border-color);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.settings-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md) !important;
+}
+
+.settings-icon-box {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: grid;
+    place-items: center;
+    color: #0f172a;
+}
+
+.settings-badge-group {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+/* Dark mode adjustments */
+[data-theme="dark"] .settings-header-icon,
+[data-theme="dark"] .settings-icon-box {
+    color: #1e293b; /* Darker text for contrast on bright gradients */
+}
+
+[data-theme="dark"] .card {
+    background-color: var(--surface-card);
+    border-color: var(--border-color) !important;
+}
+
+[data-theme="dark"] .text-muted {
+    color: var(--text-secondary) !important;
+}
+
+/* Button Theme Adaptations */
+.btn-outline-secondary {
+    color: var(--text-secondary);
+    border-color: var(--border-color);
+}
+
+.btn-outline-secondary:hover {
+    background-color: var(--surface-hover);
+    color: var(--text-primary);
+    border-color: var(--text-secondary);
+}
+
+[data-theme="dark"] .btn-outline-secondary {
+    color: var(--text-secondary);
+    border-color: var(--border-color);
+}
+
+[data-theme="dark"] .btn-outline-secondary:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+}

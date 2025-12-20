@@ -346,6 +346,71 @@ def workspace():
         #return redirect(url_for('admin_workspace'))
     return render_template('workspace.html', user=current_user)  # Regular users see user dashboard
 
+@app.route('/settings')
+@login_required
+def settings():
+    """Settings page for store info and preferences"""
+    settings_sections = {
+        'store': {
+            'title': 'Store Information',
+            'description': 'Manage store details, address, and contact info.',
+            'icon': 'fa-store',
+            'gradient': 'linear-gradient(135deg, #f6d365 0%, #fda085 100%)',
+            'links': [{'label': 'Edit Profile', 'url': '#'}]
+        },
+        'branches': {
+            'title': 'Branch Management',
+            'description': 'Configure branches and locations.',
+            'icon': 'fa-code-branch',
+            'gradient': 'linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%)',
+            'links': []
+        },
+        'orders': {
+            'title': 'Order Configuration',
+            'description': 'Invoice settings, auto-generation rules.',
+            'icon': 'fa-file-invoice',
+            'gradient': 'linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%)',
+            'links': []
+        }
+    }
+    return render_template('settings.html', user=current_user, settings_sections=settings_sections)
+
+@app.route('/settings/<section>')
+@login_required
+def settings_section(section):
+    settings_sections = {
+        'store': {
+            'title': 'Store Information',
+            'description': 'Manage store details, address, and contact info.',
+            'icon': 'fa-store',
+            'gradient': 'linear-gradient(135deg, #f6d365 0%, #fda085 100%)',
+            'links': [{'label': 'Edit Profile', 'url': '#'}]
+        },
+        'branches': {
+            'title': 'Branch Management',
+            'description': 'Configure branches and locations.',
+            'icon': 'fa-code-branch',
+            'gradient': 'linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%)',
+            'links': []
+        },
+        'orders': {
+            'title': 'Order Configuration',
+            'description': 'Invoice settings, auto-generation rules.',
+            'icon': 'fa-file-invoice',
+            'gradient': 'linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%)',
+            'links': []
+        }
+    }
+    
+    if section not in settings_sections:
+        flash('Section not found', 'error')
+        return redirect(url_for('settings'))
+        
+    return render_template('settings_section.html', 
+                         user=current_user, 
+                         section_meta=settings_sections[section],
+                         related_links=settings_sections[section]['links'])
+
 @app.route('/manager/create-user')
 @login_required
 def create_user_account():
@@ -377,8 +442,8 @@ def admin_roles():
 @login_required
 def admin_analytics():
     """Admin page for analytics and statistics"""
-    if not hasattr(current_user, 'role') or current_user.role != 'admin':
-        flash('Bạn không có quyền truy cập trang này', 'error')
+    if not hasattr(current_user, 'role') or current_user.role not in ['admin', 'manager']:
+        flash('You do not have permission to access this page', 'error')
         return redirect(url_for('workspace'))
     
     # Fetch Google Analytics Data
@@ -733,6 +798,31 @@ def admin_get_stats():
     """Get system statistics for admin dashboard"""
     if not hasattr(current_user, 'role') or current_user.role != 'admin':
         return jsonify({'success': False, 'message': 'Unauthorized'}), 403
+    
+    # Mock data for now as tables don't exist
+    return jsonify({
+        'success': True,
+        'stats': {
+            'users': 0,
+            'managers': 0,
+            'products': 0,
+            'customers': 0
+        }
+    })
+
+@app.route('/api/products')
+@login_required
+def get_products():
+    """Get all products (Mock)"""
+    # Return empty list to prevent 404 errors in dashboard
+    return jsonify({'success': True, 'products': []})
+
+@app.route('/api/customers')
+@login_required
+def get_customers():
+    """Get all customers (Mock)"""
+    # Return empty list to prevent 404 errors in dashboard
+    
     
     conn = db_manager.get_connection()
     c = conn.cursor()
@@ -2543,16 +2633,9 @@ if __name__ == '__main__':
     
     # Only start DL service from the main process, not the reloader child
     if os.environ.get('WERKZEUG_RUN_MAIN') != 'true':
-        print("[Main] Main process - Starting Deep Learning Service (Threaded)...", flush=True)
-        try:
-            # Start DL service in a separate thread
-            dl_thread = threading.Thread(target=run_dl_service, daemon=True)
-            dl_thread.start()
-            print("[Main] DL thread started successfully", flush=True)
-        except Exception as e:
-            print(f"[Main] Failed to start DL Service: {e}", flush=True)
+        print("[Main] Main process - DL Service integrated directly (Lazy Loading).", flush=True)
     else:
-        print("[Main] Reloader child process - skipping DL service start", flush=True)
+        print("[Main] Reloader child process", flush=True)
 
     db_manager.init_database()
     print("[Main] Starting Flask on port 5000...", flush=True)

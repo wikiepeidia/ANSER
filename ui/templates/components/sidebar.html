@@ -41,8 +41,14 @@
         <div class="menu-section">
             <div class="section-title">
                 <i class="fas fa-crown"></i>
-                <span>System Admin</span>
+                <span>Platform Administration</span>
             </div>
+            <a class="menu-item" href="{{ url_for('admin_dashboard') }}">
+                <div class="menu-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);"><i
+                        class="fas fa-tachometer-alt"></i></div>
+                <div class="menu-label">Admin Dashboard</div>
+                <div class="menu-arrow"><i class="fas fa-chevron-right"></i></div>
+            </a>
             <a class="menu-item" href="{{ url_for('admin_analytics') }}">
                 <div class="menu-icon" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);"><i
                         class="fas fa-chart-line"></i></div>
@@ -78,12 +84,12 @@
         <div class="menu-section">
             <div class="section-title">
                 <i class="fas fa-store"></i>
-                <span>Business Management</span>
+                <span>My Store Management</span>
             </div>
             <a class="menu-item" href="{{ url_for('dashboard') }}">
                 <div class="menu-icon" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);"><i
                         class="fas fa-chart-pie"></i></div>
-                <div class="menu-label">Business Dashboard</div>
+                <div class="menu-label">Store Dashboard</div>
                 <div class="menu-arrow"><i class="fas fa-chevron-right"></i></div>
             </a>
             <a class="menu-item" href="{{ url_for('customers') }}">
@@ -133,6 +139,12 @@
                 <div class="menu-icon" style="background: linear-gradient(135deg, #89f7fe 0%, #66a6ff 100%);"><i
                         class="fas fa-project-diagram"></i></div>
                 <div class="menu-label">Automation Scenarios</div>
+                <div class="menu-arrow"><i class="fas fa-chevron-right"></i></div>
+            </a>
+            <a class="menu-item" href="{{ url_for('settings') }}">
+                <div class="menu-icon" style="background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%);"><i
+                        class="fas fa-cog"></i></div>
+                <div class="menu-label">Settings</div>
                 <div class="menu-arrow"><i class="fas fa-chevron-right"></i></div>
             </a>
         </div>

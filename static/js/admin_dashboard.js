@@ -78,6 +78,9 @@
                         <div class="activity-title">
                             <strong>${activity.user_name}</strong> ${activity.action}
                         </div>
+                        <div class="activity-details text-muted small">
+                            ${activity.details || ''}
+                        </div>
                         <div class="activity-time">${timeAgo(activity.created_at)}</div>
                     </div>
                 </div>

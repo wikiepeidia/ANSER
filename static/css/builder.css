@@ -252,9 +252,33 @@ body.builder-page {
     flex-direction: column;
     background: var(--builder-bg);
     position: relative;
+    overflow: hidden; /* Ensure content doesn't spill out */
 }
 
-.canvas-header {
+#dropZone {
+    flex: 1;
+    position: relative;
+    overflow: hidden; /* Hide scrollbars, we use custom pan */
+    background-image: 
+        linear-gradient(var(--builder-border) 1px, transparent 1px),
+        linear-gradient(90deg, var(--builder-border) 1px, transparent 1px);
+    background-size: 20px 20px;
+    background-position: center center;
+    cursor: default;
+    /* Infinite canvas simulation */
+    width: 100%;
+    height: 100%;
+}
+
+#workflowCanvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 5000px; /* Large canvas */
+    height: 5000px;
+    transform-origin: 0 0;
+    /* No background here, grid is on dropZone */
+}
     padding: 24px 32px;
     display: flex;
     justify-content: space-between;
@@ -1056,3 +1080,13 @@ textarea.form-control {
 .console-line.warning { color: #e5c07b; }
 .console-line.error { color: #e06c75; }
 .console-line.debug { color: #c678dd; }
+
+/* Connection Line Styles */
+.connection-line {
+    cursor: pointer;
+    transition: stroke-width 0.2s, stroke 0.2s;
+}
+.connection-line:hover {
+    stroke-width: 6px !important;
+    stroke: #4f46e5 !important;
+}

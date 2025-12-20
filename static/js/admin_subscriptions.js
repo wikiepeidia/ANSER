@@ -303,7 +303,7 @@ async function loadPendingPayments(showToastMessage = false) {
         }
         const data = await response.json();
         if (!data.success) throw new Error(data.message || 'Failed to load pending payments');
-        const transactions = data.transactions || [];
+        const transactions = data.history || []; // Fixed: API returns 'history' not 'transactions'
         if (!tbody) return;
             if (!transactions.length) {
             tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">No pending transactions</td></tr>';

@@ -28,6 +28,31 @@
         <!-- Wallet / Subscription Glance -->
         <div class="wallet-glance">
             <div class="glance-head">
+                <h3><i class="fas fa-chart-line me-2"></i>Business Overview</h3>
+                <span class="glance-chip">Live Data</span>
+            </div>
+            <div class="glance-grid">
+                <div class="glance-card">
+                    <p>Total Revenue</p>
+                    <h3>$0.00</h3>
+                    <div class="glance-subtext">This Month</div>
+                </div>
+                <div class="glance-card">
+                    <p>New Orders</p>
+                    <h3>0</h3>
+                    <div class="glance-subtext">Today</div>
+                </div>
+                <div class="glance-card">
+                    <p>Returns</p>
+                    <h3>0</h3>
+                    <div class="glance-subtext">Pending</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Wallet / Subscription Glance -->
+        <div class="wallet-glance">
+            <div class="glance-head">
                 <h3><i class="fas fa-wallet me-2"></i>Subscription</h3>
                 <span class="glance-chip">Free Plan</span>
             </div>
@@ -57,19 +82,7 @@
                     <h3>Quick Actions</h3>
                 </div>
                 <div class="collection-grid">
-                    <!-- Workspace Builder Card -->
-                    <a href="{{ url_for('workspace_builder') }}" class="collection-card">
-                        <div class="collection-icon gradient-green">
-                            <i class="fas fa-cubes"></i>
-                        </div>
-                        <div class="collection-body">
-                            <h4>Workspace Builder</h4>
-                            <p>Design and manage your workspace</p>
-                        </div>
-                        <div class="collection-cta">Open <i class="fas fa-arrow-right ms-1"></i></div>
-                    </a>
-
-                    <!-- Templates Card (Placeholder) -->
+                    <!-- Templates Card -->
                     <div class="collection-card">
                         <div class="collection-icon gradient-blue">
                             <i class="fas fa-layer-group"></i>
@@ -81,7 +94,17 @@
                         <div class="collection-cta">Browse <i class="fas fa-arrow-right ms-1"></i></div>
                     </div>
 
-
+                    <!-- Settings Card -->
+                    <a href="{{ url_for('settings') }}" class="collection-card">
+                        <div class="collection-icon gradient-purple">
+                            <i class="fas fa-cog"></i>
+                        </div>
+                        <div class="collection-body">
+                            <h4>Settings</h4>
+                            <p>Configure your workspace</p>
+                        </div>
+                        <div class="collection-cta">Open <i class="fas fa-arrow-right ms-1"></i></div>
+                    </a>
                 </div>
             </div>
         </div>

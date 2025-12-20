@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}Settings - {{ project_name }}{% endblock %}
+
+{% block styles %}
+{{ super() }}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/settings.css') }}">
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script src="{{ url_for('static', filename='js/settings.js') }}" defer></script>
+{% endblock %}
+
+{% block content %}
+<div class="app-layout">
+    {% include 'components/sidebar.html' %}
+
+    <main class="app-content">
+        <div class="container-fluid py-4">
+            <div class="d-flex align-items-center flex-wrap mb-4 gap-3">
+                <div class="d-flex align-items-center">
+                    <div class="settings-header-icon me-3"
+                        style="background: linear-gradient(135deg, #d4fc79 0%, #96e6a1 100%);">
+                        <i class="fas fa-sliders-h"></i>
+                    </div>
+                    <div>
+                        <p class="text-muted mb-0">Configuration</p>
+                        <h3 class="mb-0">Settings</h3>
+                    </div>
+                </div>
+                <div class="ms-auto d-flex align-items-center gap-2 flex-wrap">
+                    <span class="badge bg-light text-dark border">Click cards to configure</span>
+                </div>
+            </div>
+
+            <div class="row gy-4">
+                {% for key, item in settings_sections.items() %}
+                <div class="col-md-6 col-lg-4">
+                    <div class="card shadow-sm h-100 position-relative settings-card">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="settings-icon-box me-3" style="background: {{ item.gradient }};">
+                                    <i class="fas {{ item.icon }}"></i>
+                                </div>
+                                <div>
+                                    <h5 class="mb-0">{{ item.title }}</h5>
+                                    <small class="text-muted">{{ item.description }}</small>
+                                </div>
+                            </div>
+                            <div class="settings-badge-group">
+                                <span class="badge bg-primary-subtle text-primary">Configure</span>
+                                {% if item.links and item.links|length > 0 %}
+                                <span class="badge bg-light text-dark border">{{ item.links|length }} links</span>
+                                {% endif %}
+                            </div>
+                            <a class="stretched-link" href="{{ url_for('settings_section', section=key) }}"
+                                aria-label="Open {{ item.title }}"></a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </main>
+</div>
+{% endblock %}

@@ -450,6 +450,19 @@ document.addEventListener('DOMContentLoaded', () => {
             case 'delete':
                 if (confirm('Delete this node?')) {
                     const nodeId = node.dataset.nodeId;
+                    
+                    // Remove associated connections
+                    const linesToRemove = [];
+                    document.querySelectorAll('.connection-line').forEach(line => {
+                        if (line.dataset.source === nodeId || line.dataset.target === nodeId) {
+                            linesToRemove.push(line);
+                        }
+                    });
+                    linesToRemove.forEach(l => l.remove());
+                    
+                    // Update builderState.connections
+                    builderState.connections = builderState.connections.filter(c => c.source !== nodeId && c.target !== nodeId);
+
                     const snapshot = node.outerHTML;
                     node.remove();
                     pushHistory({ type: 'delete', nodeId, snapshot });
@@ -466,29 +479,34 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function enableNodeDragging(node) {
-        const handle = node.querySelector('.node-header');
-        if (!handle || !canvas) {
+        if (!node || !canvas) {
             return;
         }
 
-        handle.addEventListener('mousedown', (event) => {
+        node.addEventListener('mousedown', (event) => {
+            // Ignore clicks on inputs, buttons, or connection points
+            if (event.target.closest('input, button, .connection-point, .node-menu')) return;
+
             if (event.button !== 0) {
                 return;
             }
             event.preventDefault();
-            const canvasRect = canvas.getBoundingClientRect();
-            const nodeRect = node.getBoundingClientRect();
-            const offsetX = event.clientX - nodeRect.left;
-            const offsetY = event.clientY - nodeRect.top;
+            
+            const scale = builderMode.scale || 1;
             const startLeft = parseInt(node.style.left, 10) || 0;
             const startTop = parseInt(node.style.top, 10) || 0;
+            const startX = event.clientX;
+            const startY = event.clientY;
 
             node.classList.add('dragging');
 
             function onMouseMove(moveEvent) {
-                const currentCanvasRect = canvas.getBoundingClientRect();
-                const newLeft = moveEvent.clientX - currentCanvasRect.left - offsetX;
-                const newTop = moveEvent.clientY - currentCanvasRect.top - offsetY;
+                const dx = (moveEvent.clientX - startX) / scale;
+                const dy = (moveEvent.clientY - startY) / scale;
+                
+                const newLeft = startLeft + dx;
+                const newTop = startTop + dy;
+                
                 node.style.left = `${Math.max(0, newLeft)}px`;
                 node.style.top = `${Math.max(0, newTop)}px`;
                 
@@ -654,6 +672,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const builderMode = {
         current: 'cursor',
         scale: 1.0,
+        translateX: 0,
+        translateY: 0,
         isConnecting: false,
         connectionStart: null
     };
@@ -749,13 +769,49 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (canvas) {
         canvas.addEventListener('wheel', (event) => {
-            if (builderMode.current === 'zoom') {
+            // Only zoom if Ctrl key is pressed
+            if (event.ctrlKey) {
                 event.preventDefault();
                 const delta = event.deltaY > 0 ? -0.1 : 0.1;
                 builderMode.scale = Math.max(0.5, Math.min(2.0, builderMode.scale + delta));
-                canvas.style.transform = `scale(${builderMode.scale})`;
-                canvas.style.transformOrigin = 'center center';
+                canvas.style.transform = `translate(${builderMode.translateX}px, ${builderMode.translateY}px) scale(${builderMode.scale})`;
+                canvas.style.transformOrigin = '0 0';
+            } else {
+                // Normal scrolling behavior (let the browser handle it or implement pan if needed)
+                // If we want infinite canvas panning:
+                event.preventDefault();
+                builderMode.translateX -= event.deltaX;
+                builderMode.translateY -= event.deltaY;
+                canvas.style.transform = `translate(${builderMode.translateX}px, ${builderMode.translateY}px) scale(${builderMode.scale})`;
+                canvas.style.transformOrigin = '0 0';
             }
+        });
+        
+        // Mouse drag to pan
+        let isPanning = false;
+        let startX, startY;
+
+        canvas.addEventListener('mousedown', (e) => {
+            // Only pan if clicking on background (not on a node)
+            if (e.target === canvas || e.target.id === 'dropZone') {
+                isPanning = true;
+                startX = e.clientX - builderMode.translateX;
+                startY = e.clientY - builderMode.translateY;
+                canvas.style.cursor = 'grabbing';
+            }
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (!isPanning) return;
+            e.preventDefault();
+            builderMode.translateX = e.clientX - startX;
+            builderMode.translateY = e.clientY - startY;
+            canvas.style.transform = `translate(${builderMode.translateX}px, ${builderMode.translateY}px) scale(${builderMode.scale})`;
+        });
+
+        window.addEventListener('mouseup', () => {
+            isPanning = false;
+            canvas.style.cursor = 'default';
         });
     }
 
@@ -866,6 +922,17 @@ document.addEventListener('DOMContentLoaded', () => {
         const d = getConnectionPath(sourceNode, targetNode);
 
         const line = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        
+        // Make line clickable for deletion
+        line.style.cursor = 'pointer';
+        line.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (confirm('Delete this connection?')) {
+                line.remove();
+                builderState.connections = builderState.connections.filter(c => c.source !== sourceNode.dataset.nodeId || c.target !== targetNode.dataset.nodeId);
+            }
+        });
+
         line.setAttribute('d', d);
         line.setAttribute('stroke', '#667eea');
         line.setAttribute('stroke-width', '3');
@@ -910,6 +977,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (headerUndoBtn) headerUndoBtn.addEventListener('click', () => undo());
     if (headerSaveBtn) headerSaveBtn.addEventListener('click', () => saveWorkflow());
     if (headerRunBtn) headerRunBtn.addEventListener('click', () => runWorkflow());
+    if (headerClearBtn) headerClearBtn.addEventListener('click', () => clearCanvas());
 
     // Load Workflow Logic
     const headerLoadBtn = document.querySelector('.canvas-header .canvas-actions [data-action="load-workflow"]');
@@ -1027,18 +1095,16 @@ document.addEventListener('DOMContentLoaded', () => {
         window.location.href = `/workspace/builder?id=${id}`;
     }
 
-    if (headerClearBtn) {
-        headerClearBtn.addEventListener('click', () => {
-            if (confirm('Are you sure you want to clear the entire workflow?')) {
-                document.querySelectorAll('.workflow-node').forEach(n => n.remove());
-                document.querySelectorAll('.connection-line').forEach(l => l.remove());
-                builderState.connections = [];
-                builderState.history = [];
-                builderState.redo = [];
-                updateDropZoneVisibility();
-                showNotification('Canvas cleared', 'info');
-            }
-        });
+    function clearCanvas() {
+        if (confirm('Are you sure you want to clear the entire workflow?')) {
+            document.querySelectorAll('.workflow-node').forEach(n => n.remove());
+            document.querySelectorAll('.connection-line').forEach(l => l.remove());
+            builderState.connections = [];
+            builderState.history = [];
+            builderState.redo = [];
+            updateDropZoneVisibility();
+            showNotification('Canvas cleared', 'info');
+        }
     }
 
     async function runWorkflow() {

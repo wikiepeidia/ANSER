@@ -2,6 +2,7 @@ from datetime import datetime
 import pandas as pd
 import os
 from utils.logger import get_logger
+from config import DATA_DIR
 
 logger = get_logger(__name__)
 
@@ -23,7 +24,7 @@ def load_timescale_data():
                 return 0
 
         # Load dataset_product.csv
-        df_products = pd.read_csv('data/dataset_product.csv', sep=';', encoding='utf-8')
+        df_products = pd.read_csv(DATA_DIR / 'dataset_product.csv', sep=';', encoding='utf-8')
         logger.info(f"[DATA] Loaded dataset_product.csv: {len(df_products)} products from REAL CSV file")
 
         product_info = {}
@@ -36,7 +37,7 @@ def load_timescale_data():
             }
 
         # Load import_in_a_timescale.csv
-        df_imports = pd.read_csv('data/import_in_a_timescale.csv', sep=';', encoding='utf-8')
+        df_imports = pd.read_csv(DATA_DIR / 'import_in_a_timescale.csv', sep=';', encoding='utf-8')
         logger.info(f"[DATA] Loaded import_in_a_timescale.csv: {len(df_imports)} import records from October 2025")
 
         imports_dict = {}
@@ -49,7 +50,7 @@ def load_timescale_data():
                 continue
 
         # Load sale_in_a_timescale.csv
-        df_sales = pd.read_csv('data/sale_in_a_timescale.csv', sep=';', encoding='utf-8')
+        df_sales = pd.read_csv(DATA_DIR / 'sale_in_a_timescale.csv', sep=';', encoding='utf-8')
         logger.info(f"[DATA] Loaded sale_in_a_timescale.csv: {len(df_sales)} sales records from October 2025")
 
         sales_dict = {}
