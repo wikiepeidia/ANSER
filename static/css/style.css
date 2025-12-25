@@ -189,8 +189,8 @@ body.auth-page .auth-container {
 }
 
 body.dark-mode {
-    background: #1a1a1a;
-    color: #ffffff;
+    background: #1a1a1a !important;
+    color: #ffffff !important;
 }
 
 body.dark-mode .alert {

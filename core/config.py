@@ -43,3 +43,12 @@ class Config:
         'scenarios',
         'projects'
     ]
+
+    # --- Google Analytics & OAuth ---
+    # Numeric Google Analytics Property ID (replace with your property id or set env var `GA_PROPERTY_ID`)
+    GA_PROPERTY_ID = os.environ.get('GA_PROPERTY_ID', '517047582')
+    GA_ENABLE_CACHING = True
+    GA_CACHE_LIFETIME_SECONDS = int(os.environ.get('GA_CACHE_LIFETIME_SECONDS', 3600))
+
+    _BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    GA_SERVICE_ACCOUNT_FILE = os.path.join(_BASE_DIR, 'secrets', 'analytics_service_account.json')

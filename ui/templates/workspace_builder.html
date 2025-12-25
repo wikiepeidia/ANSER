@@ -4,6 +4,7 @@
 
 {% block styles %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/builder.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/builder_tabs.css') }}">
 {% endblock %}
 
 {% block content %}
@@ -45,99 +46,153 @@
                 style="margin-top: 15px; margin-bottom: 5px; font-weight: bold; color: var(--builder-muted); font-size: 0.8rem; letter-spacing: 1px;">
                 TOOLBOX</div>
             <input type="text" id="toolSearch" class="search-input" placeholder="Search tools...">
+
+            <!-- Tabs -->
+            <ul class="nav nav-tabs nav-fill mt-2 mb-2" id="builderTabs" role="tablist"
+                style="border-bottom: 1px solid var(--builder-border);">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active py-1" id="nodes-tab" data-bs-toggle="tab"
+                        data-bs-target="#nodes-pane" type="button" role="tab" style="font-size: 0.85rem;">Nodes</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link py-1" id="templates-tab" data-bs-toggle="tab"
+                        data-bs-target="#templates-pane" type="button" role="tab"
+                        style="font-size: 0.85rem;">Templates</button>
+                </li>
+            </ul>
         </div>
-        <div class="tools-list" id="toolList">
-            <div class="category-title">TEMPLATES</div>
-            <div class="tool-item template-item" data-template="invoice_scan">
-                <div class="tool-icon" style="background: #ff9800;"><i class="fas fa-file-invoice"></i></div>
-                <div class="tool-info">
-                    <div class="tool-name">Scan Invoice</div>
-                    <div class="tool-description">OCR -> AI -> Slack</div>
-                </div>
-            </div>
-            <div class="tool-item template-item" data-template="customer_feedback">
-                <div class="tool-icon" style="background: #2196f3;"><i class="fas fa-comment-dots"></i></div>
-                <div class="tool-info">
-                    <div class="tool-name">Feedback Analysis</div>
-                    <div class="tool-description">Sheet -> Sentiment -> Email</div>
+
+        <div class="tab-content" id="builderTabsContent" style="flex: 1; overflow-y: auto;">
+            <!-- Nodes Tab -->
+            <div class="tab-pane fade show active" id="nodes-pane" role="tabpanel" aria-labelledby="nodes-tab">
+                <div class="tools-list" id="toolList">
+                    <div class="category-title">RETAIL AI</div>
+                    <div class="tool-item" draggable="true" data-category="ai" data-type="invoice_ocr">
+                        <div class="tool-icon" style="background: #00BCD4;"><i class="fas fa-file-invoice"></i></div>
+                        <div class="tool-info">
+                            <div class="tool-name">OCR Invoice</div>
+                            <div class="tool-description">Upload & Extract Invoice Data</div>
+                        </div>
+                    </div>
+                    <div class="tool-item" draggable="true" data-category="ai" data-type="invoice_forecast">
+                        <div class="tool-icon" style="background: #673AB7;"><i class="fas fa-chart-line"></i></div>
+                        <div class="tool-info">
+                            <div class="tool-name">Predict Invoice</div>
+                            <div class="tool-description">Forecast Quantity (LSTM)</div>
+                        </div>
+                    </div>
+
+                    <div class="category-title">GOOGLE</div>
+                    <div class="tool-item" draggable="true" data-category="integration" data-type="google_sheet_read">
+                        <div class="tool-icon" style="background: #0F9D58;"><i class="fas fa-table"></i></div>
+                        <div class="tool-info">
+                            <div class="tool-name">Read Sheet</div>
+                            <div class="tool-description">Read data from Google Sheets</div>
+                        </div>
+                    </div>
+                    <div class="tool-item" draggable="true" data-category="integration" data-type="google_sheet_write">
+                        <div class="tool-icon" style="background: #0F9D58;"><i class="fas fa-pen"></i></div>
+                        <div class="tool-info">
+                            <div class="tool-name">Write Sheet</div>
+                            <div class="tool-description">Write data to Google Sheets</div>
+                        </div>
+                    </div>
+                    <div class="tool-item" draggable="true" data-category="integration" data-type="google_doc_read">
+                        <div class="tool-icon" style="background: #4285F4;"><i class="fas fa-file-alt"></i></div>
+                        <div class="tool-info">
+                            <div class="tool-name">Read Doc</div>
+                            <div class="tool-description">Read text from Google Docs</div>
+                        </div>
+                    </div>
+                    <div class="tool-item" draggable="true" data-category="integration" data-type="gmail_send">
+                        <div class="tool-icon" style="background: #EA4335;"><i class="fas fa-envelope"></i></div>
+                        <div class="tool-info">
+                            <div class="tool-name">Send Email</div>
+                            <div class="tool-description">Send via Gmail</div>
+                        </div>
+                    </div>
+
+
+
+                    <div class="category-title">INTEGRATIONS</div>
+                    <div class="tool-item" draggable="true" data-category="integration" data-type="make_webhook">
+                        <div class="tool-icon" style="background: #6f42c1;"><i class="fas fa-bolt"></i></div>
+                        <div class="tool-info">
+                            <div class="tool-name">Make.com</div>
+                            <div class="tool-description">Trigger Make webhook</div>
+                        </div>
+                    </div>
+                    <div class="tool-item" draggable="true" data-category="integration" data-type="slack_notify">
+                        <div class="tool-icon" style="background: #4A154B;"><i class="fab fa-slack"></i></div>
+                        <div class="tool-info">
+                            <div class="tool-name">Slack</div>
+                            <div class="tool-description">Send Slack message</div>
+                        </div>
+                    </div>
+                    <div class="tool-item" draggable="true" data-category="integration" data-type="discord_notify">
+                        <div class="tool-icon" style="background: #5865F2;"><i class="fab fa-discord"></i></div>
+                        <div class="tool-info">
+                            <div class="tool-name">Discord</div>
+                            <div class="tool-description">Send Discord webhook</div>
+                        </div>
+                    </div>
+
+                    <div class="category-title">LOGIC</div>
+                    <div class="tool-item" draggable="true" data-category="logic" data-type="filter">
+                        <div class="tool-icon" style="background: #FF9800;"><i class="fas fa-filter"></i></div>
+                        <div class="tool-info">
+                            <div class="tool-name">Filter</div>
+                            <div class="tool-description">Filter data stream</div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <div class="category-title">GOOGLE</div>
-            <div class="tool-item" draggable="true" data-category="integration" data-type="google_sheet_read">
-                <div class="tool-icon" style="background: #0F9D58;"><i class="fas fa-table"></i></div>
-                <div class="tool-info">
-                    <div class="tool-name">Read Sheet</div>
-                    <div class="tool-description">Read data from Google Sheets</div>
-                </div>
-            </div>
-            <div class="tool-item" draggable="true" data-category="integration" data-type="google_sheet_write">
-                <div class="tool-icon" style="background: #0F9D58;"><i class="fas fa-pen"></i></div>
-                <div class="tool-info">
-                    <div class="tool-name">Write Sheet</div>
-                    <div class="tool-description">Write data to Google Sheets</div>
-                </div>
-            </div>
-            <div class="tool-item" draggable="true" data-category="integration" data-type="google_doc_read">
-                <div class="tool-icon" style="background: #4285F4;"><i class="fas fa-file-alt"></i></div>
-                <div class="tool-info">
-                    <div class="tool-name">Read Doc</div>
-                    <div class="tool-description">Read text from Google Docs</div>
-                </div>
-            </div>
-            <div class="tool-item" draggable="true" data-category="integration" data-type="gmail_send">
-                <div class="tool-icon" style="background: #EA4335;"><i class="fas fa-envelope"></i></div>
-                <div class="tool-info">
-                    <div class="tool-name">Send Email</div>
-                    <div class="tool-description">Send via Gmail</div>
-                </div>
-            </div>
+            <!-- Templates Tab -->
+            <div class="tab-pane fade" id="templates-pane" role="tabpanel" aria-labelledby="templates-tab">
+                <div class="tools-list">
+                    <div class="category-title">POPULAR TEMPLATES</div>
 
-            <div class="category-title">AI & ML</div>
-            <div class="tool-item" draggable="true" data-category="ai" data-type="invoice_ocr">
-                <div class="tool-icon" style="background: #00BCD4;"><i class="fas fa-file-invoice"></i></div>
-                <div class="tool-info">
-                    <div class="tool-name">Invoice OCR</div>
-                    <div class="tool-description">Extract data from invoice</div>
-                </div>
-            </div>
-            <div class="tool-item" draggable="true" data-category="ai" data-type="invoice_forecast">
-                <div class="tool-icon" style="background: #673AB7;"><i class="fas fa-chart-line"></i></div>
-                <div class="tool-info">
-                    <div class="tool-name">Demand Forecast</div>
-                    <div class="tool-description">Predict future sales (LSTM)</div>
-                </div>
-            </div>
+                    <div class="tool-item template-item" data-template="invoice_scan">
+                        <div class="tool-icon" style="background: #00BCD4;"><i class="fas fa-file-invoice-dollar"></i>
+                        </div>
+                        <div class="tool-info">
+                            <div class="tool-name">Invoice Processing</div>
+                            <div class="tool-description">OCR Invoice -> AI Analysis -> Slack</div>
+                        </div>
+                    </div>
 
-            <div class="category-title">INTEGRATIONS</div>
-            <div class="tool-item" draggable="true" data-category="integration" data-type="make_webhook">
-                <div class="tool-icon" style="background: #6f42c1;"><i class="fas fa-bolt"></i></div>
-                <div class="tool-info">
-                    <div class="tool-name">Make.com</div>
-                    <div class="tool-description">Trigger Make webhook</div>
-                </div>
-            </div>
-            <div class="tool-item" draggable="true" data-category="integration" data-type="slack_notify">
-                <div class="tool-icon" style="background: #4A154B;"><i class="fab fa-slack"></i></div>
-                <div class="tool-info">
-                    <div class="tool-name">Slack</div>
-                    <div class="tool-description">Send Slack message</div>
-                </div>
-            </div>
-            <div class="tool-item" draggable="true" data-category="integration" data-type="discord_notify">
-                <div class="tool-icon" style="background: #5865F2;"><i class="fab fa-discord"></i></div>
-                <div class="tool-info">
-                    <div class="tool-name">Discord</div>
-                    <div class="tool-description">Send Discord webhook</div>
-                </div>
-            </div>
+                    <div class="tool-item template-item" data-template="customer_feedback">
+                        <div class="tool-icon" style="background: #E91E63;"><i class="fas fa-heart"></i></div>
+                        <div class="tool-info">
+                            <div class="tool-name">Customer Feedback</div>
+                            <div class="tool-description">Sheet -> Sentiment -> Alert Manager</div>
+                        </div>
+                    </div>
 
-            <div class="category-title">LOGIC</div>
-            <div class="tool-item" draggable="true" data-category="logic" data-type="filter">
-                <div class="tool-icon" style="background: #FF9800;"><i class="fas fa-filter"></i></div>
-                <div class="tool-info">
-                    <div class="tool-name">Filter</div>
-                    <div class="tool-description">Filter data stream</div>
+                    <div class="tool-item template-item" data-template="low_stock_alert">
+                        <div class="tool-icon" style="background: #FF9800;"><i class="fas fa-boxes"></i></div>
+                        <div class="tool-info">
+                            <div class="tool-name">Low Stock Alert</div>
+                            <div class="tool-description">Check Stock -> Filter -> Email</div>
+                        </div>
+                    </div>
+
+                    <div class="tool-item template-item" data-template="daily_report">
+                        <div class="tool-icon" style="background: #4CAF50;"><i class="fas fa-calendar-check"></i></div>
+                        <div class="tool-info">
+                            <div class="tool-name">Daily Sales Report</div>
+                            <div class="tool-description">Fetch Sales -> Summarize -> Email</div>
+                        </div>
+                    </div>
+
+                    <div class="tool-item template-item" data-template="social_media_monitor">
+                        <div class="tool-icon" style="background: #2196F3;"><i class="fas fa-hashtag"></i></div>
+                        <div class="tool-info">
+                            <div class="tool-name">Social Monitor</div>
+                            <div class="tool-description">Monitor Brand -> Sentiment -> Sheet</div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -335,20 +390,23 @@
                                 <h5>Excel/Sheets Sync</h5>
                                 <p class="small text-muted">Automatically sync data between your database and
                                     spreadsheets.</p>
-                                <a href="#" class="btn btn-outline-success btn-sm stretched-link">View Guide</a>
+                                <a href="https://developers.google.com/workspace/sheets/api/guides/concepts?hl=vi"
+                                    target="_blank" class="btn btn-outline-success btn-sm stretched-link">API Guide</a>
                             </div>
                         </div>
                     </div>
                     <div class="col-md-6">
                         <div class="card h-100 border-0 bg-light tutorial-card">
                             <div class="card-body text-center p-4">
-                                <div class="mb-3 text-info">
-                                    <i class="fas fa-project-diagram fa-3x"></i>
+                                <div class="mb-3 text-primary">
+                                    <i class="fab fa-discord fa-3x"></i>
                                 </div>
-                                <h5>Building Workflows</h5>
-                                <p class="small text-muted">Master the drag-and-drop builder to create complex logic.
+                                <h5>Discord Integration</h5>
+                                <p class="small text-muted">Connect your workflow to Discord for real-time
+                                    notifications.
                                 </p>
-                                <a href="#" class="btn btn-outline-info btn-sm stretched-link">Start Tutorial</a>
+                                <a href="https://support.discord.com/hc/en-us/articles/228383668-Intro-to-Webhooks"
+                                    target="_blank" class="btn btn-outline-primary btn-sm stretched-link">API Guide</a>
                             </div>
                         </div>
                     </div>
@@ -387,6 +445,68 @@
         filter: invert(1) grayscale(100%) brightness(200%);
     }
 </style>
+
+<!-- Interactive Tour Modal -->
+<div class="modal fade" id="tourStepsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <h5 class="modal-title"><i class="fas fa-map-signs text-primary"></i> Quick Tour</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="d-flex mb-3">
+                    <div class="me-3">
+                        <span class="badge bg-primary rounded-circle p-2"
+                            style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">1</span>
+                    </div>
+                    <div>
+                        <h6>Drag & Drop Tools</h6>
+                        <p class="text-muted small mb-0">Drag tools from the left sidebar onto the canvas to start
+                            building.</p>
+                    </div>
+                </div>
+                <div class="d-flex mb-3">
+                    <div class="me-3">
+                        <span class="badge bg-primary rounded-circle p-2"
+                            style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">2</span>
+                    </div>
+                    <div>
+                        <h6>Connect Nodes</h6>
+                        <p class="text-muted small mb-0">Drag from the right handle of one node to the left handle of
+                            another to create a flow.</p>
+                    </div>
+                </div>
+                <div class="d-flex mb-3">
+                    <div class="me-3">
+                        <span class="badge bg-primary rounded-circle p-2"
+                            style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">3</span>
+                    </div>
+                    <div>
+                        <h6>Configure Properties</h6>
+                        <p class="text-muted small mb-0">Click on any node to open the properties panel on the right and
+                            configure its settings.</p>
+                    </div>
+                </div>
+                <div class="d-flex">
+                    <div class="me-3">
+                        <span class="badge bg-primary rounded-circle p-2"
+                            style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">4</span>
+                    </div>
+                    <div>
+                        <h6>Run Workflow</h6>
+                        <p class="text-muted small mb-0">Click the "Run" button in the top right to execute your
+                            workflow and see the results.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-primary w-100" data-bs-dismiss="modal">Got it, let's
+                    build!</button>
+            </div>
+        </div>
+    </div>
+</div>
 
 {% endblock %}
 

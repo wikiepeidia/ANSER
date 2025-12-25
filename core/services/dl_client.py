@@ -7,7 +7,7 @@ import sys
 current_dir = os.getcwd()
 dl_service_path = os.path.join(current_dir, 'dl_service')
 if dl_service_path not in sys.path:
-    sys.path.append(dl_service_path)
+    sys.path.insert(0, dl_service_path)
 
 class DLClient:
     """

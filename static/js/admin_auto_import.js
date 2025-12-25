@@ -1,4 +1,4 @@
-let automations = [];
+let currentEditId = null;
 
 async function loadAutomations() {
     try {
@@ -35,12 +35,15 @@ function renderAutomationsTable() {
                     <input class="form-check-input" type="checkbox" 
                         ${auto.status === 'active' ? 'checked' : ''} 
                         onchange="toggleStatus(${auto.id}, this.checked)">
-                    <label class="form-check-label">${auto.status}</label>
+                    <label class="form-check-label" id="status-label-${auto.id}">${auto.status}</label>
                 </div>
             </td>
             <td>${auto.last_run ? new Date(auto.last_run).toLocaleString() : 'Never'}</td>
-            <td><small class="text-muted font-monospace">${truncateConfig(auto.config)}</small></td>
+            <td><small class="text-muted font-monospace">${formatConfig(auto.type, auto.config)}</small></td>
             <td>
+                <button class="btn btn-sm btn-primary me-1" onclick="editAutomation(${auto.id})">
+                    <i class="fas fa-edit"></i>
+                </button>
                 <button class="btn btn-sm btn-danger" onclick="deleteAutomation(${auto.id})">
                     <i class="fas fa-trash"></i>
                 </button>
@@ -72,19 +75,85 @@ function formatType(type) {
     return types[type] || type;
 }
 
-function truncateConfig(configStr) {
+function formatConfig(type, config) {
     try {
-        // If it's a string, try to parse it to pretty print or just truncate
-        if (configStr.length > 30) return configStr.substring(0, 30) + '...';
-        return configStr;
+        const c = typeof config === 'string' ? JSON.parse(config) : config;
+        if (type === 'low_stock') {
+            return `Threshold: < ${c.threshold}, Order: ${c.reorder_quantity}`;
+        } else if (type === 'scheduled') {
+            return `${c.frequency} at ${c.time} (${c.day || 'All'})`;
+        } else if (type === 'smart_forecast') {
+            return `Look ahead: ${c.look_ahead_days} days`;
+        }
+        return JSON.stringify(c).substring(0, 30) + '...';
     } catch (e) {
-        return configStr;
+        return String(config);
     }
 }
 
+window.useTemplate = function(type) {
+    currentEditId = null;
+    const modal = new bootstrap.Modal(document.getElementById('automationModal'));
+    
+    // Reset form
+    document.getElementById('automationForm').reset();
+    
+    // Set type
+    const typeSelect = document.getElementById('automationTypeSelect');
+    typeSelect.value = type;
+    
+    // Update UI
+    updateConfigUI();
+    
+    // Set default name
+    const nameInput = document.querySelector('input[name="name"]');
+    if (type === 'low_stock') {
+        nameInput.value = 'Auto Import on Low Stock';
+    } else if (type === 'scheduled') {
+        nameInput.value = 'Weekly Scheduled Import';
+    }
+    
+    modal.show();
+};
+
 window.openAddAutomationModal = function() {
+    currentEditId = null;
+    document.getElementById('automationForm').reset();
     const modal = new bootstrap.Modal(document.getElementById('automationModal'));
     updateConfigUI();
+    modal.show();
+};
+
+window.editAutomation = function(id) {
+    currentEditId = id;
+    const auto = automations.find(a => a.id === id);
+    if (!auto) return;
+    
+    const modal = new bootstrap.Modal(document.getElementById('automationModal'));
+    
+    // Fill form
+    document.querySelector('input[name="name"]').value = auto.name;
+    document.getElementById('automationTypeSelect').value = auto.type;
+    document.getElementById('automationActive').checked = (auto.status === 'active');
+    
+    updateConfigUI();
+    
+    // Fill config
+    const config = typeof auto.config === 'string' ? JSON.parse(auto.config) : auto.config;
+    
+    if (auto.type === 'low_stock') {
+        document.getElementById('cfgProductScope').value = config.product_id || 'all';
+        document.getElementById('cfgThreshold').value = config.threshold || 10;
+        document.getElementById('cfgReorderQty').value = config.reorder_quantity || 50;
+    } else if (auto.type === 'scheduled') {
+        document.getElementById('cfgFrequency').value = config.frequency || 'weekly';
+        document.getElementById('cfgDay').value = config.day || 'monday';
+        document.getElementById('cfgTime').value = config.time || '09:00';
+    } else if (auto.type === 'smart_forecast') {
+        document.getElementById('cfgLookAhead').value = config.look_ahead_days || 30;
+        document.getElementById('cfgAutoApprove').value = config.auto_approve ? 'true' : 'false';
+    }
+    
     modal.show();
 };
 
@@ -188,8 +257,16 @@ window.submitAutomation = async function() {
     }
 
     try {
-        const response = await fetch('/api/automations', {
-            method: 'POST',
+        let url = '/api/automations';
+        let method = 'POST';
+        
+        if (currentEditId) {
+            url = `/api/automations/${currentEditId}`;
+            method = 'PUT';
+        }
+
+        const response = await fetch(url, {
+            method: method,
             headers: {
                 'Content-Type': 'application/json',
                 'X-CSRFToken': document.querySelector('meta[name="csrf-token"]')?.content
@@ -201,8 +278,9 @@ window.submitAutomation = async function() {
         if (result.success) {
             bootstrap.Modal.getInstance(document.getElementById('automationModal')).hide();
             form.reset();
+            currentEditId = null;
             loadAutomations();
-            alert('Automation created successfully');
+            alert(currentEditId ? 'Automation updated successfully' : 'Automation created successfully');
         } else {
             alert(result.message);
         }
@@ -212,11 +290,31 @@ window.submitAutomation = async function() {
 };
 
 window.toggleStatus = async function(id, isActive) {
-    // In a real app, we would have an endpoint to toggle status
-    // For now, we'll just reload to simulate (since we don't have a specific toggle endpoint yet, 
-    // but we could add one or just ignore for this demo)
-    console.log(`Toggling automation ${id} to ${isActive}`);
-    // Ideally: await fetch(`/api/automations/${id}/status`, { method: 'PUT', body: JSON.stringify({status: isActive ? 'active' : 'inactive'}) });
+    try {
+        const response = await fetch(`/api/automations/${id}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('meta[name="csrf-token"]')?.content
+            },
+            body: JSON.stringify({ status: isActive ? 'active' : 'inactive' })
+        });
+        
+        const result = await response.json();
+        if (result.success) {
+            // Update label
+            const label = document.getElementById(`status-label-${id}`);
+            if (label) label.textContent = isActive ? 'active' : 'inactive';
+            updateStats();
+        } else {
+            alert('Failed to update status: ' + result.message);
+            // Revert checkbox
+            loadAutomations();
+        }
+    } catch (error) {
+        console.error('Error toggling status:', error);
+        loadAutomations();
+    }
 };
 
 window.deleteAutomation = async function(id) {

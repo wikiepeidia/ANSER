@@ -12,6 +12,7 @@ from core import google_integration
 from core.workflow_engine import execute_workflow
 from core.services.dl_client import DLClient
 from core.services.analytics_service import analytics_service
+from core.automation_engine import AutomationEngine
 from datetime import datetime, timedelta
 from authlib.integrations.flask_client import OAuth
 import secrets
@@ -112,6 +113,7 @@ def login_unauthorized():
 db_manager = Database()
 db = db_manager  # Alias for convenience
 auth_manager = AuthManager(db_manager)
+automation_engine = AutomationEngine(db_manager)
 config = Config()
 utils = Utils()
 
@@ -351,70 +353,84 @@ def workspace():
         #return redirect(url_for('admin_workspace'))
     return render_template('workspace.html', user=current_user)  # Regular users see user dashboard
 
+def get_settings_config():
+    return {
+        'store': {
+            'title': 'Store Profile',
+            'description': 'Manage store identity, address, and currency.',
+            'icon': 'fa-store',
+            'gradient': 'linear-gradient(135deg, #f6d365 0%, #fda085 100%)',
+            'links': []
+        },
+        'ai': {
+            'title': 'AI & Automation',
+            'description': 'Configure OCR models, confidence thresholds, and auto-import rules.',
+            'icon': 'fa-robot',
+            'gradient': 'linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%)',
+            'links': []
+        },
+        'notifications': {
+            'title': 'Notifications',
+            'description': 'Manage low stock alerts and email reports.',
+            'icon': 'fa-bell',
+            'gradient': 'linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%)',
+            'links': []
+        },
+        'system': {
+            'title': 'System & Backup',
+            'description': 'Database backups, storage management, and maintenance.',
+            'icon': 'fa-server',
+            'gradient': 'linear-gradient(135deg, #ff9a9e 0%, #fecfef 99%, #fecfef 100%)',
+            'links': []
+        }
+    }
+
 @app.route('/settings')
 @login_required
 def settings():
     """Settings page for store info and preferences"""
-    settings_sections = {
-        'store': {
-            'title': 'Store Information',
-            'description': 'Manage store details, address, and contact info.',
-            'icon': 'fa-store',
-            'gradient': 'linear-gradient(135deg, #f6d365 0%, #fda085 100%)',
-            'links': [{'label': 'Edit Profile', 'url': '#'}]
-        },
-        'branches': {
-            'title': 'Branch Management',
-            'description': 'Configure branches and locations.',
-            'icon': 'fa-code-branch',
-            'gradient': 'linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%)',
-            'links': []
-        },
-        'orders': {
-            'title': 'Order Configuration',
-            'description': 'Invoice settings, auto-generation rules.',
-            'icon': 'fa-file-invoice',
-            'gradient': 'linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%)',
-            'links': []
-        }
-    }
-    return render_template('settings.html', user=current_user, settings_sections=settings_sections)
-
-@app.route('/settings/<section>')
-@login_required
-def settings_section(section):
-    settings_sections = {
-        'store': {
-            'title': 'Store Information',
-            'description': 'Manage store details, address, and contact info.',
-            'icon': 'fa-store',
-            'gradient': 'linear-gradient(135deg, #f6d365 0%, #fda085 100%)',
-            'links': [{'label': 'Edit Profile', 'url': '#'}]
-        },
-        'branches': {
-            'title': 'Branch Management',
-            'description': 'Configure branches and locations.',
-            'icon': 'fa-code-branch',
-            'gradient': 'linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%)',
-            'links': []
-        },
-        'orders': {
-            'title': 'Order Configuration',
-            'description': 'Invoice settings, auto-generation rules.',
-            'icon': 'fa-file-invoice',
-            'gradient': 'linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%)',
-            'links': []
-        }
-    }
+    config = get_settings_config()
     
-    if section not in settings_sections:
-        flash('Section not found', 'error')
-        return redirect(url_for('settings'))
-        
-    return render_template('settings_section.html', 
-                         user=current_user, 
-                         section_meta=settings_sections[section],
-                         related_links=settings_sections[section]['links'])
+    # Fetch all current settings from DB
+    all_settings = {}
+    try:
+        with db_manager.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT key, value FROM system_settings")
+            rows = cursor.fetchall()
+            for row in rows:
+                all_settings[row[0]] = row[1]
+    except Exception as e:
+        print(f"Error fetching settings: {e}")
+
+    return render_template('settings.html', user=current_user, settings_sections=config, all_settings=all_settings)
+
+# @app.route('/settings/<section>')
+# @login_required
+# def settings_section(section):
+#     config = get_settings_config()
+#     
+#     if section not in config:
+#         flash('Section not found', 'error')
+#         return redirect(url_for('settings'))
+#     
+#     # Fetch current settings from DB
+#     current_settings = {}
+#     try:
+#         with db_manager.get_connection() as conn:
+#             cursor = conn.cursor()
+#             cursor.execute("SELECT key, value FROM system_settings WHERE group_name = ?", (section,))
+#             rows = cursor.fetchall()
+#             for row in rows:
+#                 current_settings[row[0]] = row[1]
+#     except Exception as e:
+#         print(f"Error fetching settings: {e}")
+#         
+#     return render_template('settings_section.html', 
+#                          user=current_user, 
+#                          section_key=section,
+#                          section_meta=config[section],
+#                          settings=current_settings)
 
 @app.route('/manager/create-user')
 @login_required
@@ -451,12 +467,8 @@ def admin_analytics():
         flash('You do not have permission to access this page', 'error')
         return redirect(url_for('workspace'))
     
-    # Fetch Google Analytics Data
-    # TODO: Replace with your actual numeric Property ID from Google Analytics Admin
-    PROPERTY_ID = '516148383' 
-    analytics_data = google_integration.get_analytics_report(PROPERTY_ID)
-
-    return render_template('admin_analytics.html', user=current_user, analytics_data=analytics_data)
+    # Render admin analytics page; front-end will fetch analytics via API to avoid blocking render
+    return render_template('admin_analytics.html', user=current_user, analytics_data=None)
 
 @app.route('/admin/subscriptions')
 @login_required
@@ -1506,6 +1518,7 @@ def api_create_export():
         export_id = c.lastrowid
         
         # Create details and update stock
+        updated_products = []
         for item in items:
             product_id = item['product_id']
             quantity = int(item['quantity'])
@@ -1524,10 +1537,20 @@ def api_create_export():
                       (export_id, product_id, quantity, unit_price, total_price))
             
             # Update stock
-            c.execute('UPDATE products SET stock_quantity = stock_quantity - ? WHERE id = ?',
-                      (quantity, product_id))
+            new_stock = current_stock - quantity
+            c.execute('UPDATE products SET stock_quantity = ? WHERE id = ?',
+                      (new_stock, product_id))
+            updated_products.append((product_id, new_stock))
         
         conn.commit()
+        
+        # Trigger automations in background (or just call it, it's fast enough)
+        for pid, stock in updated_products:
+            try:
+                automation_engine.check_low_stock(pid, stock)
+            except Exception as e:
+                print(f"Error triggering automation: {e}")
+
         return jsonify({'success': True, 'message': 'Export created successfully', 'id': export_id})
         
     except Exception as e:
@@ -1580,14 +1603,45 @@ def api_get_export_details(export_id):
 @login_required
 def api_get_analytics_data():
     """Get Google Analytics Data"""
-    if not hasattr(current_user, 'role') or current_user.role != 'admin':
+    # Allow admins and managers to view analytics dashboard
+    if not hasattr(current_user, 'role') or current_user.role not in ['admin', 'manager']:
         return jsonify({'success': False, 'message': 'Unauthorized'}), 403
     
     # Optional: Allow passing property_id via query param if multiple properties
     property_id = request.args.get('property_id')
-    
+
+    # Support a forced refresh that bypasses cache
+    if request.args.get('force') in ('1','true','yes'):
+        try:
+            cache_file = os.path.join(os.getcwd(), 'secrets', 'ga_cache.json')
+            if os.path.exists(cache_file):
+                os.remove(cache_file)
+                print('Cache cleared via force param')
+        except Exception as e:
+            print('Failed to clear cache via force param:', e)
+
     result = analytics_service.get_report(property_id)
     return jsonify(result)
+
+
+
+
+
+# Admin-only: clear GA cache (useful during debugging)
+@app.route('/api/admin/analytics/clear_cache', methods=['POST'])
+@login_required
+def api_admin_clear_analytics_cache():
+    if not hasattr(current_user, 'role') or current_user.role not in ['admin', 'manager']:
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 403
+    try:
+        cache_file = os.path.join(os.getcwd(), 'secrets', 'ga_cache.json')
+        if os.path.exists(cache_file):
+            os.remove(cache_file)
+            return jsonify({'success': True, 'message': 'Cache cleared'})
+        else:
+            return jsonify({'success': False, 'message': 'No cache file'})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
 
 @app.route('/api/scenarios', methods=['GET'])
 @login_required
@@ -1745,6 +1799,7 @@ def api_get_automations():
         automations.append({
             'id': row[0], 'name': row[1], 'type': row[2],
             'config': json.loads(row[3]) if row[3] else {},
+            'status': 'active' if row[4] else 'inactive',
             'enabled': bool(row[4]), 'last_run': row[5]
         })
     conn.close()
@@ -1757,7 +1812,20 @@ def api_create_automation():
     data = request.get_json()
     name = data.get('name')
     type = data.get('type')
-    config = json.dumps(data.get('config', {}))
+    
+    # Handle config: if it's already a string (from JSON.stringify in frontend), use it.
+    # Otherwise, dump it.
+    config_input = data.get('config', {})
+    if isinstance(config_input, str):
+        try:
+            # Validate JSON
+            json.loads(config_input)
+            config = config_input
+        except:
+            # Fallback
+            config = json.dumps(config_input)
+    else:
+        config = json.dumps(config_input)
     
     conn = db_manager.get_connection()
     c = conn.cursor()
@@ -1768,6 +1836,48 @@ def api_create_automation():
                   (name, type, config, current_user.id))
         conn.commit()
         return jsonify({'success': True, 'message': 'Automation created successfully'})
+    except Exception as e:
+        conn.rollback()
+        return jsonify({'success': False, 'message': str(e)}), 500
+    finally:
+        conn.close()
+
+@app.route('/api/automations/<int:automation_id>', methods=['PUT'])
+@login_required
+def api_update_automation(automation_id):
+    """Update an automation (status or config)"""
+    data = request.get_json()
+    
+    conn = db_manager.get_connection()
+    c = conn.cursor()
+    try:
+        # Check if exists
+        c.execute('SELECT id FROM se_automations WHERE id = ?', (automation_id,))
+        if not c.fetchone():
+            return jsonify({'success': False, 'message': 'Automation not found'}), 404
+
+        # Update fields if present
+        if 'status' in data:
+            enabled = 1 if data['status'] == 'active' else 0
+            c.execute('UPDATE se_automations SET enabled = ? WHERE id = ?', (enabled, automation_id))
+        
+        if 'name' in data:
+            c.execute('UPDATE se_automations SET name = ? WHERE id = ?', (data['name'], automation_id))
+            
+        if 'config' in data:
+            config_input = data['config']
+            if isinstance(config_input, str):
+                try:
+                    json.loads(config_input)
+                    config = config_input
+                except:
+                    config = json.dumps(config_input)
+            else:
+                config = json.dumps(config_input)
+            c.execute('UPDATE se_automations SET config = ? WHERE id = ?', (config, automation_id))
+
+        conn.commit()
+        return jsonify({'success': True, 'message': 'Automation updated successfully'})
     except Exception as e:
         conn.rollback()
         return jsonify({'success': False, 'message': str(e)}), 500
@@ -2151,16 +2261,31 @@ def api_update_profile():
 @app.route('/api/settings/update', methods=['POST'])
 @login_required
 def api_update_settings():
-    # Mock endpoint for settings
-    # In a real app, we would save this to a user_settings table or a JSON column
     data = request.get_json()
-    setting = data.get('setting')
-    value = data.get('value')
+    setting_key = data.get('key')
+    setting_value = data.get('value')
+    group_name = data.get('group')
     
-    # Log the setting change
-    print(f"User {current_user.id} updated setting {setting} to {value}")
-    
-    return jsonify({'success': True})
+    if not setting_key:
+        return jsonify({'success': False, 'message': 'Missing setting key'}), 400
+        
+    try:
+        with db_manager.get_connection() as conn:
+            cursor = conn.cursor()
+            # Upsert logic
+            cursor.execute("""
+                INSERT INTO system_settings (key, value, group_name, updated_at) 
+                VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+                ON CONFLICT(key) DO UPDATE SET 
+                    value=excluded.value, 
+                    updated_at=CURRENT_TIMESTAMP
+            """, (setting_key, setting_value, group_name))
+            conn.commit()
+            
+        return jsonify({'success': True, 'message': 'Setting updated'})
+    except Exception as e:
+        print(f"Error updating setting: {e}")
+        return jsonify({'success': False, 'message': str(e)}), 500
 
 
 @app.route('/api/user/wallet/topup', methods=['POST'])
@@ -2764,6 +2889,45 @@ def api_get_product_sales_history(product_id):
         if 'conn' in locals():
             conn.close()
 
+@app.route('/api/workflow/upload_file', methods=['POST'])
+@login_required
+def api_workflow_upload_file():
+    """Upload a file for workflow configuration"""
+    if 'file' not in request.files:
+        return jsonify({'success': False, 'error': 'No file uploaded'}), 400
+    
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'success': False, 'error': 'No file selected'}), 400
+
+    try:
+        # Ensure uploads directory exists
+        upload_dir = os.path.join(app.root_path, 'uploads')
+        os.makedirs(upload_dir, exist_ok=True)
+        
+        # Secure filename
+        from werkzeug.utils import secure_filename
+        filename = secure_filename(file.filename)
+        # Add timestamp to avoid collisions
+        timestamp = int(datetime.utcnow().timestamp())
+        filename = f"{timestamp}_{filename}"
+        
+        file_path = os.path.join(upload_dir, filename)
+        file.save(file_path)
+        
+        # Return relative path for internal use and URL for display if needed
+        # We use absolute path for internal processing usually, but relative is better for portability
+        # Let's return the absolute path for the engine to use
+        return jsonify({
+            'success': True, 
+            'path': file_path, 
+            'filename': filename,
+            'message': 'File uploaded successfully'
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 def run_dl_service():
     import sys
     import os
@@ -2790,11 +2954,19 @@ if __name__ == '__main__':
     print("[Main] Starting application...", flush=True)
     
     # Only start DL service from the main process, not the reloader child
-    if os.environ.get('WERKZEUG_RUN_MAIN') != 'true':
-        print("[Main] Main process - DL Service integrated directly (Lazy Loading).", flush=True)
-    else:
-        print("[Main] Reloader child process", flush=True)
+    # if os.environ.get('WERKZEUG_RUN_MAIN') != 'true':
+    #     print("[Main] Main process - DL Service integrated directly (Lazy Loading).", flush=True)
+    # else:
+    #     print("[Main] Reloader child process", flush=True)
+    #     # Start Automation Engine in the worker process
+    #     automation_engine.start()
+
+    # FORCE DISABLE RELOADER TO PREVENT RELOAD LOOPS ON UPLOAD
+    # This means code changes require manual restart, but uploads won't crash the server
+    print("[Main] Starting Automation Engine...", flush=True)
+    automation_engine.start()
 
     db_manager.init_database()
     print("[Main] Starting Flask on port 5000...", flush=True)
-    app.run(host='0.0.0.0', port=5000, debug=True, threaded=True)
+    
+    app.run(host='0.0.0.0', port=5000, debug=True, use_reloader=False, threaded=True)

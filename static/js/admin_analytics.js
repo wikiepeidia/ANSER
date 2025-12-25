@@ -1,312 +1,286 @@
 (() => {
-    let revenueChart;
-    let categoryChart;
-    let accessChart;
-    let usersChart;
-    let themeObserver;
-
-    const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    const REVENUE_SERIES = [45000, 52000, 48000, 61000, 55000, 67000, 72000];
-    const PROFIT_SERIES = [12000, 15000, 13000, 18000, 16000, 20000, 22000];
+    // Minimal, robust analytics UI script expecting structured data from /api/admin/analytics/data
+    let dailyUsersChart, trafficSourcesChart;
+    const dom = {};
 
     const SELECTORS = {
-        timeRange: 'timeRangeFilter',
-        totalRevenue: 'totalRevenue',
-        revenueChange: 'revenueChange',
-        totalVisits: 'totalVisits',
-        visitsChange: 'visitsChange',
-        totalOrders: 'totalOrders',
-        ordersChange: 'ordersChange',
-        totalProfit: 'totalProfit',
-        profitChange: 'profitChange',
-        managerTable: 'managerPerformanceTable',
-        topProducts: 'topProducts',
-        topCustomers: 'topCustomers',
+        dailyUsersChart: 'dailyUsersChart',
+        trafficSourcesChart: 'trafficSourcesChart',
+        totalUsers: 'totalUsers',
+        totalPageViews: 'totalPageViews',
+        avgTime: 'avgTime',
+        newUsers: 'newUsers',
+        topPagesContainer: 'topPagesContainer',
+        analyticsContainer: 'analyticsContainer',
+        errorMessage: 'errorMessage'
     };
-
-    const formatCurrency = (value) => value.toLocaleString('en-US');
 
     const getThemeColors = () => {
         const styles = getComputedStyle(document.documentElement);
         return {
             text: styles.getPropertyValue('--gray-900').trim() || '#0f172a',
-            muted: styles.getPropertyValue('--gray-600').trim() || '#64748b',
             border: styles.getPropertyValue('--border-soft').trim() || 'rgba(15, 23, 42, 0.12)',
-            surface: styles.getPropertyValue('--surface-100').trim() || '#ffffff',
             surfaceAlt: styles.getPropertyValue('--surface-200').trim() || '#f8fafc',
+            primary: styles.getPropertyValue('--primary').trim() || '#3b82f6',
+            secondary: styles.getPropertyValue('--secondary').trim() || '#6366f1'
         };
     };
 
     const applyChartDefaults = () => {
         const colors = getThemeColors();
+        if (typeof Chart === 'undefined') {
+            console.error('Chart.js not available');
+            showError('Charting library missing. Charts will not render.');
+            return colors;
+        }
+        // Basic colors
         Chart.defaults.color = colors.text;
         Chart.defaults.borderColor = colors.border;
         Chart.defaults.font.family = 'Inter, "Segoe UI", sans-serif';
+
+        // Determine dark mode based on attribute/class
+        const isDark = (document.documentElement.getAttribute('data-theme') === 'dark') || document.body.classList.contains('dark-mode');
+        const tooltipBg = isDark ? 'rgba(15,23,42,0.92)' : colors.surfaceAlt;
+        const tooltipText = isDark ? '#ffffff' : colors.text;
+
+        // Tooltip styling to respect theme (title/body color, background, borders)
+        Chart.defaults.plugins = Chart.defaults.plugins || {};
+        Chart.defaults.plugins.tooltip = Object.assign({}, Chart.defaults.plugins.tooltip || {}, {
+            backgroundColor: tooltipBg,
+            titleColor: tooltipText,
+            bodyColor: tooltipText,
+            borderColor: colors.border,
+            borderWidth: 1,
+            padding: 8,
+        });
+
+        // Legend label color
+        Chart.defaults.plugins.legend = Object.assign({}, Chart.defaults.plugins.legend || {}, {
+            labels: Object.assign({}, (Chart.defaults.plugins.legend && Chart.defaults.plugins.legend.labels) || {}, { color: colors.text })
+        });
+
         return colors;
     };
 
-    const updateMetrics = async () => {
+    const cacheDom = () => {
+        for (const k in SELECTORS) dom[k] = document.getElementById(SELECTORS[k]);
+    };
+
+    const showError = (msg) => {
+        if (dom.errorMessage) {
+            dom.errorMessage.style.display = 'block';
+            dom.errorMessage.textContent = msg;
+        }
+    };
+
+    const fetchAndRender = async () => {
         try {
-            // Fetch internal stats
-            const response = await fetch('/api/reports/stats');
-            const data = await response.json();
-            
-            if (data.success) {
-                document.getElementById(SELECTORS.totalRevenue).textContent = formatCurrency(data.revenue);
-                // document.getElementById(SELECTORS.totalProfit).textContent = formatCurrency(data.profit); // Removed from UI
-                document.getElementById(SELECTORS.revenueChange).innerHTML = '<i class="fas fa-arrow-up"></i> +15.3%';
+            console.debug('Fetching analytics data...');
+            const resp = await fetch('/api/admin/analytics/data', {
+                credentials: 'include'
+            });
+            // read body as text so we can surface raw JSON in the debug panel
+            const respText = await resp.text();
+            let parsed = null;
+            try { parsed = JSON.parse(respText); } catch(e) { parsed = { __raw: respText }; }
+            console.debug('Analytics response:', parsed, resp.status);
+
+            // If cached response is empty, attempt a forced live fetch to bypass cache
+            const isCachedEmpty = (parsed && parsed.source === 'cache' && (
+                !(parsed.data && parsed.data.daily_users && parsed.data.daily_users.labels && parsed.data.daily_users.labels.length) &&
+                !(parsed.data && parsed.data.traffic_sources && parsed.data.traffic_sources.labels && parsed.data.traffic_sources.labels.length) &&
+                !(parsed.data && parsed.data.top_pages && parsed.data.top_pages.length) &&
+                !(parsed.data && parsed.data.user_stats && (parsed.data.user_stats.total_users || 0) > 0)
+            ));
+            if (isCachedEmpty) {
+                console.warn('Cached analytics data is empty — forcing a live refresh');
+                const forcedResp = await fetch('/api/admin/analytics/data?force=1', { credentials: 'include' });
+                const forcedText = await forcedResp.text();
+                let forcedJson = null;
+                try { forcedJson = JSON.parse(forcedText); } catch(e) { forcedJson = { __raw: forcedText }; }
+                console.debug('Forced analytics fetch:', forcedJson, forcedResp.status);
+                if (forcedJson && forcedJson.success) {
+                    parsed = forcedJson;
+                }
             }
 
-            // Fetch Google Analytics Data
-            const gaResponse = await fetch('/api/admin/analytics/data');
-            const gaData = await gaResponse.json();
-            
-            if (gaData.success && gaData.data && gaData.data.length > 0) {
-                // Aggregate last 7 days
-                const totalVisits = gaData.data.reduce((acc, row) => acc + row.active_users, 0);
-                const totalSessions = gaData.data.reduce((acc, row) => acc + row.sessions, 0);
-                
-                // Update Realtime Card
-                const realtimeUsers = gaData.data[gaData.data.length - 1].active_users; // Use today's active users as proxy for realtime
-                document.getElementById('realtimeUsers').textContent = realtimeUsers;
-                
-                // Update Metrics
-                document.getElementById(SELECTORS.totalVisits).textContent = totalVisits.toLocaleString();
-                document.getElementById(SELECTORS.visitsChange).innerHTML = '<i class="fas fa-arrow-up"></i> Live';
-                
-                // Update Chart
-                updateChart(gaData.data);
+            if (!resp.ok) {
+                // show helpful message about auth/login
+                showError('Failed to load analytics data (HTTP ' + resp.status + '). Please ensure you are signed in as an admin or manager.');
+                showNoDataPlaceholder('No analytics data (unauthorized)');
+                // Render client-side mock data so UI is visible and interactive for debugging
+                renderClientMockData();
+                // Update badge to show mock data
+                const badge = document.getElementById('analyticsSourceBadge');
+                if (badge) {
+                    badge.textContent = 'Mock';
+                    badge.classList.remove('bg-success');
+                    badge.classList.add('bg-warning');
+                }
+                return;
+            }
+
+            const json = parsed;
+            if (!json.success) throw new Error(json.error || 'No data');
+            const data = json.data;
+
+            // Metrics
+            if (dom.totalUsers) dom.totalUsers.textContent = (data.user_stats.total_users || 0).toLocaleString();
+            if (dom.totalPageViews) dom.totalPageViews.textContent = (data.daily_users.page_views || []).reduce((a,b)=>a+b,0).toLocaleString();
+            if (dom.avgTime) dom.avgTime.textContent = `${Math.round((data.user_stats.avg_engagement_time || 0)/60)}m ${Math.round((data.user_stats.avg_engagement_time || 0)%60)}s`;
+            if (dom.newUsers) dom.newUsers.textContent = (data.user_stats.new_users || 0).toLocaleString();
+
+            // Indicate data source (live/mock/cache)
+            const badge = document.getElementById('analyticsSourceBadge');
+            console.log('Updating badge:', badge, 'with source:', json.source);
+            if (badge) {
+                const sourceText = json.source ? (json.source === 'live' ? 'Live' : (json.source === 'cache' ? 'Cache' : 'Mock')) : 'Unknown';
+                badge.textContent = sourceText;
+                console.log('Badge text set to:', sourceText);
+                console.debug('Analytics JSON:', json, resp.status);
+            }
+
+            // If backend reports empty live data, show a clear UI message and do NOT fallback to mock
+            if (json.source === 'live' && json.empty) {
+                showError('Google Analytics returned no data for this property / date range. Verify tracking and property settings.');
+                showNoDataPlaceholder('No analytics data (live-empty)');
+                if (badge) {
+                    badge.textContent = 'Live (no data)';
+                    badge.classList.remove('bg-warning','bg-secondary');
+                    badge.classList.add('bg-info');
+                }
+                window.__lastAnalyticsData = data;
+                console.debug('Analytics data loaded (empty)', data);
+                // Render empty charts so the UI shows placeholders
+                buildCharts(data);
+                return;
+            }
+
+            if (json.source === 'mock') {
+                badge.classList.remove('bg-success');
+                badge.classList.add('bg-warning');
+            } else if (json.source === 'live') {
+                badge.classList.remove('bg-warning');
+                badge.classList.add('bg-success');
             } else {
-                console.warn('GA Data not available:', gaData.error);
+                badge.classList.remove('bg-warning');
+                badge.classList.remove('bg-success');
+                badge.classList.add('bg-secondary');
             }
 
-        } catch (error) {
-            console.error('Failed to fetch metrics', error);
+            // Clear previous error if any
+            if (dom.errorMessage) dom.errorMessage.style.display = 'none';
+
+            // Save and render data
+            window.__lastAnalyticsData = data;
+            console.debug('Analytics data loaded', data);
+            // Charts
+            buildCharts(data);
+
+            // Top pages
+            if (dom.topPagesContainer) {
+                dom.topPagesContainer.innerHTML = data.top_pages.map(p => `<div class="list-item"><span>${p.page}</span><strong>${p.views.toLocaleString()}</strong></div>`).join('');
+            }
+        } catch (e) {
+            console.error('Analytics load failed', e);
+            showError('Failed to load analytics data.');
+            showNoDataPlaceholder('No analytics data (load failed)');
+            // Provide mock data so the UI is interactive for debugging
+            renderClientMockData();
         }
     };
 
-    const updateChart = (data) => {
-        if (!revenueChart) return;
-        
-        const labels = data.map(row => {
-            const date = row.date; // YYYYMMDD
-            return `${date.substring(6, 8)}/${date.substring(4, 6)}`;
+    const teardown = (c) => { if (c) c.destroy(); };
+
+    const clearNoDataPlaceholders = () => {
+        document.querySelectorAll('.chart-card .no-data').forEach(n => n.remove());
+    };
+    const showNoDataPlaceholder = (message = 'No data to display') => {
+        document.querySelectorAll('.chart-card').forEach(c => {
+            if (!c.querySelector('.no-data')) {
+                const div = document.createElement('div');
+                div.className = 'no-data';
+                div.textContent = message;
+                c.appendChild(div);
+            }
         });
-        const users = data.map(row => row.active_users);
-        const sessions = data.map(row => row.sessions);
-        
-        revenueChart.data.labels = labels;
-        revenueChart.data.datasets[0].data = users;
-        revenueChart.data.datasets[0].label = 'Active Users';
-        revenueChart.data.datasets[1].data = sessions;
-        revenueChart.data.datasets[1].label = 'Sessions';
-        revenueChart.update();
     };
 
-    const teardownChart = (chartInstance) => {
-        if (chartInstance) {
-            chartInstance.destroy();
-        }
+    // Debug panel helpers
+
+
+    // Quick client-side tracking check
+    const checkTrackingInstalled = () => {
+        const scripts = Array.from(document.querySelectorAll('script[src]')).map(s => s.src);
+        const matches = scripts.filter(s => /googletagmanager|google-analytics|gtag|analytics.js|gstatic/.test(s));
+        const foundGtag = !!window.gtag;
+        return { found: foundGtag || matches.length>0, details: (foundGtag? 'window.gtag() present' : (matches.length? 'Found scripts: ' + matches.join(', ') : 'No GA scripts found')) };
     };
 
-    const buildCharts = () => {
-        const colors = applyChartDefaults();
-        const axisColor = colors.text;
-        const gridColor = colors.border;
-        const tooltipConfig = {
-            backgroundColor: colors.surfaceAlt,
-            borderColor: colors.border,
-            borderWidth: 1,
-            titleColor: axisColor,
-            bodyColor: axisColor,
+    // Debug panel removed; keep console logging only
+    const updateDebugPanel = (body, status) => { console.debug('Debug:', status, body); };
+
+    const renderClientMockData = () => {
+        const sample = {
+            daily_users: { labels: ['20251220','20251221','20251222','20251223','20251224'], active_users: [30,45,38,50,42], page_views: [120,180,150,220,190] },
+            traffic_sources: { labels: ['Direct','Organic','Referral','Social'], users: [80,40,20,10] },
+            top_pages: [{page:'/','views':350},{page:'/products','views':210}],
+            user_stats: { total_users: 520, new_users: 34, avg_engagement_time: 240 }
         };
+        // Populate metric cards
+        if (dom.totalUsers) dom.totalUsers.textContent = (sample.user_stats.total_users || 0).toLocaleString();
+        if (dom.totalPageViews) dom.totalPageViews.textContent = (sample.daily_users.page_views || []).reduce((a,b)=>a+b,0).toLocaleString();
+        if (dom.avgTime) dom.avgTime.textContent = `${Math.round((sample.user_stats.avg_engagement_time || 0)/60)}m ${Math.round((sample.user_stats.avg_engagement_time || 0)%60)}s`;
+        if (dom.newUsers) dom.newUsers.textContent = (sample.user_stats.new_users || 0).toLocaleString();
 
-        const revenueCtx = document.getElementById('revenueChart');
-        teardownChart(revenueChart);
-        revenueChart = new Chart(revenueCtx, {
-            type: 'line',
-            data: {
-                labels: [], // Will be populated by updateChart
-                datasets: [
-                    {
-                        label: 'Active Users',
-                        data: [],
-                        borderColor: '#4285F4', // Google Blue
-                        backgroundColor: 'rgba(66, 133, 244, 0.1)',
-                        tension: 0.4,
-                        fill: true,
-                    },
-                    {
-                        label: 'Sessions',
-                        data: [],
-                        borderColor: '#34A853', // Google Green
-                        backgroundColor: 'rgba(52, 168, 83, 0.1)',
-                        tension: 0.4,
-                        fill: true,
-                    },
-                ],
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'top',
-                        align: 'end',
-                        labels: { usePointStyle: true, boxWidth: 8 },
-                    },
-                    tooltip: tooltipConfig,
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        grid: { color: gridColor, drawBorder: false },
-                        ticks: { color: axisColor },
-                    },
-                    x: {
-                        grid: { display: false },
-                        ticks: { color: axisColor },
-                    },
-                },
-            },
-        });
-    };                        fill: true,
-                    },
-                ],
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: true,
-                plugins: {
-                    legend: { display: true, position: 'top', labels: { color: axisColor } },
-                    tooltip: tooltipConfig,
-                },
-                scales: {
-                    x: {
-                        ticks: { color: axisColor },
-                        grid: { color: gridColor },
-                    },
-                    y: {
-                        beginAtZero: true,
-                        ticks: { color: axisColor },
-                        grid: { color: gridColor },
-                    },
-                },
-            },
-        });
+        // Top pages
+        if (dom.topPagesContainer) dom.topPagesContainer.innerHTML = sample.top_pages.map(p => `<div class="list-item"><span>${p.page}</span><strong>${p.views.toLocaleString()}</strong></div>`).join('');
 
-        const categoryCtx = document.getElementById('categoryChart');
-        teardownChart(categoryChart);
-        categoryChart = new Chart(categoryCtx, {
-            type: 'doughnut',
-            data: {
-                labels: ['Imports', 'Exports', 'Services', 'Other'],
-                datasets: [
-                    {
-                        data: [120000, 85000, 30000, 10000],
-                        backgroundColor: ['#667eea', '#43e97b', '#ffd89b', '#f093fb'],
-                    },
-                ],
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: true,
-                plugins: {
-                    legend: { display: true, position: 'bottom', labels: { color: axisColor } },
-                    tooltip: tooltipConfig,
-                },
-            },
-        });
-
-        const accessCtx = document.getElementById('accessChart');
-        teardownChart(accessChart);
-        accessChart = new Chart(accessCtx, {
-            type: 'bar',
-            data: {
-                labels: ['0h', '4h', '8h', '12h', '16h', '20h'],
-                datasets: [
-                    {
-                        label: 'Visits',
-                        data: [120, 80, 450, 890, 1200, 650],
-                        backgroundColor: 'rgba(102, 126, 234, 0.8)',
-                    },
-                ],
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: true,
-                plugins: {
-                    legend: { display: false },
-                    tooltip: tooltipConfig,
-                },
-                scales: {
-                    x: {
-                        ticks: { color: axisColor },
-                        grid: { color: gridColor },
-                    },
-                    y: {
-                        beginAtZero: true,
-                        ticks: { color: axisColor },
-                        grid: { color: gridColor },
-                    },
-                },
-            },
-        });
-
-        const usersCtx = document.getElementById('usersChart');
-        teardownChart(usersChart);
-        usersChart = new Chart(usersCtx, {
-            type: 'line',
-            data: {
-                labels: DAYS,
-                datasets: [
-                    {
-                        label: 'Active users',
-                        data: [45, 52, 48, 61, 55, 67, 72],
-                        borderColor: '#f093fb',
-                        backgroundColor: 'rgba(240, 147, 251, 0.1)',
-                        tension: 0.4,
-                        fill: true,
-                    },
-                ],
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: true,
-                plugins: {
-                    legend: { display: false },
-                    tooltip: tooltipConfig,
-                },
-                scales: {
-                    x: {
-                        ticks: { color: axisColor },
-                        grid: { color: gridColor },
-                    },
-                    y: {
-                        beginAtZero: true,
-                        ticks: { color: axisColor },
-                        grid: { color: gridColor },
-                    },
-                },
-            },
-        });
+        // Render charts
+        window.__lastAnalyticsData = sample;
+        clearNoDataPlaceholders();
+        buildCharts(sample);
+        updateDebugPanel({source: 'mock', data: sample}, 'mock');
     };
 
-    const observeThemeChanges = () => {
-        const html = document.documentElement;
-        if (!html || typeof MutationObserver === 'undefined') {
-            return;
+    const buildCharts = (data) => {
+        clearNoDataPlaceholders();
+        const colors = applyChartDefaults();
+        const tooltip = { backgroundColor: colors.surfaceAlt, borderColor: colors.border, borderWidth: 1 };
+
+        // Daily users
+        if (dom.dailyUsersChart && data.daily_users) {
+            teardown(dailyUsersChart);
+            dailyUsersChart = new Chart(dom.dailyUsersChart, {
+                type: 'line',
+                data: { labels: data.daily_users.labels.map(d=>d.replace(/(\d{4})(\d{2})(\d{2})/, '$3/$2')), datasets: [{ label: 'Active Users', data: data.daily_users.active_users, borderColor: colors.primary, backgroundColor: 'rgba(59,130,246,0.08)', fill:true, tension: 0.3 }, { label:'Page Views', data:data.daily_users.page_views, borderColor: colors.secondary, backgroundColor: 'rgba(99,102,241,0.08)', fill:true, tension: 0.3 }] },
+                options: { responsive:true, maintainAspectRatio:false, devicePixelRatio: window.devicePixelRatio || 1, plugins:{ tooltip }, scales:{ y:{ beginAtZero:true } } }
+            });
         }
 
-        themeObserver?.disconnect();
-        themeObserver = new MutationObserver((mutations) => {
-            const hasThemeMutation = mutations.some((mutation) => mutation.attributeName === 'data-theme');
-            if (hasThemeMutation) {
-                buildCharts();
-            }
-        });
+        // Traffic sources (small doughnut, render legend into #trafficLegend)
+        if (dom.trafficSourcesChart && data.traffic_sources) {
+            teardown(trafficSourcesChart);
+            trafficSourcesChart = new Chart(dom.trafficSourcesChart, {
+                type: 'doughnut',
+                data: { labels: data.traffic_sources.labels, datasets:[{ data:data.traffic_sources.users, backgroundColor:['#4285F4','#34A853','#FBBC05','#EA4335'] }] },
+                options: { responsive:true, maintainAspectRatio:true, aspectRatio:1, plugins:{ tooltip } }
+            });
+            try { trafficSourcesChart.update(); trafficSourcesChart.resize(); } catch(e) { /* ignore */ }
 
-        themeObserver.observe(html, { attributes: true, attributeFilter: ['data-theme'] });
+            // Render a small textual legend for compact layout
+            const legendEl = document.getElementById('trafficLegend');
+            if (legendEl && data.traffic_sources && Array.isArray(data.traffic_sources.labels)) {
+                const colors = ['#4285F4','#34A853','#FBBC05','#EA4335'];
+                legendEl.innerHTML = data.traffic_sources.labels.map((l,i)=>`<div class="traffic-legend-item" style="display:inline-block;margin-right:10px;font-weight:600"><span class="traffic-legend-swatch" style="display:inline-block;width:12px;height:8px;background:${colors[i]};border-radius:2px;margin-right:6px"></span><span class="traffic-legend-label">${l}</span></div>`).join('');
+            }
+        }
+
+        // Ensure charts resize correctly after render
+        try {
+            if (dailyUsersChart) { dailyUsersChart.update(); dailyUsersChart.resize(); }
+            if (trafficSourcesChart) { trafficSourcesChart.update(); trafficSourcesChart.resize(); }
+        } catch (e) { console.warn('Chart resize/update failed', e); }
     };
 
     const loadManagerPerformance = async () => {
@@ -318,13 +292,13 @@
 
             const data = await response.json();
             const managers = (data.users || []).filter((user) => user.role === 'manager');
-            const tbody = document.getElementById(SELECTORS.managerTable);
+            const tbody = document.getElementById('managerPerformanceTable');
 
             if (!tbody) {
                 return;
             }
 
-                if (managers.length === 0) {
+            if (managers.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="6" class="text-center">No managers found</td></tr>';
                 return;
             }
@@ -352,86 +326,184 @@
         }
     };
 
-    const loadTopProducts = () => {
-        const products = [
-            { name: 'Laptop Dell XPS 13', sold: 245, revenue: 45000000 },
-            { name: 'iPhone 15 Pro Max', sold: 189, revenue: 38000000 },
-            { name: 'Samsung Galaxy S24', sold: 156, revenue: 28000000 },
-            { name: 'MacBook Pro M3', sold: 134, revenue: 67000000 },
-            { name: 'AirPods Pro 2', sold: 298, revenue: 15000000 },
-        ];
-
-        const container = document.getElementById(SELECTORS.topProducts);
-        if (!container) {
-            return;
-        }
-
-        container.innerHTML = products
-            .map((product, idx) => {
-                const rankClass = idx === 0 ? 'gold' : idx === 1 ? 'silver' : idx === 2 ? 'bronze' : '';
-                return `
-                    <div class="product-item">
-                        <div class="item-rank ${rankClass}">${idx + 1}</div>
-                        <div class="item-info">
-                            <div class="item-name">${product.name}</div>
-                            <div class="item-detail">Sold: ${product.sold} units</div>
-                        </div>
-                        <div class="item-value">${(product.revenue / 1_000_000).toFixed(1)}M VND</div>
-                    </div>
-                `;
-            })
-            .join('');
+    const formatCurrency = (amount) => {
+        return new Intl.NumberFormat('vi-VN').format(amount);
     };
 
-    const loadTopCustomers = () => {
-        const customers = [
-            { name: 'Nguyễn Văn A', orders: 45, revenue: 125000000 },
-            { name: 'Trần Thị B', orders: 38, revenue: 98000000 },
-            { name: 'Lê Văn C', orders: 32, revenue: 87000000 },
-            { name: 'Phạm Thị D', orders: 28, revenue: 76000000 },
-            { name: 'Hoàng Văn E', orders: 25, revenue: 65000000 },
-        ];
-
-        const container = document.getElementById(SELECTORS.topCustomers);
-        if (!container) {
-            return;
-        }
-
-        container.innerHTML = customers
-            .map((customer, idx) => {
-                const rankClass = idx === 0 ? 'gold' : idx === 1 ? 'silver' : idx === 2 ? 'bronze' : '';
-                return `
-                    <div class="customer-item">
-                        <div class="item-rank ${rankClass}">${idx + 1}</div>
-                        <div class="item-info">
-                            <div class="item-name">${customer.name}</div>
-                            <div class="item-detail">${customer.orders} orders</div>
-                        </div>
-                        <div class="item-value">${(customer.revenue / 1_000_000).toFixed(1)}M VND</div>
-                    </div>
-                `;
-            })
-            .join('');
+    const highlightSubChart = (key) => {
+        // Add a visual highlight to selected sub-chart inside chartsSection
+        document.querySelectorAll('.chart-card').forEach(c => c.classList.remove('highlight'));
+        if (!key) return;
+        const el = document.querySelector(`.chart-card[data-chart="${key}"]`);
+        if (el) el.classList.add('highlight');
     };
 
-    const loadAnalytics = () => {
-        updateMetrics();
-        buildCharts();
-        loadManagerPerformance();
-        loadTopProducts();
-        loadTopCustomers();
+    const switchTab = (targetId, subChartKey) => {
+        const sections = document.querySelectorAll('.analytics-section');
+        sections.forEach(s => s.classList.remove('active'));
+        const target = document.getElementById(targetId);
+        if (target) target.classList.add('active');
+
+        document.querySelectorAll('.tab-button').forEach(btn => {
+            const active = btn.dataset.target === targetId && (typeof subChartKey === 'undefined' || btn.dataset.chart === subChartKey || btn.dataset.chart === undefined);
+            btn.classList.toggle('active', active);
+            btn.setAttribute('aria-selected', active ? 'true' : 'false');
+        });
+
+        // If charts section is active, rebuild charts to ensure proper sizing and colors
+        if (targetId === 'chartsSection' && window.__lastAnalyticsData) {
+            buildCharts(window.__lastAnalyticsData);
+            highlightSubChart(subChartKey);
+        }
+
+        if (targetId === 'managerSection') {
+            // load managers' performance when tab becomes active
+            loadManagerPerformance();
+        }
     };
 
-    const wireEvents = () => {
-        const timeRangeSelect = document.getElementById(SELECTORS.timeRange);
-        if (timeRangeSelect) {
-            timeRangeSelect.addEventListener('change', loadAnalytics);
+    const initTabs = () => {
+        const buttons = Array.from(document.querySelectorAll('.tab-button'));
+        if (!buttons.length) return;
+
+        // Click/key handlers for each button
+        buttons.forEach((btn, idx) => {
+            btn.addEventListener('click', () => switchTab(btn.dataset.target, btn.dataset.chart));
+            btn.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); switchTab(btn.dataset.target, btn.dataset.chart); }
+                if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+                    const nextIdx = e.key === 'ArrowRight' ? (idx + 1) % buttons.length : (idx - 1 + buttons.length) % buttons.length;
+                    buttons[nextIdx].focus();
+                }
+            });
+        });
+
+        // Event delegation fallback: container-level click handler
+        const tabsContainer = document.querySelector('.analytics-tabs');
+        if (tabsContainer) {
+            tabsContainer.addEventListener('click', (e) => {
+                const btn = e.target.closest('.tab-button');
+                if (btn) switchTab(btn.dataset.target, btn.dataset.chart);
+            });
         }
+
+        // Set initial active tab
+        const activeBtn = document.querySelector('.tab-button.active') || buttons[0];
+        buttons.forEach(btn => btn.classList.toggle('active', btn === activeBtn));
+        buttons.forEach(btn => btn.setAttribute('aria-selected', btn === activeBtn ? 'true' : 'false'));
+
+        // Hide all sections except active
+        const sections = document.querySelectorAll('.analytics-section');
+        sections.forEach(s => s.classList.remove('active'));
+        const firstTarget = activeBtn.dataset.target;
+        const el = document.getElementById(firstTarget);
+        if (el) el.classList.add('active');
+    };
+
+    const observeThemeChanges = () => {
+        const html = document.documentElement;
+        if (!html || typeof MutationObserver === 'undefined') return;
+        const obs = new MutationObserver((mutations) => {
+            if (mutations.some(m => m.attributeName === 'data-theme')) {
+                if (window.__lastAnalyticsData) buildCharts(window.__lastAnalyticsData);
+                // refresh active tab visuals
+                document.querySelectorAll('.tab-button').forEach(b=> b.classList.toggle('active', b.getAttribute('aria-selected')==='true'));
+            }
+        });
+        obs.observe(html, { attributes: true, attributeFilter: ['data-theme'] });
+    };
+
+    // Ensure initial active tab is applied even if CSS or DOM arrives late
+    const performMetricAction = (el) => {
+        const action = el.dataset.action;
+        if (!action) return;
+
+        if (action === 'toggle-dataset') {
+            const dsLabel = el.dataset.dataset;
+            if (!dailyUsersChart) return;
+            const ds = dailyUsersChart.data.datasets.find(d => d.label === dsLabel);
+            if (ds) {
+                ds.hidden = !ds.hidden;
+                dailyUsersChart.update();
+                el.classList.toggle('active', !ds.hidden);
+            }
+        }
+
+        if (action === 'show-info') {
+            const info = el.dataset.info;
+            const infoPanelId = 'metricInfoPanel';
+            let panel = document.getElementById(infoPanelId);
+            if (!panel) {
+                panel = document.createElement('div');
+                panel.id = infoPanelId;
+                panel.className = 'metric-info-panel';
+                const chartsSection = document.getElementById('chartsSection');
+                if (chartsSection) chartsSection.prepend(panel);
+            }
+            panel.textContent = '';
+            if (info === 'avg_engagement') {
+                panel.textContent = `Avg engagement: ${Math.round((window.__lastAnalyticsData?.user_stats?.avg_engagement_time||0)/60)} min`;
+            } else if (info === 'new_users') {
+                panel.textContent = `New users: ${window.__lastAnalyticsData?.user_stats?.new_users || 0}`;
+            }
+            panel.style.opacity = '1';
+            setTimeout(()=>{ panel.style.opacity = '0'; }, 3500);
+        }
+    };
+
+    const initMetricCards = () => {
+        const cards = Array.from(document.querySelectorAll('.metric-card[role="button"]'));
+        if (!cards.length) return;
+        cards.forEach(c => {
+            c.addEventListener('click', ()=> performMetricAction(c));
+            c.addEventListener('keydown', (e)=> { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); performMetricAction(c); } });
+        });
     };
 
     document.addEventListener('DOMContentLoaded', () => {
-        wireEvents();
-        loadAnalytics();
-        observeThemeChanges();
+        cacheDom(); fetchAndRender(); initTabs(); observeThemeChanges(); initMetricCards();
+        const activeBtn = document.querySelector('.tab-button.active');
+        if (activeBtn) {
+            activeBtn.focus();
+            switchTab(activeBtn.dataset.target);
+        }
+
+        const btnCheck = document.getElementById('btnCheckTracking');
+        if (btnCheck) {
+            btnCheck.addEventListener('click', async () => {
+                btnCheck.disabled = true; btnCheck.textContent = 'Refreshing...';
+                try {
+                    const resp = await fetch('/api/admin/analytics/clear_cache', { method: 'POST', credentials: 'include' });
+                    const text = await resp.text();
+                    let json;
+                    try { json = JSON.parse(text); } catch(e) { json = { success:false, message:'Invalid JSON', raw: text }; }
+                    updateDebugPanel({ clear_cache: json }, resp.status);
+                    if (resp.ok && json && json.success) {
+                        // refetch fresh data
+                        // remove any existing debug cache marker
+                        await fetchAndRender();
+                        alert('Cache cleared and refreshed');
+                    } else {
+                        alert('Failed to clear cache: ' + (json && json.message || 'Unknown'));
+                    }
+                } catch (err) {
+                    console.error('Clear cache failed', err);
+                    alert('Clear cache failed: ' + err.message);
+                } finally {
+                    btnCheck.disabled = false; btnCheck.textContent = 'Refresh cache';
+                }
+            });
+        }
+
+        // Fallback: if badge is still "Loading..." after 5 seconds, force update
+        setTimeout(() => {
+            const badge = document.getElementById('analyticsSourceBadge');
+            if (badge && badge.textContent === 'Loading...') {
+                console.warn('Badge still loading, forcing mock update');
+                badge.textContent = 'Mock';
+                badge.classList.remove('bg-success', 'bg-secondary');
+                badge.classList.add('bg-warning');
+            }
+        }, 5000);
     });
 })();

@@ -30,77 +30,177 @@
 
             <div class="row g-4">
                 <div class="col-lg-8">
-                    <div class="card shadow-sm h-100">
+                    <div class="card shadow-sm">
                         <div class="card-body">
-                            <h5 class="mb-3">Primary Actions</h5>
-                            <p class="text-muted">Core operations for this module.</p>
-                            <ul class="list-group list-group-flush">
-                                <li class="list-group-item d-flex align-items-start justify-content-between">
-                                    <div>
-                                        <strong>Edit Configuration</strong>
-                                        <div class="text-muted small">Adjust information or rules.</div>
+                            <form id="settingsForm">
+                                {% if section_key == 'store' %}
+                                <div class="mb-3">
+                                    <label class="form-label">Store Name</label>
+                                    <input type="text" class="form-control setting-input" name="store_name"
+                                        value="{{ settings.get('store_name', 'My AI Store') }}" data-group="store">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Address</label>
+                                    <input type="text" class="form-control setting-input" name="store_address"
+                                        value="{{ settings.get('store_address', '') }}" data-group="store">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Currency</label>
+                                    <select class="form-select setting-input" name="currency" data-group="store">
+                                        <option value="VND" {% if settings.get('currency')=='VND' %}selected{% endif %}>
+                                            VND (Vietnamese Dong)</option>
+                                        <option value="USD" {% if settings.get('currency')=='USD' %}selected{% endif %}>
+                                            USD (US Dollar)</option>
+                                    </select>
+                                </div>
+
+                                {% elif section_key == 'ai' %}
+                                <div class="mb-4">
+                                    <label class="form-label d-flex justify-content-between">
+                                        <span>OCR Confidence Threshold</span>
+                                        <span class="badge bg-primary" id="ocrVal">{{ settings.get('ocr_confidence',
+                                            '0.8') }}</span>
+                                    </label>
+                                    <input type="range" class="form-range setting-input" name="ocr_confidence" min="0.1"
+                                        max="1.0" step="0.05" value="{{ settings.get('ocr_confidence', '0.8') }}"
+                                        oninput="document.getElementById('ocrVal').textContent = this.value"
+                                        data-group="ai">
+                                    <div class="form-text">Minimum confidence score to accept OCR results automatically.
                                     </div>
-                                    <button class="btn btn-outline-primary btn-sm" type="button"
-                                        onclick="alert('Feature coming soon!')">Open editor</button>
-                                </li>
-                                <li class="list-group-item d-flex align-items-start justify-content-between">
-                                    <div>
-                                        <strong>Sync Data</strong>
-                                        <div class="text-muted small">Ensure data is up to date.</div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label d-flex justify-content-between">
+                                        <span>Auto-Import Threshold</span>
+                                        <span class="badge bg-info" id="autoVal">{{
+                                            settings.get('auto_import_threshold', '0.9') }}</span>
+                                    </label>
+                                    <input type="range" class="form-range setting-input" name="auto_import_threshold"
+                                        min="0.5" max="1.0" step="0.05"
+                                        value="{{ settings.get('auto_import_threshold', '0.9') }}"
+                                        oninput="document.getElementById('autoVal').textContent = this.value"
+                                        data-group="ai">
+                                    <div class="form-text">Confidence required to skip manual review for auto-imports.
                                     </div>
-                                    <button class="btn btn-outline-primary btn-sm" type="button"
-                                        onclick="alert('Feature coming soon!')">Sync now</button>
-                                </li>
-                                <li class="list-group-item d-flex align-items-start justify-content-between">
-                                    <div>
-                                        <strong>Workflow Guide</strong>
-                                        <div class="text-muted small">View operational guide.</div>
-                                    </div>
-                                    <button class="btn btn-outline-primary btn-sm" type="button"
-                                        onclick="alert('Feature coming soon!')">View guide</button>
-                                </li>
-                            </ul>
+                                </div>
+
+                                {% elif section_key == 'notifications' %}
+                                <div class="form-check form-switch mb-3">
+                                    <input class="form-check-input setting-input" type="checkbox"
+                                        name="enable_low_stock_alerts" {% if
+                                        settings.get('enable_low_stock_alerts')=='true' %}checked{% endif %}
+                                        data-group="notifications">
+                                    <label class="form-check-label">Enable Low Stock Alerts</label>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Low Stock Threshold</label>
+                                    <input type="number" class="form-control setting-input" name="low_stock_threshold"
+                                        value="{{ settings.get('low_stock_threshold', '10') }}"
+                                        data-group="notifications">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Notification Email</label>
+                                    <input type="email" class="form-control setting-input" name="notification_email"
+                                        value="{{ settings.get('notification_email', '') }}" data-group="notifications">
+                                </div>
+
+                                {% elif section_key == 'system' %}
+                                <div class="mb-3">
+                                    <label class="form-label">Backup Frequency</label>
+                                    <select class="form-select setting-input" name="backup_frequency"
+                                        data-group="system">
+                                        <option value="daily" {% if settings.get('backup_frequency')=='daily'
+                                            %}selected{% endif %}>Daily</option>
+                                        <option value="weekly" {% if settings.get('backup_frequency')=='weekly'
+                                            %}selected{% endif %}>Weekly</option>
+                                        <option value="manual" {% if settings.get('backup_frequency')=='manual'
+                                            %}selected{% endif %}>Manual Only</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Keep Uploaded Images (Days)</label>
+                                    <input type="number" class="form-control setting-input" name="keep_images_days"
+                                        value="{{ settings.get('keep_images_days', '30') }}" data-group="system">
+                                    <div class="form-text">Images older than this will be automatically deleted to save
+                                        space.</div>
+                                </div>
+                                {% endif %}
+                            </form>
                         </div>
                     </div>
                 </div>
+
                 <div class="col-lg-4">
-                    <div class="card shadow-sm mb-3">
+                    <div class="card shadow-sm bg-light">
                         <div class="card-body">
-                            <h6 class="mb-2">Related Links</h6>
-                            {% if related_links %}
-                            <div class="list-group list-group-flush">
-                                {% for link in related_links %}
-                                <a class="list-group-item list-group-item-action" href="{{ link.url }}">
-                                    {{ link.label }}
-                                    <span class="float-end"><i class="fas fa-arrow-right"></i></span>
-                                </a>
-                                {% endfor %}
-                            </div>
-                            {% else %}
-                            <p class="text-muted mb-0 small">No links available yet.</p>
-                            {% endif %}
+                            <h6><i class="fas fa-info-circle"></i> About this section</h6>
+                            <p class="small text-muted mb-0">
+                                Changes are saved automatically when you leave the field.
+                            </p>
                         </div>
                     </div>
-                    <div class="card shadow-sm">
-                        <div class="card-body">
-                            <h6 class="mb-2">Status</h6>
-                            <div class="d-flex align-items-center justify-content-between mb-2">
-                                <span>Active</span>
-                                <div class="form-check form-switch mb-0">
-                                    <input class="form-check-input" type="checkbox" checked>
-                                </div>
-                            </div>
-                            <div class="d-flex align-items-center justify-content-between mb-2">
-                                <span>Automation</span>
-                                <div class="form-check form-switch mb-0">
-                                    <input class="form-check-input" type="checkbox">
-                                </div>
-                            </div>
-                        </div>
+                    <div id="saveStatus" class="mt-3 text-center text-muted small"
+                        style="opacity: 0; transition: opacity 0.3s;">
+                        <i class="fas fa-check-circle text-success"></i> Saved
                     </div>
                 </div>
             </div>
         </div>
     </main>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const inputs = document.querySelectorAll('.setting-input');
+        const statusEl = document.getElementById('saveStatus');
+        let saveTimeout;
+
+        inputs.forEach(input => {
+            input.addEventListener('change', function () {
+                saveSetting(this);
+            });
+
+            // For text inputs, also save on blur to catch changes
+            if (input.type === 'text' || input.type === 'number' || input.type === 'email') {
+                input.addEventListener('blur', function () {
+                    saveSetting(this);
+                });
+            }
+        });
+
+        async function saveSetting(input) {
+            const key = input.name;
+            let value = input.value;
+            const group = input.dataset.group;
+
+            if (input.type === 'checkbox') {
+                value = input.checked ? 'true' : 'false';
+            }
+
+            try {
+                const response = await fetch('/api/settings/update', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': document.querySelector('meta[name="csrf-token"]')?.content
+                    },
+                    body: JSON.stringify({ key, value, group })
+                });
+
+                if (response.ok) {
+                    showStatus();
+                }
+            } catch (error) {
+                console.error('Error saving setting:', error);
+            }
+        }
+
+        function showStatus() {
+            statusEl.style.opacity = '1';
+            clearTimeout(saveTimeout);
+            saveTimeout = setTimeout(() => {
+                statusEl.style.opacity = '0';
+            }, 2000);
+        }
+    });
+</script>
 {% endblock %}

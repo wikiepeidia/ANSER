@@ -2,8 +2,25 @@
 .main-content {
     margin-left: 280px;
     padding: 20px;
-    background: var(--surface-200);
+    background: linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%);
     min-height: 100vh;
+    position: relative;
+    z-index: 1;
+}
+html[data-theme='dark'] .main-content, body.dark-mode .main-content {
+    background: linear-gradient(180deg, #0b1220 0%, #0f172a 100%);
+}
+
+@media (max-width: 768px) {
+    .main-content {
+        margin-left: 0;
+        padding: 10px;
+    }
+    .sidebar { display: none; } /* Hide sidebar on mobile to prevent overlap */
+    .analytics-tabs .tab-button {
+        padding: 6px 8px;
+        font-size: 14px;
+    }
 }
 
 .metric-card {
@@ -16,6 +33,19 @@
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
     transition: transform 0.3s ease;
     margin-bottom: 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.metric-card:nth-child(2) {
+    background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+}
+
+.metric-card:nth-child(3) {
+    background: linear-gradient(135deg, #ffd89b 0%, #ff8a00 100%);
+}
+
+.metric-card:nth-child(4) {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
 }
 
 .metric-card:hover {
@@ -70,12 +100,117 @@
 }
 
 .chart-card {
-    background: var(--surface-100);
-    border-radius: 15px;
-    padding: 25px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
-    margin-bottom: 20px;
+    transition: box-shadow 0.18s ease, transform 0.12s ease, border 0.12s ease;
 }
+.chart-card.highlight {
+    box-shadow: 0 12px 34px rgba(47, 111, 214, 0.12);
+    transform: translateY(-6px);
+    border: 1px solid rgba(47,111,214,0.10);
+    background: linear-gradient(180deg, rgba(47,111,214,0.03), transparent);
+}
+
+.chart-card {
+    background: var(--surface-100);
+    border-radius: 12px;
+    padding: 18px 18px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    margin-bottom: 16px;
+    min-height: 320px; /* ensure chart container fits canvas */
+    overflow: hidden;
+    max-width: 1100px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.chart-card--small { min-height: 300px; padding: 14px; }
+.chart-card canvas { max-height: 320px; width: 100% !important; height: 300px !important; display: block; }
+.chart-card--small canvas { height: 220px !important; max-height: 220px; }
+
+/* tighten title sizes */
+.chart-card .card-title { font-size:16px; font-weight:700; }
+.chart-card--small .card-title { font-size:15px; }
+
+
+/* Metric card uniform sizing */
+.metric-card { min-height: 84px; display:flex; flex-direction:column; justify-content:center; padding:12px 14px; border-radius:12px; }
+.metric-card .text-muted.small { color: rgba(255,255,255,0.95) !important; font-size:11px; letter-spacing:0.6px; }
+.metric-card .h3 { font-size:20px; font-weight:700; margin-top:4px; }
+.metric-card { transition: transform 0.18s ease, box-shadow 0.18s ease; }
+.metric-card:hover { transform: translateY(-3px); box-shadow: 0 8px 26px rgba(47,111,214,0.06); }
+
+/* clickable metric cards */
+.metric-card[role="button"] { cursor: pointer; }
+.metric-card.active { transform: translateY(-4px); box-shadow: 0 12px 28px rgba(0,0,0,0.12); }
+
+/* per-card palettes */
+.metric-card--users { background: linear-gradient(135deg, #5b6ffb 0%, #7f8cff 100%); color: #fff; }
+.metric-card--pageviews { background: linear-gradient(135deg, #34c759 0%, #52d07a 100%); color: #fff; }
+.metric-card--engagement { background: linear-gradient(135deg, #ffb347 0%, #ff9a4a 100%); color: #fff; }
+.metric-card--newusers { background: linear-gradient(135deg, #9b59b6 0%, #b06cbf 100%); color: #fff; }
+
+.metric-card .text-muted.small, .metric-card .h3 { color: #fff !important; }
+
+/* metric card layout */
+.metric-card { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; cursor:pointer; min-height:80px; }
+.metric-card:focus, .metric-card:focus-visible { outline: 3px solid rgba(0,0,0,0.06); box-shadow: 0 6px 18px rgba(15,23,42,0.06); }
+.metric-card:hover { transform: translateY(-2px); transition: transform 0.12s ease; }
+.metric-icon { font-size:20px; opacity:0.8; margin-bottom:2px; }
+.metric-label { font-size:10px; text-transform:uppercase; opacity:0.9; font-weight:600; letter-spacing:0.5px; }
+.metric-value { font-size:20px; font-weight:800; text-align:center; }
+.metric-info-panel { background: rgba(0,0,0,0.04); padding: 10px 14px; border-radius: 10px; margin-bottom: 12px; text-align:center; transition: opacity 0.3s ease; opacity: 1; }
+
+
+/* Ensure sharp chart rendering */
+.chart-card canvas {
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* Debug panel removed for production */
+/* (Temporary debug panel removed) */
+
+/* Chart and legend styling */
+.chart-card { background: #fff; }
+.chart-card .card-title { color: var(--text-high); }
+#trafficLegend { color: var(--gray-700); }
+
+/* Dark mode adjustments */
+[data-theme="dark"] #trafficLegend, [data-theme="dark"] #trafficLegend * { color: #fff !important; }
+html[data-theme='dark'] #trafficLegend, body.dark-mode #trafficLegend { color: var(--gray-900) !important; }
+
+/* Ensure legend labels use the same text color as card titles */
+#trafficLegend .traffic-legend-label { color: var(--text-high); }
+html[data-theme='dark'] #trafficLegend .traffic-legend-label, body.dark-mode #trafficLegend .traffic-legend-label { color: var(--gray-900) !important; }
+
+/* Force legend labels to adopt the same style as chart titles (higher specificity + !important) */
+.chart-card #trafficLegend .traffic-legend-label,
+.chart-card--small #trafficLegend .traffic-legend-label { color: var(--text-high) !important; }
+html[data-theme='dark'] .chart-card #trafficLegend .traffic-legend-label,
+body.dark-mode .chart-card #trafficLegend .traffic-legend-label { color: var(--gray-900) !important; }
+
+/* Make legend swatches visible on dark backgrounds */
+#trafficLegend .traffic-legend-swatch { border: 1px solid rgba(0,0,0,0.06); }
+html[data-theme='dark'] #trafficLegend .traffic-legend-swatch { border-color: rgba(255,255,255,0.08); }
+
+[data-theme="dark"] .chart-card { background: var(--surface-900); }
+
+/* Make small chart cards white in light mode and dark in dark mode */
+.chart-card--small { background: #fff; }
+[data-theme="dark"] .chart-card--small { background: var(--surface-800); }
+
+/* Ensure canvas has matching background for consistent visuals */
+.chart-card canvas { background: transparent; }
+.chart-card { background-clip: padding-box; }
+.chart-card canvas { background: #fff; }
+[data-theme="dark"] .chart-card canvas { background: var(--surface-800); }
+
+/* Data source alignment */
+.analytics-overview .mt-3 { display:flex; align-items:center; justify-content:center; gap:10px; }
+#btnCheckTracking { min-width:110px; }
+
+
 
 .analytics-page .card {
     background: var(--surface-100);
@@ -94,6 +229,10 @@
 .analytics-page .card:not([class*='bg-']) .card-text {
     color: var(--gray-900);
 }
+
+/* Ensure metric labels are white on the colored metric cards */
+.metric-card .text-muted.small { color: rgba(255,255,255,0.85) !important; }
+.metric-card .h3 { color: #ffffff !important; }
 
 .analytics-page .table {
     color: var(--gray-900);
@@ -220,10 +359,9 @@ body.dark-mode .analytics-page .form-select:focus {
     color: var(--gray-600);
 }
 
-.item-value {
-    font-weight: 700;
-    color: var(--primary);
-    font-size: 16px;
+html[data-theme='dark'] .item-name,
+html[data-theme='dark'] .item-detail {
+    color: var(--gray-100);
 }
 
 .badge {
@@ -261,3 +399,126 @@ body.dark-mode .analytics-page .form-select:focus {
         opacity: 0;
     }
 }
+
+/* Tabs for analytics sections */
+.analytics-tabs {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding: 0 16px;
+    background: var(--surface-100);
+    border-radius: 0;
+    border: 0;
+    margin: 0;
+    position: relative; /* keep inline in flow and not floating */
+    top: auto;
+    left: auto;
+    right: auto;
+    height: auto;
+    align-items: center;
+    z-index: 2;
+    flex-wrap: wrap;
+    box-shadow: none;
+    pointer-events: auto;
+}
+
+/* Ensure tabs container sits visually above charts */
+.analytics-tabs::after { content: ''; position: absolute; left: 0; right: 0; bottom: -1px; height: 1px; background: rgba(0,0,0,0.04); }
+
+/* spacer (pushed below the fixed bar) */
+.tabs-spacer { height: 56px; width: 100%; display:block; }
+
+/* ensure sections are strictly hidden unless active */
+.analytics-section { display: none !important; }
+.analytics-section.active { display: block !important; }
+
+/* Unified tab bar: full-width, single-color, no vertical scroll */
+.analytics-tabs {
+    left: 0;
+    right: 0;
+    width: 100%;
+    box-sizing: border-box;
+    overflow-x: auto;
+    overflow-y: hidden; /* hide vertical scrollbar */
+}
+
+.analytics-tabs .tab-button {
+    flex: 0 0 auto;
+    min-width: 140px;
+    margin: 0 6px;
+    text-align: center;
+    background: transparent;
+    color: var(--gray-900);
+    border-radius: 10px;
+    padding: 8px 16px;
+    border: 1px solid rgba(15,23,42,0.04);
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 14px;
+    transition: background 0.18s ease, color 0.18s ease, transform 0.12s ease;
+}
+
+/* per-tab subtle tint for inactive state */
+.analytics-tabs .tab-button:nth-child(1) { background: rgba(91,111,251,0.06); color: #3340b9; }
+.analytics-tabs .tab-button:nth-child(2) { background: rgba(52,199,89,0.06); color: #0b9344; }
+.analytics-tabs .tab-button:nth-child(3) { background: rgba(255,179,71,0.06); color: #9b5a00; }
+.analytics-tabs .tab-button:nth-child(4) { background: rgba(155,89,182,0.06); color: #6e2f86; }
+.analytics-tabs .tab-button:nth-child(5) { background: rgba(67,156,255,0.06); color: #235cdb; }
+
+.analytics-tabs .tab-button:hover { filter: brightness(0.96); }
+
+/* active state: full color */
+.analytics-tabs .tab-button.active:nth-child(1) { background: #5b6ffb; color: #ffffff; box-shadow: 0 10px 26px rgba(91,111,251,0.16); }
+.analytics-tabs .tab-button.active:nth-child(2) { background: #34c759; color: #ffffff; box-shadow: 0 10px 26px rgba(52,199,89,0.14); }
+.analytics-tabs .tab-button.active:nth-child(3) { background: #ffb347; color: #ffffff; box-shadow: 0 10px 26px rgba(255,179,71,0.12); }
+.analytics-tabs .tab-button.active:nth-child(4) { background: #9b59b6; color: #ffffff; box-shadow: 0 10px 26px rgba(155,89,182,0.12); }
+
+/* dark mode tweaks keep contrast */
+html[data-theme='dark'] .analytics-tabs .tab-button { color: #f3f4f6; border-color: rgba(255,255,255,0.04); }
+html[data-theme='dark'] .analytics-tabs .tab-button:nth-child(1) { background: rgba(91,111,251,0.08); color: #e6e9ff; }
+html[data-theme='dark'] .analytics-tabs .tab-button:nth-child(2) { background: rgba(52,199,89,0.06); color: #eaffef; }
+html[data-theme='dark'] .analytics-tabs .tab-button:nth-child(3) { background: rgba(255,179,71,0.06); color: #fff6e6; }
+html[data-theme='dark'] .analytics-tabs .tab-button:nth-child(4) { background: rgba(155,89,182,0.06); color: #f6e6ff; }
+
+.analytics-tabs .tab-button:focus {
+    outline: 3px solid rgba(99,102,241,0.12);
+    outline-offset: 2px;
+}
+
+/* Responsive: ensure buttons distribute across the width */
+@media (max-width: 768px) {
+    .analytics-tabs { position: static; padding: 8px; }
+    .analytics-tabs .tab-button { flex: 1 0 auto; min-width: 90px; }
+}
+
+/* Hide vertical scrollbars and make horizontal scrollbar thin */
+.analytics-tabs { -ms-overflow-style: none; scrollbar-width: thin; }
+.analytics-tabs::-webkit-scrollbar { height: 6px; background: transparent; }
+.analytics-tabs::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.06); border-radius: 6px; }
+
+/* Dark-mode adjustments: keep white text for clarity */
+html[data-theme='dark'] .analytics-tabs { background: var(--surface-200); }
+html[data-theme='dark'] .analytics-tabs .tab-button { color: #ffffff; }
+html[data-theme='dark'] .analytics-tabs .tab-button.active { background: rgba(255,255,255,0.12); color: #ffffff; }
+
+/* Traffic legend and small card dark-mode fixes */
+#trafficLegend { color: var(--gray-700); }
+#trafficLegend div { display:inline-block; margin-right:10px; font-weight:600; color:inherit; }
+#trafficLegend span { display:inline-block; width:12px; height:8px; background:#ddd; border-radius:2px; margin-right:6px; vertical-align:middle; }
+
+html[data-theme='dark'] #trafficLegend,
+body.dark-mode #trafficLegend {
+    color: var(--gray-100) !important;
+}
+
+.chart-card--small .card-title { color: var(--gray-900); }
+html[data-theme='dark'] .chart-card--small .card-title,
+body.dark-mode .chart-card--small .card-title {
+    color: var(--gray-900);
+}
+
+.analytics-section { display: none; }
+.analytics-section.active { display: block; }
+
+/* Ensure main content stacks beneath the tabs */
+.main-content { position: relative; z-index: 1; }

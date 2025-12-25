@@ -171,8 +171,16 @@ def get_invoices_from_db(limit=100, offset=0):
             invoices = []
             for row in rows:
                 invoice = dict(row)
-                # Parse JSON products
-                invoice['products'] = json.loads(invoice['products'])
+                # Parse JSON products (handle NULL or empty values)
+                products_json = invoice.get('products')
+                if products_json:
+                    try:
+                        invoice['products'] = json.loads(products_json)
+                    except json.JSONDecodeError:
+                        logger.warning(f"Failed to decode products JSON for invoice {invoice.get('invoice_id')}")
+                        invoice['products'] = []
+                else:
+                    invoice['products'] = []
                 invoices.append(invoice)
             
             return invoices
@@ -204,7 +212,15 @@ def get_invoice_by_id(invoice_id):
             row = cursor.fetchone()
             if row:
                 invoice = dict(row)
-                invoice['products'] = json.loads(invoice['products'])
+                products_json = invoice.get('products')
+                if products_json:
+                    try:
+                        invoice['products'] = json.loads(products_json)
+                    except json.JSONDecodeError:
+                        logger.warning(f"Failed to decode products JSON for invoice {invoice.get('invoice_id')}")
+                        invoice['products'] = []
+                else:
+                    invoice['products'] = []
                 return invoice
             return None
             

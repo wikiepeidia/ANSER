@@ -60,6 +60,43 @@ document.addEventListener('DOMContentLoaded', () => {
                 { source: 'node-2', target: 'node-3' },
                 { source: 'node-3', target: 'node-4' }
             ]
+        },
+        low_stock_alert: {
+            nodes: [
+                { id: 'node-1', title: 'Check Stock', category: 'trigger', type: 'schedule_trigger', left: 100, top: 100, description: 'Run daily at 9 AM' },
+                { id: 'node-2', title: 'Read Inventory', category: 'integration', type: 'google_sheet_read', left: 400, top: 100, description: 'Get stock levels' },
+                { id: 'node-3', title: 'Filter Low Stock', category: 'logic', type: 'filter', left: 700, top: 100, description: 'Continue if stock < 10' },
+                { id: 'node-4', title: 'Email Purchasing', category: 'integration', type: 'gmail_send', left: 1000, top: 100, description: 'Send reorder list' }
+            ],
+            connections: [
+                { source: 'node-1', target: 'node-2' },
+                { source: 'node-2', target: 'node-3' },
+                { source: 'node-3', target: 'node-4' }
+            ]
+        },
+        daily_report: {
+            nodes: [
+                { id: 'node-1', title: 'Daily Trigger', category: 'trigger', type: 'schedule_trigger', left: 100, top: 100, description: 'Run every day' },
+                { id: 'node-2', title: 'Fetch Sales', category: 'integration', type: 'google_sheet_read', left: 400, top: 100, description: 'Get daily sales data' },
+                { id: 'node-3', title: 'Summarize AI', category: 'ai', type: 'ai_service', left: 700, top: 100, description: 'Generate summary report' },
+                { id: 'node-4', title: 'Send Report', category: 'integration', type: 'gmail_send', left: 1000, top: 100, description: 'Email to stakeholders' }
+            ],
+            connections: [
+                { source: 'node-1', target: 'node-2' },
+                { source: 'node-2', target: 'node-3' },
+                { source: 'node-3', target: 'node-4' }
+            ]
+        },
+        social_media_monitor: {
+            nodes: [
+                { id: 'node-1', title: 'New Mention', category: 'trigger', type: 'webhook_trigger', left: 100, top: 100, description: 'Webhook from social tool' },
+                { id: 'node-2', title: 'Analyze Sentiment', category: 'ai', type: 'ai_service', left: 400, top: 100, description: 'Positive/Negative/Neutral' },
+                { id: 'node-3', title: 'Log to Sheet', category: 'integration', type: 'google_sheet_write', left: 700, top: 100, description: 'Save for analysis' }
+            ],
+            connections: [
+                { source: 'node-1', target: 'node-2' },
+                { source: 'node-2', target: 'node-3' }
+            ]
         }
     };
 
@@ -1645,7 +1682,11 @@ document.addEventListener('DOMContentLoaded', () => {
             } else if (type === 'invoice_ocr') {
                 html = `
                     <label>File URL / Path</label>
-                    <input type="text" id="cfg-file-url" value="${config.fileUrl || ''}" placeholder="{{parent.file_url}}">
+                    <div style="display: flex; gap: 5px;">
+                        <input type="text" id="cfg-file-url" value="${config.fileUrl || ''}" placeholder="{{parent.file_url}}" style="flex: 1;">
+                        <button id="cfg-upload-btn" class="action-btn" style="width: auto;" title="Upload Invoice"><i class="fas fa-upload"></i></button>
+                    </div>
+                    <input type="file" id="cfg-file-input" style="display: none;" accept="image/*,application/pdf">
                     <small>Leave empty to use parent output automatically</small>
                 `;
             } else if (type === 'invoice_forecast') {
@@ -1657,6 +1698,50 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             settingsContainer.innerHTML = html;
+
+            const uploadBtn = document.getElementById('cfg-upload-btn');
+            const fileInput = document.getElementById('cfg-file-input');
+            if (uploadBtn && fileInput) {
+                uploadBtn.addEventListener('click', () => fileInput.click());
+                fileInput.addEventListener('change', () => {
+                    if (fileInput.files.length > 0) {
+                        const file = fileInput.files[0];
+                        const formData = new FormData();
+                        formData.append('file', file);
+                        
+                        // Show loading state
+                        uploadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                        uploadBtn.disabled = true;
+                        
+                        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+                        
+                        fetch('/api/workflow/upload_file', {
+                            method: 'POST',
+                            headers: {
+                                'X-CSRFToken': csrfToken
+                            },
+                            body: formData
+                        })
+                        .then(res => res.json())
+                        .then(data => {
+                            if (data.success) {
+                                document.getElementById('cfg-file-url').value = data.path;
+                                showNotification('File uploaded successfully', 'success');
+                            } else {
+                                showNotification('Upload failed: ' + data.error, 'error');
+                            }
+                        })
+                        .catch(err => {
+                            console.error(err);
+                            showNotification('Upload network error', 'error');
+                        })
+                        .finally(() => {
+                            uploadBtn.innerHTML = '<i class="fas fa-upload"></i>';
+                            uploadBtn.disabled = false;
+                        });
+                    }
+                });
+            }
 
             const sheetPickerBtn = document.getElementById('cfg-sheet-picker');
             const docPickerBtn = document.getElementById('cfg-doc-picker');
@@ -1967,8 +2052,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         localStorage.setItem('hasSeenBuilderTutorial', 'true');
         
-        // Simple interactive tour
-        alert('Welcome to the Builder! \n\n1. Drag tools from the left sidebar.\n2. Connect them by dragging from the right handle.\n3. Click a node to edit properties.\n4. Click "Run" to execute.');
+        // Show the new tour steps modal
+        const tourModalEl = document.getElementById('tourStepsModal');
+        if (tourModalEl) {
+            const tourModal = new bootstrap.Modal(tourModalEl);
+            tourModal.show();
+        }
     };
 
     // Auto-show tutorial

@@ -107,6 +107,31 @@ class Database:
             UNIQUE(user_id, permission_type)
         )''')
 
+        # System Settings table
+        c.execute('''CREATE TABLE IF NOT EXISTS system_settings (
+            key TEXT PRIMARY KEY,
+            value TEXT,
+            group_name TEXT,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )''')
+        
+        # Initialize default settings if empty
+        c.execute("SELECT count(*) FROM system_settings")
+        if c.fetchone()[0] == 0:
+            defaults = [
+                ('store_name', 'My AI Store', 'store'),
+                ('store_address', '123 AI Blvd', 'store'),
+                ('currency', 'VND', 'store'),
+                ('ocr_confidence', '0.8', 'ai'),
+                ('auto_import_threshold', '0.9', 'ai'),
+                ('enable_low_stock_alerts', 'true', 'notifications'),
+                ('low_stock_threshold', '10', 'notifications'),
+                ('notification_email', 'admin@example.com', 'notifications'),
+                ('backup_frequency', 'daily', 'system'),
+                ('keep_images_days', '30', 'system')
+            ]
+            c.executemany("INSERT INTO system_settings (key, value, group_name) VALUES (?, ?, ?)", defaults)
+
         # Activity Logs table
         c.execute('''CREATE TABLE IF NOT EXISTS activity_logs (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -835,34 +860,25 @@ class Database:
         conn = self.get_connection()
         c = conn.cursor()
         
-        # Check if google_token column exists
+        # Check if google_token column exists once
         c.execute("PRAGMA table_info(users)")
         columns = [col[1] for col in c.fetchall()]
         has_google_token = 'google_token' in columns
         
-        if has_google_token:
-            c.execute('''
-                SELECT a.id, a.action, a.details, a.created_at, u.name, u.email, u.google_token 
-                FROM activity_logs a
-                LEFT JOIN users u ON a.user_id = u.id
-                ORDER BY a.created_at DESC
-                LIMIT ?
-            ''', (limit,))
-        else:
-            c.execute('''
-                SELECT a.id, a.action, a.details, a.created_at, u.name, u.email 
-                FROM activity_logs a
-                LEFT JOIN users u ON a.user_id = u.id
-                ORDER BY a.created_at DESC
-                LIMIT ?
-            ''', (limit,))
+        # Simplified and more robust query
+        query = '''
+            SELECT a.id, a.action, a.details, a.created_at, u.name, u.email,
+                   {}
+            FROM activity_logs a
+            LEFT JOIN users u ON a.user_id = u.id
+            ORDER BY a.created_at DESC
+            LIMIT ?
+        '''.format('u.google_token' if has_google_token else 'NULL as google_token')
+
+        c.execute(query, (limit,))
             
         activities = []
         for row in c.fetchall():
-            is_google = False
-            if has_google_token and len(row) > 6:
-                is_google = bool(row[6])
-                
             activities.append({
                 'id': row[0],
                 'action': row[1],
@@ -870,7 +886,7 @@ class Database:
                 'created_at': row[3],
                 'user_name': row[4] or 'System',
                 'user_email': row[5],
-                'is_google_user': is_google
+                'is_google_user': bool(row[6]) if has_google_token else False
             })
         conn.close()
         return activities

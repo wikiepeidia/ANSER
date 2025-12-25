@@ -1,0 +1,40 @@
+
+/* Tab Styles */
+.nav-tabs .nav-link {
+    color: var(--builder-muted);
+    border: none;
+    border-bottom: 2px solid transparent;
+    background: transparent;
+    transition: all 0.2s;
+}
+
+.nav-tabs .nav-link:hover {
+    color: var(--builder-text);
+    border-color: transparent;
+}
+
+.nav-tabs .nav-link.active {
+    color: #4f46e5;
+    background: transparent;
+    border-bottom: 2px solid #4f46e5;
+    font-weight: 600;
+}
+
+.template-item {
+    padding: 12px;
+    margin-bottom: 10px;
+    background: var(--builder-card);
+    border: 1px solid var(--builder-border);
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    transition: all 0.2s;
+}
+
+.template-item:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--builder-shadow);
+    border-color: #4f46e5;
+}

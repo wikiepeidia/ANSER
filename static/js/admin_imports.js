@@ -206,6 +206,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const ocrResult = document.getElementById('ocrResult');
     const ocrItemsBody = document.getElementById('ocrItemsBody');
     const btnSaveOcrImport = document.getElementById('btnSaveOcrImport');
+    const ocrProgressBar = document.getElementById('ocrProgressBar');
+    const ocrStatusText = document.getElementById('ocrStatusText');
     
     let extractedData = null;
 
@@ -219,6 +221,47 @@ document.addEventListener('DOMContentLoaded', function() {
             ocrResult.style.display = 'none';
             btnSaveOcrImport.disabled = true;
             ocrItemsBody.innerHTML = '';
+
+            // Progress Bar Init
+            let progress = 0;
+            if (ocrProgressBar) {
+                ocrProgressBar.style.width = '0%';
+                ocrProgressBar.textContent = '0%';
+                ocrProgressBar.classList.remove('bg-success', 'bg-danger');
+                ocrProgressBar.classList.add('progress-bar-striped', 'progress-bar-animated');
+            }
+            if (ocrStatusText) ocrStatusText.textContent = 'Starting upload...';
+
+            // Simulation
+            const steps = [
+                { pct: 15, msg: 'Uploading invoice image...' },
+                { pct: 35, msg: 'Analyzing document layout...' },
+                { pct: 55, msg: 'Detecting tables and regions...' },
+                { pct: 75, msg: 'Running OCR text extraction...' },
+                { pct: 90, msg: 'Parsing product data...' }
+            ];
+            
+            let stepIndex = 0;
+            const progressInterval = setInterval(() => {
+                if (stepIndex < steps.length) {
+                    if (progress < steps[stepIndex].pct) {
+                        progress += Math.random() * 2;
+                    } else {
+                        stepIndex++;
+                    }
+                } else {
+                    if (progress < 95) progress += 0.2;
+                }
+                
+                if (ocrProgressBar) {
+                    const currentPct = Math.min(Math.round(progress), 99);
+                    ocrProgressBar.style.width = `${currentPct}%`;
+                    ocrProgressBar.textContent = `${currentPct}%`;
+                }
+                if (ocrStatusText && stepIndex < steps.length) {
+                    ocrStatusText.textContent = steps[stepIndex].msg;
+                }
+            }, 100);
 
             const formData = new FormData();
             formData.append('file', file);
@@ -236,26 +279,57 @@ document.addEventListener('DOMContentLoaded', function() {
                 const result = await response.json();
 
                 if (result.success) {
+                    if (ocrProgressBar) {
+                        ocrProgressBar.style.width = '100%';
+                        ocrProgressBar.textContent = '100%';
+                        ocrProgressBar.classList.remove('progress-bar-animated');
+                        ocrProgressBar.classList.add('bg-success');
+                    }
+                    if (ocrStatusText) ocrStatusText.textContent = 'Analysis Complete!';
+                    
+                    // Small delay to show 100%
+                    await new Promise(r => setTimeout(r, 500));
+
                     extractedData = result.data;
                     renderOcrPreview(extractedData);
                     ocrResult.style.display = 'block';
                     btnSaveOcrImport.disabled = false;
+                    ocrLoading.style.display = 'none';
                 } else {
                     alert('OCR Failed: ' + (result.error || 'Unknown error'));
+                    ocrLoading.style.display = 'none';
                 }
             } catch (error) {
                 console.error('OCR Error:', error);
                 alert('Error processing invoice: ' + error.message);
-            } finally {
                 ocrLoading.style.display = 'none';
+            } finally {
+                clearInterval(progressInterval);
+                // Reset file input to allow re-uploading the same file if needed
+                ocrFile.value = ''; 
             }
         });
     }
 
+    function _extractOcrItems(data) {
+        // Support multiple shapes returned by DL service
+        // Possible shapes:
+        // - data.products (array)
+        // - data.items (array)
+        // - data.invoice.items
+        // - data.data.products (when wrapped)
+        const items = data?.products || data?.items || data?.invoice?.items || data?.invoice?.products || data?.data?.products || [];
+        // Normalize fields to product_name, quantity, unit_price, total
+        return items.map(item => ({
+            product_name: item.product_name || item.name || item.product || item.product_name || '',
+            quantity: item.quantity || item.qty || item.count || 1,
+            unit_price: item.unit_price || item.unit || item.price || 0,
+            total: item.line_total || item.total || item.lineTotal || (item.unit_price && item.quantity ? item.unit_price * item.quantity : 0)
+        }));
+    }
+
     function renderOcrPreview(data) {
-        // Assuming data structure from DL service: { invoice: { items: [...] } }
-        // Adjust based on actual DL service response
-        const items = data.invoice?.items || [];
+        const items = _extractOcrItems(data);
         
         if (items.length === 0) {
             ocrItemsBody.innerHTML = '<tr><td colspan="5" class="text-center">No items detected</td></tr>';
@@ -329,15 +403,17 @@ if (btnSaveOcrImport) {
         // We need to map OCR items to our product structure
         // For now, we'll create new products if they don't exist or just use raw names
         
-        const items = (extractedData.invoice?.items || []).map(item => ({
+        const ocrItems = _extractOcrItems(extractedData);
+        const items = ocrItems.map(item => ({
             product_id: null, // We don't know the ID yet, backend might handle name matching or we send raw name
-            product_name: item.name || 'Unknown Product',
+            product_name: item.product_name || 'Unknown Product',
             quantity: parseInt(item.quantity) || 1,
-            unit_price: parseFloat(item.unit_price) || 0
+            unit_price: parseFloat(item.unit_price) || 0,
+            line_total: parseFloat(item.total) || 0
         }));
 
         const payload = {
-            supplier_name: extractedData.invoice?.vendor_name || 'Unknown Supplier',
+            supplier_name: extractedData.invoice?.vendor_name || extractedData.vendor_name || 'Unknown Supplier',
             notes: 'Imported via OCR Smart Import',
             items: items
         };
