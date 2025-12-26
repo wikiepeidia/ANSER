@@ -3102,6 +3102,66 @@ def run_dl_service():
     except Exception as e:
         print(f"[DL Thread] Error starting DL Service: {e}", flush=True)
 
+# AI Chat Integration
+@app.route('/api/ai/chat', methods=['POST'])
+@login_required
+def ai_chat():
+    """
+    Endpoint to handle chat messages from the frontend widget.
+    Forwards the message to the Hugging Face AI Space.
+    """
+    try:
+        data = request.get_json()
+        user_message = data.get('message')
+        
+        if not user_message:
+            return jsonify({'error': 'Message is required'}), 400
+
+        # Load AI Config
+        try:
+            with open('secrets/ai_config.json') as f:
+                ai_config = json.load(f)
+                hf_token = ai_config.get('HF_TOKEN')
+                hf_base_url = ai_config.get('HF_BASE_URL')
+        except FileNotFoundError:
+            return jsonify({'error': 'AI Configuration not found'}), 500
+
+        if not hf_token or not hf_base_url:
+             return jsonify({'error': 'AI Configuration incomplete'}), 500
+
+        # Prepare payload for AI Service
+        # We send the current user's ID to maintain context if needed
+        payload = {
+            "user_id": current_user.id,
+            "store_id": 1, # Default store ID for now, can be dynamic later
+            "message": user_message
+        }
+
+        headers = {
+            "Authorization": f"Bearer {hf_token}",
+            "Content-Type": "application/json"
+        }
+
+        # Call Hugging Face Space
+        import requests
+        response = requests.post(
+            f"{hf_base_url}/chat",
+            headers=headers,
+            json=payload,
+            timeout=30
+        )
+
+        if response.status_code == 200:
+            ai_response = response.json()
+            return jsonify(ai_response)
+        else:
+            print(f"AI Service Error: {response.status_code} - {response.text}")
+            return jsonify({'error': 'Failed to get response from AI service'}), 502
+
+    except Exception as e:
+        print(f"AI Chat Exception: {str(e)}")
+        return jsonify({'error': 'Internal Server Error'}), 500
+
 if __name__ == '__main__':
     import sys
     import os

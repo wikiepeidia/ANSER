@@ -1,12 +1,12 @@
 from sqlalchemy import Column, Integer, String, Boolean, DateTime, Text, ForeignKey, Float, func
 from sqlalchemy.orm import relationship
-from app.db_clean import Base
+from app.db import Base
 
 class User(Base):
     __tablename__ = "users"
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String(320), unique=True, index=True, nullable=False)
-    password = Column(String(256), nullable=False) # Note: sqlite uses 'password', not 'hashed_password' in the schema provided
+    password = Column(String(256), nullable=False)
     name = Column(String(255), nullable=False)
     first_name = Column(String(255), nullable=True)
     last_name = Column(String(255), nullable=True)
@@ -55,7 +55,7 @@ class Item(Base):
     priority = Column(String(64), default="medium")
     assignee_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     parent_id = Column(Integer, ForeignKey("items.id"), nullable=True)
-    meta_data = Column('metadata', Text)
+    metadata = Column(Text)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
@@ -294,6 +294,6 @@ class WalletTransaction(Base):
     method = Column(String(64))
     reference = Column(String(255))
     notes = Column(Text)
-    meta_data = Column('metadata', Text)  # renamed attribute to avoid Declarative 'metadata' conflict
+    metadata = Column(Text)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
