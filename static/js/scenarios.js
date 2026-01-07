@@ -6,35 +6,7 @@ const scenarioState = {
     searchTerm: ''
 };
 
-const fallbackScenarios = [
-    {
-        id: 'SCN-INV-001',
-        name: 'Inventory Sync Automation',
-        description: 'Keeps Shopify and internal ERP inventory in sync every hour.',
-        status: 'active',
-        runs: 42,
-        folder: 'all',
-        updated_at: new Date().toISOString()
-    },
-    {
-        id: 'SCN-CS-002',
-        name: 'Customer Service Digest',
-        description: 'Summarizes daily support tickets and posts to Slack.',
-        status: 'inactive',
-        runs: 0,
-        folder: 'uncategorized',
-        updated_at: new Date(Date.now() - 86400000).toISOString()
-    },
-    {
-        id: 'SCN-FR-003',
-        name: 'Fraud Review Concept',
-        description: 'Prototype flow for flagging risky orders.',
-        status: 'concept',
-        runs: 0,
-        folder: 'concepts',
-        updated_at: new Date(Date.now() - 43200000).toISOString()
-    }
-];
+const fallbackScenarios = [];
 
 function initScenariosPage() {
     if (!document.body.classList.contains('scenarios-page')) {
@@ -290,23 +262,8 @@ function createFolder() {
 }
 
 function createScenario() {
-    const form = document.getElementById('scenarioForm');
-    if (form) {
-        form.reset();
-    }
-    const idInput = document.getElementById('scenarioId');
-    if (idInput) idInput.value = '';
-    
-    const label = document.getElementById('scenarioModalLabel');
-    if (label) label.textContent = 'Create New Scenario';
-    
-    const modalEl = document.getElementById('scenarioModal');
-    if (modalEl) {
-        const modal = new bootstrap.Modal(modalEl);
-        modal.show();
-    } else {
-        console.error('Scenario modal not found');
-    }
+    // Direct to builder page as requested
+    openBuilder();
 }
 
 function editScenario(id) {
@@ -318,8 +275,11 @@ function editScenario(id) {
     document.getElementById('scenarioDescription').value = scenario.description || '';
     document.getElementById('scenarioModalLabel').textContent = 'Edit Scenario';
     
-    const modal = new bootstrap.Modal(document.getElementById('scenarioModal'));
-    modal.show();
+    const modalEl = document.getElementById('scenarioModal');
+    if (modalEl && typeof bootstrap !== 'undefined') {
+        const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+        modal.show();
+    }
 }
 
 async function saveScenario() {
@@ -335,11 +295,15 @@ async function saveScenario() {
     const payload = { name, description };
     const method = id ? 'PUT' : 'POST';
     const url = id ? `/api/scenarios/${id}` : '/api/scenarios';
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
 
     try {
         const response = await fetch(url, {
             method: method,
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
             body: JSON.stringify(payload)
         });
 
@@ -349,8 +313,10 @@ async function saveScenario() {
         
         // Hide modal
         const modalEl = document.getElementById('scenarioModal');
-        const modal = bootstrap.Modal.getInstance(modalEl);
-        modal.hide();
+        if (modalEl && typeof bootstrap !== 'undefined') {
+            const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+            modal.hide();
+        }
 
         // Reload scenarios
         loadScenarios();
@@ -367,9 +333,14 @@ async function saveScenario() {
 async function deleteScenario(id) {
     if (!confirm('Are you sure you want to delete this scenario?')) return;
 
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+
     try {
         const response = await fetch(`/api/scenarios/${id}`, {
-            method: 'DELETE'
+            method: 'DELETE',
+            headers: {
+                'X-CSRFToken': csrfToken
+            }
         });
 
         if (!response.ok) throw new Error('Failed to delete scenario');

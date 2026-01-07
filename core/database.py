@@ -3,6 +3,13 @@ import hashlib
 from datetime import datetime
 from .config import Config
 
+# Compatibility shim: if `app.db` exists, expose SessionLocal and Base for other modules
+try:
+    from app.db import SessionLocal, Base  # type: ignore
+except Exception:
+    SessionLocal = None
+    Base = None
+
 class Database:
     def __init__(self):
         self.db_path = Config.DATABASE_PATH
@@ -36,6 +43,12 @@ class Database:
         
         if 'google_token' not in columns:
             c.execute("ALTER TABLE users ADD COLUMN google_token TEXT")
+
+        if 'google_email' not in columns:
+            c.execute("ALTER TABLE users ADD COLUMN google_email TEXT")
+            
+        if 'manager_id' not in columns:
+            c.execute("ALTER TABLE users ADD COLUMN manager_id INTEGER REFERENCES users(id)")
         
         # Workspaces table
         c.execute('''CREATE TABLE IF NOT EXISTS workspaces (
@@ -274,6 +287,20 @@ class Database:
             except sqlite3.OperationalError:
                 pass
 
+        # Ensure scenarios table has steps and conditions columns
+        c.execute("PRAGMA table_info(scenarios)")
+        columns = [col[1] for col in c.fetchall()]
+        if 'steps' not in columns:
+            try:
+                c.execute("ALTER TABLE scenarios ADD COLUMN steps TEXT")
+            except sqlite3.OperationalError:
+                pass
+        if 'conditions' not in columns:
+            try:
+                c.execute("ALTER TABLE scenarios ADD COLUMN conditions TEXT")
+            except sqlite3.OperationalError:
+                pass
+
         # Manager subscriptions & history
         c.execute('''CREATE TABLE IF NOT EXISTS manager_subscriptions (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -353,9 +380,21 @@ class Database:
             cursor.execute('''INSERT OR IGNORE INTO users 
                             (email, password, name, avatar, role) VALUES (?, ?, ?, ?, ?)''', 
                          (email, hashed_pw, name, avatar, role))
+            
+            # Get the user ID (whether newly inserted or existing)
+            cursor.execute('SELECT id FROM users WHERE email = ?', (email,))
+            user_row = cursor.fetchone()
+            if user_row:
+                user_id = user_row[0]
+                # Create default workspace if not exists
+                cursor.execute('SELECT id FROM workspaces WHERE user_id = ?', (user_id,))
+                if not cursor.fetchone():
+                    cursor.execute('''INSERT INTO workspaces (user_id, name, type, description) 
+                                    VALUES (?, ?, ?, ?)''',
+                                 (user_id, f"{name.split()[0]}'s Workspace", 'personal', 'Demo workspace'))
     
     # User methods
-    def create_user(self, email, password, name, role="user", first_name=None, last_name=None):
+    def create_user(self, email, password, name, role="user", first_name=None, last_name=None, manager_id=None):
         conn = self.get_connection()
         c = conn.cursor()
         hashed_pw = hashlib.sha256(password.encode()).hexdigest()
@@ -365,11 +404,11 @@ class Database:
             columns = [col[1] for col in c.fetchall()]
             
             if 'first_name' in columns:
-                c.execute('INSERT INTO users (email, password, name, role, first_name, last_name) VALUES (?, ?, ?, ?, ?, ?)', 
-                         (email, hashed_pw, name, role, first_name, last_name))
+                c.execute('INSERT INTO users (email, password, name, role, first_name, last_name, manager_id) VALUES (?, ?, ?, ?, ?, ?, ?)', 
+                         (email, hashed_pw, name, role, first_name, last_name, manager_id))
             else:
-                c.execute('INSERT INTO users (email, password, name, role) VALUES (?, ?, ?, ?)', 
-                         (email, hashed_pw, name, role))
+                c.execute('INSERT INTO users (email, password, name, role, manager_id) VALUES (?, ?, ?, ?, ?)', 
+                         (email, hashed_pw, name, role, manager_id))
             
             user_id = c.lastrowid
             conn.commit()
@@ -590,23 +629,33 @@ class Database:
             }
         return None
     
-    def create_scenario(self, user_id, name, description='', active=False):
+    def create_scenario(self, user_id, name, description='', active=False, steps=None):
         conn = self.get_connection()
         c = conn.cursor()
         
         # Get user's default workspace
         c.execute('SELECT id FROM workspaces WHERE user_id = ? LIMIT 1', (user_id,))
         workspace = c.fetchone()
-        if not workspace:
-            raise Exception('No workspace found for user')
         
-        workspace_id = workspace[0]
+        if not workspace:
+            # Auto-create a default workspace if none exists
+            user_name_query = c.execute('SELECT name FROM users WHERE id = ?', (user_id,)).fetchone()
+            user_name = user_name_query[0] if user_name_query else "User"
+            workspace_name = f"{user_name}'s Workspace"
+            
+            c.execute('''INSERT INTO workspaces (user_id, name, type, description) 
+                        VALUES (?, ?, ?, ?)''',
+                     (user_id, workspace_name, 'personal', 'Default personal workspace'))
+            workspace_id = c.lastrowid
+        else:
+            workspace_id = workspace[0]
+        
         status = 'active' if active else 'inactive'
         
         c.execute('''INSERT INTO scenarios 
-                    (workspace_id, name, description, status) 
-                    VALUES (?, ?, ?, ?)''', 
-                  (workspace_id, name, description, status))
+                    (workspace_id, name, description, status, steps) 
+                    VALUES (?, ?, ?, ?, ?)''', 
+                  (workspace_id, name, description, status, steps))
         
         scenario_id = c.lastrowid
         conn.commit()
@@ -662,12 +711,24 @@ class Database:
         c = conn.cursor()
         
         # Verify ownership and delete
+        # We check if the scenario belongs to a workspace owned by the user
         c.execute('''DELETE FROM scenarios 
                     WHERE id = ? AND workspace_id IN 
                     (SELECT id FROM workspaces WHERE user_id = ?)''', 
                   (scenario_id, user_id))
         
         if c.rowcount == 0:
+            # Check if scenario exists at all
+            c.execute('SELECT id FROM scenarios WHERE id = ?', (scenario_id,))
+            if not c.fetchone():
+                # Scenario doesn't exist, so technically it's "gone". 
+                # But let's raise error to be consistent with "not found"
+                pass 
+            
+            # If scenario exists but wasn't deleted, it means permission denied
+            # However, for robustness, if the user has NO workspace, they shouldn't have scenarios.
+            # But if they do (orphan scenarios?), we might want to handle that.
+            # For now, just keep the exception but make it clearer.
             raise Exception('Scenario not found or access denied')
         
         conn.commit()

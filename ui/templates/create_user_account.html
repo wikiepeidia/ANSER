@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Create User Account - {{ project_name }}{% endblock %}
+{% block title %}Create Employee Account - {{ project_name }}{% endblock %}
 
 {% block styles %}
 {{ super() }}
@@ -18,18 +18,17 @@
 
     <main class="app-content">
         <header class="create-user-header">
-            <h1>Create User Account</h1>
-            <p>Create a new staff account with basic permissions</p>
+            <h1>Create Employee Account</h1>
+            <p>Create a new staff account for your store</p>
         </header>
 
         <div class="create-user-card">
             <div class="info-box">
-                <p><i class="fas fa-info-circle"></i> <strong>User Permissions:</strong> User accounts have access
-                    to core features (Customers, Products, Import/Export). Does not have access to
-                    VIP for Managers (Advanced analytics, smart reports, advanced scenarios).</p>
+                <p><i class="fas fa-info-circle"></i> <strong>Employee Permissions:</strong> Employee accounts have access
+                    to core features (Products, Import/Export) but cannot manage other users.</p>
             </div>
 
-            <form id="createUserForm" method="POST" action="/api/create-user">
+            <form id="createUserForm" method="POST" action="/api/create-user" novalidate>
                 <div class="form-section">
                     <h3><i class="fas fa-user"></i> Basic Information</h3>
 
@@ -56,7 +55,7 @@
                 </div>
 
                 <!-- Role section hidden as there is only one role available -->
-                <input type="hidden" name="role" value="user">
+                <input type="hidden" name="role" value="employee">
                 <!--
                 <div class="form-section">
                     <h3><i class="fas fa-shield-alt"></i> Role & Permissions</h3>
@@ -64,11 +63,10 @@
                     <div class="form-group">
                         <label for="role">Role</label>
                         <select id="role" name="role" disabled>
-                            <option value="user" selected>User (Full basic access)</option>
+                            <option value="employee" selected>Employee (Standard access)</option>
                         </select>
                         <small style="color: #6b7280; display: block; margin-top: 5px;">
-                            Default user role: Customers, Products, Imports/Exports. No Manager analytics or VIP
-                            reports.
+                            Default employee role: Products, Imports/Exports. No Manager analytics.
                         </small>
                     </div>
                 </div>
@@ -87,31 +85,30 @@
 
         <div class="create-user-card" style="margin-top: 30px;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
-                <h2 style="margin: 0;"><i class="fas fa-users"></i> User list</h2>
+                <h2 style="margin: 0;"><i class="fas fa-users"></i> Employee list</h2>
                 <button class="btn btn-secondary" onclick="loadUserList()">
                     <i class="fas fa-sync-alt"></i> Reload
                 </button>
             </div>
 
             <div style="margin-bottom: 20px;">
-                <input type="text" id="searchUser" placeholder="Search by email or name..."
-                    style="width: 100%; padding: 12px 16px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 1rem;">
+                <input type="text" id="searchUser" class="search-input" placeholder="Search by email or name...">
             </div>
 
             <div style="overflow-x: auto;">
-                <table style="width: 100%; border-collapse: collapse;">
+                <table class="user-table">
                     <thead>
-                        <tr style="background: #f3f4f6; border-bottom: 2px solid #e5e7eb;">
-                            <th style="padding: 12px; text-align: left; font-weight: 600;">Email</th>
-                            <th style="padding: 12px; text-align: left; font-weight: 600;">Full name</th>
-                            <th style="padding: 12px; text-align: center; font-weight: 600;">Role</th>
-                            <th style="padding: 12px; text-align: center; font-weight: 600;">Status</th>
-                            <th style="padding: 12px; text-align: center; font-weight: 600;">Actions</th>
+                        <tr>
+                            <th>Email</th>
+                            <th>Full name</th>
+                            <th class="text-center">Role</th>
+                            <th class="text-center">Status</th>
+                            <th class="text-center">Actions</th>
                         </tr>
                     </thead>
                     <tbody id="userListBody">
                         <tr>
-                            <td colspan="5" style="padding: 40px; text-align: center; color: #6b7280;">
+                            <td colspan="5" class="empty-state">
                                 <i class="fas fa-spinner fa-spin" style="font-size: 2rem; margin-bottom: 10px;"></i>
                                 <p>Loading list...</p>
                             </td>

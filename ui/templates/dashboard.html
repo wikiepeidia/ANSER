@@ -39,7 +39,7 @@
             <div class="glance-grid">
                 <div class="glance-card">
                     <p>Total Revenue</p>
-                    <h3>$0.00</h3>
+                    <h3>10.122 ₫</h3>
                     <div class="glance-subtext">This Month</div>
                 </div>
                 <div class="glance-card">
@@ -89,17 +89,29 @@
                     <h3>Quick Actions</h3>
                 </div>
                 <div class="collection-grid">
-                    <!-- Templates Card -->
-                    <div class="collection-card">
+                    <!-- New Workflow Card -->
+                    <a href="{{ url_for('workspace_builder') }}" class="collection-card">
+                        <div class="collection-icon gradient-indigo">
+                            <i class="fas fa-plus"></i>
+                        </div>
+                        <div class="collection-body">
+                            <h4>New Workflow</h4>
+                            <p>Create automation from scratch</p>
+                        </div>
+                        <div class="collection-cta">Create <i class="fas fa-arrow-right ms-1"></i></div>
+                    </a>
+
+                    <!-- Scenarios Card -->
+                    <a href="{{ url_for('scenarios') }}" class="collection-card">
                         <div class="collection-icon gradient-blue">
                             <i class="fas fa-layer-group"></i>
                         </div>
                         <div class="collection-body">
-                            <h4>Templates</h4>
-                            <p>Start from pre-built scenarios</p>
+                            <h4>My Scenarios</h4>
+                            <p>Manage your existing automations</p>
                         </div>
                         <div class="collection-cta">Browse <i class="fas fa-arrow-right ms-1"></i></div>
-                    </div>
+                    </a>
 
                     <!-- Settings Card -->
                     <a href="{{ url_for('settings') }}" class="collection-card">

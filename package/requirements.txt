@@ -19,7 +19,7 @@ authlib
 google-auth-oauthlib
 google-auth-httplib2
 google-api-python-client
-
+google.analytics
 
 # ==================================================
 # OCR & Image Processing
@@ -60,7 +60,7 @@ sentence-transformers
 # ==================================================
 timm
 einops
-flash-attn
+# flash-attn
 
 
 # ==================================================
@@ -82,3 +82,13 @@ python-docx
 ddgs
 addict
 easydict
+
+
+# ==================================================
+#SQLAlchemy & Database
+# ==================================================
+SQLAlchemy>=2.0
+alembic
+psycopg[binary]
+passlib[bcrypt]
+python-dotenv

@@ -80,18 +80,6 @@
                         ALL
                         <span class="tab-badge" data-tab-count="all">0</span>
                     </div>
-                    <div class="tab" data-tab="active">
-                        ACTIVE SCENARIOS
-                        <span class="tab-badge" data-tab-count="active">0</span>
-                    </div>
-                    <div class="tab" data-tab="inactive">
-                        INACTIVE SCENARIOS
-                        <span class="tab-badge" data-tab-count="inactive">0</span>
-                    </div>
-                    <div class="tab" data-tab="concept">
-                        CONCEPTS
-                        <span class="tab-badge" data-tab-count="concept">0</span>
-                    </div>
                 </div>
             </div>
             <button class="create-btn" onclick="createScenario()">
@@ -248,23 +236,3 @@
         </div>
     </div>
 </div>
-
-<style>
-    /* Dark mode support for modal */
-    [data-theme="dark"] .modal-content {
-        background-color: var(--surface-100);
-        color: var(--gray-100);
-    }
-
-    [data-theme="dark"] .tutorial-card {
-        background-color: var(--surface-200) !important;
-    }
-
-    [data-theme="dark"] .text-muted {
-        color: var(--gray-400) !important;
-    }
-
-    [data-theme="dark"] .btn-close {
-        filter: invert(1) grayscale(100%) brightness(200%);
-    }
-</style>

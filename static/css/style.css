@@ -28,7 +28,7 @@
     --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
     --gradient-primary: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
     --gradient-hero: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    --body-bg: var(--gradient-hero);
+    --body-bg: #f8fafc;
     --surface-100: #ffffff;
     --surface-200: #f8fafc;
     --surface-300: #edf2ff;
@@ -68,9 +68,7 @@
 
 html[data-theme='dark'],
 body.dark-mode {
-    --body-bg: radial-gradient(circle at 20% 20%, rgba(15, 118, 255, 0.12), transparent 55%),
-        radial-gradient(circle at 80% 0%, rgba(236, 72, 153, 0.12), transparent 50%),
-        #050816;
+    --body-bg: #020617;
     --surface-100: #0f172a;
     --surface-200: #111c32;
     --surface-300: #16233f;

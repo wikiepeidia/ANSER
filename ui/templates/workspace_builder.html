@@ -2,6 +2,8 @@
 
 {% block title %}Workspace Builder{% endblock %}
 
+{% block body_class %}builder-page{% endblock %}
+
 {% block styles %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/builder.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/builder_tabs.css') }}">
@@ -37,9 +39,9 @@
                     <i class="fas fa-check-circle"></i> Google Connected
                 </div>
                 {% else %}
-                <div style="font-size: 0.75rem; color: #9aa0a6; display: flex; align-items: center; gap: 5px;">
-                    <i class="fas fa-exclamation-circle"></i> Google not connected
-                </div>
+                <a href="{{ url_for('google_connect') }}" style="font-size: 0.75rem; color: #F4B400; display: flex; align-items: center; gap: 5px; text-decoration: none; cursor: pointer;">
+                    <i class="fas fa-exclamation-circle"></i> Connect Google
+                </a>
                 {% endif %}
             </div>
             <div
@@ -215,7 +217,7 @@
                     <i class="fas fa-save"></i> Save
                 </button>
                 <button class="action-btn" data-action="load-workflow" style="color: #FF9800; border-color: #FF9800;">
-                    <i class="fas fa-folder-open"></i> Load
+                    <i class="fas fa-folder-open"></i> Load Scenario
                 </button>
                 <button class="action-btn" data-action="clear-canvas" style="color: #f44336; border-color: #f44336;">
                     <i class="fas fa-trash"></i> Clear
@@ -295,7 +297,7 @@
     <div id="loadWorkflowModal" class="builder-modal">
         <div class="builder-modal-content">
             <div class="builder-modal-header">
-                <h3>Load Workflow</h3>
+                <h3>Load Scenario</h3>
                 <span class="builder-close-modal">&times;</span>
             </div>
             <div class="builder-modal-body">
@@ -503,6 +505,32 @@
             <div class="modal-footer border-0">
                 <button type="button" class="btn btn-primary w-100" data-bs-dismiss="modal">Got it, let's
                     build!</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Save Scenario Modal -->
+<div class="modal fade" id="saveScenarioModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <h5 class="modal-title">Save Automation</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="saveScenarioName" class="form-label">Name</label>
+                    <input type="text" class="form-control" id="saveScenarioName" placeholder="Enter automation name">
+                </div>
+                <div class="mb-3">
+                    <label for="saveScenarioDescription" class="form-label">Description (Optional)</label>
+                    <textarea class="form-control" id="saveScenarioDescription" rows="3" placeholder="What does this automation do?"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="confirmSaveScenarioBtn">Save</button>
             </div>
         </div>
     </div>

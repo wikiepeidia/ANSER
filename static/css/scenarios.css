@@ -1,33 +1,65 @@
 /* Automation Scenarios Styles */
 :root {
     --scenario-gradient: var(--gradient-primary, linear-gradient(135deg, #667eea 0%, #764ba2 100%));
-    --scenario-surface: var(--surface-200, #f4f6fb);
-    --scenario-panel: var(--surface-100, #ffffff);
-    --scenario-panel-alt: var(--surface-300, #edf2ff);
-    --scenario-border: var(--border-soft, #e2e8f0);
-    --scenario-border-strong: var(--border-strong, #ccd5f6);
-    --scenario-muted: var(--gray-500, #6b7280);
-    --scenario-text: var(--gray-900, #111827);
-    --scenario-accent: var(--primary, #667eea);
-    --scenario-shadow: var(--shadow-lg, 0 12px 30px rgba(15, 23, 42, 0.08));
-    --scenario-card-bg: var(--surface-100, #ffffff);
-    --scenario-card-soft: var(--surface-200, #f4f6fb);
+    --scenario-surface: #f4f6fb;
+    --scenario-panel: #ffffff;
+    --scenario-panel-alt: #edf2ff;
+    --scenario-border: #e2e8f0;
+    --scenario-border-strong: #ccd5f6;
+    --scenario-muted: #6b7280;
+    --scenario-text: #111827;
+    --scenario-accent: #667eea;
+    --scenario-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+    --scenario-card-bg: #ffffff;
+    --scenario-card-soft: #f4f6fb;
     --scenario-chip-bg: rgba(102, 126, 234, 0.12);
 }
 
 html[data-theme='dark'],
 body.dark-mode {
-    --scenario-surface: var(--surface-200, #050816);
-    --scenario-panel: var(--surface-100, #0f172a);
-    --scenario-panel-alt: var(--surface-200, #111c32);
-    --scenario-border: var(--border-soft, rgba(148, 163, 184, 0.18));
+    --scenario-surface: #050816;
+    --scenario-panel: #0f172a;
+    --scenario-panel-alt: #111c32;
+    --scenario-border: rgba(148, 163, 184, 0.18);
     --scenario-border-strong: rgba(102, 126, 234, 0.35);
-    --scenario-muted: var(--gray-400, #94a3b8);
-    --scenario-text: var(--gray-100, #f8fafc);
+    --scenario-muted: #94a3b8;
+    --scenario-text: #f8fafc;
     --scenario-shadow: 0 30px 55px rgba(0, 0, 0, 0.45);
     --scenario-card-bg: rgba(15, 23, 42, 0.95);
     --scenario-card-soft: rgba(15, 23, 42, 0.75);
     --scenario-chip-bg: rgba(99, 102, 241, 0.25);
+}
+
+/* Dark mode support for modal */
+[data-theme="dark"] .modal-content {
+    background-color: var(--scenario-panel, #0f172a);
+    color: var(--scenario-text, #f8fafc);
+    border-color: var(--scenario-border, rgba(255,255,255,0.1));
+}
+
+[data-theme="dark"] .tutorial-card {
+    background-color: var(--scenario-panel-alt, #1e293b) !important;
+    color: var(--scenario-text, #f8fafc);
+}
+
+[data-theme="dark"] .text-muted {
+    color: var(--scenario-muted, #94a3b8) !important;
+}
+
+[data-theme="dark"] .btn-close {
+    filter: invert(1) grayscale(100%) brightness(200%);
+}
+
+[data-theme="dark"] .form-control,
+[data-theme="dark"] .form-select {
+    background-color: var(--scenario-surface, #050816);
+    border-color: var(--scenario-border, rgba(255,255,255,0.1));
+    color: var(--scenario-text, #f8fafc);
+}
+
+[data-theme="dark"] .form-control:focus {
+    background-color: var(--scenario-surface, #050816);
+    color: var(--scenario-text, #f8fafc);
 }
 
 body.scenarios-page {

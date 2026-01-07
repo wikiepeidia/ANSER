@@ -73,9 +73,17 @@
         }
     };
 
-    const fetchAndRender = async () => {
+    const fetchAndRender = async (forceLive = false) => {
         try {
             console.debug('Fetching analytics data...');
+            
+            // Load mock data by default unless forceLive is true
+            if (!forceLive) {
+                console.debug('Loading mock data by default');
+                loadMockData();
+                return;
+            }
+            
             const resp = await fetch('/api/admin/analytics/data', {
                 credentials: 'include'
             });
@@ -162,6 +170,12 @@
             } else if (json.source === 'live') {
                 badge.classList.remove('bg-warning');
                 badge.classList.add('bg-success');
+                // Update button to show "Load Mock Data" when live data is active
+                const btnToggle = document.getElementById('btnLoadMock');
+                if (btnToggle) {
+                    btnToggle.innerHTML = '<i class="fas fa-database"></i><span>Load Mock Data</span>';
+                    window.__currentDataSource = 'live';
+                }
             } else {
                 badge.classList.remove('bg-warning');
                 badge.classList.remove('bg-success');
@@ -264,16 +278,33 @@
             trafficSourcesChart = new Chart(dom.trafficSourcesChart, {
                 type: 'doughnut',
                 data: { labels: data.traffic_sources.labels, datasets:[{ data:data.traffic_sources.users, backgroundColor:['#4285F4','#34A853','#FBBC05','#EA4335'] }] },
-                options: { responsive:true, maintainAspectRatio:true, aspectRatio:1, plugins:{ tooltip } }
+                options: { 
+                    responsive:true, 
+                    maintainAspectRatio:true, 
+                    aspectRatio:1, 
+                    plugins:{ 
+                        tooltip,
+                        legend: {
+                            display: true,
+                            position: 'bottom',
+                            labels: {
+                                padding: 15,
+                                boxWidth: 15,
+                                boxHeight: 15,
+                                font: {
+                                    size: 13,
+                                    family: 'Inter, "Segoe UI", sans-serif',
+                                    weight: '600'
+                                },
+                                color: colors.text,
+                                usePointStyle: true,
+                                pointStyle: 'circle'
+                            }
+                        }
+                    } 
+                }
             });
             try { trafficSourcesChart.update(); trafficSourcesChart.resize(); } catch(e) { /* ignore */ }
-
-            // Render a small textual legend for compact layout
-            const legendEl = document.getElementById('trafficLegend');
-            if (legendEl && data.traffic_sources && Array.isArray(data.traffic_sources.labels)) {
-                const colors = ['#4285F4','#34A853','#FBBC05','#EA4335'];
-                legendEl.innerHTML = data.traffic_sources.labels.map((l,i)=>`<div class="traffic-legend-item" style="display:inline-block;margin-right:10px;font-weight:600"><span class="traffic-legend-swatch" style="display:inline-block;width:12px;height:8px;background:${colors[i]};border-radius:2px;margin-right:6px"></span><span class="traffic-legend-label">${l}</span></div>`).join('');
-            }
         }
 
         // Ensure charts resize correctly after render
@@ -281,6 +312,62 @@
             if (dailyUsersChart) { dailyUsersChart.update(); dailyUsersChart.resize(); }
             if (trafficSourcesChart) { trafficSourcesChart.update(); trafficSourcesChart.resize(); }
         } catch (e) { console.warn('Chart resize/update failed', e); }
+    };
+
+    const loadVIPCustomers = async () => {
+        try {
+            const response = await fetch('/api/admin/users');
+            if (!response.ok) {
+                throw new Error('Failed to load customers');
+            }
+
+            const data = await response.json();
+            const customers = (data.users || []).filter((user) => user.role === 'customer');
+            const container = document.getElementById('topCustomers');
+
+            if (!container) {
+                return;
+            }
+
+            if (customers.length === 0) {
+                container.innerHTML = '<div class="text-center py-4 text-muted">No VIP customers found</div>';
+                return;
+            }
+
+            // Sort by mock revenue and take top 5
+            const topCustomers = customers
+                .map(customer => ({
+                    ...customer,
+                    revenue: Math.floor(Math.random() * 100000000) + 50000000,
+                    orders: Math.floor(Math.random() * 50) + 10
+                }))
+                .sort((a, b) => b.revenue - a.revenue)
+                .slice(0, 5);
+
+            container.innerHTML = topCustomers
+                .map((customer, index) => {
+                    const rankClass = index === 0 ? 'gold' : index === 1 ? 'silver' : index === 2 ? 'bronze' : '';
+                    return `
+                        <div class="customer-item">
+                            <div class="item-rank ${rankClass}">${index + 1}</div>
+                            <div class="item-info">
+                                <div class="item-name">${customer.name}</div>
+                                <div class="item-detail">${customer.email} • ${customer.orders} orders</div>
+                            </div>
+                            <div>
+                                <strong style="color: #43e97b; font-size: 16px;">${formatCurrency(customer.revenue)} VND</strong>
+                            </div>
+                        </div>
+                    `;
+                })
+                .join('');
+        } catch (error) {
+            console.error('Error loading VIP customers:', error);
+            const container = document.getElementById('topCustomers');
+            if (container) {
+                container.innerHTML = '<div class="text-center py-4 text-danger">Failed to load customers</div>';
+            }
+        }
     };
 
     const loadManagerPerformance = async () => {
@@ -314,7 +401,7 @@
                             <td><strong>${manager.name}</strong></td>
                             <td>${manager.email}</td>
                             <td><span class="badge bg-primary">${usersManaged} users</span></td>
-                            <td><span class="badge bg-info">${permissionsGranted} quyền</span></td>
+                            <td><span class="badge bg-info">${permissionsGranted} permissions</span></td>
                             <td><strong style="color: #43e97b;">${formatCurrency(revenue)} VND</strong></td>
                             <td><span class="badge bg-success">Active</span></td>
                         </tr>
@@ -359,6 +446,11 @@
         if (targetId === 'managerSection') {
             // load managers' performance when tab becomes active
             loadManagerPerformance();
+        }
+
+        if (targetId === 'customersSection') {
+            // load VIP customers when tab becomes active
+            loadVIPCustomers();
         }
     };
 
@@ -492,6 +584,129 @@
                 } finally {
                     btnCheck.disabled = false; btnCheck.textContent = 'Refresh cache';
                 }
+            });
+        }
+
+        // Mock data loading function
+        const loadMockData = () => {
+            const mockData = {
+                "daily_users": {
+                    "labels": ["20241220","20241221","20241222","20241223","20241224","20241225","20241226"],
+                    "active_users": [120, 135, 140, 130, 150, 145, 160],
+                    "page_views": [450, 480, 500, 470, 520, 510, 550]
+                },
+                "traffic_sources": {
+                    "labels": ["Direct","Organic Search","Referral","Social Media"],
+                    "users": [85, 40, 15, 10]
+                },
+                "top_pages": [
+                    {"page": "/", "views": 250},
+                    {"page": "/products", "views": 150},
+                    {"page": "/about", "views": 95},
+                    {"page": "/contact", "views": 60},
+                    {"page": "/services", "views": 45}
+                ],
+                "user_stats": {
+                    "total_users": 150,
+                    "new_users": 35,
+                    "avg_engagement_time": 180
+                }
+            };
+
+            // Manually inject mock data
+            window.__lastAnalyticsData = mockData;
+            window.__currentDataSource = 'mock';
+            
+            // Update realtime overview
+            const realtimeUsersEl = document.getElementById('realtimeUsers');
+            if (realtimeUsersEl) realtimeUsersEl.textContent = '12';
+            
+            const deviceDesktopEl = document.getElementById('deviceDesktop');
+            if (deviceDesktopEl) deviceDesktopEl.textContent = '68%';
+            
+            const deviceMobileEl = document.getElementById('deviceMobile');
+            if (deviceMobileEl) deviceMobileEl.textContent = '32%';
+            
+            // Update stats cards
+            if (dom.totalUsers) dom.totalUsers.textContent = mockData.user_stats.total_users.toLocaleString();
+            if (dom.totalPageViews) {
+                const totalPageViews = mockData.daily_users.page_views.reduce((a, b) => a + b, 0);
+                dom.totalPageViews.textContent = totalPageViews.toLocaleString();
+            }
+            if (dom.avgTime) {
+                const minutes = Math.floor(mockData.user_stats.avg_engagement_time / 60);
+                const seconds = mockData.user_stats.avg_engagement_time % 60;
+                dom.avgTime.textContent = `${minutes}m ${seconds}s`;
+            }
+            if (dom.newUsers) dom.newUsers.textContent = mockData.user_stats.new_users.toLocaleString();
+            
+            // Update top pages
+            if (dom.topPagesContainer) {
+                dom.topPagesContainer.innerHTML = mockData.top_pages.map(p => 
+                    `<div class="list-item"><span>${p.page}</span><strong>${p.views.toLocaleString()}</strong></div>`
+                ).join('');
+            }
+            
+            // Build charts
+            clearNoDataPlaceholders();
+            buildCharts(mockData);
+            
+            // Update badge
+            const badge = document.getElementById('analyticsSourceBadge');
+            if (badge) {
+                badge.textContent = 'Mock';
+                badge.classList.remove('bg-success', 'bg-secondary', 'bg-info');
+                badge.classList.add('bg-warning');
+            }
+            
+            // Update button text
+            const btnToggle = document.getElementById('btnLoadMock');
+            if (btnToggle) {
+                btnToggle.innerHTML = '<i class="fas fa-wifi"></i><span>Load Live Data</span>';
+            }
+            
+            // Clear error if any
+            if (dom.errorMessage) dom.errorMessage.style.display = 'none';
+            
+            console.log('Mock data loaded successfully');
+        };
+
+        // Mock/Live data toggle button handler
+        const btnLoadMock = document.getElementById('btnLoadMock');
+        if (btnLoadMock) {
+            btnLoadMock.addEventListener('click', async () => {
+                const currentSource = window.__currentDataSource || 'mock';
+                btnLoadMock.disabled = true;
+                
+                if (currentSource === 'mock') {
+                    // Switch to live data
+                    btnLoadMock.textContent = 'Loading...';
+                    try {
+                        // Clear cache first
+                        await fetch('/api/admin/analytics/clear_cache', { method: 'POST', credentials: 'include' });
+                        // Force live data fetch
+                        await fetchAndRender(true);
+                        
+                        // Update button
+                        btnLoadMock.innerHTML = '<i class="fas fa-database"></i><span>Load Mock Data</span>';
+                        window.__currentDataSource = 'live';
+                    } catch (err) {
+                        console.error('Load live failed', err);
+                        alert('Failed to load live data: ' + err.message);
+                        btnLoadMock.innerHTML = '<i class="fas fa-wifi"></i><span>Load Live Data</span>';
+                    }
+                } else {
+                    // Switch to mock data
+                    btnLoadMock.textContent = 'Loading...';
+                    try {
+                        loadMockData();
+                    } catch (err) {
+                        console.error('Load mock failed', err);
+                        alert('Failed to load mock data: ' + err.message);
+                    }
+                }
+                
+                btnLoadMock.disabled = false;
             });
         }
 

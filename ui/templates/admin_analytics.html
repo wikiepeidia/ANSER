@@ -88,11 +88,21 @@
                             <p class="card-text text-muted">Monitor your website performance with real-time Google
                                 Analytics data. Track user engagement, traffic sources, and key metrics to optimize your
                                 business.</p>
-                            <div class="mt-3 d-flex justify-content-center gap-2">
-                                <span class="badge bg-secondary me-2" id="analyticsSourceBadge">Loading...</span>
-                                <small class="text-muted">Data source</small>
-                                <button id="btnCheckTracking" class="btn btn-sm btn-outline-primary ms-3"
-                                    type="button">Refresh cache</button>
+                            <div class="analytics-controls">
+                                <div class="data-source-indicator">
+                                    <span class="badge bg-secondary" id="analyticsSourceBadge">Loading...</span>
+                                    <span class="data-source-label">Data source</span>
+                                </div>
+                                <div class="control-buttons">
+                                    <button id="btnCheckTracking" class="btn-modern btn-modern--primary" type="button">
+                                        <i class="fas fa-sync-alt"></i>
+                                        <span>Refresh</span>
+                                    </button>
+                                    <button id="btnLoadMock" class="btn-modern btn-modern--warning" type="button">
+                                        <i class="fas fa-wifi"></i>
+                                        <span>Load Live Data</span>
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -166,7 +176,6 @@
                             <canvas id="trafficSourcesChart"
                                 style="height:260px; max-width:260px; width:100%;"></canvas>
                         </div>
-                        <div id="trafficLegend" class="mt-3 small text-muted"></div>
                     </div>
                 </div>
             </div>

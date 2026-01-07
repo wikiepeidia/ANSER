@@ -22,9 +22,16 @@
                         <p class="launch-eyebrow">Business Management</p>
                         <h3>Operations Dashboard</h3>
                     </div>
-                    <span class="collection-hint">All within this workspace</span>
                 </div>
                 <div class="collection-grid">
+                    <button type="button" class="collection-card" onclick="location.href='{{ url_for('create_user_account') }}'">
+                        <div class="collection-icon gradient-blue"><i class="fas fa-users"></i></div>
+                        <div class="collection-body">
+                            <h4>Manage Employees</h4>
+                            <p>Create and manage staff accounts.</p>
+                        </div>
+                        <span class="collection-cta">Open page</span>
+                    </button>
                     <button type="button" class="collection-card" onclick="location.href='{{ url_for('products') }}'">
                         <div class="collection-icon gradient-orange"><i class="fas fa-box"></i></div>
                         <div class="collection-body">
@@ -49,15 +56,6 @@
                         </div>
                         <span class="collection-cta">Open page</span>
                     </button>
-                    <button type="button" class="collection-card"
-                        onclick="location.href='{{ url_for('admin_analytics') }}'">
-                        <div class="collection-icon gradient-violet"><i class="fas fa-chart-pie"></i></div>
-                        <div class="collection-body">
-                            <h4>Manager Analytics</h4>
-                            <p>View revenue, profit, and restock predictions (Manager only).</p>
-                        </div>
-                        <span class="collection-cta">Open page</span>
-                    </button>
                 </div>
             </div>
 
@@ -67,17 +65,8 @@
                         <p class="launch-eyebrow">Intelligent Automation</p>
                         <h3>Scenario &amp; AI Automation</h3>
                     </div>
-                    <span class="collection-hint">Belongs to Workspace Automation</span>
                 </div>
                 <div class="collection-grid">
-                    <button type="button" class="collection-card" onclick="location.href='{{ url_for('dashboard') }}'">
-                        <div class="collection-icon gradient-purple"><i class="fas fa-chart-pie"></i></div>
-                        <div class="collection-body">
-                            <h4>Business Dashboard</h4>
-                            <p>Track revenue, profit, and detailed business analytics.</p>
-                        </div>
-                        <span class="collection-cta">Open page</span>
-                    </button>
                     <button type="button" class="collection-card"
                         onclick="location.href='{{ url_for('se_auto_import') }}'">
                         <div class="collection-icon gradient-gold"><i class="fas fa-sync-alt"></i></div>
@@ -87,7 +76,6 @@
                         </div>
                         <span class="collection-cta">Open page</span>
                     </button>
-                    {% if current_user.role != 'admin' %}
                     <button type="button" class="collection-card"
                         onclick="location.href='{{ url_for('workspace_builder') }}'">
                         <div class="collection-icon gradient-indigo"><i class="fas fa-diagram-project"></i></div>
@@ -97,90 +85,11 @@
                         </div>
                         <span class="collection-cta"><i class="fas fa-tools"></i> Go to builder</span>
                     </button>
-                    {% endif %}
-                    <button type="button" class="collection-card" onclick="location.href='{{ url_for('se_reports') }}'">
-                        <div class="collection-icon gradient-cyan"><i class="fas fa-chart-line"></i></div>
-                        <div class="collection-body">
-                            <h4>Smart Reports</h4>
-                            <p>Paid version for Manager/Admin with realtime data.</p>
-                        </div>
-                        <span class="collection-cta">Go to page</span>
-                    </button>
                 </div>
             </div>
         </section>
 
-        <section class="wallet-glance" id="walletGlanceSection">
-            <div class="glance-head">
-                <div>
-                    <p class="launch-eyebrow">Wallet & Subscription</p>
-                    <h2>Manager Upgrade Status</h2>
-                </div>
-                <div class="glance-actions">
-                    <button class="btn btn-outline-secondary" type="button" onclick="redirectToWallet()">
-                        <i class="fas fa-arrow-right"></i> Go to wallet
-                    </button>
-                </div>
-            </div>
-            <div class="glance-body" id="walletGlanceContent">
-                <!-- Wallet glance content will be loaded here -->
-            </div>
-        </section>
-
-        <section class="scenario-tier-board" id="scenarioAccessBoard">
-            <div class="tier-card tier-card--free">
-                <p class="tier-eyebrow">Free workspace</p>
-                <h3>Free workspace</h3>
-                <p class="tier-subtext">Includes basic scenarios, suitable for exploring the system before upgrading.
-                </p>
-                <ul class="tier-feature-list">
-                    <li><i class="fas fa-check"></i> Scraping + CRM Sync similar to Make.com</li>
-                    <li><i class="fas fa-check"></i> Basic module library &amp; save drafts</li>
-                    <li><i class="fas fa-check"></i> 01 luồng chạy thủ công / lần</li>
-                </ul>
-                <div class="tier-actions">
-                    <button class="btn btn-outline-light" type="button" onclick="openScrapingScenario()">
-                        <i class="fas fa-play"></i> Continue with Free plan
-                    </button>
-                </div>
-            </div>
-            <div class="tier-card tier-card--paid" id="paidScenarioGate" data-paid-scenario="locked">
-                <p class="tier-eyebrow">Paid Scenario</p>
-                <h3>Paid Scenario</h3>
-                <p class="tier-subtext">This is a paid section. Upgrade to unlock more scenarios, auto-run and API
-                    integrations.
-                    scheduling and API integrations.</p>
-                <ul class="tier-feature-list">
-                    <li><i class="fas fa-lock"></i> Advanced scenarios &amp; auto-run</li>
-                    <li><i class="fas fa-lock"></i> Priority SLA &amp; large data support</li>
-                    <li><i class="fas fa-lock"></i> API hook (coming soon)</li>
-                </ul>
-                <div class="tier-actions">
-                    <button class="btn btn-warning" type="button" onclick="redirectToWallet('#planGrid')"
-                        data-paid-action="checkout">
-                        <i class="fas fa-credit-card"></i> Paid Scenario
-                    </button>
-                </div>
-                <small class="tier-note">Not paid? Click the button above to go to the wallet page and complete the
-                    upgrade.</small>
-            </div>
-            <div class="tier-card tier-card--manager" data-paid-scenario="manager">
-                <p class="tier-eyebrow">Manager / Admin</p>
-                <h3>Private Orchestration Gateway</h3>
-                <p class="tier-subtext">This area will consume data from internal APIs, separated from the Free user
-                    view.</p>
-                <div class="tier-manager-callout">
-                    <span class="badge bg-info text-dark">Coming soon API</span>
-                    <p class="mb-0">Admins can toggle Paid Scenario for each workspace when API integration is ready.
-                    </p>
-                </div>
-                <div class="tier-actions">
-                    <button class="btn btn-outline-info" type="button" onclick="redirectToWallet('#planGrid')">
-                        <i class="fas fa-layer-group"></i> View upgrade options
-                    </button>
-                </div>
-            </div>
-        </section>
+        <!-- Sections removed as per redesign request -->
 
         <!-- ========== USER VIEW (Limited) ========== -->
         {% else %}
@@ -192,17 +101,8 @@
                         <p class="launch-eyebrow">Business Management</p>
                         <h3>Operations Dashboard</h3>
                     </div>
-                    <span class="collection-hint">Basic features</span>
                 </div>
                 <div class="collection-grid">
-                    <button type="button" class="collection-card" onclick="location.href='{{ url_for('customers') }}'">
-                        <div class="collection-icon gradient-blue"><i class="fas fa-users"></i></div>
-                        <div class="collection-body">
-                            <h4>Customers</h4>
-                            <p>Manage customer information and transaction history.</p>
-                        </div>
-                        <span class="collection-cta">Open page</span>
-                    </button>
                     <button type="button" class="collection-card" onclick="location.href='{{ url_for('products') }}'">
                         <div class="collection-icon gradient-orange"><i class="fas fa-box"></i></div>
                         <div class="collection-body">
@@ -227,15 +127,6 @@
                         </div>
                         <span class="collection-cta">Open page</span>
                     </button>
-                    <button type="button" class="collection-card"
-                        onclick="location.href='{{ url_for('workspace_builder') }}'">
-                        <div class="collection-icon gradient-indigo"><i class="fas fa-diagram-project"></i></div>
-                        <div class="collection-body">
-                            <h4>Workflow Builder</h4>
-                            <p>Drag-and-drop automation scenarios, edit nodes and save drafts.</p>
-                        </div>
-                        <span class="collection-cta"><i class="fas fa-tools"></i> Go to builder</span>
-                    </button>
                 </div>
             </div>
 
@@ -245,20 +136,25 @@
                         <p class="launch-eyebrow">Intelligent Automation</p>
                         <h3>Scenario &amp; AI Automation</h3>
                     </div>
-                    <span class="collection-hint">Basic features</span>
                 </div>
                 <div class="collection-grid">
-                    <button type="button" class="collection-card locked" onclick="redirectToWallet('#planGrid')"
-                        style="cursor: pointer;">
-                        <div class="collection-icon gradient-purple"><i class="fas fa-lock"></i></div>
+                    <button type="button" class="collection-card" onclick="location.href='{{ url_for('scenarios') }}'">
+                        <div class="collection-icon gradient-purple"><i class="fas fa-project-diagram"></i></div>
                         <div class="collection-body">
-                            <h4>Revenue Dashboard <span style="color: #ef4444;">(VIP)</span></h4>
-                            <p>Track revenue, profit - Manager only.</p>
+                            <h4>Scenario</h4>
+                            <p>Manage and run your automation scenarios.</p>
                         </div>
-                        <span class="collection-cta">Upgrade to unlock</span>
+                        <span class="collection-cta">Open page</span>
                     </button>
-                    <button type="button" class="collection-card"
-                        onclick="location.href='{{ url_for('se_auto_import') }}'">
+                    <button type="button" class="collection-card" onclick="location.href='{{ url_for('workspace_builder') }}'">
+                        <div class="collection-icon gradient-indigo"><i class="fas fa-tools"></i></div>
+                        <div class="collection-body">
+                            <h4>Workflow</h4>
+                            <p>Build and edit automation workflows.</p>
+                        </div>
+                        <span class="collection-cta">Open page</span>
+                    </button>
+                    <button type="button" class="collection-card" onclick="location.href='{{ url_for('se_auto_import') }}'">
                         <div class="collection-icon gradient-gold"><i class="fas fa-sync-alt"></i></div>
                         <div class="collection-body">
                             <h4>Auto Import</h4>
@@ -266,50 +162,7 @@
                         </div>
                         <span class="collection-cta">Open page</span>
                     </button>
-                    <button type="button" class="collection-card locked" onclick="redirectToWallet('#planGrid')"
-                        style="cursor: pointer;">
-                        <div class="collection-icon gradient-cyan"><i class="fas fa-lock"></i></div>
-                        <div class="collection-body">
-                            <h4>Smart Reports <span style="color: #ef4444;">(VIP)</span></h4>
-                            <p>This paid section unlocks after upgrading to Manager - realtime data.</p>
-                        </div>
-                        <span class="collection-cta">Upgrade to unlock</span>
-                    </button>
                 </div>
-            </div>
-        </section>
-
-        {% if current_user.role != 'admin' %}
-        <section class="workspace-collections" style="margin-top: 2rem;">
-            <div class="collection-block">
-                <div class="collection-head">
-                    <div>
-                        <p class="launch-eyebrow">My Workflows</p>
-                        <h3>Saved Automations</h3>
-                    </div>
-                    <button class="btn btn-primary btn-sm" onclick="location.href='{{ url_for('workspace_builder') }}'">
-                        <i class="fas fa-plus"></i> New Workflow
-                    </button>
-                </div>
-                <div class="collection-grid" id="workflowList">
-                    <!-- Workflows will be loaded here -->
-                    <div class="text-center w-100 py-4">
-                        <div class="spinner-border text-primary" role="status"></div>
-                    </div>
-                </div>
-            </div>
-        </section>
-        {% endif %}
-
-        <section class="upgrade-cta"
-            style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px; border-radius: 16px; text-align: center; color: white; margin: 30px 0;">
-            <h3 style="font-size: 1.8rem; margin-bottom: 15px;">Upgrade to Manager to unlock VIP features</h3>
-            <p style="font-size: 1.1rem; margin-bottom: 25px; opacity: 0.9;">Analyze revenue, use smart reports,
-                run scenarios automatically and unlock many advanced features.</p>
-            <div style="display: flex; gap: 15px; justify-content: center;">
-                <button class="btn btn-light btn-lg" onclick="redirectToWallet('#planGrid')">
-                    <i class="fas fa-crown"></i> View Manager Plans
-                </button>
             </div>
         </section>
 
@@ -326,62 +179,6 @@
         let url = '/wallet';
         if (hash) url += hash;
         window.location.href = url;
-    }
-
-    document.addEventListener('DOMContentLoaded', function () {
-        const workflowList = document.getElementById('workflowList');
-        if (workflowList) {
-            fetch('/api/workflows')
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success && data.workflows.length > 0) {
-                        workflowList.innerHTML = data.workflows.map(w => `
-                            <div class="collection-card" onclick="location.href='{{ url_for('workspace_builder') }}?id=${w.id}'">
-                                <div class="collection-icon gradient-indigo"><i class="fas fa-diagram-project"></i></div>
-                                <div class="collection-body">
-                                    <h4>${w.name}</h4>
-                                    <p>Last updated: ${new Date(w.updated_at).toLocaleDateString()}</p>
-                                </div>
-                                <div class="collection-actions" style="margin-top: auto; padding-top: 10px; display: flex; gap: 10px;">
-                                    <button class="btn btn-sm btn-outline-danger" onclick="event.stopPropagation(); deleteWorkflow('${w.id}')">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </div>
-                            </div>
-                        `).join('');
-                    } else {
-                        workflowList.innerHTML = `
-                            <div class="col-12 text-center text-muted py-4">
-                                <p>No workflows found. Create your first one!</p>
-                            </div>
-                        `;
-                    }
-                })
-                .catch(err => {
-                    console.error(err);
-                    workflowList.innerHTML = '<p class="text-danger">Error loading workflows</p>';
-                });
-        }
-    });
-
-    function deleteWorkflow(id) {
-        if (!confirm('Are you sure you want to delete this workflow?')) return;
-
-        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
-        fetch(`/api/workflows/${id}`, {
-            method: 'DELETE',
-            headers: {
-                'X-CSRFToken': csrfToken
-            }
-        })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
-                    location.reload();
-                } else {
-                    alert('Error deleting workflow');
-                }
-            });
     }
 </script>
 {% if current_user.role in ['manager', 'admin'] %}

@@ -348,7 +348,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             case 'connect': {
                 const svg = document.getElementById('connectionLines');
-                const toRemove = [...svg.querySelectorAll('.connection-line')].find((line) => line.dataset.source === last.source && line.dataset.target === last.target);
+                const toRemove = [...svg.querySelectorAll('.connection-wrapper')].find((g) => g.dataset.source === last.source && g.dataset.target === last.target);
                 if (toRemove) toRemove.remove();
                 builderState.connections = builderState.connections.filter((c) => !(c.source === last.source && c.target === last.target));
                 break;
@@ -404,24 +404,142 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         node.addEventListener('click', (event) => {
-            if (event.target.closest('.node-menu')) {
+            if (event.target.closest('.node-menu') || event.target.closest('.connection-point')) {
                 return;
             }
             selectNode(node);
         });
 
-        // Attach click handlers to connection points so connect mode acts on the exact point
+        // Attach click handlers to connection points
         const connectionPoints = node.querySelectorAll('.connection-point');
         if (connectionPoints && connectionPoints.length) {
             connectionPoints.forEach((cp) => {
                 cp.addEventListener('click', (ev) => {
                     ev.stopPropagation();
-                    handleConnectionMode(node, cp);
+                    handlePointClick(node, cp);
                 });
             });
         }
 
         enableNodeDragging(node);
+    }
+
+    // New Connection Logic
+    const connectionState = {
+        active: false,
+        sourceNode: null,
+        sourcePoint: null
+    };
+
+    function handlePointClick(node, point) {
+        const isOutput = point.classList.contains('output');
+        const isInput = point.classList.contains('input');
+        const nodeId = node.dataset.nodeId;
+
+        // Check if point is already connected
+        const isConnected = builderState.connections.some(c => 
+            (isOutput && c.source === nodeId) || (isInput && c.target === nodeId)
+        );
+
+        // Scenario: Disconnect if clicking an already connected point
+        if (isConnected) {
+            if (confirm('Disconnect this node?')) {
+                // Remove all connections involving this point
+                const wrappersToRemove = [];
+                const svg = document.getElementById('connectionLines');
+                
+                if (isOutput) {
+                    // Remove all outgoing from this node
+                    builderState.connections = builderState.connections.filter(c => {
+                        if (c.source === nodeId) {
+                            const w = svg.querySelector(`.connection-wrapper[data-source="${c.source}"][data-target="${c.target}"]`);
+                            if (w) wrappersToRemove.push(w);
+                            
+                            // Remove 'connected' from the target input point
+                            const targetNode = document.querySelector(`.workflow-node[data-node-id="${c.target}"]`);
+                            if (targetNode) {
+                                const targetPoint = targetNode.querySelector('.connection-point.input');
+                                if (targetPoint) targetPoint.classList.remove('connected');
+                            }
+                            
+                            return false;
+                        }
+                        return true;
+                    });
+                } else {
+                    // Remove all incoming to this node
+                    builderState.connections = builderState.connections.filter(c => {
+                        if (c.target === nodeId) {
+                            const w = svg.querySelector(`.connection-wrapper[data-source="${c.source}"][data-target="${c.target}"]`);
+                            if (w) wrappersToRemove.push(w);
+
+                            // Remove 'connected' from the source output point
+                            const sourceNode = document.querySelector(`.workflow-node[data-node-id="${c.source}"]`);
+                            if (sourceNode) {
+                                const sourcePoint = sourceNode.querySelector('.connection-point.output');
+                                if (sourcePoint) sourcePoint.classList.remove('connected');
+                            }
+
+                            return false;
+                        }
+                        return true;
+                    });
+                }
+                
+                wrappersToRemove.forEach(w => w.remove());
+                point.classList.remove('connected');
+                point.classList.remove('connecting'); // Ensure connecting state is also cleared
+                showNotification('Disconnected', 'info');
+            }
+            // Reset any active connection state just in case
+            resetConnectionState();
+            return;
+        }
+
+        // Scenario: Start or Complete Connection
+        if (!connectionState.active) {
+            // Start connecting (must start from Output usually, but let's allow flexible start)
+            if (isOutput) {
+                connectionState.active = true;
+                connectionState.sourceNode = node;
+                connectionState.sourcePoint = point;
+                point.classList.add('connecting');
+                showNotification('Select an input to connect', 'info');
+            } else {
+                showNotification('Start connection from an Output point (Right side)', 'warning');
+            }
+        } else {
+            // Complete connection
+            if (connectionState.sourceNode === node) {
+                // Cancel if clicking same node
+                resetConnectionState();
+                showNotification('Connection cancelled', 'info');
+                return;
+            }
+
+            if (isInput) {
+                // Valid connection: Output -> Input
+                drawConnection(connectionState.sourceNode, node);
+                showNotification('Connected!', 'success');
+                
+                // Mark points as connected
+                connectionState.sourcePoint.classList.add('connected');
+                point.classList.add('connected');
+                
+                resetConnectionState();
+            } else {
+                showNotification('Connect to an Input point (Left side)', 'warning');
+            }
+        }
+    }
+
+    function resetConnectionState() {
+        if (connectionState.sourcePoint) {
+            connectionState.sourcePoint.classList.remove('connecting');
+        }
+        connectionState.active = false;
+        connectionState.sourceNode = null;
+        connectionState.sourcePoint = null;
     }
 
     function showNodeMenu(node) {
@@ -489,13 +607,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     const nodeId = node.dataset.nodeId;
                     
                     // Remove associated connections
-                    const linesToRemove = [];
-                    document.querySelectorAll('.connection-line').forEach(line => {
-                        if (line.dataset.source === nodeId || line.dataset.target === nodeId) {
-                            linesToRemove.push(line);
+                    const wrappersToRemove = [];
+                    document.querySelectorAll('.connection-wrapper').forEach(wrapper => {
+                        if (wrapper.dataset.source === nodeId || wrapper.dataset.target === nodeId) {
+                            wrappersToRemove.push(wrapper);
                         }
                     });
-                    linesToRemove.forEach(l => l.remove());
+                    wrappersToRemove.forEach(w => w.remove());
                     
                     // Update builderState.connections
                     builderState.connections = builderState.connections.filter(c => c.source !== nodeId && c.target !== nodeId);
@@ -620,7 +738,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // Reset connection state if we were in the middle of connecting
-        if (builderMode.current === 'connect' && builderMode.connectionStart) {
+        if (connectionState.active) {
             resetConnectionState();
             showNotification('Connection cancelled due to new node', 'info');
         }
@@ -734,6 +852,38 @@ document.addEventListener('DOMContentLoaded', () => {
         btn.setAttribute('role', 'button');
         btn.setAttribute('aria-pressed', 'false');
         btn.style.display = 'none'; // Hide buttons as modes are removed
+        btn.addEventListener('click', function () {
+            const action = this.dataset.action;
+            document.querySelectorAll('.toolbar-btn').forEach((item) => {
+                item.classList.remove('active');
+                item.setAttribute('aria-pressed', 'false');
+            });
+            this.classList.add('active');
+            this.setAttribute('aria-pressed', 'true');
+            builderMode.current = action;
+
+            if (action === 'cursor') {
+                if (canvas) {
+                    canvas.classList.remove('zoom-mode');
+                    canvas.classList.add('cursor-mode');
+                }
+                resetConnectionState();
+                showNotification('Select mode activated', 'info');
+            } else if (action === 'connect') {
+                // Legacy connect button - now just informs user
+                showNotification('Click the big circles on nodes to connect!', 'info');
+            } else if (action === 'zoom') {
+                if (canvas) {
+                    canvas.classList.remove('cursor-mode', 'connect-mode');
+                    canvas.classList.add('zoom-mode');
+                }
+                resetConnectionState();
+                showNotification('Zoom mode activated - Use mouse wheel to zoom in/out', 'info');
+                showZoomControls();
+            } else {
+                hideZoomControls();
+            }
+        });
     });
 
     // Zoom control panel
@@ -814,6 +964,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 startX = e.clientX - builderMode.translateX;
                 startY = e.clientY - builderMode.translateY;
                 canvas.style.cursor = 'grabbing';
+
+                // Reset connection state if clicking background
+                if (connectionState.active) {
+                    resetConnectionState();
+                    showNotification('Connection cancelled', 'info');
+                }
             }
         });
 
@@ -936,17 +1092,17 @@ document.addEventListener('DOMContentLoaded', () => {
         const svg = document.getElementById('connectionLines');
         if (!svg) return;
 
-        const lines = svg.querySelectorAll(`.connection-line[data-source="${nodeId}"], .connection-line[data-target="${nodeId}"]`);
+        const wrappers = svg.querySelectorAll(`.connection-wrapper[data-source="${nodeId}"], .connection-wrapper[data-target="${nodeId}"]`);
         
-        lines.forEach(line => {
-            const sourceId = line.dataset.source;
-            const targetId = line.dataset.target;
+        wrappers.forEach(wrapper => {
+            const sourceId = wrapper.dataset.source;
+            const targetId = wrapper.dataset.target;
             const sourceNode = document.querySelector(`.workflow-node[data-node-id="${sourceId}"]`);
             const targetNode = document.querySelector(`.workflow-node[data-node-id="${targetId}"]`);
 
             if (sourceNode && targetNode) {
                 const d = getConnectionPath(sourceNode, targetNode);
-                line.setAttribute('d', d);
+                wrapper.querySelectorAll('path').forEach(p => p.setAttribute('d', d));
             }
         });
     }
@@ -961,16 +1117,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const d = getConnectionPath(sourceNode, targetNode);
 
+        const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        group.classList.add('connection-wrapper');
+        group.dataset.source = sourceNode.dataset.nodeId;
+        group.dataset.target = targetNode.dataset.nodeId;
+        group.style.cursor = 'pointer';
+
+        // Hit area path (invisible, wide)
+        const hitPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        hitPath.setAttribute('d', d);
+        hitPath.setAttribute('stroke', 'transparent');
+        hitPath.setAttribute('stroke-width', '20');
+        hitPath.setAttribute('fill', 'none');
+        hitPath.classList.add('connection-hit');
+
         const line = document.createElementNS('http://www.w3.org/2000/svg', 'path');
         
-        // Make line clickable for deletion
-        line.style.cursor = 'pointer';
-        line.addEventListener('click', (e) => {
+        // Group handles events now
+        group.addEventListener('dblclick', (e) => {
             e.stopPropagation();
-            if (confirm('Delete this connection?')) {
-                line.remove();
-                builderState.connections = builderState.connections.filter(c => c.source !== sourceNode.dataset.nodeId || c.target !== targetNode.dataset.nodeId);
-            }
+            group.remove();
+            builderState.connections = builderState.connections.filter(c => c.source !== sourceNode.dataset.nodeId || c.target !== targetNode.dataset.nodeId);
+            showNotification('Connection removed', 'info');
         });
 
         line.setAttribute('d', d);
@@ -986,10 +1154,12 @@ document.addEventListener('DOMContentLoaded', () => {
             svg.__arrowCreated = true;
         }
         line.setAttribute('marker-end', 'url(#arrowhead)');
-        svg.appendChild(line);
-        line.dataset.source = sourceNode.dataset.nodeId;
-        line.dataset.target = targetNode.dataset.nodeId;
-        builderState.connections.push({ source: line.dataset.source, target: line.dataset.target });
+        
+        group.appendChild(hitPath);
+        group.appendChild(line);
+        svg.appendChild(group);
+        
+        builderState.connections.push({ source: sourceNode.dataset.nodeId, target: targetNode.dataset.nodeId });
 
         const length = line.getTotalLength();
         line.style.strokeDasharray = length;
@@ -1019,9 +1189,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (headerRunBtn) headerRunBtn.addEventListener('click', () => runWorkflow());
     if (headerClearBtn) headerClearBtn.addEventListener('click', () => clearCanvas());
 
-    // Load Workflow Logic
-    const headerLoadBtn = document.querySelector('.canvas-header .canvas-actions [data-action="load-workflow"]');
-    if (headerLoadBtn) headerLoadBtn.addEventListener('click', () => openLoadModal());
+    // Load Workflow Logic - DEPRECATED (Replaced by new Scenario Loader below)
+    // const headerLoadBtn = document.querySelector('.canvas-header .canvas-actions [data-action="load-workflow"]');
+    // if (headerLoadBtn) headerLoadBtn.addEventListener('click', () => openLoadModal());
 
     // Modal Elements
     const loadModal = document.getElementById('loadWorkflowModal');
@@ -1234,9 +1404,18 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function saveWorkflow() {
+    // Refactored save logic to support both direct updates and modal-based creation
+    function performScenarioSave(name, description, scenarioId) {
         const nodes = [];
-        document.querySelectorAll('.workflow-node').forEach((node) => {
+        const nodeElements = document.querySelectorAll('.workflow-node');
+        
+        // Check if canvas is empty
+        if (nodeElements.length === 0) {
+            showNotification('Cannot save empty workflow. Add at least one node.', 'warning');
+            return;
+        }
+        
+        nodeElements.forEach((node) => {
             nodes.push({
                 id: node.dataset.nodeId,
                 title: node.dataset.title,
@@ -1249,130 +1428,152 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
 
-        const svg = document.getElementById('connectionLines');
-        const connections = [];
-        if (svg) {
-            svg.querySelectorAll('.connection-line').forEach((line) => {
-                connections.push({ source: line.dataset.source, target: line.dataset.target });
-            });
-        }
-
-        const payload = { nodes, connections };
-        
-        // Get workflow ID from URL if exists
-        const urlParams = new URLSearchParams(window.location.search);
-        let workflowId = urlParams.get('id');
-        
-        // Always ask for name to allow saving as new version or renaming
-        const currentNameInput = document.querySelector('.workflow-name-input');
-        let defaultName = currentNameInput ? currentNameInput.value : 'Untitled Workflow';
-        
-        // If we are in Scenario Mode (builderState.scenarioId is set), we save to Scenario
-        if (builderState.scenarioId) {
-             const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
-             
-             fetch(`/api/scenarios/${builderState.scenarioId}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': csrfToken
-                },
-                body: JSON.stringify({
-                    name: defaultName,
-                    steps: JSON.stringify(payload)
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    showNotification('Scenario saved successfully', 'success');
-                } else {
-                    showNotification('Error saving scenario: ' + data.message, 'error');
+        let connections = [];
+        if (builderState.connections && builderState.connections.length > 0) {
+            connections = [...builderState.connections];
+        } else {
+            const svg = document.getElementById('connectionLines');
+            if (svg) {
+                // Try wrappers first (new style)
+                svg.querySelectorAll('.connection-wrapper').forEach((wrapper) => {
+                    connections.push({ source: wrapper.dataset.source, target: wrapper.dataset.target });
+                });
+                // Fallback to lines (old style) if no wrappers found
+                if (connections.length === 0) {
+                    svg.querySelectorAll('.connection-line').forEach((line) => {
+                        connections.push({ source: line.dataset.source, target: line.dataset.target });
+                    });
                 }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                showNotification('Network error saving scenario', 'error');
-            });
-            return;
-        }
-
-        const name = prompt('Enter workflow name to save:', defaultName);
-        if (!name) return; // User cancelled
-
-        // If user changed name, treat as new workflow (optional, but good for history)
-        // Or we can ask "Save as new?"
-        // For now, let's just save. If ID exists, it updates.
-        // To support "Save as new", we would clear workflowId if the user wants a copy.
-        // Let's add a simple confirm for "Save as new" if ID exists.
-        
-        if (workflowId) {
-            if (confirm('Do you want to save as a NEW workflow? (Cancel to overwrite current)')) {
-                workflowId = null; // Clear ID to force create new
             }
         }
 
+        // Ensure payload is valid
+        const payload = { nodes: nodes || [], connections: connections || [] };
         const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+        const method = scenarioId ? 'PUT' : 'POST';
+        const url = scenarioId ? `/api/scenarios/${scenarioId}` : '/api/scenarios';
 
-        fetch('/api/workflows', {
-            method: 'POST',
+        fetch(url, {
+            method: method,
             headers: {
                 'Content-Type': 'application/json',
                 'X-CSRFToken': csrfToken
             },
             body: JSON.stringify({
-                id: workflowId,
                 name: name,
-                data: payload
+                steps: JSON.stringify(payload),
+                description: description || 'Created via Workspace Builder'
             })
         })
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                showNotification('Workflow saved successfully', 'success');
+                showNotification('Saved successfully', 'success');
+                const currentNameInput = document.querySelector('.workflow-name-input');
                 if (currentNameInput) currentNameInput.value = name;
                 
-                // Update URL if it was a new save or we are on a new ID
-                if (!urlParams.get('id') || workflowId === null) {
+                // If we just created a new scenario, update state and URL
+                if (!scenarioId && data.id) {
+                    builderState.scenarioId = data.id;
                     const newUrl = new URL(window.location);
-                    newUrl.searchParams.set('id', data.id);
+                    newUrl.searchParams.set('scenario_id', data.id);
+                    // Clean up legacy 'id' param if present to avoid confusion
+                    newUrl.searchParams.delete('id');
                     window.history.pushState({}, '', newUrl);
                 }
             } else {
-                showNotification('Error saving workflow: ' + data.message, 'error');
+                showNotification('Error saving: ' + (data.message || 'Unknown error'), 'error');
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            showNotification('Network error saving workflow', 'error');
+            showNotification('Network error saving', 'error');
         });
     }
+
+    window.saveWorkflow = function() {
+        // Determine Scenario ID
+        // We prioritize builderState.scenarioId, then URL param 'scenario_id', then URL param 'id'
+        const urlParams = new URLSearchParams(window.location.search);
+        let scenarioId = builderState.scenarioId || urlParams.get('scenario_id') || urlParams.get('id');
+        
+        const currentNameInput = document.querySelector('.workflow-name-input');
+        let defaultName = currentNameInput ? currentNameInput.value : 'Untitled Automation';
+        
+        if (scenarioId) {
+            // Update existing scenario - Show confirmation
+            if (!confirm(`Save changes to "${defaultName}"?`)) {
+                return;
+            }
+            performScenarioSave(defaultName, 'Updated via Workspace Builder', scenarioId);
+        } else {
+            // Create new scenario - Show Modal
+            const modalEl = document.getElementById('saveScenarioModal');
+            if (modalEl) {
+                const nameInput = document.getElementById('saveScenarioName');
+                if (nameInput) nameInput.value = defaultName;
+                
+                // Use Bootstrap modal API
+                const modal = new bootstrap.Modal(modalEl);
+                modal.show();
+                
+                // Setup one-time click handler for the save button
+                const confirmBtn = document.getElementById('confirmSaveScenarioBtn');
+                // Clone to remove old listeners
+                const newConfirmBtn = confirmBtn.cloneNode(true);
+                confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
+                
+                newConfirmBtn.addEventListener('click', () => {
+                    const newName = document.getElementById('saveScenarioName').value;
+                    const newDesc = document.getElementById('saveScenarioDescription').value;
+                    
+                    if (!newName) {
+                        alert('Please enter a name');
+                        return;
+                    }
+                    
+                    performScenarioSave(newName, newDesc, null);
+                    modal.hide();
+                });
+            } else {
+                // Fallback if modal missing
+                const name = prompt('Enter name for this automation:', defaultName);
+                if (name) performScenarioSave(name, '', null);
+            }
+        }
+    }
+
+    // Removed window.handleSaveOption and performSave as they are no longer needed
+
 
     // Load workflow logic
     const loadBtn = document.querySelector('button[data-action="load-workflow"]');
     if (loadBtn) {
         loadBtn.addEventListener('click', () => {
-            // Fetch list of workflows
-            fetch('/api/workflows')
+            // Fetch list of scenarios
+            fetch('/api/scenarios')
             .then(res => res.json())
             .then(data => {
                 if (data.success) {
-                    if (data.workflows.length === 0) {
-                        showNotification('No saved workflows found.', 'info');
+                    if (!data.scenarios || data.scenarios.length === 0) {
+                        showNotification('No saved scenarios found.', 'info');
                         return;
                     }
                     
-                    // Simple prompt for now (could be a modal)
-                    // Let's build a simple modal dynamically
-                    showLoadModal(data.workflows);
+                    showLoadModal(data.scenarios);
                 } else {
-                    showNotification('Failed to fetch workflows', 'error');
+                    console.error('Server error:', data.message);
+                    showNotification('Failed to fetch scenarios: ' + (data.message || 'Unknown error'), 'error');
                 }
+            })
+            .catch(err => {
+                console.error(err);
+                showNotification('Network error fetching scenarios: ' + err.message, 'error');
             });
         });
     }
 
-    function showLoadModal(workflows) {
+    function showLoadModal(scenarios) {
         // Remove existing if any
         const existing = document.getElementById('loadWorkflowModal');
         if (existing) existing.remove();
@@ -1393,12 +1594,12 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
         
         content.innerHTML = `
-            <h3 style="margin-top: 0; color: var(--builder-text);">Load Workflow</h3>
-            <div style="overflow-y: auto; flex: 1; margin-bottom: 15px; border: 1px solid var(--builder-border); border-radius: 8px;">
-                ${workflows.map(w => `
-                    <div class="workflow-list-item" data-id="${w.id}" style="padding: 10px; border-bottom: 1px solid var(--builder-border); cursor: pointer; hover: background: var(--builder-bg);">
-                        <div style="font-weight: bold; color: var(--builder-text);">${w.name}</div>
-                        <div style="font-size: 0.8rem; color: var(--builder-muted);">Last updated: ${new Date(w.updated_at).toLocaleString()}</div>
+            <h3 style="margin-top: 0; color: var(--builder-text);">Load Scenario</h3>
+            <div style="overflow-y: auto; flex: 1; margin-bottom: 15px; border: 1px solid var(--builder-border); border-radius: 8px; max-height: 400px;">
+                ${scenarios.map(s => `
+                    <div class="workflow-list-item" data-id="${s.id}" style="padding: 10px; border-bottom: 1px solid var(--builder-border); cursor: pointer; transition: background 0.2s;">
+                        <div style="font-weight: bold; color: var(--builder-text);">${s.name}</div>
+                        <div style="font-size: 0.8rem; color: var(--builder-muted);">Created: ${new Date(s.created_at).toLocaleString()}</div>
                     </div>
                 `).join('')}
             </div>
@@ -1414,20 +1615,37 @@ document.addEventListener('DOMContentLoaded', () => {
         modal.querySelectorAll('.workflow-list-item').forEach(item => {
             item.addEventListener('click', () => {
                 const id = item.dataset.id;
-                const workflow = workflows.find(w => w.id == id);
-                if (workflow) {
-                    if (confirm(`Load "${workflow.name}"? Unsaved changes will be lost.`)) {
-                        loadWorkflowData(workflow.data);
-                        showNotification(`Loaded: ${workflow.name}`, 'success');
+                const scenario = scenarios.find(s => s.id == id);
+                if (scenario) {
+                    if (confirm(`Load "${scenario.name}"? Unsaved changes will be lost.`)) {
+                        // Parse steps if string
+                        let steps = scenario.steps;
+                        if (typeof steps === 'string') {
+                            try {
+                                steps = JSON.parse(steps);
+                            } catch(e) {
+                                console.error("Error parsing steps", e);
+                                steps = { nodes: [], connections: [] };
+                            }
+                        }
+                        
+                        // Update name input BEFORE loading data
+                        const nameInput = document.querySelector('.workflow-name-input');
+                        if (nameInput) {
+                            nameInput.value = scenario.name || 'Untitled Workflow';
+                        }
+                        
+                        loadWorkflowData(steps);
+                        showNotification(`Loaded: ${scenario.name}`, 'success');
                         
                         // Update URL
                         const newUrl = new URL(window.location);
-                        newUrl.searchParams.set('id', workflow.id);
+                        newUrl.searchParams.set('scenario_id', scenario.id);
+                        newUrl.searchParams.delete('id'); // Remove legacy id
                         window.history.pushState({}, '', newUrl);
                         
-                        // Update name input
-                        const nameInput = document.querySelector('.workflow-name-input');
-                        if (nameInput) nameInput.value = workflow.name;
+                        // Update state
+                        builderState.scenarioId = scenario.id;
                         
                         modal.remove();
                     }
@@ -1501,10 +1719,18 @@ document.addEventListener('DOMContentLoaded', () => {
         // Clear canvas
         document.querySelectorAll('.workflow-node').forEach(n => n.remove());
         document.querySelectorAll('.connection-line').forEach(l => l.remove());
+        document.querySelectorAll('.connection-wrapper').forEach(w => w.remove());
         builderState.connections = [];
         
+        // Handle null or undefined data
+        if (!data) {
+            console.error('loadWorkflowData: data is null or undefined');
+            showNotification('Error loading workflow: Invalid data', 'error');
+            return;
+        }
+        
         // Restore nodes
-        if (data.nodes) {
+        if (data.nodes && data.nodes.length > 0) {
             data.nodes.forEach(nodeData => {
                 const node = createWorkflowNode({
                     name: nodeData.title,

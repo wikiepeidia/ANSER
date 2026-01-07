@@ -39,14 +39,24 @@ class AuthManager:
         finally:
             conn.close()
     
-    def register_user(self, email, password, first_name, last_name, phone=''):
+    def register_user(self, email, password, first_name, last_name, phone='', role='manager', manager_id=None):
         conn = self.db.get_connection()
         c = conn.cursor()
         try:
             hashed_pw = AuthManager.hash_password(password)
             full_name = f"{first_name} {last_name}"
-            c.execute('INSERT INTO users (name, email, password) VALUES (?, ?, ?)', 
-                     (full_name, email, hashed_pw))
+            
+            # Check columns
+            c.execute("PRAGMA table_info(users)")
+            columns = [col[1] for col in c.fetchall()]
+            
+            if 'manager_id' in columns:
+                c.execute('INSERT INTO users (name, email, password, role, manager_id) VALUES (?, ?, ?, ?, ?)', 
+                         (full_name, email, hashed_pw, role, manager_id))
+            else:
+                c.execute('INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)', 
+                         (full_name, email, hashed_pw, role))
+                
             user_id = c.lastrowid
             
             # Create default personal workspace
@@ -153,7 +163,7 @@ The Workflow Automation Team
                 if not current_user.is_authenticated:
                     return jsonify({'success': False, 'message': 'Unauthorized - please login'}), 401
                 
-                # Admin và Manager có tất cả quyền
+                # Admin and Manager have all permissions
                 if hasattr(current_user, 'role') and current_user.role in ['admin', 'manager']:
                     return f(*args, **kwargs)
                 

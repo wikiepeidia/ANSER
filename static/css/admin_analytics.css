@@ -522,3 +522,273 @@ body.dark-mode .chart-card--small .card-title {
 
 /* Ensure main content stacks beneath the tabs */
 .main-content { position: relative; z-index: 1; }
+
+/* Top Pages list styling */
+.list-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 15px 18px;
+    border-bottom: 1px solid var(--border-soft);
+    transition: background 0.2s ease, transform 0.15s ease;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    background: var(--surface-100);
+}
+
+.list-item:hover {
+    background: var(--surface-200);
+    transform: translateX(4px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.list-item:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+}
+
+.list-item span:first-child {
+    font-weight: 600;
+    color: var(--gray-900);
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.list-item span:first-child::before {
+    content: '📄';
+    font-size: 16px;
+    opacity: 0.7;
+}
+
+.list-item strong {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--primary);
+    background: rgba(99, 102, 241, 0.08);
+    padding: 6px 14px;
+    border-radius: 8px;
+    min-width: 60px;
+    text-align: center;
+}
+
+html[data-theme='dark'] .list-item {
+    background: var(--surface-800);
+}
+
+html[data-theme='dark'] .list-item:hover {
+    background: var(--surface-700);
+}
+
+html[data-theme='dark'] .list-item span:first-child {
+    color: var(--gray-100);
+}
+
+html[data-theme='dark'] .list-item strong {
+    color: #7c8aff;
+    background: rgba(99, 102, 241, 0.15);
+}
+
+#topPagesContainer {
+    min-height: 200px;
+}
+
+/* Modern Traffic Legend Redesign */
+#trafficLegend {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 20px;
+    padding: 16px;
+    background: var(--surface-100);
+    border-radius: 12px;
+    border: 1px solid var(--border-soft);
+}
+
+.traffic-legend-item {
+    display: flex !important;
+    align-items: center;
+    gap: 12px;
+    padding: 8px;
+    border-radius: 8px;
+    transition: background 0.2s ease, transform 0.15s ease;
+    margin: 0 !important;
+    float: none !important;
+}
+
+.traffic-legend-item:hover {
+    background: var(--surface-200);
+    transform: translateX(2px);
+}
+
+.traffic-legend-swatch {
+    width: 16px;
+    height: 16px;
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    flex-shrink: 0;
+}
+
+.traffic-legend-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1;
+}
+
+.traffic-legend-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--gray-900);
+}
+
+.traffic-legend-value {
+    font-size: 12px;
+    color: var(--gray-600);
+    font-weight: 500;
+}
+
+html[data-theme='dark'] #trafficLegend {
+    background: var(--surface-800);
+}
+
+html[data-theme='dark'] .traffic-legend-item:hover {
+    background: var(--surface-700);
+}
+
+html[data-theme='dark'] .traffic-legend-label {
+    color: var(--gray-100);
+}
+
+html[data-theme='dark'] .traffic-legend-value {
+    color: var(--gray-400);
+}
+
+@media (max-width: 768px) {
+    #trafficLegend {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+}
+
+/* Modern Button Redesign */
+.analytics-controls {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    margin-top: 24px;
+}
+
+.data-source-indicator {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.data-source-label {
+    font-size: 13px;
+    color: var(--gray-600);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.control-buttons {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.btn-modern {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 24px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-modern i {
+    font-size: 14px;
+}
+
+.btn-modern:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.btn-modern:active {
+    transform: translateY(0);
+}
+
+.btn-modern:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none !important;
+}
+
+.btn-modern--primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: #ffffff;
+}
+
+.btn-modern--primary:hover {
+    background: linear-gradient(135deg, #5568d3 0%, #6a4190 100%);
+}
+
+.btn-modern--warning {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    color: #ffffff;
+}
+
+.btn-modern--warning:hover {
+    background: linear-gradient(135deg, #e67ff0 0%, #e94560 100%);
+}
+
+.btn-modern--success {
+    background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+    color: #ffffff;
+}
+
+.btn-modern--success:hover {
+    background: linear-gradient(135deg, #32d66a 0%, #27e6c6 100%);
+}
+
+/* Badge styling improvements */
+#analyticsSourceBadge {
+    font-size: 12px;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+html[data-theme='dark'] .data-source-label {
+    color: var(--gray-400);
+}
+
+@media (max-width: 768px) {
+    .analytics-controls {
+        gap: 12px;
+    }
+    
+    .btn-modern {
+        padding: 10px 20px;
+        font-size: 13px;
+    }
+    
+    .control-buttons {
+        gap: 8px;
+    }
+}

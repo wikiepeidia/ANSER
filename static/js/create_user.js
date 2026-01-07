@@ -3,12 +3,19 @@ document.getElementById('createUserForm').addEventListener('submit', async (e) =
     e.preventDefault();
 
     const formData = new FormData(e.target);
+    const email = formData.get('email');
+    
+    if (!email || !email.includes('@')) {
+        alert("Please include an '@' in the email address.");
+        return;
+    }
+
     const data = {
-        email: formData.get('email'),
+        email: email,
         password: formData.get('password'),
         first_name: formData.get('first_name'),
         last_name: formData.get('last_name'),
-        role: 'user' // Force user role
+        role: 'employee' // Force employee role
     };
 
     try {
@@ -39,7 +46,7 @@ async function loadUserList() {
     const tbody = document.getElementById('userListBody');
     tbody.innerHTML = `
     <tr>
-        <td colspan="5" style="padding: 40px; text-align: center; color: #6b7280;">
+        <td colspan="5" class="empty-state">
             <i class="fas fa-spinner fa-spin" style="font-size: 2rem; margin-bottom: 10px;"></i>
                             <p>Loading list...</p>
         </td>
@@ -47,25 +54,25 @@ async function loadUserList() {
 `;
 
     try {
-        const response = await fetch('/api/users?role=user');
+        const response = await fetch('/api/users?role=employee');
         const result = await response.json();
 
         if (response.ok && result.users && result.users.length > 0) {
             tbody.innerHTML = result.users.map(user => `
-            <tr style="border-bottom: 1px solid #e5e7eb;">
-                <td style="padding: 12px;">${user.email}</td>
-                <td style="padding: 12px;">${user.first_name || ''} ${user.last_name || ''}</td>
-                <td style="padding: 12px; text-align: center;">
-                    <span style="background: #dbeafe; color: #1e40af; padding: 4px 12px; border-radius: 12px; font-size: 0.85rem; font-weight: 600;">
-                        USER
+            <tr>
+                <td>${user.email}</td>
+                <td>${user.first_name || ''} ${user.last_name || ''}</td>
+                <td class="text-center">
+                    <span class="badge badge-employee">
+                        EMPLOYEE
                     </span>
                 </td>
-                <td style="padding: 12px; text-align: center;">
-                    <span style="background: #d1fae5; color: #065f46; padding: 4px 12px; border-radius: 12px; font-size: 0.85rem; font-weight: 600;">
+                <td class="text-center">
+                    <span class="badge badge-active">
                         <i class="fas fa-check-circle"></i> Active
                     </span>
                 </td>
-                <td style="padding: 12px; text-align: center;">
+                <td class="text-center">
                     <button class="btn-action btn-edit" onclick="editUser(${user.id})" title="Chỉnh sửa">
                         <i class="fas fa-edit"></i>
                     </button>
@@ -81,9 +88,9 @@ async function loadUserList() {
         } else {
             tbody.innerHTML = `
             <tr>
-                <td colspan="5" style="padding: 40px; text-align: center; color: #6b7280;">
+                <td colspan="5" class="empty-state">
                     <i class="fas fa-users" style="font-size: 2rem; margin-bottom: 10px; opacity: 0.3;"></i>
-                    <p>No users have been created</p>
+                    <p>No employees found</p>
                 </td>
             </tr>
         `;
@@ -91,7 +98,7 @@ async function loadUserList() {
     } catch (error) {
         tbody.innerHTML = `
         <tr>
-            <td colspan="5" style="padding: 40px; text-align: center; color: #ef4444;">
+            <td colspan="5" class="empty-state" style="color: #ef4444;">
                 <i class="fas fa-exclamation-circle" style="font-size: 2rem; margin-bottom: 10px;"></i>
                 <p>Error loading data: ${error.message}</p>
             </td>

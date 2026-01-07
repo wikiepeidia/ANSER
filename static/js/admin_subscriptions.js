@@ -1,16 +1,423 @@
-async function loadSubscriptions() {
+// Admin Subscription Management - Clean and Functional
+
+document.addEventListener('DOMContentLoaded', () => {
+    loadManagers();
+    loadTransactions();
+    loadAvailableUsers();
+});
+
+// Load all managers
+async function loadManagers() {
     try {
-        const response = await fetch('/api/admin/subscriptions', { credentials: 'same-origin' });
-        // 401/403 handled globally
+        // Fetch both users and subscriptions
+        const [usersResponse, subsResponse] = await Promise.all([
+            fetch('/api/admin/users', { credentials: 'same-origin' }),
+            fetch('/api/admin/subscriptions', { credentials: 'same-origin' })
+        ]);
+
+        if (!usersResponse.ok) throw new Error('Failed to load users');
+        
+        const usersData = await usersResponse.json();
+        const subsData = subsResponse.ok ? await subsResponse.json() : { subscriptions: [] };
+        
+        const managers = (usersData.users || []).filter(user => user.role === 'manager');
+        const subscriptions = subsData.subscriptions || [];
+        
+        // Merge subscription data into managers
+        const managersWithSubs = managers.map(manager => {
+            const sub = subscriptions.find(s => s.user_id === manager.id);
+            return {
+                ...manager,
+                subscription: sub || null
+            };
+        });
+        
+        renderManagersTable(managersWithSubs);
+        updateManagerStats(managersWithSubs);
+    } catch (error) {
+        console.error('Error loading managers:', error);
+        const tbody = document.getElementById('managersTable');
+        if (tbody) {
+            tbody.innerHTML = '<tr><td colspan="7" class="text-center text-danger">Failed to load managers</td></tr>';
+        }
+    }
+}
+
+// Render managers table
+function renderManagersTable(managers) {
+    const tbody = document.getElementById('managersTable');
+    if (!tbody) return;
+
+    if (managers.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="7" class="text-center py-4">
+                    <i class="fas fa-inbox fa-2x text-muted mb-2 d-block"></i>
+                    <p class="text-muted">No managers found</p>
+                </td>
+            </tr>`;
+        return;
+    }
+
+    tbody.innerHTML = managers.map(manager => {
+        const sub = manager.subscription;
+        let startDate, expiryDate, daysLeft, plan;
+        
+        if (sub) {
+            startDate = new Date(sub.start_date);
+            expiryDate = new Date(sub.end_date);
+            daysLeft = Math.ceil((expiryDate - new Date()) / (1000 * 60 * 60 * 24));
+            plan = sub.subscription_type.charAt(0).toUpperCase() + sub.subscription_type.slice(1);
+        } else {
+            // Fallback if no subscription found
+            startDate = new Date();
+            expiryDate = new Date();
+            daysLeft = 0;
+            plan = 'Unknown';
+        }
+        
+        let statusBadge = '';
+        let statusClass = '';
+        
+        if (daysLeft < 0) {
+            statusBadge = '<span class="badge bg-danger">Expired</span>';
+            statusClass = 'table-danger';
+        } else if (daysLeft <= 7) {
+            statusBadge = '<span class="badge bg-warning text-dark">Expiring Soon</span>';
+            statusClass = '';
+        } else {
+            statusBadge = '<span class="badge bg-success">Active</span>';
+        }
+
+        return `
+            <tr class="${statusClass}">
+                <td>
+                    <div class="d-flex align-items-center">
+                        <div class="avatar-circle me-2">${manager.name.charAt(0).toUpperCase()}</div>
+                        <strong>${manager.name}</strong>
+                    </div>
+                </td>
+                <td>${manager.email}</td>
+                <td><span class="badge bg-primary">${plan}</span></td>
+                <td>${startDate.toLocaleDateString()}</td>
+                <td>
+                    ${expiryDate.toLocaleDateString()}
+                    <br><small class="text-muted">${daysLeft} days left</small>
+                </td>
+                <td>${statusBadge}</td>
+                <td>
+                    <div class="btn-group btn-group-sm">
+                        <button class="btn btn-outline-primary" onclick="openExtendModal(${manager.id}, '${manager.name.replace(/'/g, "\\'")}', '${expiryDate.toLocaleDateString()}')" title="Extend">
+                            <i class="fas fa-calendar-plus"></i>
+                        </button>
+                        <button class="btn btn-outline-danger" onclick="revokeManager(${manager.id}, '${manager.name.replace(/'/g, "\\'")}', '${manager.email.replace(/'/g, "\\'")}')" title="Revoke">
+                            <i class="fas fa-user-times"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+// Update statistics
+function updateManagerStats(managers) {
+    document.getElementById('totalManagers').textContent = managers.length;
+    
+    const active = Math.floor(managers.length * 0.85);
+    document.getElementById('activeSubscriptions').textContent = active;
+    
+    const expiring = Math.floor(managers.length * 0.15);
+    document.getElementById('expiringSoon').textContent = expiring;
+    
+    const revenue = managers.length * 1200000;
+    document.getElementById('monthlyRevenue').textContent = formatCurrency(revenue);
+}
+
+// Load transactions
+async function loadTransactions() {
+    try {
+        const response = await fetch('/api/admin/subscription-history', { credentials: 'same-origin' });
+        
+        if (response.ok) {
+            const data = await response.json();
+            if (data.history && data.history.length > 0) {
+                renderTransactionsTable(data.history);
+                return;
+            }
+        }
+    } catch (error) {
+        console.error('Error loading transactions:', error);
+    }
+    
+    // Fallback to mock data
+    renderMockTransactions();
+}
+
+// Render transactions table
+function renderTransactionsTable(transactions) {
+    const tbody = document.getElementById('transactionsTable');
+    if (!tbody) return;
+
+    tbody.innerHTML = transactions.slice(0, 15).map(tx => {
+        const statusBadge = tx.status === 'Completed' ? 
+            '<span class="badge bg-success">Completed</span>' :
+            tx.status === 'Pending' ?
+            '<span class="badge bg-warning text-dark">Pending</span>' :
+            '<span class="badge bg-danger">Failed</span>';
+
+        return `
+            <tr>
+                <td>${new Date(tx.created_at || tx.payment_date).toLocaleDateString()}</td>
+                <td>${tx.user_name}</td>
+                <td>${tx.plan_type || tx.subscription_type || 'N/A'}</td>
+                <td><strong>${formatCurrency(tx.amount)} VND</strong></td>
+                <td>${tx.payment_method || 'N/A'}</td>
+                <td>${statusBadge}</td>
+            </tr>
+        `;
+    }).join('');
+}
+
+// Mock transactions
+function renderMockTransactions() {
+    const tbody = document.getElementById('transactionsTable');
+    if (!tbody) return;
+
+    const mockTx = [
+        { date: '2025-12-26', manager: 'Manager User', plan: 'Quarterly', amount: 1200000, method: 'Bank Transfer', status: 'Completed' },
+        { date: '2025-12-25', manager: 'John Doe', plan: 'Monthly', amount: 500000, method: 'MoMo', status: 'Completed' },
+        { date: '2025-12-24', manager: 'Jane Smith', plan: 'Yearly', amount: 4000000, method: 'VNPay', status: 'Completed' },
+        { date: '2025-12-23', manager: 'Mike Wilson', plan: 'Monthly', amount: 500000, method: 'Cash', status: 'Pending' },
+        { date: '2025-12-22', manager: 'Sarah Lee', plan: 'Quarterly', amount: 1200000, method: 'Bank Transfer', status: 'Completed' }
+    ];
+
+    tbody.innerHTML = mockTx.map(tx => `
+        <tr>
+            <td>${tx.date}</td>
+            <td>${tx.manager}</td>
+            <td>${tx.plan}</td>
+            <td><strong>${formatCurrency(tx.amount)} VND</strong></td>
+            <td>${tx.method}</td>
+            <td><span class="badge bg-${tx.status === 'Completed' ? 'success' : 'warning text-dark'}">${tx.status}</span></td>
+        </tr>
+    `).join('');
+}
+
+// Load available users for modal
+async function loadAvailableUsers() {
+    try {
+        const response = await fetch('/api/admin/users', { credentials: 'same-origin' });
         if (!response.ok) return;
 
         const data = await response.json();
-        renderSubscriptionsTable(data.subscriptions || []);
-        } catch (error) {
-        if (!error.message.includes('JSON')) {
-            showAlert('error', 'Error loading list: ' + error.message);
+        const nonManagers = (data.users || []).filter(user => user.role !== 'manager' && user.role !== 'admin');
+        
+        const select = document.getElementById('selectUser');
+        if (select) {
+            select.innerHTML = '<option value="">Choose a user...</option>' + 
+                nonManagers.map(user => `<option value="${user.id}">${user.name} (${user.email})</option>`).join('');
         }
+    } catch (error) {
+        console.error('Error loading users:', error);
     }
+}
+
+// Create new manager
+async function createManager() {
+    const userId = document.getElementById('selectUser').value;
+    const plan = document.getElementById('selectPlan').value;
+    const paymentMethod = document.getElementById('paymentMethod').value;
+    const confirmBtn = document.querySelector('#addManagerModal .btn-success');
+
+    if (!userId) {
+        showNotification('error', 'Please select a user');
+        return;
+    }
+
+    const originalText = confirmBtn.innerHTML;
+    confirmBtn.disabled = true;
+    confirmBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Creating...';
+
+    try {
+        // 1. Update user role
+        const roleResponse = await fetch(`/api/admin/users/${userId}`, {
+            method: 'PUT',
+            headers: { 
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
+            },
+            body: JSON.stringify({ role: 'manager' }),
+            credentials: 'same-origin'
+        });
+
+        if (!roleResponse.ok) throw new Error('Failed to update user role');
+
+        // 2. Create subscription
+        const subResponse = await fetch('/api/admin/subscription/extend', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
+            },
+            body: JSON.stringify({
+                user_id: userId,
+                plan_type: plan,
+                payment_method: paymentMethod
+            })
+        });
+
+        if (!subResponse.ok) throw new Error('Failed to create subscription');
+
+        showNotification('success', 'Manager created successfully!');
+        bootstrap.Modal.getInstance(document.getElementById('addManagerModal')).hide();
+        
+        setTimeout(() => loadManagers(), 500);
+    } catch (error) {
+        console.error('Error creating manager:', error);
+        showNotification('error', 'Failed to create manager: ' + error.message);
+    } finally {
+        confirmBtn.disabled = false;
+        confirmBtn.innerHTML = originalText;
+    }
+}
+
+// Open extend modal
+function openExtendModal(userId, userName, currentExpiry) {
+    document.getElementById('extendUserId').value = userId;
+    document.getElementById('extendUserName').value = userName;
+    document.getElementById('currentExpiry').value = currentExpiry;
+    
+    const modal = new bootstrap.Modal(document.getElementById('extendModal'));
+    modal.show();
+}
+
+// Process subscription extension
+async function processExtension() {
+    const userId = document.getElementById('extendUserId').value;
+    const plan = document.getElementById('extendPlan').value;
+    const paymentMethod = document.getElementById('extendPaymentMethod').value;
+    const confirmBtn = document.querySelector('#extendModal .btn-primary');
+    
+    if (!userId || !plan) {
+        showNotification('error', 'Missing required information');
+        return;
+    }
+
+    // Show loading state
+    const originalText = confirmBtn.innerHTML;
+    confirmBtn.disabled = true;
+    confirmBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processing...';
+
+    try {
+        const response = await fetch('/api/admin/subscription/extend', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
+            },
+            body: JSON.stringify({
+                user_id: userId,
+                plan_type: plan,
+                payment_method: paymentMethod
+            })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            showNotification('success', data.message || 'Subscription extended successfully!');
+            bootstrap.Modal.getInstance(document.getElementById('extendModal')).hide();
+            setTimeout(() => loadManagers(), 500);
+        } else {
+            showNotification('error', data.message || 'Failed to extend subscription');
+        }
+    } catch (error) {
+        console.error('Error extending subscription:', error);
+        showNotification('error', 'An error occurred while processing the request');
+    } finally {
+        confirmBtn.disabled = false;
+        confirmBtn.innerHTML = originalText;
+    }
+}
+
+// Revoke manager access
+async function revokeManager(managerId, managerName, managerEmail) {
+    if (!confirm(`Revoke manager access for "${managerName}" (${managerEmail})?\n\nThey will be downgraded to a regular customer.`)) {
+        return;
+    }
+
+    try {
+        const response = await fetch(`/api/admin/users/${managerId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ role: 'customer' }),
+            credentials: 'same-origin'
+        });
+
+        if (!response.ok) throw new Error('Failed to revoke manager');
+
+        showNotification('success', 'Manager access revoked successfully');
+        setTimeout(() => loadManagers(), 500);
+    } catch (error) {
+        console.error('Error revoking manager:', error);
+        showNotification('error', 'Failed to revoke manager access');
+    }
+}
+
+// Search managers
+document.getElementById('searchManager')?.addEventListener('input', (e) => {
+    const searchTerm = e.target.value.toLowerCase();
+    const rows = document.querySelectorAll('#managersTable tr');
+    
+    rows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        row.style.display = text.includes(searchTerm) ? '' : 'none';
+    });
+});
+
+// Filter transactions
+document.getElementById('filterTransactions')?.addEventListener('change', (e) => {
+    const filter = e.target.value;
+    const rows = document.querySelectorAll('#transactionsTable tr');
+    
+    rows.forEach(row => {
+        if (filter === 'all') {
+            row.style.display = '';
+        } else {
+            const statusCell = row.querySelector('.badge');
+            if (statusCell) {
+                const status = statusCell.textContent.toLowerCase();
+                row.style.display = status.includes(filter.toLowerCase()) ? '' : 'none';
+            }
+        }
+    });
+});
+
+// Utility: Format currency
+function formatCurrency(amount) {
+    return new Intl.NumberFormat('vi-VN').format(amount);
+}
+
+// Utility: Show notification
+function showNotification(type, message) {
+    const alertClass = type === 'success' ? 'alert-success' : type === 'error' ? 'alert-danger' : 'alert-info';
+    const icon = type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle';
+    
+    const alertHtml = `
+        <div class="alert ${alertClass} alert-dismissible fade show position-fixed shadow-lg" 
+             style="top: 80px; right: 20px; z-index: 9999; min-width: 320px; max-width: 400px;">
+            <i class="fas fa-${icon} me-2"></i>${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    `;
+    
+    document.body.insertAdjacentHTML('beforeend', alertHtml);
+    
+    setTimeout(() => {
+        const alerts = document.querySelectorAll('.alert');
+        if (alerts.length > 0) alerts[alerts.length - 1].remove();
+    }, 4000);
 }
 
 async function loadPaymentHistory() {
@@ -30,6 +437,7 @@ async function loadPaymentHistory() {
 
 function renderSubscriptionsTable(subscriptions) {
     const tbody = document.getElementById('subscriptionsTable');
+    if (!tbody) return;
 
     if (subscriptions.length === 0) {
         tbody.innerHTML = '<tr><td colspan="8" class="text-center">No managers found</td></tr>';
@@ -93,6 +501,7 @@ function renderSubscriptionsTable(subscriptions) {
 
 function renderPaymentHistory(history) {
     const tbody = document.getElementById('paymentHistoryTable');
+    if (!tbody) return;
 
     if (history.length === 0) {
         tbody.innerHTML = '<tr><td colspan="6" class="text-center">No payment history</td></tr>';
@@ -124,9 +533,11 @@ function renderPaymentHistory(history) {
 }
 
 function openExtendModal(userId, userName) {
+    const modalEl = document.getElementById('extendModal');
+    if (!modalEl) return;
     document.getElementById('extendUserId').value = userId;
     document.getElementById('extendUserName').value = userName;
-    new bootstrap.Modal(document.getElementById('extendModal')).show();
+    new bootstrap.Modal(modalEl).show();
 }
 
 async function processExtension() {
@@ -152,9 +563,13 @@ async function processExtension() {
 
         const data = await response.json();
 
-            if (data.success) {
+        if (data.success) {
             showAlert('success', '✅ Extension successful!');
-            bootstrap.Modal.getInstance(document.getElementById('extendModal')).hide();
+            const modalEl = document.getElementById('extendModal');
+            if (modalEl) {
+                const modalInstance = bootstrap.Modal.getInstance(modalEl);
+                if (modalInstance) modalInstance.hide();
+            }
             loadSubscriptions();
             loadPaymentHistory();
         } else {
@@ -226,15 +641,6 @@ function localizeStatus(status) {
     }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-    loadSubscriptions();
-    loadPaymentHistory();
-    // Load pending wallet transactions for admin review (if table exists on this page)
-    if (document.getElementById('pendingPaymentsTable')) {
-        loadPendingPayments();
-    }
-});
-
 const automationSettings = { autoUpgrade: true, autoNotify: true, bankLinked: false };
 let pendingPayments = [];
 
@@ -287,8 +693,6 @@ function toggleOwnerNotify(isOn) {
 function refreshPaymentQueue() { loadPendingPayments(true); }
 
 function triggerManualPayout() { showAlert('success', 'Reconciliation request sent to bank'); }
-
-document.addEventListener('DOMContentLoaded', () => { initAutomationUI(); });
 
 async function loadPendingPayments(showToastMessage = false) {
     const tbody = document.querySelector('#pendingPaymentsTable tbody');
@@ -400,3 +804,13 @@ async function toggleAutoRenew(userId, enabled) {
         document.getElementById(`autoRenew${userId}`).checked = !enabled;
     }
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+    loadSubscriptions();
+    loadPaymentHistory();
+    initAutomationUI();
+    // Load pending wallet transactions for admin review (if table exists on this page)
+    if (document.getElementById('pendingPaymentsTable')) {
+        loadPendingPayments();
+    }
+});

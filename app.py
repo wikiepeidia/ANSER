@@ -286,7 +286,9 @@ def signup():
         last_name = request.form['last_name']
         phone = request.form.get('phone', '')
         
-        success, message = auth_manager.register_user(email, password, first_name, last_name, phone)
+        print(f"DEBUG: Registering user {email} with role='manager'")
+        # Default role is now 'manager' for new signups
+        success, message = auth_manager.register_user(email, password, first_name, last_name, phone, role='manager')
         if success:
             # Log activity (we don't have user_id here easily without querying, so maybe skip or query)
             # For simplicity, let's just log it as system activity or try to get the user
@@ -334,7 +336,7 @@ def admin_dashboard():
 def admin_workspace():
     # Redirect to new admin dashboard
     if not hasattr(current_user, 'role') or current_user.role != 'admin':
-        flash('Bạn không có quyền truy cập trang này', 'error')
+        flash('You do not have permission to access this page', 'error')
         return redirect(url_for('workspace'))
     return redirect(url_for('admin_dashboard'))
 
@@ -437,7 +439,7 @@ def settings():
 def create_user_account():
     """Manager/Admin page to create user accounts"""
     if not hasattr(current_user, 'role') or current_user.role not in ['admin', 'manager']:
-        flash('Bạn không có quyền truy cập trang này', 'error')
+        flash('You do not have permission to access this page', 'error')
         return redirect(url_for('workspace'))
     return render_template('create_user_account.html', user=current_user)
 
@@ -446,7 +448,7 @@ def create_user_account():
 def admin_managers():
     """Admin page to manage managers"""
     if not hasattr(current_user, 'role') or current_user.role != 'admin':
-        flash('Bạn không có quyền truy cập trang này', 'error')
+        flash('You do not have permission to access this page', 'error')
         return redirect(url_for('workspace'))
     return render_template('admin_managers.html', user=current_user)
 
@@ -455,7 +457,7 @@ def admin_managers():
 def admin_roles():
     """Admin page to manage user roles"""
     if not hasattr(current_user, 'role') or current_user.role != 'admin':
-        flash('Bạn không có quyền truy cập trang này', 'error')
+        flash('You do not have permission to access this page', 'error')
         return redirect(url_for('workspace'))
     return render_template('admin_roles.html', user=current_user)
 
@@ -475,7 +477,7 @@ def admin_analytics():
 def admin_subscriptions():
     """Admin page for managing manager subscriptions"""
     if not hasattr(current_user, 'role') or current_user.role != 'admin':
-        flash('Bạn không có quyền truy cập trang này', 'error')
+        flash('You do not have permission to access this page', 'error')
         return redirect(url_for('workspace'))
     return render_template('admin_subscriptions.html', user=current_user)
 
@@ -706,8 +708,11 @@ def create_workspace():
 def get_scenarios():
     try:
         scenarios = db.get_scenarios(current_user.id)
-        return jsonify(scenarios)
+        return jsonify({'success': True, 'scenarios': scenarios})
     except Exception as e:
+        print(f"Error in get_scenarios: {e}")
+        import traceback
+        traceback.print_exc()
         return jsonify({'success': False, 'message': str(e)}), 500
 
 @app.route('/api/scenarios/<int:scenario_id>', methods=['GET'])
@@ -726,14 +731,19 @@ def get_scenario(scenario_id):
 def create_scenario():
     try:
         data = request.get_json()
+        print(f"Creating scenario for user {current_user.id}: {data.get('name')}")
         scenario_id = db.create_scenario(
             user_id=current_user.id,
             name=data.get('name'),
             description=data.get('description', ''),
-            active=data.get('active', False)
+            active=data.get('active', False),
+            steps=data.get('steps')
         )
         return jsonify({'success': True, 'message': 'Scenario created successfully', 'id': scenario_id})
     except Exception as e:
+        print(f"Error in create_scenario: {e}")
+        import traceback
+        traceback.print_exc()
         return jsonify({'success': False, 'message': str(e)}), 500
 
 @app.route('/api/scenarios/<int:scenario_id>', methods=['PUT'])
@@ -925,16 +935,17 @@ def create_user():
         last_name = data.get('last_name', '')
         full_name = f"{first_name} {last_name}".strip() or data['email'].split('@')[0]
         
-        # Create user with 'user' role only
+        # Create user with 'employee' role and link to manager
         user_id = db_manager.create_user(
             data['email'], 
             data['password'], 
             full_name, 
-            role='user',
+            role='employee',
             first_name=first_name,
-            last_name=last_name
+            last_name=last_name,
+            manager_id=current_user.id
         )
-        return jsonify({'success': True, 'message': 'User created successfully', 'user_id': user_id})
+        return jsonify({'success': True, 'message': 'Employee account created successfully', 'user_id': user_id})
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 400
 
@@ -957,19 +968,36 @@ def get_users():
     has_first_name = 'first_name' in columns
     
     if has_first_name:
-        if role_filter:
-            c.execute('''
+        if current_user.role == 'manager':
+            # Managers only see their own employees
+            query = '''
                 SELECT id, email, first_name, last_name, role, created_at 
                 FROM users 
-                WHERE role = ?
-                ORDER BY created_at DESC
-            ''', (role_filter,))
+                WHERE manager_id = ?
+            '''
+            params = [current_user.id]
+            
+            if role_filter:
+                query += " AND role = ?"
+                params.append(role_filter)
+                
+            query += " ORDER BY created_at DESC"
+            c.execute(query, tuple(params))
         else:
-            c.execute('''
-                SELECT id, email, first_name, last_name, role, created_at 
-                FROM users 
-                ORDER BY created_at DESC
-            ''')
+            # Admins see all users
+            if role_filter:
+                c.execute('''
+                    SELECT id, email, first_name, last_name, role, created_at 
+                    FROM users 
+                    WHERE role = ?
+                    ORDER BY created_at DESC
+                ''', (role_filter,))
+            else:
+                c.execute('''
+                    SELECT id, email, first_name, last_name, role, created_at 
+                    FROM users 
+                    ORDER BY created_at DESC
+                ''')
         
         users = []
         for row in c.fetchall():
@@ -983,27 +1011,42 @@ def get_users():
             })
     else:
         # Fallback to name column
-        if role_filter:
-            c.execute('''
+        if current_user.role == 'manager':
+             # Managers only see their own employees
+            query = '''
                 SELECT id, email, name, role, created_at 
                 FROM users 
-                WHERE role = ?
-                ORDER BY created_at DESC
-            ''', (role_filter,))
+                WHERE manager_id = ?
+            '''
+            params = [current_user.id]
+            
+            if role_filter:
+                query += " AND role = ?"
+                params.append(role_filter)
+                
+            query += " ORDER BY created_at DESC"
+            c.execute(query, tuple(params))
         else:
-            c.execute('''
-                SELECT id, email, name, role, created_at 
-                FROM users 
-                ORDER BY created_at DESC
-            ''')
+            if role_filter:
+                c.execute('''
+                    SELECT id, email, name, role, created_at 
+                    FROM users 
+                    WHERE role = ?
+                    ORDER BY created_at DESC
+                ''', (role_filter,))
+            else:
+                c.execute('''
+                    SELECT id, email, name, role, created_at 
+                    FROM users 
+                    ORDER BY created_at DESC
+                ''')
         
         users = []
         for row in c.fetchall():
             users.append({
                 'id': row[0],
                 'email': row[1],
-                'first_name': row[2] or '',
-                'last_name': '',
+                'name': row[2] or '',
                 'role': row[3],
                 'created_at': row[4]
             })
@@ -1643,16 +1686,6 @@ def api_admin_clear_analytics_cache():
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
 
-@app.route('/api/scenarios', methods=['GET'])
-@login_required
-def api_get_scenarios():
-    """Get all scenarios"""
-    try:
-        scenarios = db_manager.get_scenarios(current_user.id)
-        return jsonify({'success': True, 'scenarios': scenarios})
-    except Exception as e:
-        return jsonify({'success': False, 'message': str(e)}), 500
-
 @app.route('/api/dashboard/stats', methods=['GET'])
 @login_required
 def api_get_dashboard_stats():
@@ -1973,6 +2006,86 @@ def api_toggle_auto_renew():
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
 
+@app.route('/api/admin/subscription/extend', methods=['POST'])
+@login_required
+@csrf.exempt
+def api_extend_subscription():
+    """Extend a manager's subscription"""
+    if not hasattr(current_user, 'role') or current_user.role != 'admin':
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 403
+    
+    data = request.get_json()
+    user_id = data.get('user_id')
+    plan_type = data.get('plan_type')
+    payment_method = data.get('payment_method', 'manual')
+    transaction_id = data.get('transaction_id', f'MANUAL-{secrets.token_hex(4).upper()}')
+    
+    if not user_id or not plan_type:
+        return jsonify({'success': False, 'message': 'Missing required fields'}), 400
+        
+    # Plan details
+    plans = {
+        'monthly': {'days': 30, 'amount': 500000},
+        'quarterly': {'days': 90, 'amount': 1200000},
+        'yearly': {'days': 365, 'amount': 4000000},
+        'trial': {'days': 30, 'amount': 0}
+    }
+    
+    if plan_type not in plans:
+        return jsonify({'success': False, 'message': 'Invalid plan type'}), 400
+        
+    plan_info = plans[plan_type]
+    duration_days = plan_info['days']
+    amount = plan_info['amount']
+    
+    try:
+        conn = db_manager.get_connection()
+        c = conn.cursor()
+        
+        # Get current subscription
+        c.execute("SELECT end_date FROM manager_subscriptions WHERE user_id = ?", (user_id,))
+        row = c.fetchone()
+        
+        current_date = datetime.now()
+        start_date = current_date
+        
+        if row and row[0]:
+            # If has existing subscription, extend from end date if it's in the future
+            current_end_str = row[0]
+            try:
+                current_end = datetime.strptime(current_end_str, '%Y-%m-%d')
+                if current_end > current_date:
+                    start_date = current_end
+            except ValueError:
+                pass # Invalid date format, start from now
+        
+        new_end_date = start_date + timedelta(days=duration_days)
+        new_end_date_str = new_end_date.strftime('%Y-%m-%d')
+        
+        # Update or Insert subscription
+        c.execute('''INSERT OR REPLACE INTO manager_subscriptions 
+                     (user_id, subscription_type, amount, start_date, end_date, status, auto_renew)
+                     VALUES (?, ?, ?, ?, ?, 'active', 0)''',
+                  (user_id, plan_type, amount, datetime.now().strftime('%Y-%m-%d'), new_end_date_str))
+        
+        # Log history
+        c.execute('''INSERT INTO subscription_history 
+                     (user_id, subscription_type, amount, payment_date, payment_method, transaction_id, status)
+                     VALUES (?, ?, ?, ?, ?, ?, 'Completed')''',
+                  (user_id, plan_type, amount, datetime.now().strftime('%Y-%m-%d %H:%M:%S'), payment_method, transaction_id))
+        
+        conn.commit()
+        conn.close()
+        
+        return jsonify({
+            'success': True, 
+            'message': f'Subscription extended until {new_end_date_str}',
+            'new_expiry': new_end_date_str
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
 @app.route('/api/admin/subscription-history', methods=['GET'])
 @login_required
 def api_get_subscription_history():
@@ -2027,7 +2140,7 @@ def api_get_subscription_history():
 
 @app.route('/api/admin/extend-subscription', methods=['POST'])
 @login_required
-def api_extend_subscription():
+def api_extend_subscription_v2():
     """Extend manager subscription"""
     if not hasattr(current_user, 'role') or current_user.role != 'admin':
         return jsonify({'success': False, 'message': 'Unauthorized'}), 403
@@ -2558,6 +2671,19 @@ def api_admin_process_wallet_transaction(transaction_id):
 
 # Routes OAuth2
 
+@app.route('/auth/connect/google')
+@login_required
+def google_connect():
+    """Connect Google account to existing user"""
+    session['google_connect_mode'] = True
+    redirect_uri = url_for('google_authorize', _external=True)
+    return google.authorize_redirect(
+        redirect_uri,
+        access_type='offline',
+        prompt='consent',
+        include_granted_scopes='true'
+    )
+
 @app.route('/auth/login/google')
 def google_login():
     # Redirect to Google signin
@@ -2593,14 +2719,40 @@ def google_authorize():
             'raw_token': token
         }
         
+        # Check if in connect mode (connecting existing user)
+        if session.pop('google_connect_mode', False):
+            if not current_user.is_authenticated:
+                flash('Session expired during connection. Please login again.', 'error')
+                return redirect(url_for('auth.signin'))
+            
+            # Update current user's token
+            conn = db_manager.get_connection()
+            c = conn.cursor()
+            token_json = json.dumps(normalized_token)
+            # Update google_token AND google_email
+            c.execute("UPDATE users SET google_token = ?, google_email = ? WHERE id = ?", (token_json, email, current_user.id))
+            conn.commit()
+            conn.close()
+            
+            flash('Google account connected successfully!', 'success')
+            # Redirect to builder if that's where they came from, or workspace
+            return redirect(url_for('workspace_builder'))
+
         email = user_info['email']
         name = user_info.get('name', 'Google User')
         
         # Check user in database
         conn = db_manager.get_connection()
         c = conn.cursor()
-        c.execute("SELECT id, role FROM users WHERE email = ?", (email,))
+        
+        # 1. Check by primary email
+        c.execute("SELECT id, role, email, google_token FROM users WHERE email = ?", (email,))
         user_row = c.fetchone()
+        
+        # 2. If not found, check by connected google_email
+        if not user_row:
+            c.execute("SELECT id, role, email, google_token FROM users WHERE google_email = ?", (email,))
+            user_row = c.fetchone()
         
         user_id = None
         role = 'user'
@@ -2611,7 +2763,9 @@ def google_authorize():
             user_id = user_row[0]
             role = user_row[1]
             # Update token - ALWAYS update with new token to ensure freshness
-            c.execute("UPDATE users SET google_token = ? WHERE id = ?", (token_json, user_id))
+            # Note: If we matched by google_email, we should update google_token. 
+            # If we matched by email, we also update google_token (and maybe google_email to be sure).
+            c.execute("UPDATE users SET google_token = ?, google_email = ? WHERE id = ?", (token_json, email, user_id))
             conn.commit()
         else:
             # User does not exist -> Automatically register new
@@ -2625,9 +2779,10 @@ def google_authorize():
             first_name = names[0]
             last_name = ' '.join(names[1:]) if len(names) > 1 else ''
             
-            c.execute('''INSERT INTO users (email, password, name, first_name, last_name, role, avatar, google_token) 
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
-                     (email, hashed_pw, name, first_name, last_name, 'user', user_info.get('picture'), token_json))
+            # Insert with google_email
+            c.execute('''INSERT INTO users (email, password, name, first_name, last_name, role, avatar, google_token, google_email) 
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+                     (email, hashed_pw, name, first_name, last_name, 'manager', user_info.get('picture'), token_json, email))
             user_id = c.lastrowid
             
             # Create default workspace for Google user
@@ -2946,6 +3101,66 @@ def run_dl_service():
         dl_app.run(host='0.0.0.0', port=5001, debug=False, use_reloader=False)
     except Exception as e:
         print(f"[DL Thread] Error starting DL Service: {e}", flush=True)
+
+# AI Chat Integration
+@app.route('/api/ai/chat', methods=['POST'])
+@login_required
+def ai_chat():
+    """
+    Endpoint to handle chat messages from the frontend widget.
+    Forwards the message to the Hugging Face AI Space.
+    """
+    try:
+        data = request.get_json()
+        user_message = data.get('message')
+        
+        if not user_message:
+            return jsonify({'error': 'Message is required'}), 400
+
+        # Load AI Config
+        try:
+            with open('secrets/ai_config.json') as f:
+                ai_config = json.load(f)
+                hf_token = ai_config.get('HF_TOKEN')
+                hf_base_url = ai_config.get('HF_BASE_URL')
+        except FileNotFoundError:
+            return jsonify({'error': 'AI Configuration not found'}), 500
+
+        if not hf_token or not hf_base_url:
+             return jsonify({'error': 'AI Configuration incomplete'}), 500
+
+        # Prepare payload for AI Service
+        # We send the current user's ID to maintain context if needed
+        payload = {
+            "user_id": current_user.id,
+            "store_id": 1, # Default store ID for now, can be dynamic later
+            "message": user_message
+        }
+
+        headers = {
+            "Authorization": f"Bearer {hf_token}",
+            "Content-Type": "application/json"
+        }
+
+        # Call Hugging Face Space
+        import requests
+        response = requests.post(
+            f"{hf_base_url}/chat",
+            headers=headers,
+            json=payload,
+            timeout=30
+        )
+
+        if response.status_code == 200:
+            ai_response = response.json()
+            return jsonify(ai_response)
+        else:
+            print(f"AI Service Error: {response.status_code} - {response.text}")
+            return jsonify({'error': 'Failed to get response from AI service'}), 502
+
+    except Exception as e:
+        print(f"AI Chat Exception: {str(e)}")
+        return jsonify({'error': 'Internal Server Error'}), 500
 
 if __name__ == '__main__':
     import sys

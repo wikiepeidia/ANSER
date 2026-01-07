@@ -1,0 +1,38 @@
+<!-- Chat Widget -->
+<div id="ai-chat-widget" class="ai-chat-widget">
+    <!-- Chat Button -->
+    <button id="ai-chat-toggle" class="ai-chat-toggle" aria-label="Open AI Assistant">
+        <i class="fas fa-robot"></i>
+    </button>
+
+    <!-- Chat Window -->
+    <div id="ai-chat-window" class="ai-chat-window" hidden>
+        <div class="ai-chat-header">
+            <div class="ai-chat-title">
+                <i class="fas fa-robot"></i>
+                <span>AI Assistant</span>
+            </div>
+            <div class="ai-chat-controls">
+                <button id="ai-chat-minimize" class="ai-chat-control-btn" aria-label="Minimize">
+                    <i class="fas fa-minus"></i>
+                </button>
+            </div>
+        </div>
+        
+        <div id="ai-chat-messages" class="ai-chat-messages">
+            <div class="ai-message ai-message-bot">
+                <div class="ai-message-content">
+                    Xin chào! Tôi là trợ lý ảo của bạn. Tôi có thể giúp gì cho bạn hôm nay?
+                </div>
+                <div class="ai-message-time">Just now</div>
+            </div>
+        </div>
+
+        <div class="ai-chat-input-area">
+            <textarea id="ai-chat-input" placeholder="Nhập câu hỏi của bạn..." rows="1"></textarea>
+            <button id="ai-chat-send" class="ai-chat-send-btn" aria-label="Send">
+                <i class="fas fa-paper-plane"></i>
+            </button>
+        </div>
+    </div>
+</div>
