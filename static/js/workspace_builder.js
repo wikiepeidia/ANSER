@@ -755,12 +755,17 @@ document.addEventListener('DOMContentLoaded', () => {
         node.style.left = `${position.x - 100}px`;
         node.style.position = 'absolute';
 
+        builderState.nodeCounter += 1; // Increment before creating HTML
+
         node.innerHTML = `
             <div class="node-header">
                 <div class="node-icon" style="background: ${getCategoryColor(toolData.category)};">
                     <i class="${toolData.icon}"></i>
                 </div>
-                <div class="node-title">${toolData.name}</div>
+                <div class="node-title">
+                    <span class="node-id-badge" style="font-size:0.8em; opacity:0.6; margin-right:4px;">#${builderState.nodeCounter}</span>
+                    ${toolData.name}
+                </div>
                 <div class="node-menu">
                     <i class="fas fa-ellipsis-h"></i>
                 </div>
@@ -772,7 +777,6 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
         `;
 
-        builderState.nodeCounter += 1;
         node.dataset.nodeId = `node-${builderState.nodeCounter}`;
         canvas.appendChild(node);
         attachNodeInteractions(node);
@@ -1688,10 +1692,16 @@ document.addEventListener('DOMContentLoaded', () => {
                         node.dataset.config = JSON.stringify(nodeData.config);
                     }
                     
-                    // Update counter to avoid collision
+                    // Update counter to avoid collision and update visual badge
                     const numId = parseInt(nodeData.id.replace('node-', ''));
-                    if (!isNaN(numId) && numId > builderState.nodeCounter) {
-                        builderState.nodeCounter = numId;
+                    if (!isNaN(numId)) {
+                        if (numId > builderState.nodeCounter) {
+                            builderState.nodeCounter = numId;
+                        }
+                        const badge = node.querySelector('.node-id-badge');
+                        if (badge) {
+                            badge.textContent = `#${numId}`;
+                        }
                     }
                 }
             });

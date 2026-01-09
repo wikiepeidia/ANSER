@@ -1,0 +1,233 @@
+{% extends "base.html" %}
+
+{% block title %}Point of Sale - {{ project_name }}{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/sale.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="sale-container">
+    <div class="row h-100 g-0">
+        <!-- Left Side: Product Search & Grid -->
+        <div class="col-md-7 col-lg-8 d-flex flex-column p-3 left-panel">
+            <div class="d-flex align-items-center mb-3">
+                <a href="{{ url_for('workspace') }}" class="btn btn-outline-secondary me-3">
+                    <i class="fas fa-arrow-left"></i> Back
+                </a>
+                <h4 class="mb-0 me-auto">Point of Sale</h4>
+                <button class="btn btn-info text-white" onclick="showHistory()">
+                    <i class="fas fa-history"></i> History
+                </button>
+            </div>
+            <div class="search-section mb-3">
+                <div class="input-group input-group-lg">
+                    <span class="input-group-text search-icon border-end-0"><i
+                            class="fas fa-search text-muted"></i></span>
+                    <input type="text" id="productSearch" class="form-control border-start-0 ps-0"
+                        placeholder="Search products (scan barcode or type name)..." autocomplete="off">
+                </div>
+                <div id="searchResults" class="search-results-dropdown shadow-sm" style="display: none;"></div>
+            </div>
+
+            <div class="products-grid-container flex-grow-1">
+                <h5 class="mb-3 section-title"><i class="fas fa-box-open me-2"></i>Product Suggestions</h5>
+                <div id="productSuggestions" class="row row-cols-2 row-cols-md-3 row-cols-xl-4 g-3">
+                    <!-- Random products will be loaded here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Side: Cart & Payment -->
+        <div class="col-md-5 col-lg-4 d-flex flex-column border-start right-panel shadow-lg">
+
+            <div class="cart-header p-3 border-bottom">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-shopping-cart me-2"></i>Current Sale</h5>
+                    <span class="badge bg-primary rounded-pill" id="cartItemCount">0 items</span>
+                </div>
+            </div>
+
+            <div class="cart-items flex-grow-1 p-0 overflow-auto" id="cartItemsContainer">
+                <div class="text-center text-muted mt-5 pt-5 empty-cart-msg">
+                    <i class="fas fa-basket-shopping fa-3x mb-3 opacity-25"></i>
+                    <p>Cart is empty</p>
+                    <small>Search products to start selling</small>
+                </div>
+                <table class="table table-hover mb-0 cart-table" style="display: none;">
+                    <thead class="sticky-top">
+                        <tr>
+                            <th scope="col" width="45%">Item</th>
+                            <th scope="col" width="20%">Qty</th>
+                            <th scope="col" width="25%">Price</th>
+                            <th scope="col" width="10%"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="cartTableBody">
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="payment-section p-4 border-top">
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="h5 mb-0 fw-normal">Total</span>
+                    <span class="h5 mb-0 fw-bold text-primary" id="grandTotal">0 ₫</span>
+                </div>
+
+                <div class="mb-3">
+                    <label for="customerGiven" class="form-label small text-muted text-uppercase fw-bold">Customer
+                        Given</label>
+                    <div class="input-group">
+                        <input type="number" class="form-control form-control-lg text-end fw-bold" id="customerGiven"
+                            placeholder="0">
+                        <span class="input-group-text">₫</span>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-between mb-4">
+                    <span class="mb-0 text-muted">Refund (Change)</span>
+                    <span class="h5 mb-0 fw-bold text-success" id="refundAmount">0 ₫</span>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label small text-muted text-uppercase fw-bold">Payment Method</label>
+                    <div class="btn-group w-100" role="group" aria-label="Payment Method">
+                        <input type="radio" class="btn-check" name="paymentMethod" id="payCash" value="Cash" checked>
+                        <label class="btn btn-outline-primary" for="payCash">
+                            <i class="fas fa-money-bill-wave me-1"></i> Cash
+                        </label>
+
+                        <input type="radio" class="btn-check" name="paymentMethod" id="payCard" value="Card">
+                        <label class="btn btn-outline-primary" for="payCard">
+                            <i class="fas fa-credit-card me-1"></i> Card
+                        </label>
+
+                        <input type="radio" class="btn-check" name="paymentMethod" id="payTransfer" value="Transfer">
+                        <label class="btn btn-outline-primary" for="payTransfer">
+                            <i class="fas fa-university me-1"></i> Transfer
+                        </label>
+                    </div>
+                </div>
+
+                <div class="d-grid gap-2">
+                    <button class="btn btn-primary btn-lg py-3 fw-bold" id="btnCompleteSale" disabled>
+                        <i class="fas fa-check-circle me-2"></i> COMPLETE SALE
+                    </button>
+                    <button class="btn btn-outline-danger" id="btnClearCart">
+                        <i class="fas fa-trash-alt me-2"></i> Clear Cart
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Receipt Modal (Optional, for future) -->
+<div class="modal fade" id="receiptModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-body text-center p-4">
+                <div class="display-1 text-success mb-3"><i class="fas fa-check-circle"></i></div>
+                <h4 class="mb-3">Sale Completed!</h4>
+                <p class="text-muted">Transaction saved successfully.</p>
+                <button type="button" class="btn btn-primary w-100" data-bs-dismiss="modal">New Sale</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- History Modal -->
+<div class="modal fade" id="historyModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-history me-2"></i>Sales History</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0">
+                <!-- Toolbar -->
+                <div class="p-3 border-bottom d-flex gap-2 history-toolbar">
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-search text-muted"></i></span>
+                        <input type="text" id="historySearchInput" class="form-control"
+                            placeholder="Search by ID or Payment Method...">
+                    </div>
+                    <button class="btn btn-outline-secondary" onclick="refreshHistory()" title="Refresh">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
+                </div>
+
+                <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
+                    <table class="table table-striped table-hover mb-0" id="historyTable">
+                        <thead class="sticky-top shadow-sm history-table-head" style="top: 0; z-index: 10;">
+                            <tr>
+                                <th>ID</th>
+                                <th>Date</th>
+                                <th>Payment</th>
+                                <th class="text-center">Items</th>
+                                <th class="text-end">Amount</th>
+                                <th class="text-center" style="width: 100px;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="historyTableBody">
+                            <tr>
+                                <td colspan="6" class="text-center py-4">Loading...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Sale Details Modal -->
+<div class="modal fade" id="saleDetailsModal" tabindex="-1" aria-hidden="true" style="z-index: 1060;">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Sale Details #<span id="detailSaleId"></span></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3 d-flex justify-content-between align-items-center details-header p-2 rounded">
+                    <span><strong>Date:</strong> <span id="detailSaleDate"></span></span>
+                    <span><strong>Method:</strong> <span id="detailSaleMethod" class="badge bg-secondary"></span></span>
+                </div>
+                <!-- Error Alert Box -->
+                <div id="detailError" class="alert alert-danger d-none my-2"></div>
+
+                <div class="table-responsive">
+                    <table class="table table-sm table-bordered mb-0">
+                        <thead class="details-table-header">
+                            <tr>
+                                <th>Item</th>
+                                <th class="text-center">Qty</th>
+                                <th class="text-end">Price</th>
+                                <th class="text-end">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody id="detailItemsBody"></tbody>
+                        <tfoot class="details-table-footer fw-bold">
+                            <tr>
+                                <td colspan="3" class="text-end">Total:</td>
+                                <td class="text-end" id="detailSaleTotal"></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/sale.js') }}"></script>
+{% endblock %}

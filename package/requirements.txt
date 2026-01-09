@@ -19,14 +19,14 @@ authlib
 google-auth-oauthlib
 google-auth-httplib2
 google-api-python-client
-google.analytics
+google-analytics-data
 
 # ==================================================
 # OCR & Image Processing
 # ==================================================
 easyocr
 pytesseract
-opencv-python>=4.5.0
+opencv-python-headless>=4.5.0
 Pillow
 paddlepaddle>=2.4.0
 paddleocr>=2.6.0
@@ -85,10 +85,11 @@ easydict
 
 
 # ==================================================
-#SQLAlchemy & Database
+# Database
 # ==================================================
 SQLAlchemy>=2.0
 alembic
 psycopg[binary]
 passlib[bcrypt]
 python-dotenv
+psycopg2-binary

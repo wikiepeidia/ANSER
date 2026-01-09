@@ -24,11 +24,20 @@
                     </div>
                 </div>
                 <div class="collection-grid">
-                    <button type="button" class="collection-card" onclick="location.href='{{ url_for('create_user_account') }}'">
+                    <button type="button" class="collection-card"
+                        onclick="location.href='{{ url_for('create_user_account') }}'">
                         <div class="collection-icon gradient-blue"><i class="fas fa-users"></i></div>
                         <div class="collection-body">
                             <h4>Manage Employees</h4>
                             <p>Create and manage staff accounts.</p>
+                        </div>
+                        <span class="collection-cta">Open page</span>
+                    </button>
+                    <button type="button" class="collection-card" onclick="location.href='{{ url_for('sale_page') }}'">
+                        <div class="collection-icon gradient-green"><i class="fas fa-cash-register"></i></div>
+                        <div class="collection-body">
+                            <h4>Point of Sale</h4>
+                            <p>Sell products, manage cart and checkout.</p>
                         </div>
                         <span class="collection-cta">Open page</span>
                     </button>
@@ -146,7 +155,8 @@
                         </div>
                         <span class="collection-cta">Open page</span>
                     </button>
-                    <button type="button" class="collection-card" onclick="location.href='{{ url_for('workspace_builder') }}'">
+                    <button type="button" class="collection-card"
+                        onclick="location.href='{{ url_for('workspace_builder') }}'">
                         <div class="collection-icon gradient-indigo"><i class="fas fa-tools"></i></div>
                         <div class="collection-body">
                             <h4>Workflow</h4>
@@ -154,7 +164,8 @@
                         </div>
                         <span class="collection-cta">Open page</span>
                     </button>
-                    <button type="button" class="collection-card" onclick="location.href='{{ url_for('se_auto_import') }}'">
+                    <button type="button" class="collection-card"
+                        onclick="location.href='{{ url_for('se_auto_import') }}'">
                         <div class="collection-icon gradient-gold"><i class="fas fa-sync-alt"></i></div>
                         <div class="collection-body">
                             <h4>Auto Import</h4>
@@ -166,6 +177,28 @@
             </div>
         </section>
 
+        <!-- ========== EMPLOYEE VIEW ========== -->
+        <section class="workspace-collections">
+            <div class="collection-block">
+                <div class="collection-head">
+                    <div>
+                        <p class="launch-eyebrow">Staff Access</p>
+                        <h3>Employee Dashboard</h3>
+                    </div>
+                </div>
+                <div class="collection-grid">
+                    <button type="button" class="collection-card" onclick="location.href='{{ url_for('sale_page') }}'">
+                        <div class="collection-icon gradient-green"><i class="fas fa-cash-register"></i></div>
+                        <div class="collection-body">
+                            <h4>Point of Sale</h4>
+                            <p>Sell products, manage cart and checkout.</p>
+                        </div>
+                        <span class="collection-cta">Open page</span>
+                    </button>
+                    <!-- Add more employee tools here if needed -->
+                </div>
+            </div>
+        </section>
         {% endif %}
 
     </main>

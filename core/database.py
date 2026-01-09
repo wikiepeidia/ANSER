@@ -1,5 +1,6 @@
 import sqlite3
 import hashlib
+import re
 from datetime import datetime
 from .config import Config
 
@@ -10,19 +11,153 @@ except Exception:
     SessionLocal = None
     Base = None
 
+# Postgres Adapter Classes
+class PGShimCursor:
+    def __init__(self, cursor):
+        self._cursor = cursor
+        self.lastrowid = None
+        self.rowcount = -1
+
+    def execute(self, query, params=None):
+        if params is None:
+            params = ()
+        
+        # 1. Convert ? placeholders to %s
+        query = query.replace('?', '%s')
+        
+        # 2. Handle Auto-increment IDs (sqlite's lastrowid)
+        # We append RETURNING id if it's an INSERT and look for the result
+        is_insert = query.strip().upper().startswith('INSERT')
+        
+        try:
+            if is_insert and 'RETURNING' not in query.upper():
+                query += " RETURNING id"
+                self._cursor.execute(query, params)
+                row = self._cursor.fetchone()
+                if row:
+                    self.lastrowid = row[0]
+            else:
+                self._cursor.execute(query, params)
+                self.lastrowid = None
+            
+            self.rowcount = self._cursor.rowcount
+            return self
+        except Exception as e:
+            # If RETURNING id failed (maybe table has no id column?), try without it
+            if is_insert and 'RETURNING id' in query:
+                # print(f"Postgres Shim Info: 'RETURNING id' failed ({e}). Rolling back and retrying without it.")
+                try:
+                    # Try to access connection and rollback
+                    if hasattr(self._cursor, 'connection'):
+                         self._cursor.connection.rollback()
+                    else:
+                         # Fallback if cursor doesn't have connection attribute directly
+                         print("Postgres Shim Warning: Cannot access cursor.connection to rollback.")
+                except Exception as rb_error:
+                     print(f"Postgres Shim Error: Rollback failed during retry: {rb_error}")
+
+                clean_query = query.replace(" RETURNING id", "")
+                try:
+                    self._cursor.execute(clean_query, params)
+                    self.lastrowid = None
+                    return self
+                except Exception as retry_error:
+                    # If retry fails, raise the RETRY error (likely the same fundamental issue), or logic to bubble up original
+                     # print(f"Postgres Shim: Retry also failed: {retry_error}")
+                     raise retry_error
+            raise e
+
+    def executemany(self, query, params_seq):
+        query = query.replace('?', '%s')
+        self._cursor.executemany(query, params_seq)
+        return self
+
+    def fetchone(self):
+        return self._cursor.fetchone()
+
+    def fetchall(self):
+        return self._cursor.fetchall()
+        
+    def fetchmany(self, size=None):
+        return self._cursor.fetchmany(size)
+    
+    def close(self):
+        self._cursor.close()
+
+    def __getattr__(self, name):
+        return getattr(self._cursor, name)
+
+class PGShimConnection:
+    def __init__(self, conn):
+        self._conn = conn
+        self.row_factory = None # Not fully implemented
+
+    def cursor(self):
+        return PGShimCursor(self._conn.cursor())
+
+    def commit(self):
+        self._conn.commit()
+
+    def rollback(self):
+        self._conn.rollback()
+
+    def close(self):
+        self._conn.close()
+
 class Database:
     def __init__(self):
         self.db_path = Config.DATABASE_PATH
-        self.init_database()
-    
+        self.use_postgres = getattr(Config, 'USE_POSTGRES', False)
+        # We do NOT allow init_database to run automatically on import if using Postgres
+        # to prevent accidental schema changes. Migration script should handle it.
+        if not self.use_postgres:
+            self.init_database()
+        # If postgres, we assume schema is managed or we call init manually if needed
+        # But for safety in this hybrid state, let's allow it to run once to ensure tables exist
+        if self.use_postgres:
+            try:
+                self.init_database()
+            except Exception as e:
+                print(f"Postgres Init Warning: {e}") 
+
     def get_connection(self):
-        # Increase timeout to 30 seconds to avoid "database is locked" errors
-        return sqlite3.connect(self.db_path, timeout=30.0)
+        if self.use_postgres:
+            import psycopg2
+            conn = psycopg2.connect(Config.POSTGRES_URL)
+            return PGShimConnection(conn)
+        else:
+             # Increase timeout to 30 seconds to avoid "database is locked" errors
+            return sqlite3.connect(self.db_path, timeout=30.0)
     
     def init_database(self):
         conn = self.get_connection()
         c = conn.cursor()
         
+        # Postgres Shim Note:
+        # The CREATE TABLE syntax is mostly compatible, but AUTOINCREMENT is not.
+        # SQLite: INTEGER PRIMARY KEY AUTOINCREMENT
+        # Postgres: SERIAL PRIMARY KEY (Handled by migration script or manual fix)
+        # However, since we are using IF NOT EXISTS, we can leave the SQLite syntax 
+        # IF we handle the translation in the execute() method? No, execute() only handles dml.
+        # DDL differences are significant.
+        # For this hybrid `init_database`, we should detect engine and use appropriate SQL.
+        
+        is_pg = self.use_postgres
+        
+        if is_pg:
+            # Postgres Init Logic (Simplified)
+            # This is complex because we have many CREATE statements.
+            # Ideally, use the migration tool to init.
+            # We will just pass here if tables exist, or run a simplified check.
+            pass # We rely on 'python database/progres.py' to init schema for Postgres
+        else:
+            # SQLite Init Logic (Original)
+            self._init_sqlite(c)
+            conn.commit()
+        
+        conn.close()
+
+    def _init_sqlite(self, c):
         # Users table (có cột role)
         c.execute('''CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -92,6 +227,21 @@ class Database:
             status TEXT DEFAULT 'active',
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (workspace_id) REFERENCES workspaces (id)
+        )''')
+        
+        # Sales table
+        c.execute('''CREATE TABLE IF NOT EXISTS sales (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER,
+            workspace_id INTEGER,
+            total_amount REAL,
+            amount_given REAL,
+            change_amount REAL,
+            items TEXT,
+            payment_method TEXT DEFAULT 'cash',
+            category TEXT DEFAULT 'Retail',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users (id)
         )''')
         
         # Communication channels

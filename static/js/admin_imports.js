@@ -372,75 +372,78 @@ document.addEventListener('DOMContentLoaded', function() {
         btnSaveOcrImport.addEventListener('click', async function() {
             if (!extractedData) return;
             
-            // Convert OCR data to Import format and save
-            // This part depends on how your create import API works
-            // For now, we'll just show an alert
-            alert('Integration complete! In a real app, this would create the import record.');
+            const rows = document.querySelectorAll('#ocrItemsBody tr');
+            const items = [];
             
-            // TODO: Call /api/imports/create with extractedData
-            // const payload = { ... };
-            // await fetch('/api/imports', ...);
-            
-            const modal = bootstrap.Modal.getInstance(document.getElementById('ocrImportModal'));
-            modal.hide();
+            rows.forEach(row => {
+                const select = row.querySelector('.ocr-product-select');
+                const qtyInput = row.querySelectorAll('input')[0];
+                const priceInput = row.querySelectorAll('input')[1];
+                
+                // If value is "new" or empty, we send null ID and the detected name
+                // If value is a number (ID), we send that ID
+                const isNew = select.value === 'new' || select.value === '';
+                const productId = isNew ? null : select.value;
+                const productName = select.dataset.detected || 'Unknown Product';
+                
+                items.push({
+                    product_id: productId,
+                    product_name: productName,
+                    quantity: parseFloat(qtyInput.value) || 0,
+                    unit_price: parseFloat(priceInput.value) || 0
+                });
+            });
+
+            if (items.length === 0) {
+                alert('No items to import');
+                return;
+            }
+
+            const payload = {
+                supplier_name: extractedData.invoice?.vendor_name || extractedData.vendor_name || 'OCR Import',
+                notes: 'Imported via OCR Smart Import',
+                items: items
+            };
+
+            try {
+                // Show loading state
+                const originalText = btnSaveOcrImport.innerHTML;
+                btnSaveOcrImport.disabled = true;
+                btnSaveOcrImport.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Saving...';
+
+                const response = await fetch('/api/imports', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
+                    },
+                    body: JSON.stringify(payload)
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('ocrImportModal'));
+                    modal.hide();
+                    loadImports(); // Reload table
+                    showAlert('success', 'Import created successfully!');
+                    
+                    // Reset OCR form
+                    if (ocrItemsBody) ocrItemsBody.innerHTML = '';
+                    if (ocrResult) ocrResult.style.display = 'none';
+                    if (ocrFile) ocrFile.value = '';
+                    extractedData = null;
+                } else {
+                    alert('Failed to create import: ' + data.message);
+                }
+            } catch (error) {
+                console.error('Import Error:', error);
+                alert('Error creating import: ' + error.message);
+            } finally {
+                btnSaveOcrImport.disabled = false;
+                btnSaveOcrImport.innerHTML = originalText;
+            }
         });
     }
 });
 
-// Override the save button logic to actually save to DB
-if (btnSaveOcrImport) {
-    // Remove old listener by cloning (simple hack) or just add new one that handles the logic
-    // Since we can't easily remove anonymous listeners, we'll just update the existing one's behavior
-    // by checking a flag or we can just replace the element.
-    
-    const newBtn = btnSaveOcrImport.cloneNode(true);
-    btnSaveOcrImport.parentNode.replaceChild(newBtn, btnSaveOcrImport);
-    
-    newBtn.addEventListener('click', async function() {
-        if (!extractedData) return;
-        
-        // Prepare payload for /api/imports
-        // We need to map OCR items to our product structure
-        // For now, we'll create new products if they don't exist or just use raw names
-        
-        const ocrItems = _extractOcrItems(extractedData);
-        const items = ocrItems.map(item => ({
-            product_id: null, // We don't know the ID yet, backend might handle name matching or we send raw name
-            product_name: item.product_name || 'Unknown Product',
-            quantity: parseInt(item.quantity) || 1,
-            unit_price: parseFloat(item.unit_price) || 0,
-            line_total: parseFloat(item.total) || 0
-        }));
-
-        const payload = {
-            supplier_name: extractedData.invoice?.vendor_name || extractedData.vendor_name || 'Unknown Supplier',
-            notes: 'Imported via OCR Smart Import',
-            items: items
-        };
-
-        try {
-            const response = await fetch('/api/imports', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
-                },
-                body: JSON.stringify(payload)
-            });
-
-            const result = await response.json();
-
-            if (result.success) {
-                showAlert('success', 'Import created successfully!');
-                const modal = bootstrap.Modal.getInstance(document.getElementById('ocrImportModal'));
-                modal.hide();
-                loadImports(); // Refresh table
-            } else {
-                showAlert('error', 'Failed to save import: ' + (result.message || 'Unknown error'));
-            }
-        } catch (error) {
-            console.error('Save Import Error:', error);
-            showAlert('error', 'Error saving import');
-        }
-    });
-}

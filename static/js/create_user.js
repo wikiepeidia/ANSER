@@ -118,9 +118,9 @@ document.getElementById('searchUser').addEventListener('input', (e) => {
     });
 });
 
-// Chỉnh sửa user
+// Edit user
 function editUser(userId) {
-    alert('Edit feature under development. User ID: ' + userId);
+    alert('Edit feature under development. User ID: 3755');
     // TODO: Implement edit user functionality
 }
 

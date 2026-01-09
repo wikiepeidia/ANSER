@@ -283,7 +283,7 @@ evaluate_models.py
 *.sqlite
 *.sqlite3
 *.sqlite-journal
-
+database/
 *.db-journal
 *.db-wal
 *.db-shm

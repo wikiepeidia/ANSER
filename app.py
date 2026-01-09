@@ -159,6 +159,10 @@ def inject_project_config():
 def parse_db_datetime(value):
     if not value:
         return None
+    if isinstance(value, (int, float)):
+        return None
+    if hasattr(value, 'strftime'): # Handle datetime objects
+        return value
     if isinstance(value, (str,)):
         # Try multiple formats
         from datetime import datetime
@@ -346,6 +350,193 @@ def dashboard():
     """Main dashboard - monetization features"""
     return render_template('dashboard.html', user=current_user)
 
+@app.route('/sale')
+@login_required
+def sale_page():
+    return render_template('sale.html')
+
+@app.route('/api/products/search')
+@login_required
+def search_products():
+    query = request.args.get('q', '').lower()
+    random_mode = request.args.get('random') == 'true'
+    
+    try:
+        catalog_path = os.path.join(app.root_path, 'dl_service/data/product_catalogs.json')
+        # Handle case where path might be relative or different
+        if not os.path.exists(catalog_path):
+             # Try absolute path based on workspace exploration
+             catalog_path = os.path.join(os.getcwd(), 'dl_service/data/product_catalogs.json')
+             
+        with open(catalog_path, 'r', encoding='utf-8') as f:
+            products = json.load(f)
+            
+        if random_mode:
+            import random
+            results = random.sample(products, min(len(products), 8))
+        else:
+            # Filter products
+            results = [
+                p for p in products 
+                if query in p.get('name', '').lower() or query in str(p.get('id', '')).lower()
+            ][:5] # Limit to 5
+            
+        return jsonify(results)
+    except Exception as e:
+        print(f"Error searching products: {e}")
+        return jsonify([])
+
+@app.route('/api/sales/create', methods=['POST'])
+@login_required
+def create_sale():
+    data = request.json
+    try:
+        db = Database()
+        conn = db.get_connection()
+        c = conn.cursor()
+        
+        items_json = json.dumps(data.get('items', []))
+        
+        # Determine workspace_id (default to user's personal if not provided, or NULL)
+        # For now we don't have active workspace in session easily accessble here unless passed
+        workspace_id = data.get('workspace_id')
+        
+        c.execute('''
+            INSERT INTO sales (user_id, total_amount, amount_given, change_amount, items, payment_method, workspace_id, category)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (
+            current_user.id,
+            data.get('total_amount'),
+            data.get('amount_given'),
+            data.get('change_amount'),
+            items_json,
+            data.get('payment_method', 'cash'),
+            workspace_id,
+            data.get('category', 'Retail')
+        ))
+        
+        conn.commit()
+        return jsonify({'success': True, 'message': 'Sale recorded successfully'})
+    except Exception as e:
+        print(f"Error creating sale: {e}")
+        try:
+             conn.rollback()
+        except: 
+             pass
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/sales/history', methods=['GET'])
+@login_required
+def get_sales_history():
+    try:
+        search_query = request.args.get('q', '').strip()
+        limit = request.args.get('limit', 10, type=int)
+
+        db = Database()
+        conn = db.get_connection()
+        c = conn.cursor()
+        
+        # Base query
+        base_query = '''
+            SELECT id, created_at, total_amount, payment_method, items 
+            FROM sales 
+            WHERE user_id = ?
+        '''
+        params = [current_user.id]
+
+        # Add search filter
+        if search_query:
+            if search_query.isdigit():
+                # Search by ID if it's a number
+                if Config.USE_POSTGRES:
+                     base_query += " AND CAST(id AS TEXT) LIKE ?"
+                else:
+                     base_query += " AND CAST(id AS TEXT) LIKE ?"
+                params.append(f"%{search_query}%")
+            else:
+                # Search by payment_method (case insensitive)
+                base_query += " AND LOWER(payment_method) LIKE ?"
+                params.append(f"%{search_query.lower()}%")
+
+        # Order and Limit
+        base_query += " ORDER BY created_at DESC LIMIT ?"
+        params.append(limit)
+        
+        c.execute(base_query, tuple(params))
+        rows = c.fetchall()
+        
+        history = []
+        for row in rows:
+            # row: 0=id, 1=created_at, 2=total, 3=method, 4=items
+            # Parse items to get count
+            try:
+                # Handle case where items might be None or not JSON
+                if not row[4]:
+                     items = []
+                elif isinstance(row[4], str):
+                     items = json.loads(row[4])
+                elif isinstance(row[4], (dict, list)):
+                     items = row[4] # psycopg2 might decode json automatically if column type is JSON (it's TEXT here but let's be safe)
+                else:
+                     items = []
+
+                if isinstance(items, list):
+                    item_count = sum(int(item.get('qty', 0)) for item in items if isinstance(item, dict))
+                else:
+                    item_count = 0
+            except Exception as e:
+                print(f"Error parsing items for sale {row[0]}: {e}")
+                item_count = 0
+            
+            history.append({
+                'id': row[0],
+                'date': format_display_datetime(row[1]) or str(row[1]),
+                'amount': row[2],
+                'payment_method': row[3] or 'Cash',
+                'item_count': item_count,
+                'items': items # Pass full items list for details view
+            })
+            
+        return jsonify(history)
+    except Exception as e:
+        print(f"Error fetching history: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/sales/history/<int:sale_id>', methods=['DELETE'])
+@login_required
+def delete_sale(sale_id):
+    try:
+        if Config.USE_POSTGRES:
+            # Postgres
+            db = Database()
+            conn = db.get_connection()
+            cur = conn.cursor()
+            cur.execute("DELETE FROM sales WHERE id = %s", (sale_id,))
+            if cur.rowcount == 0:
+                conn.close()
+                return jsonify({'success': False, 'message': 'Sale not found'}), 404
+            conn.commit()
+            conn.close()
+        else:
+            # SQLite
+            db = Database()
+            conn = db.get_connection()
+            c = conn.cursor()
+            c.execute("DELETE FROM sales WHERE id = ?", (sale_id,))
+            if c.rowcount == 0:
+                conn.close()
+                return jsonify({'success': False, 'message': 'Sale not found'}), 404
+            conn.commit()
+            conn.close()
+            
+        return jsonify({'success': True, 'message': 'Sale deleted successfully'})
+    except Exception as e:
+        print(f"Error deleting sale: {e}")
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+
 @app.route('/workspace')
 @login_required
 def workspace():
@@ -362,20 +553,6 @@ def get_settings_config():
             'description': 'Manage store identity, address, and currency.',
             'icon': 'fa-store',
             'gradient': 'linear-gradient(135deg, #f6d365 0%, #fda085 100%)',
-            'links': []
-        },
-        'ai': {
-            'title': 'AI & Automation',
-            'description': 'Configure OCR models, confidence thresholds, and auto-import rules.',
-            'icon': 'fa-robot',
-            'gradient': 'linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%)',
-            'links': []
-        },
-        'notifications': {
-            'title': 'Notifications',
-            'description': 'Manage low stock alerts and email reports.',
-            'icon': 'fa-bell',
-            'gradient': 'linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%)',
             'links': []
         },
         'system': {

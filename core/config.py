@@ -1,4 +1,5 @@
 import os
+import json
 
 # Core Configuration
 class Config:
@@ -8,8 +9,21 @@ class Config:
     # Default secret key (override with environment variable in production)
     SECRET_KEY = os.environ.get('SECRET_KEY', "change_me_random_key")
 
-    # Default database filename
+    # Database Configuration
     DATABASE_PATH = os.environ.get('DATABASE_PATH', 'group_project_ai_ml.db')
+    POSTGRES_URL = os.environ.get('POSTGRES_URL')
+    USE_POSTGRES = os.environ.get('USE_POSTGRES', 'False').lower() == 'true'
+
+    # Load Database Secrets
+    try:
+        with open('secrets/database.json', 'r') as f:
+            db_secrets = json.load(f)
+            if 'POSTGRES_URL' in db_secrets:
+                POSTGRES_URL = db_secrets['POSTGRES_URL']
+                # Auto-enable Postgres if URL is present in secrets
+                USE_POSTGRES = True
+    except FileNotFoundError:
+        pass # Fallback to SQLite
     
     # Site domain and base URL (override with env vars)
     SITE_DOMAIN = os.environ.get('SITE_DOMAIN', 'auto-flowai.com')
