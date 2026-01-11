@@ -691,7 +691,13 @@ document.addEventListener('DOMContentLoaded', () => {
     function getDataStatus(node) {
         if (!node || !node.dataset.config) return 'missing';
         
-        const config = JSON.parse(node.dataset.config);
+        let config = {};
+        try {
+            config = JSON.parse(node.dataset.config);
+        } catch (e) {
+            return 'missing';
+        }
+        
         const type = node.dataset.type;
         const nodeId = node.dataset.nodeId;
         // Helper: Check connections
@@ -1360,57 +1366,72 @@ document.addEventListener('DOMContentLoaded', () => {
         executionController = new AbortController();
         setExecutionState(true);
 
-        const nodes = [];
-        let missingData = false;
-
-        document.querySelectorAll('.workflow-node').forEach((node) => {
-            const config = node.dataset.config ? JSON.parse(node.dataset.config) : {};
-            const type = node.dataset.type;
-            const title = node.dataset.title || 'Untitled Node';
-            const nodeId = node.dataset.nodeId;
-
-            // Check for missing data
-            if (type === 'google_sheet_read' && !config.sheetId) {
-                missingData = true;
-                if (window.ConsoleManager) window.ConsoleManager.log(`Node '${title}' (${nodeId}) missing Sheet ID. Using mock data.`, 'warning');
-            }
-            if (type === 'google_sheet_write' && !config.sheetId) {
-                missingData = true;
-                if (window.ConsoleManager) window.ConsoleManager.log(`Node '${title}' (${nodeId}) missing Sheet ID. Using mock data.`, 'warning');
-            }
-            if (type === 'google_doc_read' && !config.docId) {
-                missingData = true;
-                if (window.ConsoleManager) window.ConsoleManager.log(`Node '${title}' (${nodeId}) missing Doc ID. Using mock data.`, 'warning');
-            }
-
-            nodes.push({
-                id: node.dataset.nodeId.replace('node-', ''),
-                type: node.dataset.type,
-                config: config
-            });
-        });
-
-        if (missingData) {
-            console.warn("Some nodes are missing configuration. System will use mock data.");
-            if (window.ConsoleManager) window.ConsoleManager.log("Warning: Some nodes are missing configuration. System will use mock data.", 'warning');
-        }
-
-        const edges = [];
-        const svg = document.getElementById('connectionLines');
-        if (svg) {
-            svg.querySelectorAll('.connection-line').forEach((line) => {
-                edges.push({ 
-                    from: line.dataset.source.replace('node-', ''), 
-                    to: line.dataset.target.replace('node-', '') 
-                });
-            });
-        }
-
-        const payload = { nodes, edges };
-        console.log("Executing Payload:", payload);
-        if (window.ConsoleManager) window.ConsoleManager.log(`Payload prepared: ${nodes.length} nodes, ${edges.length} edges`, 'debug');
-
         try {
+            const nodes = [];
+            let missingData = false;
+
+            document.querySelectorAll('.workflow-node').forEach((node) => {
+                let config = {};
+                try {
+                    config = node.dataset.config ? JSON.parse(node.dataset.config) : {};
+                } catch (e) {
+                    console.error('Invalid JSON in node config:', node.dataset.config);
+                    if (window.ConsoleManager) window.ConsoleManager.log(`Error parsing config for node ${node.dataset.nodeId || 'unknown'}. Resetting to default.`, 'error');
+                }
+                
+                const type = node.dataset.type;
+                const title = node.dataset.title || 'Untitled Node';
+                const nodeId = node.dataset.nodeId;
+
+                // Check for missing data
+                if (type === 'google_sheet_read' && !config.sheetId) {
+                    missingData = true;
+                    if (window.ConsoleManager) window.ConsoleManager.log(`Node '${title}' (${nodeId}) missing Sheet ID. Using mock data.`, 'warning');
+                }
+                if (type === 'google_sheet_write' && !config.sheetId) {
+                    missingData = true;
+                    if (window.ConsoleManager) window.ConsoleManager.log(`Node '${title}' (${nodeId}) missing Sheet ID. Using mock data.`, 'warning');
+                }
+                if (type === 'google_doc_read' && !config.docId) {
+                    missingData = true;
+                    if (window.ConsoleManager) window.ConsoleManager.log(`Node '${title}' (${nodeId}) missing Doc ID. Using mock data.`, 'warning');
+                }
+
+                if (node.dataset.nodeId) {
+                    nodes.push({
+                        id: node.dataset.nodeId.replace('node-', ''),
+                        type: node.dataset.type,
+                        config: config
+                    });
+                } else {
+                    console.warn(`Node '${title}' missing dataset.nodeId, skipping.`);
+                }
+            });
+
+            if (missingData) {
+                console.warn("Some nodes are missing configuration. System will use mock data.");
+                if (window.ConsoleManager) window.ConsoleManager.log("Warning: Some nodes are missing configuration. System will use mock data.", 'warning');
+            }
+
+            const edges = [];
+            const svg = document.getElementById('connectionLines');
+            if (svg) {
+                svg.querySelectorAll('.connection-line').forEach((line) => {
+                    if (line.dataset.source && line.dataset.target) {
+                        edges.push({ 
+                            from: line.dataset.source.replace('node-', ''), 
+                            to: line.dataset.target.replace('node-', '') 
+                        });
+                    } else {
+                         console.warn("Connection line missing source or target", line);
+                    }
+                });
+            }
+
+            const payload = { nodes, edges };
+            console.log("Executing Payload:", payload);
+            if (window.ConsoleManager) window.ConsoleManager.log(`Payload prepared: ${nodes.length} nodes, ${edges.length} edges`, 'debug');
+
             const response = await fetch('/api/workflow/execute', {
                 method: 'POST',
                 headers: {
@@ -1437,13 +1458,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 showNotification('Workflow failed: ' + (result.message || 'Unknown error'), 'error');
                 if (window.ConsoleManager) window.ConsoleManager.log(`Error details: ${result.message || 'Unknown error'}`, 'error');
             }
+
         } catch (error) {
             if (error.name === 'AbortError') {
                 if (window.ConsoleManager) window.ConsoleManager.log('Workflow execution aborted.', 'warning');
             } else {
                 console.error('Error executing workflow:', error);
-                showNotification('Network error executing workflow', 'error');
-                if (window.ConsoleManager) window.ConsoleManager.log(`Network error: ${error.message}`, 'error');
+                showNotification('Error executing workflow: ' + error.message, 'error');
+                if (window.ConsoleManager) window.ConsoleManager.log(`Execution Error: ${error.message}`, 'error');
             }
         } finally {
             executionController = null;
@@ -1724,9 +1746,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Load workflow if ID is present
     const urlParams = new URLSearchParams(window.location.search);
-    const workflowId = urlParams.get('id');
+    const workflowId = urlParams.get('id') || urlParams.get('scenario_id');
     
     if (workflowId) {
+        // Show loading modal
+        const loadingModalEl = document.getElementById('loadingModal');
+        let loadingModal;
+        if (loadingModalEl) {
+            loadingModal = new bootstrap.Modal(loadingModalEl);
+            loadingModal.show();
+        }
+
         // Try to load as Scenario first
         fetch(`/api/scenarios/${workflowId}`)
             .then(res => res.json())
@@ -1758,9 +1788,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             })
             .catch(() => {
-                // Fallback to Workflow loading
                 loadWorkflowById(workflowId);
+            })
+            .finally(() => {
+                // Hide loading modal
+                if (loadingModal) {
+                    setTimeout(() => loadingModal.hide(), 500); // Small delay for smooth transition
+                }
             });
+    } else {
+        // Just empty builder, ready to go
     }
 
     function loadWorkflowById(id) {
@@ -1905,7 +1942,13 @@ document.addEventListener('DOMContentLoaded', () => {
         if (settingsContainer) {
             settingsContainer.innerHTML = ''; // Clear previous settings
             const type = node.dataset.type;
-            const config = node.dataset.config ? JSON.parse(node.dataset.config) : {};
+            let config = {};
+            try {
+                config = node.dataset.config ? JSON.parse(node.dataset.config) : {};
+            } catch (e) {
+                console.error("Error parsing node config", e);
+                config = {};
+            }
             warnIfGoogleNode(type);
 
             let html = '';
@@ -2100,7 +2143,12 @@ document.addEventListener('DOMContentLoaded', () => {
             if (contentEl) contentEl.textContent = newDescription;
 
             // Save Config
-            const config = node.dataset.config ? JSON.parse(node.dataset.config) : {};
+            let config = {};
+            try {
+                config = node.dataset.config ? JSON.parse(node.dataset.config) : {};
+            } catch (e) {
+                console.error("Error parsing node config for saving", e);
+            }
             const type = node.dataset.type;
 
             if (type === 'google_sheet_read') {
@@ -2139,6 +2187,11 @@ document.addEventListener('DOMContentLoaded', () => {
             pushHistory({ type: 'edit', nodeId: node.dataset.nodeId, from: { title: oldTitle, description: oldDescription }, to: { title: newTitle, description: newDescription } });
             showNotification('Node updated', 'success');
         });
+    }
+
+    function hideZoomControls() {
+        const wrapper = document.querySelector('.zoom-controls');
+        if (wrapper) wrapper.style.display = 'none';
     }
 
     // Initially hide zoom controls until user clicks zoom mode

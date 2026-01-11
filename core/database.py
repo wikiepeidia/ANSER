@@ -800,29 +800,51 @@ class Database:
         return scenarios
     
     def get_scenario(self, scenario_id, user_id):
+        """Fetch a single scenario scoped to the current user.
+
+        We avoid type casting issues by doing two simple queries instead of a join.
+        """
         conn = self.get_connection()
         c = conn.cursor()
-        c.execute('''SELECT s.id, s.name, s.description, s.steps, s.conditions, 
-                           s.status, s.created_at, w.name as workspace_name
-                    FROM scenarios s
-                    JOIN workspaces w ON s.workspace_id = CAST(w.id AS VARCHAR)
-                    WHERE s.id = ? AND w.user_id = ?''', (scenario_id, user_id))
-        row = c.fetchone()
+
+        # Get the scenario row first
+        # DB Schema Inconsistency: scenarios.id is TEXT, but passed as int
+        c.execute('''SELECT id, workspace_id, name, description, steps, conditions, status, created_at
+                     FROM scenarios WHERE id = ?''', (str(scenario_id),))
+        scenario_row = c.fetchone()
+        if not scenario_row:
+            conn.close()
+            return None
+
+        scenario_workspace_id = scenario_row[1]
+
+        # DB Schema Inconsistency: workspace_id in scenarios is TEXT, but id in workspaces is BIGINT
+        try:
+            target_workspace_id = int(scenario_workspace_id)
+        except (ValueError, TypeError):
+            target_workspace_id = scenario_workspace_id
+
+        # Verify the workspace belongs to the user
+        c.execute('SELECT name FROM workspaces WHERE id = ? AND user_id = ?', (target_workspace_id, user_id))
+        workspace_row = c.fetchone()
+        if not workspace_row:
+            conn.close()
+            return None
+
+        workspace_name = workspace_row[0]
         conn.close()
-        
-        if row:
-            return {
-                'id': row[0],
-                'name': row[1],
-                'description': row[2],
-                'steps': row[3],
-                'conditions': row[4],
-                'active': row[5] == 'active',
-                'created_at': row[6],
-                'workspace_name': row[7],
-                'runs': 0
-            }
-        return None
+
+        return {
+            'id': scenario_row[0],
+            'name': scenario_row[2],
+            'description': scenario_row[3],
+            'steps': scenario_row[4],
+            'conditions': scenario_row[5],
+            'active': scenario_row[6] == 'active',
+            'created_at': scenario_row[7],
+            'workspace_name': workspace_name,
+            'runs': 0
+        }
     
     def create_scenario(self, user_id, name, description='', active=False, steps=None):
         conn = self.get_connection()

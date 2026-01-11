@@ -45,10 +45,11 @@
                 </a>
                 {% endif %}
             </div>
-            <div
-                style="margin-top: 15px; margin-bottom: 5px; font-weight: bold; color: var(--builder-muted); font-size: 0.8rem; letter-spacing: 1px;">
-                TOOLBOX</div>
-            <input type="text" id="toolSearch" class="search-input" placeholder="Search tools...">
+            <div class="category-title" style="margin-top: 24px;">TOOLBOX</div>
+            <div class="search-box p-0 border-0">
+                <input type="text" id="toolSearch" class="search-input" placeholder="Search tools...">
+                <i class="fas fa-search search-icon"></i>
+            </div>
 
             <!-- Tabs -->
             <ul class="nav nav-tabs nav-fill mt-2 mb-2" id="builderTabs" role="tablist"
@@ -531,6 +532,21 @@
             <div class="modal-footer border-0">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                 <button type="button" class="btn btn-primary" id="confirmSaveScenarioBtn">Save</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- Loading Modal -->
+<div class="modal fade" id="loadingModal" data-bs-backdrop="static" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content border-0 bg-transparent shadow-none">
+            <div class="modal-body text-center">
+                <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <h5 class="mt-3 text-white" style="text-shadow: 0 2px 4px rgba(0,0,0,0.5);">Loading Workflow...</h5>
             </div>
         </div>
     </div>
