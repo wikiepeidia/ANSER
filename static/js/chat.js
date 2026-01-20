@@ -1,230 +1,287 @@
 document.addEventListener('DOMContentLoaded', function() {
-    console.log("🚀 Chat Script v4.0 (Stop Generation) Loaded");
-    
-    // DOM Elements
-    const elements = {
-        input: document.getElementById('ai-chat-input'),
-        sendBtn: document.getElementById('ai-chat-send'),
-        messagesContainer: document.getElementById('ai-chat-messages'),
-        toggleBtn: document.getElementById('ai-chat-toggle'),
-        chatWindow: document.getElementById('ai-chat-window'),
-        closeBtn: document.getElementById('ai-chat-minimize'),
-        fileInput: document.getElementById('ai-chat-file-input'),
-        attachBtn: document.getElementById('ai-chat-attach-btn'),
-        filePreview: document.getElementById('ai-chat-file-preview'),
-        fileNameDisplay: document.getElementById('ai-chat-file-name'),
-        clearFileBtn: document.getElementById('ai-chat-clear-file')
-    };
+    console.log("🚀 Chat Script Final Loaded");
 
-    // State
+    const input = document.getElementById('ai-chat-input');
+    const sendBtn = document.getElementById('ai-chat-send');
+    const messagesContainer = document.getElementById('ai-chat-messages');
+    const toggleBtn = document.getElementById('ai-chat-toggle');
+    const chatWindow = document.getElementById('ai-chat-window');
+    const closeBtn = document.getElementById('ai-chat-minimize');
+    
+    // File Upload Elements
+    const fileInput = document.getElementById('ai-chat-file-input');
+    const attachBtn = document.getElementById('ai-chat-attach-btn');
+    const filePreview = document.getElementById('ai-chat-file-preview');
+    const fileNameDisplay = document.getElementById('ai-chat-file-name');
+    const clearFileBtn = document.getElementById('ai-chat-clear-file');
+
     let isProcessing = false;
     let currentFile = null;
-    let pollInterval = null;
-    let abortController = null; // Used to cancel requests
-    let activeUiId = null;
 
-    // --- TOGGLE CHAT ---
-    function toggleChat() {
-        if(!elements.chatWindow) return;
-        const isHidden = elements.chatWindow.hasAttribute('hidden');
-        if (isHidden) {
-            elements.chatWindow.removeAttribute('hidden');
-            setTimeout(() => { if(elements.input) elements.input.focus(); }, 100);
-        } else {
-            elements.chatWindow.setAttribute('hidden', '');
-        }
+    // --- 1. HISTORY LOADER ---
+    async function loadHistory() {
+        if (!messagesContainer) return;
+        try {
+            const res = await fetch('/api/ai/history');
+            const data = await res.json();
+            if (data.history && data.history.length > 0) {
+                messagesContainer.innerHTML = ''; 
+                data.history.forEach(msg => {
+                    const role = (msg.role === 'user') ? 'user' : 'bot';
+                    addMessage(msg.content, role);
+                });
+                scrollToBottom();
+            }
+        } catch(e) { console.error("History Error:", e); }
     }
-    if(elements.toggleBtn) elements.toggleBtn.addEventListener('click', toggleChat);
-    if(elements.closeBtn) elements.closeBtn.addEventListener('click', toggleChat);
+    loadHistory();
 
-    // --- FILE UPLOAD ---
-    if (elements.attachBtn && elements.fileInput) {
-        elements.attachBtn.addEventListener('click', () => elements.fileInput.click());
-        elements.fileInput.addEventListener('change', async (e) => {
+    // --- 2. TOGGLE ---
+    function toggleChat() {
+        if(!chatWindow) return;
+        chatWindow.hasAttribute('hidden') ? chatWindow.removeAttribute('hidden') : chatWindow.setAttribute('hidden', '');
+    }
+    if(toggleBtn) toggleBtn.addEventListener('click', toggleChat);
+    if(closeBtn) closeBtn.addEventListener('click', toggleChat);
+
+    // --- 3. FILE UPLOAD ---
+    if (attachBtn && fileInput) {
+        attachBtn.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', async (e) => {
             const file = e.target.files[0];
             if (!file) return;
-            elements.filePreview.style.display = 'flex';
-            elements.fileNameDisplay.innerHTML = '⏳ Uploading...';
+            filePreview.style.display = 'flex';
+            fileNameDisplay.innerHTML = '⏳ Uploading...';
             
             const formData = new FormData();
             formData.append('file', file);
             
             try {
-                const res = await fetch('/api/ai/upload', { method: 'POST', body: formData });
+                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+                const res = await fetch('/api/ai/upload', {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': csrfToken || '' },
+                    body: formData
+                });
                 const data = await res.json();
                 if (res.ok) {
                     currentFile = data.filename;
-                    elements.fileNameDisplay.innerHTML = '✅ ' + file.name;
+                    fileNameDisplay.innerHTML = '✅ ' + file.name;
                 } else {
-                    elements.fileNameDisplay.innerHTML = '❌ Failed';
+                    fileNameDisplay.innerHTML = '❌ Failed';
                 }
             } catch (e) {
-                elements.fileNameDisplay.innerHTML = '❌ Error';
+                fileNameDisplay.innerHTML = '❌ Error';
             }
         });
-        if (elements.clearFileBtn) elements.clearFileBtn.addEventListener('click', () => {
-            elements.fileInput.value = '';
-            elements.filePreview.style.display = 'none';
+        if (clearFileBtn) clearFileBtn.addEventListener('click', () => {
+            fileInput.value = '';
+            filePreview.style.display = 'none';
             currentFile = null;
         });
     }
 
-    // --- UI HELPERS ---
+    // --- 4. UI HELPERS ---
     function scrollToBottom() {
-        if(elements.messagesContainer) elements.messagesContainer.scrollTop = elements.messagesContainer.scrollHeight;
+        if (messagesContainer) messagesContainer.scrollTop = messagesContainer.scrollHeight;
     }
 
     function addMessage(text, role) {
+        // Try parsing JSON for Workflow cards (only for bot)
+        if (role === 'bot') {
+            try {
+                if (typeof text === 'string' && text.trim().startsWith('{')) {
+                    const data = JSON.parse(text);
+                    if (data.action === 'create_workflow') {
+                        renderWorkflowCard(data.text || `Created workflow: ${data.name}`, data.id);
+                        return;
+                    }
+                }
+            } catch(e) {}
+        }
+
         const div = document.createElement('div');
         div.className = `ai-message ai-message-${role}`;
         div.innerHTML = typeof marked !== 'undefined' ? marked.parse(text) : text;
-        elements.messagesContainer.appendChild(div);
+        messagesContainer.appendChild(div);
         scrollToBottom();
     }
 
-    // --- STOP LOGIC ---
-    function setProcessingState(processing) {
-        isProcessing = processing;
-        if (processing) {
-            // Change Send Button to Stop Button
-            elements.sendBtn.innerHTML = '<i class="fas fa-square"></i>'; // Stop Icon
-            elements.sendBtn.classList.add('stop');
-            elements.sendBtn.title = "Stop Generating";
-            elements.input.disabled = true;
+    // THIS IS THE LOGIC THAT PREVENTS JSON DUMPING
+    function renderWorkflowCard(text, id) {
+        let btnHtml = '';
+        if (id && id !== 'undefined') {
+            btnHtml = `<a href="/workspace/builder?load=${id}" class="wf-btn">Open Builder</a>`;
         } else {
-            // Revert to Send Button
-            elements.sendBtn.innerHTML = '<i class="fas fa-paper-plane"></i>';
-            elements.sendBtn.classList.remove('stop');
-            elements.sendBtn.title = "Send";
-            elements.input.disabled = false;
-            elements.input.focus();
+            btnHtml = `<span class="wf-btn" style="opacity:0.5; cursor:not-allowed;">ID Missing - Check History</span>`;
         }
+
+        const div = document.createElement('div');
+        div.className = 'ai-message ai-message-bot';
+        div.innerHTML = `
+            <div class="workflow-card">
+                <div class="wf-title">✅ Automation Created</div>
+                <div class="wf-desc">${typeof marked !== 'undefined' ? marked.parse(text) : text}</div>
+                ${btnHtml}
+            </div>`;
+        messagesContainer.appendChild(div);
+        scrollToBottom();
     }
 
-    function stopGeneration() {
-        console.log("🛑 User stopped generation.");
-        
-        // 1. Cancel Network Request
-        if (abortController) abortController.abort();
-        
-        // 2. Stop Polling
-        if (pollInterval) clearInterval(pollInterval);
-        
-        // 3. Remove UI Bubble
-        if (activeUiId) {
-            const el = document.getElementById(activeUiId);
-            if (el) {
-                el.innerHTML = '<span style="color:#ef4444; font-size:12px;">⛔ Stopped by user</span>';
-                setTimeout(() => el.remove(), 1000);
+    // --- 5. DEEP RESEARCH UI ---
+    const RESEARCH_STEPS = [
+        { icon: "🧠", text: "Analyzing Intent..." },
+        { icon: "🗄️", text: "Querying Database..." },
+        { icon: "📝", text: "Designing Workflow..." },
+        { icon: "⚙️", text: "Writing Code..." },
+        { icon: "💾", text: "Saving Workspace..." }
+    ];
+
+    function showDeepResearchUI() {
+        const id = 'process-' + Date.now();
+        const div = document.createElement('div');
+        div.id = id;
+        div.className = 'agent-process-container';
+        div.style.display = 'block';
+        div.innerHTML = `
+            <div class="process-header">
+                <div class="spinner-ring"></div>
+                <span id="${id}-status">Thinking...</span>
+            </div>
+            <div class="process-steps" id="${id}-steps"></div>
+        `;
+        messagesContainer.appendChild(div);
+        scrollToBottom();
+        return id;
+    }
+
+    function updateDeepResearchStep(id, stepIndex) {
+        const container = document.getElementById(id + '-steps');
+        const status = document.getElementById(id + '-status');
+        if (!container) return;
+        if (stepIndex < RESEARCH_STEPS.length) {
+            const step = RESEARCH_STEPS[stepIndex];
+            if(status) status.innerText = step.text;
+            const stepDiv = document.createElement('div');
+            stepDiv.className = 'step-item active';
+            stepDiv.innerHTML = `<span class="step-icon">${step.icon}</span> <span>${step.text}</span>`;
+            container.appendChild(stepDiv);
+            if (container.children.length > 1) {
+                const prev = container.children[container.children.length - 2];
+                prev.classList.remove('active');
+                prev.querySelector('.step-icon').innerText = '✅';
             }
+            scrollToBottom();
         }
-
-        // 4. Reset State
-        setProcessingState(false);
     }
 
-    // --- POLLING ---
-    async function pollJob(jobId, uiId) {
-        activeUiId = uiId;
-        pollInterval = setInterval(async () => {
+    function removeUI(id) {
+        const el = document.getElementById(id);
+        if (el) el.remove();
+    }
+
+    // --- 6. POLLING LOGIC ---
+    async function pollJob(jobId, uiId, uiTimer) {
+        const pollInterval = setInterval(async () => {
             try {
                 const res = await fetch(`/api/ai/status/${jobId}`);
                 const data = await res.json();
 
                 if (data.status === 'completed') {
+                    // DONE
                     clearInterval(pollInterval);
-                    document.getElementById(uiId)?.remove();
+                    if (uiTimer) clearInterval(uiTimer);
+                    removeUI(uiId);
+                    isProcessing = false;
+                    input.disabled = false;
                     
+                    // SMART SWITCH: JSON vs Card
                     if (data.action && data.action.action === 'workflow_created') {
-                        // Render Success Card
-                        const div = document.createElement('div');
-                        div.className = 'ai-message ai-message-bot';
-                        div.innerHTML = `
-                            <div class="workflow-card">
-                                <div class="wf-title">✅ Automation Created</div>
-                                <div class="wf-desc">${data.response}</div>
-                                <a href="/workspace/builder?load=${data.action.id}" class="wf-btn">Open Builder</a>
-                            </div>`;
-                        elements.messagesContainer.appendChild(div);
-                        scrollToBottom();
+                        renderWorkflowCard(data.response, data.action.id);
                     } else {
                         addMessage(data.response, 'bot');
                     }
-                    setProcessingState(false);
+                    input.focus();
                 } 
                 else if (data.status === 'failed') {
+                    // FAILED
                     clearInterval(pollInterval);
-                    document.getElementById(uiId)?.remove();
-                    addMessage(`❌ AI Error: ${data.error}`, 'bot');
-                    setProcessingState(false);
+                    if (uiTimer) clearInterval(uiTimer);
+                    removeUI(uiId);
+                    isProcessing = false;
+                    input.disabled = false;
+                    addMessage(`❌ Error: ${data.error}`, 'bot');
                 }
-            } catch (e) {
-                console.error("Polling Error:", e);
-            }
-        }, 1000);
+            } catch(e) { console.error(e); }
+        }, 1500);
     }
 
-    // --- SEND MESSAGE ---
+    // --- 7. SEND LOGIC ---
     async function sendMessage() {
-        // If already processing, clicking the button means STOP
-        if (isProcessing) {
-            stopGeneration();
-            return;
-        }
-
-        const text = elements.input.value.trim();
-        if (!text && !currentFile) return;
+        const text = input.value.trim();
+        if(!text && !currentFile) return;
+        if (isProcessing) return;
 
         addMessage(text || (currentFile ? '[Sent File]' : ''), 'user');
-        elements.input.value = '';
-        
-        // Clear file
-        if(elements.fileInput) elements.fileInput.value = '';
-        if(elements.filePreview) elements.filePreview.style.display = 'none';
+        input.value = '';
+        input.disabled = true;
+        isProcessing = true;
+        if(fileInput) fileInput.value = '';
+        if(filePreview) filePreview.style.display = 'none';
 
-        // Set State & Abort Controller
-        setProcessingState(true);
-        abortController = new AbortController();
-        const signal = abortController.signal;
+        // UI Choice
+        const complexKeywords = /tạo|create|build|workflow|quy trình|tự động|auto|doanh thu|sales/i;
+        let uiId = null;
+        let uiTimer = null;
+        let step = 0;
 
-        // Show UI
-        const uiId = 'thinking-' + Date.now();
-        activeUiId = uiId;
-        const uiDiv = document.createElement('div');
-        uiDiv.id = uiId;
-        uiDiv.className = 'agent-process-container';
-        uiDiv.style.display = 'block';
-        uiDiv.innerHTML = `
-            <div class="process-header">
-                <div class="spinner-ring"></div>
-                <span>Analyzing Request...</span>
-            </div>
-            <div class="process-steps"></div>`;
-        elements.messagesContainer.appendChild(uiDiv);
-        scrollToBottom();
+        if (complexKeywords.test(text)) {
+            uiId = showDeepResearchUI();
+            uiTimer = setInterval(() => updateDeepResearchStep(uiId, step++), 1500);
+        } else {
+            // Simple typing indicator
+            uiId = 'typing-' + Date.now();
+            const div = document.createElement('div');
+            div.id = uiId;
+            div.className = 'ai-message ai-message-bot';
+            div.style.color = '#888';
+            div.style.fontStyle = 'italic';
+            div.innerHTML = `<span class="spinner-ring" style="display:inline-block; width:10px; height:10px; border-width:1px; margin-right:5px;"></span> Project A is typing...`;
+            messagesContainer.appendChild(div);
+            scrollToBottom();
+        }
 
         try {
             const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-            
             const res = await fetch('/api/ai/chat', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken || '' },
-                body: JSON.stringify({ message: text }),
-                signal: signal // Attach abort signal
+                body: JSON.stringify({ message: text })
             });
             const data = await res.json();
 
             if (data.status === 'completed') {
-                document.getElementById(uiId)?.remove();
+                // Instant
+                if (uiTimer) clearInterval(uiTimer);
+                removeUI(uiId);
+                isProcessing = false;
+                input.disabled = false;
                 addMessage(data.response, 'bot');
-                setProcessingState(false);
             } else if (data.job_id) {
-                pollJob(data.job_id, uiId);
+                // Async
+                pollJob(data.job_id, uiId, uiTimer);
             } else {
-                throw new Error("Invalid Server Response");
+                throw new Error("Invalid response");
             }
-
         } catch (e) {
-            if (e.name === 'AbortError') {
-                // Handled in stopGeneration
-            } else {
+            if (uiTimer) clearInterval(uiTimer);
+            removeUI(uiId);
+            isProcessing = false;
+            input.disabled = false;
+            addMessage(`❌ Error: ${e.message}`, 'bot');
+        }
+    }
+
+    if(sendBtn) sendBtn.addEventListener('click', sendMessage);
+    if(input) input.addEventListener('keypress', e => { if(e.key==='Enter') sendMessage(); });
+});

@@ -1,3 +1,13 @@
+import os
+import sys
+import json
+import uuid
+import time
+import threading
+import requests
+import secrets
+from datetime import datetime, timedelta
+
 from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify
 from werkzeug.middleware.proxy_fix import ProxyFix
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
@@ -5,10 +15,10 @@ from flask_wtf.csrf import CSRFProtect, CSRFError, generate_csrf
 from flask_talisman import Talisman 
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+from authlib.integrations.flask_client import OAuth
+
+# Core Imports
 from core.database import Database
-import uuid
-import time
-import requests
 from core.auth import AuthManager
 from core.config import Config
 from core.utils import Utils
@@ -17,15 +27,7 @@ from core.workflow_engine import execute_workflow
 from core.services.dl_client import DLClient
 from core.services.analytics_service import analytics_service
 from core.automation_engine import AutomationEngine
-from datetime import datetime, timedelta
-from authlib.integrations.flask_client import OAuth
 from core.agent_middleware import AgentMiddleware 
-import secrets
-import os
-import json
-import sqlite3
-import sys
-import threading
 sys.stdout.reconfigure(encoding='utf-8')
 
 # Allow OAuth over HTTP for local development
@@ -134,6 +136,8 @@ app.extensions['database'] = db_manager
 # In-Memory Job Store (For Async AI Tasks)
 # Structure: { job_id: { "status": "processing", "result": None, "start_time": timestamp } }
 AI_JOBS = {}
+JOBS_DIR = os.path.join(os.getcwd(), 'jobs')
+os.makedirs(JOBS_DIR, exist_ok=True)
 
 # Central subscription plans (used in wallet/subscription logic)
 SUBSCRIPTION_PLANS = {
@@ -245,8 +249,8 @@ def load_user(user_id):
             return User(
                 user_data['id'], 
                 user_data['email'], 
-                user_data['first_name'], 
-                user_data['last_name'],
+                user_data.get('first_name', ''), 
+                user_data.get('last_name', ''),
                 user_data.get('role', 'user'), 
                 user_data.get('google_token'),
                 user_data.get('avatar')
@@ -330,16 +334,7 @@ app.register_blueprint(auth_bp, url_prefix='/auth')
 
 # Main routes
 @app.route('/')
-def index():
-    if current_user.is_authenticated:
-     # Check user role and redirect accordingly
-        user_data = auth_manager.get_user_by_id(current_user.id)
-        if user_data and user_data.get('role') == 'admin':
-            return redirect(url_for('admin_workspace'))  # Admin goes to admin workspace
-        else:
-            return redirect(url_for('workspace'))  # Regular user goes to workspace
-    return render_template('index.html')  # Show login page
-
+def index(): return redirect(url_for('workspace')) if current_user.is_authenticated else render_template('signin.html')
 
 @app.route('/admin')
 @login_required
@@ -556,12 +551,7 @@ def delete_sale(sale_id):
 
 @app.route('/workspace')
 @login_required
-def workspace():
-     # Redirect admin users to admin dashboard (admin workspace)
-    #user_data = auth_manager.get_user_by_id(current_user.id)
-    #if user_data and user_data.get('role') == 'admin':
-        #return redirect(url_for('admin_workspace'))
-    return render_template('workspace.html', user=current_user)  # Regular users see user dashboard
+def workspace(): return render_template('workspace.html', user=current_user)
 
 def get_settings_config():
     return {
@@ -728,8 +718,7 @@ def scenarios():
 
 @app.route('/workspace/builder')
 @login_required
-def workspace_builder():
-    return render_template('workspace_builder.html', user=current_user)
+def workspace_builder(): return render_template('workspace_builder.html', user=current_user)
 
 # Workspace API Routes
 @app.route('/api/workspaces')
@@ -2933,6 +2922,7 @@ def google_authorize():
         # Receive token from Google
         token = google.authorize_access_token()
         user_info = token['userinfo']  # Include email, name, picture
+        email = user_info['email'] # Extract email early
 
         # Normalize token to the format expected by google.oauth2.credentials.Credentials
         normalized_token = {
@@ -2967,7 +2957,7 @@ def google_authorize():
             # Redirect to builder if that's where they came from, or workspace
             return redirect(url_for('workspace_builder'))
 
-        email = user_info['email']
+        # email = user_info['email'] # Already extracted above
         name = user_info.get('name', 'Google User')
         
         # Check user in database
@@ -2991,10 +2981,11 @@ def google_authorize():
             # User already exists -> Get ID
             user_id = user_row[0]
             role = user_row[1]
-            # Update token - ALWAYS update with new token to ensure freshness
-            # Note: If we matched by google_email, we should update google_token. 
-            # If we matched by email, we also update google_token (and maybe google_email to be sure).
-            c.execute("UPDATE users SET google_token = ?, google_email = ? WHERE id = ?", (token_json, email, user_id))
+            
+            # Update token AND avatar - Ensure we have the latest profile pic
+            avatar_url = user_info.get('picture')
+            c.execute("UPDATE users SET google_token = ?, google_email = ?, avatar = ? WHERE id = ?", 
+                     (token_json, email, avatar_url, user_id))
             conn.commit()
         else:
             # User does not exist -> Automatically register new
@@ -3333,6 +3324,7 @@ def run_dl_service():
 
 @app.route('/api/ai/upload', methods=['POST'])
 @login_required
+@csrf.exempt
 def ai_upload():
     """Forward file uploads to AI Service"""
     if 'file' not in request.files:
@@ -3374,110 +3366,153 @@ def ai_upload():
 JOBS_DIR = os.path.join(os.getcwd(), 'jobs')
 os.makedirs(JOBS_DIR, exist_ok=True)
 
-def save_job(job_id, data):
-    """Saves job data to a JSON file."""
-    with open(os.path.join(JOBS_DIR, f"{job_id}.json"), 'w') as f:
-        json.dump(data, f)
-
-def load_job(job_id):
-    """Loads job data from a JSON file."""
+# --- JOB HELPERS ---
+def save_job_file(job_id, data):
+    with open(os.path.join(JOBS_DIR, f"{job_id}.json"), 'w') as f: json.dump(data, f)
+def load_job_file(job_id):
     try:
-        with open(os.path.join(JOBS_DIR, f"{job_id}.json"), 'r') as f:
-            return json.load(f)
-    except FileNotFoundError:
-        return None
+        with open(os.path.join(JOBS_DIR, f"{job_id}.json"), 'r') as f: return json.load(f)
+    except: return None
 
 def background_ai_task(job_id, user_id, message):
-    print(f"🧵 [Job {job_id}] Processing...")
-    
-    # Update status to processing
-    save_job(job_id, {"status": "processing", "start_time": time.time()})
-
+    save_job_file(job_id, {"status": "processing", "start_time": time.time()})
     try:
-        # 1. Config
+        # Re-init for thread safety
+        db = Database()
+        mw = AgentMiddleware(db)
+        
+        # 1. Fetch History
+        history_str = db.get_ai_history(user_id, limit=6)
+        
+        # 2. Config & Context
         with open('secrets/ai_config.json') as f:
-            config = json.load(f)
-            hf_token = config.get('HF_TOKEN')
-            hf_base_url = config.get('HF_BASE_URL')
-
-        # 2. Context
-        # Re-init middleware inside thread to ensure DB connection is fresh
-        db_thread = Database()
-        mw_thread = AgentMiddleware(db_thread)
-        system_context = mw_thread.get_system_context()
+            conf = json.load(f)
+            url = conf.get('HF_BASE_URL').rstrip('/') + '/chat'
+            token = conf.get('HF_TOKEN')
+            
+        system_context = mw.get_system_context()
+        full_msg = f"[SYSTEM CONTEXT]\n{system_context}\n\n[CONVERSATION HISTORY]\n{history_str}\n\n[USER REQUEST]\n{message}"
         
-        full_payload = f"[SYSTEM CONTEXT]\n{system_context}\n[USER REQUEST]\n{message}"
-
         # 3. Request
-        target_url = f"{hf_base_url.rstrip('/')}/chat"
         headers = {"Content-Type": "application/json"}
-        if hf_token: headers["Authorization"] = f"Bearer {hf_token}"
+        if token: headers["Authorization"] = f"Bearer {token}"
         
-        response = requests.post(target_url, headers=headers, json={
-            "user_id": user_id, "store_id": 1, "message": full_payload
-        }, timeout=300)
-
-        if response.status_code == 200:
-            data = response.json()
-            ai_text = data.get('response', '')
+        res = requests.post(url, json={"user_id": user_id, "store_id": 1, "message": full_msg}, headers=headers, timeout=120)
+        
+        if res.status_code == 200:
+            ai_resp = res.json()
+            ai_text = ai_resp.get('response', '')
             
-            # 4. Actions
-            final_response, action_meta = mw_thread.process_ai_response(ai_text, user_id)
+            # Process Actions FIRST to get clean text/metadata
+            final_text, action = mw.process_ai_response(ai_text, user_id)
             
-            # 5. SAVE SUCCESS
-            save_job(job_id, {
-                "status": "completed",
-                "response": final_response,
-                "action": action_meta
-            })
-            print(f"✅ [Job {job_id}] Finished.")
+            # Decide what to save to DB History
+            msg_to_save = final_text
+            if action and action.get('action') == 'workflow_created':
+                # Save structured JSON so chat history can re-render the card
+                import json
+                structured = {
+                    "action": "create_workflow",
+                    "id": action.get('id'),
+                    "name": action.get('name', 'Workflow'),
+                    "text": final_text
+                }
+                msg_to_save = json.dumps(structured)
+            
+            # Save to DB
+            db.add_ai_message(user_id, 'assistant', msg_to_save)
+            
+            save_job_file(job_id, {"status": "completed", "response": final_text, "action": action})
         else:
-            save_job(job_id, {"status": "failed", "error": f"AI Error: {response.text}"})
-
+            save_job_file(job_id, {"status": "failed", "error": f"AI Error {res.status_code}"})
+            
     except Exception as e:
-        print(f"❌ [Job {job_id}] Crash: {e}")
-        save_job(job_id, {"status": "failed", "error": str(e)})
+        save_job_file(job_id, {"status": "failed", "error": str(e)})
+
+# --- ROUTES ---
+
+
 
 @app.route('/api/ai/chat', methods=['POST'])
 @login_required
+@csrf.exempt
 def ai_chat():
     data = request.get_json()
-    message = data.get('message', '').strip()
-    if not message: return jsonify({'error': 'Message required'}), 400
+    msg = data.get('message', '').strip()
+    if not msg: return jsonify({'error': 'Empty message'}), 400
 
-    job_id = str(uuid.uuid4())
+    # Save User Message to DB
+    db_manager.add_ai_message(current_user.id, 'user', msg)
 
-    # 1. LOCAL REFLEX
+    # Local Reflex
     greetings = ["xin chào", "hello", "hi", "chào"]
-    if any(message.lower().startswith(g) for g in greetings) and len(message) < 20:
-        return jsonify({
-            "status": "completed",
-            "response": "Xin chào! Tôi có thể giúp gì cho bạn hôm nay?",
-            "action": None
-        })
+    if any(msg.lower().startswith(g) for g in greetings) and len(msg) < 20:
+        reply = "Xin chào! Tôi là trợ lý ảo Project A. Tôi có thể giúp bạn tạo quy trình tự động hóa hoặc tra cứu dữ liệu."
+        db_manager.add_ai_message(current_user.id, 'assistant', reply)
+        return jsonify({"status": "completed", "response": reply, "action": None})
 
-    # 2. ASYNC START
-    save_job(job_id, {"status": "processing", "start_time": time.time()})
-    
-    thread = threading.Thread(target=background_ai_task, args=(job_id, current_user.id, message))
-    thread.daemon = True
-    thread.start()
-    
+    # Async Job
+    job_id = str(uuid.uuid4())
+    save_job_file(job_id, {"status": "pending"})
+    threading.Thread(target=background_ai_task, args=(job_id, current_user.id, msg)).start()
     return jsonify({"status": "processing", "job_id": job_id})
+
+
+@app.route('/api/ai/history', methods=['GET'])
+@login_required
+def get_chat_history():
+    try:
+        conn = db_manager.get_connection()
+        c = conn.cursor()
+        # FIX: Order by created_at ASC (Oldest first for chat log)
+        c.execute("SELECT role, content FROM ai_chat_history WHERE user_id = ? ORDER BY created_at ASC LIMIT 50", (current_user.id,))
+        rows = c.fetchall()
+        conn.close()
+        return jsonify({'history': [{'role': r[0], 'content': r[1]} for r in rows]})
+    except Exception as e:
+        print(f"History Error: {e}")
+        return jsonify({'history': []})
 
 @app.route('/api/ai/status/<job_id>', methods=['GET'])
 @login_required
 def ai_job_status(job_id):
-    job = load_job(job_id)
-    if not job:
-        return jsonify({"status": "failed", "error": "Job file not found"}), 404
+    job = load_job_file(job_id)
+    if not job: return jsonify({"status": "failed", "error": "Job not found"}), 404
     return jsonify(job)
+
+# 2. GET SINGLE WORKFLOW (For Builder Loading)
+@app.route('/api/workflows/<int:workflow_id>', methods=['GET'])
+@login_required
+def get_single_workflow(workflow_id):
+    try:
+        conn = db_manager.get_connection()
+        c = conn.cursor()
+        c.execute('SELECT id, name, data FROM workflows WHERE id = ?', (workflow_id,))
+        row = c.fetchone()
+        conn.close()
+        if row:
+            # Parse JSON safely
+            flow_data = json.loads(row[2]) if row[2] else {}
+            return jsonify({'success': True, 'data': flow_data, 'name': row[1]})
+        return jsonify({'success': False}), 404
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    
+@app.route('/api/ai/history', methods=['DELETE'])
+@login_required
+def clear_chat_history():
+    try:
+        conn = db_manager.get_connection()
+        c = conn.cursor()
+        c.execute("DELETE FROM ai_chat_history WHERE user_id = ?", (current_user.id,))
+        conn.commit()
+        conn.close()
+        return jsonify({'status': 'success', 'message': 'History cleared'})
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
 
 
 if __name__ == '__main__':
-    app.run(
-        host='0.0.0.0',
-        port=5000,
-        debug=False,
-        use_reloader=False
-    )
+    db_manager.init_database()
+    app.run(host='0.0.0.0', port=5000, debug=True, use_reloader=False)

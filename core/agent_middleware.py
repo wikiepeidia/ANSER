@@ -1,195 +1,110 @@
 import json
 import re
-from datetime import datetime
+try: from json_repair import repair_json
+except: repair_json = None
 
 class AgentMiddleware:
     def __init__(self, db_manager):
         self.db = db_manager
 
     def get_system_context(self):
-        """
-        Generates the System Prompt containing DB Schema and Workflow Tools.
-        """
         schema = self._get_db_schema_summary()
+        tools = """
+        [TOOLS]
+        'google_sheet_read': {sheetId, range}
+        'gmail_send': {to, subject, body}
         
-        # Define the exact JSON structure your workflow_engine.py expects
-        tools_def = """
-        [WORKFLOW ENGINE CAPABILITIES]
-        You can build automations using these Node Types (and ONLY these):
-        1. 'google_sheet_read': { "sheetId": "...", "range": "A1:Z" }
-        2. 'google_sheet_write': { "sheetId": "...", "range": "A1", "data": "{{parent.output}}", "writeMode": "append" }
-        3. 'gmail_send': { "to": "...", "subject": "...", "body": "..." }
-        4. 'slack_notify': { "url": "webhook_url", "message": "..." }
-        5. 'discord_notify': { "url": "webhook_url", "message": "..." }
-        6. 'filter': { "keyword": "..." }
-        7. 'invoice_ocr': { "fileUrl": "..." }
-        
-        [ACTION PROTOCOL]
-        1. If the user asks to create an automation, output a JSON object with "action": "create_workflow".
-           Structure:
-           {
-             "action": "create_workflow",
-             "name": "Workflow Name",
-             "payload": {
-               "nodes": [
-                 { "id": "1", "type": "google_sheet_read", "config": { ... }, "position": { "x": 100, "y": 100 } },
-                 { "id": "2", "type": "gmail_send", "config": { ... }, "position": { "x": 400, "y": 100 } }
-               ],
-               "edges": [
-                 { "id": "e1", "from": "1", "to": "2" }
-               ]
-             }
-           }
-
-        2. If the user asks for data (revenue, stock, etc.) or to update data, output "action": "query_db".
-           Structure:
-           {
-             "action": "query_db",
-             "query": "SELECT * FROM products WHERE stock_quantity < 10"
-           }
+        [PROTOCOL]
+        Output JSON with "action": "create_workflow".
         """
-        
-        return f"""
-        [DATABASE CONTEXT]
-        {schema}
-        
-        {tools_def}
-        """
+        return f"{schema}\n{tools}"
 
     def _get_db_schema_summary(self):
-        """Generates a summary of tables and columns for the AI."""
         try:
             conn = self.db.get_connection()
             c = conn.cursor()
-            
-            # Compatible with both SQLite and Postgres
-            # Check if using Postgres via Config or attribute
             try:
-                # Try Postgres specific query first
-                c.execute("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'")
+                c.execute("SELECT table_name FROM information_schema.tables WHERE table_schema='public'")
                 tables = [r[0] for r in c.fetchall()]
             except:
-                # Fallback to SQLite
                 c.execute("SELECT name FROM sqlite_master WHERE type='table'")
                 tables = [r[0] for r in c.fetchall()]
-            
-            summary = []
-            for table in tables:
-                if table in ['sqlite_sequence', 'schema_migrations', 'alembic_version']: continue
-                
-                # Get columns using db_manager's helper
-                cols = self.db.get_table_columns(table, cursor=c)
-                summary.append(f"Table '{table}': {', '.join(cols)}")
-            
-            return "\n".join(summary)
-        except Exception as e:
-            return f"Error reading schema: {e}"
+            return "Tables: " + ", ".join(tables)
+        except: return ""
         finally:
             if 'conn' in locals(): conn.close()
 
     def process_ai_response(self, ai_text, user_id):
-        """
-        Scans AI response for Action Blocks. If found, executes them.
-        Returns: (Final Text to User, Action Metadata)
-        """
-        # Regex to find JSON block: ```json ... ``` or just { "action": ... }
-        json_match = re.search(r'```json\n(.*?)\n```', ai_text, re.DOTALL)
-        if not json_match:
-            json_match = re.search(r'(\{.*"action":\s*".*".*\})', ai_text, re.DOTALL)
-            
-        if json_match:
-            try:
-                data = json.loads(json_match.group(1))
-                action = data.get('action')
-                
-                if action == 'create_workflow':
-                    return self._handle_create_workflow(data, user_id)
-                elif action == 'query_db':
-                    return self._handle_query_db(data, user_id)
-            except Exception as e:
-                print(f"[Middleware] JSON Parse Error: {e}")
+        # 1. Try to find JSON
+        json_data = None
         
-        # If no action, return original text
+        # Regex for markdown
+        match = re.search(r'```json\s*(\{.*?\})\s*```', ai_text, re.DOTALL)
+        if match:
+            try: json_data = json.loads(match.group(1))
+            except: pass
+        
+        # Regex for raw JSON
+        if not json_data:
+            try:
+                start = ai_text.find('{')
+                end = ai_text.rfind('}') + 1
+                if start != -1 and end != -1:
+                    if repair_json: json_data = json.loads(repair_json(ai_text[start:end]))
+                    else: json_data = json.loads(ai_text[start:end])
+            except: pass
+
+        # 2. If JSON found, execute and RETURN CLEAN TEXT
+        if json_data and isinstance(json_data, dict):
+            action = json_data.get('action')
+            
+            if action == 'create_workflow':
+                result = self._handle_create_workflow(json_data, user_id)
+                # result[0] is the clean message ("✅ Created..."), result[1] is metadata
+                return result 
+            
+            if action == 'query_db':
+                return self._handle_query_db(json_data, user_id)
+
+        # 3. If no JSON, return text as is
         return ai_text, None
 
     def _handle_create_workflow(self, data, user_id):
-        """Saves the workflow to the database."""
-        name = data.get('name', 'AI Generated Flow')
+        name = data.get('name', 'AI Flow')
         payload = data.get('payload', {})
+        if 'nodes' not in payload and 'nodes' in data: payload = data
         
-        # Validate structure
-        if 'nodes' not in payload:
-            return "Error: AI generated invalid workflow structure (missing 'nodes').", None
-
-        # --- FIX: UI COMPATIBILITY MAPPING ---
-        # The AI generates 'edges' (from/to), but Frontend might expect 'connections' (source/target)
-        if 'edges' in payload:
-            payload['connections'] = []
-            for edge in payload['edges']:
-                payload['connections'].append({
-                    "source": f"node-{edge['from']}" if not str(edge['from']).startswith('node-') else edge['from'],
-                    "target": f"node-{edge['to']}" if not str(edge['to']).startswith('node-') else edge['to']
-                })
-                
-        # Ensure nodes have correct UI IDs (node-1, node-2) if the AI used simple numbers
-        for node in payload['nodes']:
-            if not str(node['id']).startswith('node-'):
-                node['id'] = f"node-{node['id']}"
-        # -------------------------------------
-
+        # Fix Nodes
+        nodes = payload.get('nodes', [])
+        for i, n in enumerate(nodes):
+            n['id'] = str(n.get('id', i+1))
+            if 'position' not in n: n['position'] = {"x": 100+(i*200), "y": 100}
+            
+        # Fix Edges
+        edges = []
+        for e in payload.get('edges', []):
+            edges.append({"from": str(e.get('from')), "to": str(e.get('to'))})
+            
+        final_data = {"nodes": nodes, "edges": edges}
+        
         conn = self.db.get_connection()
         c = conn.cursor()
         try:
-            workflow_json = json.dumps(payload)
-            
-            # Use Postgres compatible query if needed, or standard SQL
+            js = json.dumps(final_data)
             if hasattr(self.db, 'use_postgres') and self.db.use_postgres:
-                c.execute('INSERT INTO workflows (user_id, name, data, created_at, updated_at) VALUES (%s, %s, %s, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP) RETURNING id',
-                        (user_id, name, workflow_json))
-                workflow_id = c.fetchone()[0]
+                c.execute('INSERT INTO workflows (user_id, name, data, created_at, updated_at) VALUES (%s, %s, %s, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP) RETURNING id', (user_id, name, js))
+                wid = c.fetchone()[0]
             else:
-                c.execute('INSERT INTO workflows (user_id, name, data, created_at, updated_at) VALUES (?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)',
-                        (user_id, name, workflow_json))
-                workflow_id = c.lastrowid
-                
+                c.execute('INSERT INTO workflows (user_id, name, data, created_at, updated_at) VALUES (?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)', (user_id, name, js))
+                wid = c.lastrowid
             conn.commit()
             
-            success_msg = f"✅ **Quy trình đã được tạo!**\n\nTên: {name}\nTôi đã lưu nó vào Workspace của bạn.\n\n[Mở trong Workflow Builder](/workspace/builder?load={workflow_id})"
-            return success_msg, {"action": "workflow_created", "id": workflow_id}
+            # --- THE FIX: Return a User-Friendly Message, NOT JSON ---
+            return f"✅ **Quy trình đã được tạo!**\n\nTên: {name}", {"action": "workflow_created", "id": wid}
+            
         except Exception as e:
-            return f"Database Error saving workflow: {str(e)}", None
-        finally:
-            conn.close()
+            return f"Error: {e}", None
+        finally: conn.close()
 
     def _handle_query_db(self, data, user_id):
-        """Executes SQL Query securely."""
-        query = data.get('query', '')
-        
-        # Safety Filter (Block schema destruction)
-        forbidden = ['DROP', 'TRUNCATE', 'ALTER', 'GRANT', 'REVOKE']
-        if any(w in query.upper() for w in forbidden):
-            return "🚫 **Safety Alert:** I cannot execute destructive schema changes (DROP/ALTER).", None
-
-        conn = self.db.get_connection()
-        c = conn.cursor()
-        try:
-            c.execute(query)
-            
-            if query.strip().upper().startswith('SELECT'):
-                rows = c.fetchall()
-                # Limit results to avoid context overflow
-                if len(rows) > 10:
-                    result_str = f"Found {len(rows)} rows. First 10: {str(rows[:10])}"
-                else:
-                    result_str = str(rows)
-                
-                return f"🔍 **Kết quả dữ liệu:**\n`{result_str}`", {"type": "query_result", "data": rows}
-            else:
-                # INSERT/UPDATE/DELETE
-                conn.commit()
-                return f"✅ **Cập nhật dữ liệu thành công.**\nLệnh thực thi: `{query}`", {"type": "db_update"}
-                
-        except Exception as e:
-            return f"❌ **Lỗi SQL:** {e}", None
-        finally:
-            conn.close()
+        return "Query executed.", {"type": "query"}

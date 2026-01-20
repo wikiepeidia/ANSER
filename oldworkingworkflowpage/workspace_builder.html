@@ -19,7 +19,7 @@
             </a>
             <div class="user-menu">
                 <div class="user-avatar">
-                    {% if current_user.avatar %}
+                    {% if current_user.google_token %}
                     <img src="{{ current_user.avatar }}" alt="Avatar"
                         style="width: 100%; height: 100%; border-radius: 50%;">
                     {% else %}
@@ -555,5 +555,5 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="{{ url_for('static', filename='js/workspace_builder.js') }}?v=9999"></script>
+<script src="{{ url_for('static', filename='js/workspace_builder.js') }}"></script>
 {% endblock %}

@@ -1,7 +1,4 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // Shared URL Params
-    const urlParams = new URLSearchParams(window.location.search);
-
     const toolSearch = document.getElementById('toolSearch');
     const toolItems = Array.from(document.querySelectorAll('.tool-item'));
     const propertyPanel = document.getElementById('propertyPanel');
@@ -1583,12 +1580,12 @@ document.addEventListener('DOMContentLoaded', () => {
     window.saveWorkflow = function() {
         // Determine Scenario ID
         // We prioritize builderState.scenarioId, then URL param 'scenario_id', then URL param 'id'
-        // const urlParams = new URLSearchParams(window.location.search); // Already defined
+        const urlParams = new URLSearchParams(window.location.search);
         let scenarioId = builderState.scenarioId || urlParams.get('scenario_id') || urlParams.get('id');
         
         const currentNameInput = document.querySelector('.workflow-name-input');
         let defaultName = currentNameInput ? currentNameInput.value : 'Untitled Automation';
-
+        
         if (scenarioId) {
             // Update existing scenario - Show confirmation
             if (!confirm(`Save changes to "${defaultName}"?`)) {
@@ -1747,7 +1744,8 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // const urlParams = new URLSearchParams(window.location.search); // Already defined
+    // Load workflow if ID is present
+    const urlParams = new URLSearchParams(window.location.search);
     const workflowId = urlParams.get('id') || urlParams.get('scenario_id');
     
     if (workflowId) {
@@ -1818,91 +1816,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    function normalizeWorkflowData(rawData) {
-        let data = rawData;
-
-        if (typeof data === 'string') {
-            try {
-                data = JSON.parse(data);
-            } catch (e) {
-                console.error('normalizeWorkflowData: unable to parse string JSON', e);
-                return null;
-            }
-        }
-
-        if (data && data.payload && (data.payload.nodes || data.payload.edges || data.payload.connections)) {
-            data = data.payload;
-        }
-
-        if (!data || typeof data !== 'object') {
-            return null;
-        }
-
-        const inferCategoryFromType = (type) => {
-            const t = (type || '').toLowerCase();
-            if (t.includes('trigger')) return 'trigger';
-            if (t.includes('sheet') || t.includes('gmail') || t.includes('mail') || t.includes('google')) return 'integration';
-            if (t.includes('ai') || t.includes('llm')) return 'ai';
-            if (t.includes('filter') || t.includes('logic')) return 'logic';
-            return 'custom';
-        };
-
-        const formatTypeLabel = (type) => {
-            if (!type) return 'Custom Step';
-            return String(type)
-                .replace(/[_-]+/g, ' ')
-                .replace(/\b\w/g, c => c.toUpperCase());
-        };
-
-        const normalizeNodeId = (id, index) => {
-            const baseId = id != null ? String(id) : String(index + 1);
-            return baseId.startsWith('node-') ? baseId : `node-${baseId}`;
-        };
-
-        const nodes = Array.isArray(data.nodes) ? data.nodes : [];
-        const normalizedNodes = nodes.map((nodeData, index) => {
-            const normalizedId = normalizeNodeId(nodeData.id, index);
-            const type = nodeData.type || nodeData.tool || nodeData.module || 'custom';
-            const category = nodeData.category || inferCategoryFromType(type);
-            const title = nodeData.title || nodeData.name || formatTypeLabel(type);
-            const description = nodeData.description || '';
-            const position = nodeData.position || {};
-            const left = nodeData.left ?? nodeData.x ?? position.x ?? (100 + index * 220);
-            const top = nodeData.top ?? nodeData.y ?? position.y ?? (100 + index * 120);
-            const config = nodeData.config || nodeData.params || {};
-
-            return {
-                id: normalizedId,
-                title,
-                category,
-                type,
-                description,
-                left,
-                top,
-                config
-            };
-        });
-
-        const normalizedConnections = [];
-        const connections = Array.isArray(data.connections) ? data.connections : [];
-        connections.forEach(conn => {
-            if (!conn) return;
-            const source = normalizeNodeId(conn.source, 0);
-            const target = normalizeNodeId(conn.target, 0);
-            normalizedConnections.push({ source, target });
-        });
-
-        const edges = Array.isArray(data.edges) ? data.edges : [];
-        edges.forEach(edge => {
-            if (!edge) return;
-            const source = normalizeNodeId(edge.from, 0);
-            const target = normalizeNodeId(edge.to, 0);
-            normalizedConnections.push({ source, target });
-        });
-
-        return { nodes: normalizedNodes, connections: normalizedConnections };
-    }
-
     function loadWorkflowData(data) {
         // Clear canvas
         document.querySelectorAll('.workflow-node').forEach(n => n.remove());
@@ -1910,16 +1823,12 @@ document.addEventListener('DOMContentLoaded', () => {
         document.querySelectorAll('.connection-wrapper').forEach(w => w.remove());
         builderState.connections = [];
         
-        const normalizedData = normalizeWorkflowData(data);
-
         // Handle null or undefined data
-        if (!normalizedData) {
+        if (!data) {
             console.error('loadWorkflowData: data is null or undefined');
             showNotification('Error loading workflow: Invalid data', 'error');
             return;
         }
-
-        data = normalizedData;
         
         // Restore nodes
         if (data.nodes && data.nodes.length > 0) {
@@ -2515,45 +2424,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // --- LOAD SCENARIO FROM URL ---
-    // const urlParams = new URLSearchParams(window.location.search); // Already defined
-    const loadId = urlParams.get('load');
-    if (loadId) {
-        // Show loading modal
-        const loadingModal = new bootstrap.Modal(document.getElementById('loadingModal'));
-        loadingModal.show();
-
-        fetch(`/api/scenarios/${loadId}`)
-            .then(res => res.json())
-            .then(data => {
-                if (data.success && data.scenario) {
-                    let payload = data.scenario.data;
-                    if (typeof payload === 'string') {
-                        try { payload = JSON.parse(payload); } catch(e) {}
-                    }
-                    
-                    document.querySelector('.workflow-name-input').value = data.scenario.name;
-                    
-                    // Allow nodes to be rendered
-                    setTimeout(() => {
-                        loadWorkflowData(payload);
-                        showNotification(`Loaded: ${data.scenario.name}`, 'success');
-                    }, 500);
-                } else {
-                    showNotification('Failed to load scenario', 'error');
-                }
-            })
-            .catch(err => {
-                console.error(err);
-                showNotification('Error loading scenario', 'error');
-            })
-            .finally(() => {
-                setTimeout(() => {
-                    const el = document.getElementById('loadingModal');
-                    const modal = bootstrap.Modal.getInstance(el);
-                    if (modal) modal.hide();
-                }, 1000);
-            });
+    // Auto-show tutorial
+    const hasSeenTutorial = localStorage.getItem('hasSeenBuilderTutorial');
+    if (!hasSeenTutorial) {
+        setTimeout(() => {
+            if (window.showTutorialModal) window.showTutorialModal();
+        }, 1000);
     }
-
 });

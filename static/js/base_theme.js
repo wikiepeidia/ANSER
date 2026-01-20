@@ -138,6 +138,8 @@ window.handleSessionExpired = function() {
 })();
 
 // Add a global handler for unauthorized (401/403) responses so AJAX calls redirect to signin
+// DISABLED: Too aggressive, causing false positives
+/*
 ;(function attachUnauthorizedHandler() {
     if (typeof window.fetch !== 'function' || window.__unauthorizedFetchPatched) return;
     window.__unauthorizedFetchPatched = true;
@@ -158,3 +160,4 @@ window.handleSessionExpired = function() {
         });
     };
 })();
+*/
