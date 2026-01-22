@@ -62,6 +62,11 @@ class PGShimConnection:
     def commit(self): self._conn.commit()
     def rollback(self): self._conn.rollback()
     def close(self): self._conn.close()
+    def __enter__(self): return self
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if exc_type: self.rollback()
+        else: self.commit()
+
 
 class Database:
     def __init__(self):

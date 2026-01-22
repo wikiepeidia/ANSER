@@ -248,8 +248,16 @@ def read_sheet(sheet_id, range_name, token_info=None):
                             cell_range = range_name.split('!', 1)[1]
                         else:
                             cell_range = range_name
+                        
+                        # Fix for implicit Sheet1 (common in English tutorials/defaults) vs "Trang tính1" (Vietnamese default)
+                        # If the cell_range is literally "Sheet1" (or quoted 'Sheet1'), it means "Read All of Sheet1".
+                        # We should replace it with "Read All of [ActualFirstSheet]" instead of "[ActualFirstSheet]!Sheet1"
+                        clean_cell_range = cell_range.replace("'", "").replace('"', "")
+                        if clean_cell_range.lower() == 'sheet1':
+                            new_range = f"'{first_sheet_title}'"
+                        else:
+                            new_range = f"'{first_sheet_title}'!{cell_range}"
                             
-                        new_range = f"'{first_sheet_title}'!{cell_range}"
                         print(f"[Google] Retrying with corrected range: {new_range}")
                         
                         result = sheet.values().get(spreadsheetId=sheet_id, range=new_range).execute()
@@ -310,6 +318,52 @@ def read_doc(doc_id, token_info=None):
     print(f"[Google] MOCK: Reading Doc {doc_id}...")
     time.sleep(0.5)
     return "This is the content of the Google Doc."
+
+def write_doc(doc_id, content, token_info=None):
+    """
+    Appends text to a Google Doc.
+    """
+    service = get_google_service('docs', 'v1', token_info)
+
+    if service:
+        try:
+            text = str(content) if content is not None else ""
+            print(f"[Google] REAL API: Writing to Doc {doc_id}...")
+
+            document = service.documents().get(documentId=doc_id).execute()
+            body = document.get('body', {})
+            contents = body.get('content', [])
+            end_index = 1
+            if contents:
+                end_index = contents[-1].get('endIndex', 1)
+
+            # Insert before the last end index to append text
+            requests = [
+                {
+                    "insertText": {
+                        "location": {"index": max(1, end_index - 1)},
+                        "text": text
+                    }
+                }
+            ]
+
+            result = service.documents().batchUpdate(
+                documentId=doc_id,
+                body={"requests": requests}
+            ).execute()
+
+            return result
+        except Exception as e:
+            error_str = str(e)
+            print(f"[Google] REAL API Failed: {error_str}")
+            if "Method doesn't allow unregistered callers" in error_str:
+                print("\n[Google] CRITICAL ERROR: The API call was rejected because the OAuth token is missing or invalid.")
+                print("[Google] FIX: Please delete 'test/token.json' and run 'python test/authenticate.py' again.\n")
+            print("[Google] Falling back to mock.")
+
+    print(f"[Google] MOCK: Writing to Doc {doc_id}...")
+    time.sleep(0.5)
+    return {"status": "mock_success", "message": "Doc updated (simulated)"}
 
 def write_sheet(sheet_id, range_name, values, method='append', token_info=None):
     """

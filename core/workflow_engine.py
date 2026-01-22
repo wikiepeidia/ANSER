@@ -1,7 +1,7 @@
 import json
 import re
 import os
-from .google_integration import read_sheet, read_doc, write_sheet, send_email
+from .google_integration import read_sheet, read_doc, write_sheet, write_doc, send_email
 from .make_integration import trigger_webhook
 from .services.dl_client import DLClient
 
@@ -70,24 +70,27 @@ def resolve_template(template_str, context):
     # Replace {{...}}
     resolved_str = re.sub(r'\{\{(.*?)\}\}', replacer, template_str)
     
+
     try:
         return json.loads(resolved_str)
     except:
         return resolved_str
 
-def execute_workflow(workflow_data, token_info=None):
+def stream_workflow(workflow_data, token_info=None):
     """
-    Executes the workflow defined in the JSON data using a topological sort.
+    Generator that executes the workflow and yields status updates.
     """
     logs = []
+    
     def log(msg):
+        # Helper to both yield a log event and print it
         print(msg)
-        logs.append(msg)
+        return {"type": "log", "message": msg}
 
     nodes = {str(n['id']): n for n in workflow_data.get('nodes', [])}
     edges = workflow_data.get('edges', [])
     
-    log(f"Executing workflow with {len(nodes)} nodes and {len(edges)} edges.")
+    yield log(f"Executing workflow with {len(nodes)} nodes and {len(edges)} edges.")
     
     # 1. Build Adjacency List and In-Degree Count
     adj_list = {node_id: [] for node_id in nodes}
@@ -117,7 +120,8 @@ def execute_workflow(workflow_data, token_info=None):
                 queue.append(neighbor)
                 
     if len(execution_order) != len(nodes):
-        return {"status": "error", "message": "Cycle detected in workflow!", "logs": logs}
+        yield {"type": "error", "message": "Cycle detected in workflow!"}
+        return
         
     # 3. Execute Nodes in Order
     context = {} # Stores output of each node: {node_id: output_data}
@@ -128,6 +132,9 @@ def execute_workflow(workflow_data, token_info=None):
         node_type = node['type']
         config = node.get('config', {})
         
+        # Notify Start
+        yield {"type": "node_update", "node_id": node_id, "status": "running"}
+
         # --- Flow Control Check ---
         # Check if all parents executed successfully
         parents = parents_map[node_id]
@@ -139,11 +146,12 @@ def execute_workflow(workflow_data, token_info=None):
                 break
         
         if parent_failed:
-            log(f"Skipping Node {node_id} because parent failed/skipped.")
+            yield log(f"Skipping Node {node_id} because parent failed/skipped.")
             node_results[node_id] = {"status": "skipped", "reason": "Parent failed or skipped"}
+            yield {"type": "node_update", "node_id": node_id, "status": "skipped", "reason": "Parent failed"}
             continue
 
-        log(f"--- Running Node {node_id} ({node_type}) ---")
+        yield log(f"--- Running Node {node_id} ({node_type}) ---")
         
         try:
             result = None
@@ -160,12 +168,18 @@ def execute_workflow(workflow_data, token_info=None):
                 data_template = config.get('data', '')
                 write_mode = config.get('writeMode', 'json') # json, row, single
 
-                log(f"[Workflow] Node {node_id} Write Mode: {write_mode}")
-                log(f"[Workflow] Raw Template: '{data_template}'")
+                yield log(f"[Workflow] Node {node_id} Write Mode: {write_mode}")
+                yield log(f"[Workflow] Raw Template: '{data_template}'")
 
-                resolved_data = resolve_template(data_template, context)
+                # AUTO-PASS: If data template is empty, try to use parent output
+                if not data_template and parents:
+                    p_id = parents[0]
+                    yield log(f"[Workflow] Auto-passing output from Parent Node {p_id} to Google Sheet write")
+                    resolved_data = context.get(p_id)
+                else:
+                    resolved_data = resolve_template(data_template, context)
                 
-                log(f"[Workflow] Resolved Data: '{resolved_data}' (Type: {type(resolved_data)})")
+                yield log(f"[Workflow] Resolved Data: '{resolved_data}' (Type: {type(resolved_data)})")
 
                 data_to_write = []
                 method = 'append' # Default method
@@ -200,7 +214,7 @@ def execute_workflow(workflow_data, token_info=None):
                     # "A\nB\nC" -> [["A"], ["B"], ["C"]]
                     if isinstance(resolved_data, str):
                         # Split by newline
-                        rows = resolved_data.split('\n')
+                        rows = resolved_data.split('\\n')
                         data_to_write = [[x.strip()] for x in rows if x.strip()]
                     elif isinstance(resolved_data, list):
                         # Assume list of strings -> column
@@ -221,14 +235,28 @@ def execute_workflow(workflow_data, token_info=None):
                 elif data_to_write and not isinstance(data_to_write[0], list):
                     data_to_write = [data_to_write]
                 
-                log(f"[Workflow] Writing to Sheet {sheet_id} at {range_name}. Mode: {write_mode}, Method: {method}")
-                log(f"[Workflow] Payload: {data_to_write}")
+                yield log(f"[Workflow] Writing to Sheet {sheet_id} at {range_name}. Mode: {write_mode}, Method: {method}")
+                yield log(f"[Workflow] Payload: {data_to_write}")
 
                 result = write_sheet(sheet_id, range_name, data_to_write, method=method, token_info=token_info)
                 
             elif node_type == 'google_doc_read':
                 doc_id = config.get('docId', 'dummy_doc')
                 result = read_doc(doc_id, token_info)
+
+            elif node_type == 'google_doc_write':
+                doc_id = config.get('docId', 'dummy_doc')
+                body_template = config.get('body', '')
+
+                # AUTO-PASS: If body is empty, try to use parent output
+                if not body_template and parents:
+                    p_id = parents[0]
+                    yield log(f"[Workflow] Auto-passing output from Parent Node {p_id} to Google Doc write")
+                    resolved_body = context.get(p_id)
+                else:
+                    resolved_body = resolve_template(body_template, context)
+
+                result = write_doc(doc_id, resolved_body, token_info)
                 
             elif node_type == 'make_webhook':
                 url = config.get('url', 'http://example.com/webhook')
@@ -267,7 +295,7 @@ def execute_workflow(workflow_data, token_info=None):
                 # AUTO-PASS: If template is empty, try to use parent output
                 if not message_template and parents:
                     p_id = parents[0]
-                    log(f"[Workflow] Auto-passing output from Parent Node {p_id} to Discord")
+                    yield log(f"[Workflow] Auto-passing output from Parent Node {p_id} to Discord")
                     resolved_message = context.get(p_id)
                 else:
                     resolved_message = resolve_template(message_template, context)
@@ -289,7 +317,7 @@ def execute_workflow(workflow_data, token_info=None):
                 # AUTO-PASS: If body is empty, try to use parent output
                 if not body_template and parents:
                     p_id = parents[0]
-                    log(f"[Workflow] Auto-passing output from Parent Node {p_id} to Gmail")
+                    yield log(f"[Workflow] Auto-passing output from Parent Node {p_id} to Gmail")
                     resolved_body = context.get(p_id)
                 else:
                     resolved_body = resolve_template(body_template, context)
@@ -297,7 +325,7 @@ def execute_workflow(workflow_data, token_info=None):
                 # Combine Title and Body
                 final_body = str(resolved_body)
                 if title:
-                    final_body = f"{title}\n\n{final_body}"
+                    final_body = f"{title}\\n\\n{final_body}"
 
                 result = send_email(to, subject, final_body, token_info)
 
@@ -325,6 +353,7 @@ def execute_workflow(workflow_data, token_info=None):
                     # If filter fails, we raise an exception or return a special status?
                     # Let's return a 'stopped' status so children are skipped
                     node_results[node_id] = {"status": "stopped", "reason": "Filter condition failed"}
+                    yield {"type": "node_update", "node_id": node_id, "status": "stopped", "reason": "Filter condition failed"}
                     continue
 
             elif node_type == 'invoice_ocr':
@@ -372,11 +401,48 @@ def execute_workflow(workflow_data, token_info=None):
             # Store result
             context[node_id] = result
             node_results[node_id] = {"status": "success", "output": result}
+            yield {"type": "node_update", "node_id": node_id, "status": "success", "output": result}
             
         except Exception as e:
-            log(f"Error in Node {node_id}: {str(e)}")
+            yield log(f"Error in Node {node_id}: {str(e)}")
             node_results[node_id] = {"status": "error", "error": str(e)}
+            yield {"type": "node_update", "node_id": node_id, "status": "error", "error": str(e)}
             # Stop execution on error? For now, yes.
-            return {"status": "failed", "node_results": node_results, "error_node": node_id, "logs": logs}
+            yield {"type": "workflow_finish", "status": "failed"}
+            return
 
-    return {"status": "completed", "node_results": node_results, "logs": logs}
+    yield {"type": "workflow_finish", "status": "completed"}
+
+def execute_workflow(workflow_data, token_info=None):
+    """
+    Executes the workflow defined in the JSON data using a topological sort.
+    Backwards compatible wrapper for stream_workflow.
+    """
+    logs = []
+    node_results = {}
+    final_status = "completed"
+    
+    for event in stream_workflow(workflow_data, token_info):
+        if event['type'] == 'log':
+            logs.append(event['message'])
+        elif event['type'] == 'node_update':
+            status = event['status']
+            node_id = event['node_id']
+            # Only record final statuses, not "running"
+            if status in ['success', 'error', 'skipped', 'stopped']:
+                # Reconstruct the result object
+                res = {"status": status}
+                if 'output' in event: res['output'] = event['output']
+                if 'error' in event: res['error'] = event['error']
+                if 'reason' in event: res['reason'] = event['reason']
+                node_results[node_id] = res
+        elif event['type'] == 'workflow_finish':
+            final_status = event['status']
+        elif event['type'] == 'error':
+             logs.append(event['message'])
+             final_status = "error"
+
+    if final_status == 'error':
+         return {"status": "failed", "node_results": node_results, "logs": logs}
+         
+    return {"status": final_status, "node_results": node_results, "logs": logs}

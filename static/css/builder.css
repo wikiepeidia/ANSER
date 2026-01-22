@@ -36,12 +36,15 @@ body.builder-page {
     background: var(--builder-bg);
     color: var(--builder-text);
     min-height: 100vh;
-    scrollbar-width: none; /* Firefox */
-    -ms-overflow-style: none; /* IE/Edge */
+    scrollbar-width: none;
+    /* Firefox */
+    -ms-overflow-style: none;
+    /* IE/Edge */
 }
 
 body.builder-page::-webkit-scrollbar {
-    display: none; /* Chrome/Safari/Opera */
+    display: none;
+    /* Chrome/Safari/Opera */
 }
 
 .builder-container {
@@ -186,8 +189,10 @@ body.builder-page::-webkit-scrollbar {
     display: flex;
     flex-direction: column;
     gap: 16px;
-    scrollbar-width: none; /* Firefox */
-    -ms-overflow-style: none; /* IE/Edge */
+    scrollbar-width: none;
+    /* Firefox */
+    -ms-overflow-style: none;
+    /* IE/Edge */
 }
 
 /* Hide scrollbar for Chrome, Safari and Opera */
@@ -227,7 +232,8 @@ body.builder-page::-webkit-scrollbar {
 
 .tool-item:hover {
     transform: translateY(-2px) translateX(2px);
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08); /* Smoother lift */
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08);
+    /* Smoother lift */
     border-color: var(--builder-border-strong);
     z-index: 10;
 }
@@ -241,7 +247,8 @@ body.builder-page::-webkit-scrollbar {
     justify-content: center;
     font-size: 1.1rem;
     color: #ffffff;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1); /* Icon pop */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    /* Icon pop */
 }
 
 .tool-info {
@@ -266,14 +273,16 @@ body.builder-page::-webkit-scrollbar {
     flex-direction: column;
     background: var(--builder-bg);
     position: relative;
-    overflow: hidden; /* Ensure content doesn't spill out */
+    overflow: hidden;
+    /* Ensure content doesn't spill out */
 }
 
 #dropZone {
     flex: 1;
     position: relative;
-    overflow: hidden; /* Hide scrollbars, we use custom pan */
-    background-image: 
+    overflow: hidden;
+    /* Hide scrollbars, we use custom pan */
+    background-image:
         linear-gradient(var(--builder-border) 1px, transparent 1px),
         linear-gradient(90deg, var(--builder-border) 1px, transparent 1px);
     background-size: 20px 20px;
@@ -288,7 +297,8 @@ body.builder-page::-webkit-scrollbar {
     position: absolute;
     top: 0;
     left: 0;
-    width: 5000px; /* Large canvas */
+    width: 5000px;
+    /* Large canvas */
     height: 5000px;
     transform-origin: 0 0;
     /* No background here, grid is on dropZone */
@@ -429,12 +439,15 @@ body.builder-page::-webkit-scrollbar {
 .workflow-canvas.cursor-mode .workflow-node {
     cursor: move;
 }
+
 .workflow-canvas.zoom-mode {
     cursor: zoom-in;
 }
+
 .workflow-canvas.connect-mode .node-connections {
     opacity: 1;
 }
+
 .workflow-canvas.connect-mode .connection-point {
     width: 14px;
     height: 14px;
@@ -442,6 +455,7 @@ body.builder-page::-webkit-scrollbar {
     background: #7c3aed;
     z-index: 10;
 }
+
 .connection-point:hover {
     transform: scale(1.2);
 }
@@ -548,7 +562,8 @@ body.builder-page::-webkit-scrollbar {
     height: 0;
     transform: translateY(-50%);
     z-index: 10;
-    pointer-events: none; /* Let clicks pass through container */
+    pointer-events: none;
+    /* Let clicks pass through container */
 }
 
 .connection-point {
@@ -558,12 +573,13 @@ body.builder-page::-webkit-scrollbar {
     background: #ffffff;
     border: 4px solid #6366f1;
     cursor: pointer;
-    pointer-events: auto; /* Re-enable clicks on points */
+    pointer-events: auto;
+    /* Re-enable clicks on points */
     transition: all 0.2s ease;
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
 .connection-point:hover {
@@ -587,15 +603,24 @@ body.builder-page::-webkit-scrollbar {
 }
 
 .connection-point.connecting {
-    background: #fbbf24; /* Amber for active state */
+    background: #fbbf24;
+    /* Amber for active state */
     border-color: #ffffff;
     animation: pulse 1.5s infinite;
 }
 
 @keyframes pulse {
-    0% { box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.4); }
-    70% { box-shadow: 0 0 0 10px rgba(251, 191, 36, 0); }
-    100% { box-shadow: 0 0 0 0 rgba(251, 191, 36, 0); }
+    0% {
+        box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.4);
+    }
+
+    70% {
+        box-shadow: 0 0 0 10px rgba(251, 191, 36, 0);
+    }
+
+    100% {
+        box-shadow: 0 0 0 0 rgba(251, 191, 36, 0);
+    }
 }
 
 .property-panel {
@@ -688,7 +713,7 @@ textarea.form-control {
     background: var(--builder-panel);
     padding: 6px;
     border-radius: 16px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
     border: 1px solid var(--builder-border);
 }
 
@@ -720,6 +745,7 @@ textarea.form-control {
     margin-left: 8px;
     align-items: center;
 }
+
 .zoom-controls .zoom-btn {
     border-radius: 8px;
     padding: 6px 8px;
@@ -730,6 +756,7 @@ textarea.form-control {
     font-weight: 700;
     min-width: 40px;
 }
+
 .zoom-controls .zoom-btn:hover {
     transform: translateY(-2px);
 }
@@ -739,6 +766,11 @@ textarea.form-control {
     margin-top: 15px;
     border-top: 1px solid var(--builder-border);
     padding-top: 15px;
+    /* Ensure scrolling for content that exceeds height */
+    max-height: calc(100vh - 400px);
+    /* Approximate height to leave room for header/buttons */
+    overflow-y: auto;
+    scrollbar-width: thin;
 }
 
 .dynamic-settings label {
@@ -747,6 +779,8 @@ textarea.form-control {
     font-weight: 600;
     font-size: 0.9em;
     color: var(--builder-muted);
+    margin-top: 12px;
+    /* Add some spacing between sections */
 }
 
 .dynamic-settings input,
@@ -815,8 +849,15 @@ textarea.form-control {
 }
 
 @keyframes fadeIn {
-    from { opacity: 0; transform: scale(0.95); }
-    to { opacity: 1; transform: scale(1); }
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
 }
 
 /* Modal Styles */
@@ -845,8 +886,15 @@ textarea.form-control {
 }
 
 @keyframes modalSlideIn {
-    from { transform: translateY(-20px); opacity: 0; }
-    to { transform: translateY(0); opacity: 1; }
+    from {
+        transform: translateY(-20px);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
 }
 
 .builder-modal-header {
@@ -908,7 +956,7 @@ textarea.form-control {
 .workflow-item:hover {
     border-color: var(--builder-border-strong);
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
 .workflow-item.skeleton {
@@ -919,14 +967,19 @@ textarea.form-control {
 
 .skeleton-line {
     height: 10px;
-    background: linear-gradient(90deg, rgba(0,0,0,0.05), rgba(0,0,0,0.12), rgba(0,0,0,0.05));
+    background: linear-gradient(90deg, rgba(0, 0, 0, 0.05), rgba(0, 0, 0, 0.12), rgba(0, 0, 0, 0.05));
     border-radius: 6px;
     animation: shimmer 1.2s infinite linear;
 }
 
 @keyframes shimmer {
-    0% { background-position: -200px 0; }
-    100% { background-position: 200px 0; }
+    0% {
+        background-position: -200px 0;
+    }
+
+    100% {
+        background-position: 200px 0;
+    }
 }
 
 .workflow-item-info h4 {
@@ -955,7 +1008,7 @@ textarea.form-control {
     position: relative;
     width: 100%;
     height: 4px;
-    background: rgba(0,0,0,0.08);
+    background: rgba(0, 0, 0, 0.08);
     border-radius: 999px;
     overflow: hidden;
 }
@@ -971,8 +1024,13 @@ textarea.form-control {
 }
 
 @keyframes pickerSlide {
-    0% { left: -40%; }
-    100% { left: 100%; }
+    0% {
+        left: -40%;
+    }
+
+    100% {
+        left: 100%;
+    }
 }
 
 .delete-workflow-btn {
@@ -990,6 +1048,7 @@ textarea.form-control {
 }
 
 @media (max-width: 1100px) {
+
     .tools-sidebar,
     .property-panel {
         width: 280px;
@@ -1037,15 +1096,19 @@ textarea.form-control {
 .console-panel {
     position: fixed;
     bottom: 20px;
-    left: 280px; /* Shifted to avoid Sidebar overlap */
-    width: 600px; /* Wider for better visibility */
+    left: 280px;
+    /* Shifted to avoid Sidebar overlap */
+    width: 600px;
+    /* Wider for better visibility */
     max-width: calc(100% - 300px);
     max-height: 80vh;
-    background: #1e1e1e; /* Always dark for terminal feel */
+    background: #1e1e1e;
+    /* Always dark for terminal feel */
     color: #f0f0f0;
     border-radius: 12px;
-    box-shadow: 0 8px 30px rgba(0,0,0,0.35);
-    z-index: 1200; /* Above property panel for easier access */
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
+    z-index: 1200;
+    /* Above property panel for easier access */
     display: flex;
     flex-direction: column;
     transition: height 0.25s cubic-bezier(0.4, 0, 0.2, 1), transform 0.2s ease;
@@ -1102,7 +1165,7 @@ textarea.form-control {
 
 .console-action-btn:hover {
     color: #fff;
-    background: rgba(255,255,255,0.1);
+    background: rgba(255, 255, 255, 0.1);
 }
 
 .console-content {
@@ -1155,19 +1218,74 @@ textarea.form-control {
     min-width: 70px;
 }
 
-.console-line.system { color: #888; font-style: italic; }
-.console-line.info { color: #61afef; }
-.console-line.success { color: #98c379; }
-.console-line.warning { color: #e5c07b; }
-.console-line.error { color: #e06c75; }
-.console-line.debug { color: #c678dd; }
+.console-line.system {
+    color: #888;
+    font-style: italic;
+}
+
+.console-line.info {
+    color: #61afef;
+}
+
+.console-line.success {
+    color: #98c379;
+}
+
+.console-line.warning {
+    color: #e5c07b;
+}
+
+.console-line.error {
+    color: #e06c75;
+}
+
+.console-line.debug {
+    color: #c678dd;
+}
 
 /* Connection Line Styles */
 .connection-line {
     cursor: pointer;
     transition: stroke-width 0.2s, stroke 0.2s;
 }
+
 .connection-line:hover {
     stroke-width: 6px !important;
     stroke: #4f46e5 !important;
+}
+
+/* Execution Status Styles - Added for visual feedback */
+.workflow-node.running {
+    box-shadow: 0 0 15px rgba(255, 193, 7, 0.6), 0 5px 15px rgba(0, 0, 0, 0.1) !important;
+    border-color: #ffc107 !important;
+    animation: pulse 1.5s infinite;
+}
+
+.workflow-node.success {
+    box-shadow: 0 0 15px rgba(76, 175, 80, 0.6), 0 5px 15px rgba(0, 0, 0, 0.1) !important;
+    border-color: #4caf50 !important;
+}
+
+.workflow-node.error {
+    box-shadow: 0 0 15px rgba(244, 67, 54, 0.6), 0 5px 15px rgba(0, 0, 0, 0.1) !important;
+    border-color: #f44336 !important;
+}
+
+.workflow-node.skipped {
+    opacity: 0.6;
+    border-style: dashed !important;
+}
+
+@keyframes pulse {
+    0% {
+        box-shadow: 0 0 15px rgba(255, 193, 7, 0.6);
+    }
+
+    50% {
+        box-shadow: 0 0 25px rgba(255, 193, 7, 0.9);
+    }
+
+    100% {
+        box-shadow: 0 0 15px rgba(255, 193, 7, 0.6);
+    }
 }

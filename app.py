@@ -8,7 +8,7 @@ import requests
 import secrets
 from datetime import datetime, timedelta
 
-from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify
+from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify, Response, stream_with_context
 from werkzeug.middleware.proxy_fix import ProxyFix
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from flask_wtf.csrf import CSRFProtect, CSRFError, generate_csrf
@@ -23,7 +23,7 @@ from core.auth import AuthManager
 from core.config import Config
 from core.utils import Utils
 from core import google_integration
-from core.workflow_engine import execute_workflow
+from core.workflow_engine import execute_workflow, stream_workflow
 from core.services.dl_client import DLClient
 from core.services.analytics_service import analytics_service
 from core.automation_engine import AutomationEngine
@@ -972,6 +972,29 @@ def run_workflow():
         
         result = execute_workflow(workflow_data, token_info)
         return jsonify(result)
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+@app.route('/api/workflow/execute_stream', methods=['POST'])
+@login_required
+@csrf.exempt
+def run_workflow_stream():
+    try:
+        workflow_data = request.json
+        
+        # Get token from current_user
+        token_info = None
+        if current_user.google_token:
+            try:
+                token_info = json.loads(current_user.google_token)
+            except Exception as e:
+                print(f"Error parsing google_token for user {current_user.id}: {e}")
+        
+        def generate():
+            for event in stream_workflow(workflow_data, token_info):
+                yield json.dumps(event) + "\n"
+                
+        return Response(stream_with_context(generate()), mimetype='application/x-ndjson')
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
@@ -3410,7 +3433,6 @@ def background_ai_task(job_id, user_id, message):
             msg_to_save = final_text
             if action and action.get('action') == 'workflow_created':
                 # Save structured JSON so chat history can re-render the card
-                import json
                 structured = {
                     "action": "create_workflow",
                     "id": action.get('id'),
