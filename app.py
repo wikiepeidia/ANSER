@@ -68,10 +68,10 @@ Talisman(app,
              'object-src': ["'none'"],
              'frame-ancestors': ["'none'"],
          },
-         strict_transport_security=False,
+         strict_transport_security=True,
          frame_options='DENY',
          x_content_type_options=True,
-         session_cookie_secure=False,
+         session_cookie_secure=True,
          force_file_save=False
          )
 
