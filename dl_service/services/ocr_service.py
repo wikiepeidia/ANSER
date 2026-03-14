@@ -19,6 +19,21 @@ _paddle_disabled = False
 _easyocr_reader = None
 _easyocr_disabled = False
 
+from services.cpt_ocr import run_vietocr_with_paddle_layout
+
+def _vietocr_ocr(image: Image.Image) -> Optional[dict]:
+    engine = _get_paddle_engine()
+    if engine is None:
+        return None
+    try:
+        print("[OCR] VietOCR: attempting with CV Layout (Paddle/CTPN)...", flush=True)
+        res = run_vietocr_with_paddle_layout(image, engine)
+        if res and res.get('text'):
+             return res
+    except Exception as exc:
+        print(f"[OCR] VietOCR: ERROR ({exc}) — falling back", flush=True)
+    return None
+
 
 def _get_brain_url():
     """Load the Brain (AI Agent Service) base URL from secrets/ai_config.json."""
@@ -86,6 +101,10 @@ def _brain_vlm_ocr(image: Image.Image) -> Optional[dict]:
         text = (data.get('text') or '').strip()
         if not text:
             print("[OCR] Brain VLM: returned empty text, falling back", flush=True)
+            return None
+        # Guard against vision error strings leaking through as "text"
+        if text.startswith('Error analyzing') or text.startswith('Vision module'):
+            print(f"[OCR] Brain VLM: vision error in response — {text[:80]}", flush=True)
             return None
 
         print(f"[OCR] Brain VLM: SUCCESS — extracted {len(text)} chars (backend={data.get('backend','qwen2-vl')})", flush=True)
@@ -302,10 +321,10 @@ def extract_text_from_image_bytes(image_bytes):
         return {'success': False, 'text': '', 'error': f'Failed to open image: {exc}'}
 
     backends = [
-        ('Brain VLM (Qwen2-VL)',  _brain_vlm_ocr),
-        ('PaddleOCR',             _paddle_ocr),
-        ('EasyOCR',               _easyocr_ocr),
-        ('Tesseract',             _pytesseract_ocr),
+        ('Brain VLM (Qwen2-VL)',                _brain_vlm_ocr),
+        ('VietOCR + ComputerVision',            _vietocr_ocr),
+        ('PaddleOCR + ComputerVision',          _paddle_ocr),
+        ('Tesseract',                           _pytesseract_ocr),
     ]
     print(f"[OCR] Fallback chain: {' → '.join(n for n, _ in backends)}", flush=True)
     for name, runner in backends:

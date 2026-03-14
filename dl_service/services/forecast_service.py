@@ -126,7 +126,7 @@ def forecast_quantity(lstm_model, invoice_data_list):
     total_predicted = 0
 
     for invoice_item in invoice_data_list:
-        product_name = invoice_item.get('product_name', '')
+        product_name = invoice_item.get('product_name') or invoice_item.get('name', '')
         current_qty = invoice_item.get('quantity', 0)
 
         # Get historical data

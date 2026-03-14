@@ -93,3 +93,5 @@ psycopg[binary]
 passlib[bcrypt]
 python-dotenv
 psycopg2-binary
+gdown
+eniops
