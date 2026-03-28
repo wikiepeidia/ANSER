@@ -364,10 +364,6 @@ test_orders/
 sample_retail_data/
 fun_work_hub.db
 group_project_ai_ml.db
-.claude/settings.local.json
-
-# GSD planning session files (per-session state — conflict-prone between team members)
-# Shared planning artifacts (ROADMAP, REQUIREMENTS, PLAN files) remain tracked.
-.planning/STATE.md
-.planning/phases/*/*-CONTEXT.md
-.planning/phases/*/*-DISCUSSION-LOG.md
+# Claude Code / GSD planning — keep out of main/demo/shared branches
+.claude/
+.planning/
