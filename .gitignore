@@ -364,6 +364,6 @@ test_orders/
 sample_retail_data/
 fun_work_hub.db
 group_project_ai_ml.db
-# Claude Code / GSD planning — keep out of main/demo/shared branches
+# Claude Code / GSD planning — development-only, not for shared branches
 .claude/
 .planning/
