@@ -1,20 +1,34 @@
 ---
-name: Feature request
-about: Suggest an idea for this project
-title: ''
-labels: ''
+name: Đề xuất tính năng (Feature Request)
+about: Góp ý tính năng mới cho dự án
+title: 'feat(<scope>): <mô tả ngắn>'
+labels: enhancement
 assignees: ''
-
 ---
 
-**Is your feature request related to a problem? Please describe.**
-A clear and concise description of what the problem is. Ex. I'm always frustrated when [...]
+## Tính năng đề xuất
+<!-- Mô tả tính năng muốn thêm -->
 
-**Describe the solution you'd like**
-A clear and concise description of what you want to happen.
+## Vấn đề hiện tại
+<!-- Tính năng này giải quyết vấn đề gì? Hiện tại đang thiếu gì? -->
 
-**Describe alternatives you've considered**
-A clear and concise description of any alternative solutions or features you've considered.
+## Giải pháp đề xuất
+<!-- Mô tả cách bạn muốn tính năng này hoạt động -->
 
-**Additional context**
-Add any other context or screenshots about the feature request here.
+## Phạm vi ảnh hưởng
+- [ ] Backend (`app.py`, `core/`, `dl_service/`)
+- [ ] Frontend (`ui/templates/`)
+- [ ] AI Agent (`ai_agent_service/`)
+- [ ] Database (schema thay đổi)
+- [ ] Khác: ___
+
+## Độ ưu tiên
+- [ ] Cao — cần cho jury retake
+- [ ] Trung bình — cải thiện chất lượng
+- [ ] Thấp — nice to have
+
+## Quy tắc triển khai
+- Tạo tính năng trên nhánh đúng: `backend` hoặc `frontend` (xem README)
+- Commit theo format: `feat(<scope>): <mô tả>` (xem README)
+- Merge vào `mixed` → `dev` → `main` sau khi test
+- Tag người phụ trách bằng `@username`
