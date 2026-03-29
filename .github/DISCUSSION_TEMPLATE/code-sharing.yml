@@ -1,0 +1,71 @@
+title: "[Code] "
+labels: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Chia sẻ code / snippet
+        Dùng thread này để chia sẻ đoạn code, snippet, hoặc solution hữu ích với cả nhóm.
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: Thuộc về phần nào?
+      options:
+        - Backend (Flask / Python)
+        - Frontend (HTML / CSS / JS)
+        - AI Agent
+        - Deep Learning / OCR / LSTM
+        - Database / Query
+        - Utility / Helper
+        - Khác
+    validations:
+      required: true
+
+  - type: input
+    id: file
+    attributes:
+      label: File liên quan
+      description: "Vd: core/auth.py, ui/templates/dashboard.html"
+      placeholder: "path/to/file.py"
+
+  - type: textarea
+    id: code
+    attributes:
+      label: Code
+      description: Paste đoạn code vào đây. Dùng code block đúng ngôn ngữ.
+      render: python
+      placeholder: |
+        def example():
+            pass
+    validations:
+      required: true
+
+  - type: textarea
+    id: explanation
+    attributes:
+      label: Giải thích
+      description: Code này làm gì? Tại sao bạn làm như vậy?
+      placeholder: "Đoạn code này xử lý... vì..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: usage
+    attributes:
+      label: Cách dùng
+      description: Ví dụ cách gọi / import đoạn code này
+      render: python
+      placeholder: |
+        from core.xyz import example
+        result = example()
+
+  - type: checkboxes
+    id: rules
+    attributes:
+      label: Xác nhận
+      options:
+        - label: Code này không chứa secret key, password, hoặc API key
+          required: true
+        - label: Tôi đã test đoạn code này trước khi share
+          required: false
