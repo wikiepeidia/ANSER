@@ -16,6 +16,7 @@ assignees: ''
 <!-- Mô tả cách bạn muốn tính năng này hoạt động -->
 
 ## Phạm vi ảnh hưởng
+
 - [ ] Backend (`app.py`, `core/`, `dl_service/`)
 - [ ] Frontend (`ui/templates/`)
 - [ ] AI Agent (`ai_agent_service/`)
@@ -23,11 +24,13 @@ assignees: ''
 - [ ] Khác: ___
 
 ## Độ ưu tiên
+
 - [ ] Cao — cần cho jury retake
 - [ ] Trung bình — cải thiện chất lượng
 - [ ] Thấp — nice to have
 
 ## Quy tắc triển khai
+
 - Tạo tính năng trên nhánh đúng: `backend` hoặc `frontend` (xem README)
 - Commit theo format: `feat(<scope>): <mô tả>` (xem README)
 - Merge vào `mixed` → `dev` → `main` sau khi test
