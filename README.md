@@ -135,7 +135,7 @@ HTTP Status Code:
 
 ### 6. Quy tắc Code sạch
 
-- Hàm không quá **50 dòng** — nếu dài hơn, tách ra service riêng
+- Tổ chức theo **feature/service** — mỗi service một file riêng (kiểu `ai_agent_service/src/`)
 - Không để `console.log` hay `print()` debug trong production code
 - Không commit code đã comment-out — xóa hẳn hoặc ghi vào TODO.md
 - Import theo thứ tự: stdlib → third-party → local
