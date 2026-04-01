@@ -4,6 +4,10 @@ import os
 import json
 from typing import Optional
 
+# Fix PaddlePaddle PIR compiler crash on Windows CPU (oneDNN + PIR incompatibility)
+os.environ.setdefault('FLAGS_enable_pir_api', '0')
+os.environ.setdefault('FLAGS_enable_pir_in_executor', '0')
+
 import numpy as np
 from PIL import Image
 import requests
@@ -186,19 +190,14 @@ def _paddle_ocr(image: Image.Image) -> Optional[dict]:
     if engine is None:
         return None
     try:
-        # PaddleOCR v3+ uses 'predict' internally but 'ocr' is the public API.
-        # However, some versions might have issues with kwargs.
-        # Let's try calling it without 'cls' if it fails, or check version.
-        # Based on debug, 'cls' kwarg might be the issue in newer versions if passed to predict?
-        # Actually, the error was TypeError: PaddleOCR.predict() got an unexpected keyword argument 'cls'
-        # This suggests we should pass cls=True to __init__ (use_angle_cls=True) and not to ocr() or check docs.
-        # But standard usage is ocr(img, cls=True).
-        # If that fails, we try without cls.
+        # PaddleOCR v3.4+ removed cls kwarg from ocr()/predict()
         try:
             result = engine.ocr(np.array(image), cls=True)
         except TypeError:
-             # Fallback for versions where cls arg is not accepted in ocr/predict
-             result = engine.ocr(np.array(image))
+            try:
+                result = engine.ocr(np.array(image))
+            except Exception:
+                result = list(engine.predict(np.array(image)))
              
         if not result:
             logger.info("PaddleOCR returned no text; falling back")
@@ -254,7 +253,7 @@ def _get_easyocr_reader():
     try:
         import easyocr
 
-        _easyocr_reader = easyocr.Reader(['en'], gpu=_PADDLE_USE_GPU)
+        _easyocr_reader = easyocr.Reader(['en', 'vi'], gpu=_PADDLE_USE_GPU)
         logger.info("EasyOCR initialized (gpu=%s)", 'on' if _PADDLE_USE_GPU else 'off')
     except Exception as exc:
         _easyocr_disabled = True
@@ -320,10 +319,15 @@ def extract_text_from_image_bytes(image_bytes):
     except Exception as exc:
         return {'success': False, 'text': '', 'error': f'Failed to open image: {exc}'}
 
+    # Build cascade: prefer fast local engines first, remote/slow backends last.
+    # EasyOCR is the most reliable local backend on Windows.
+    # PaddleOCR 3.4 has oneDNN/PIR crash on Windows CPU — try but expect failure.
+    # Brain VLM requires a remote server (30s timeout) — only try if configured.
     backends = [
-        ('Brain VLM (Qwen2-VL)',                _brain_vlm_ocr),
+        ('EasyOCR',                             _easyocr_ocr),
+        ('PaddleOCR',                           _paddle_ocr),
         ('VietOCR + ComputerVision',            _vietocr_ocr),
-        ('PaddleOCR + ComputerVision',          _paddle_ocr),
+        ('Brain VLM (Qwen2-VL)',                _brain_vlm_ocr),
         ('Tesseract',                           _pytesseract_ocr),
     ]
     print(f"[OCR] Fallback chain: {' → '.join(n for n, _ in backends)}", flush=True)
