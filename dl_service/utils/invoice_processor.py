@@ -186,6 +186,29 @@ def _parse_money_token(token: str) -> float:
     return float(cleaned)
 
 
+def _is_price_token(token: str) -> bool:
+    """Check if a token looks like a price (has separator or is pure digits >= 4 chars)."""
+    cleaned = token.strip()
+    has_sep = ',' in cleaned or '.' in cleaned
+    digits_only = re.sub(r'[^0-9]', '', cleaned)
+    # A price token is pure numeric with separators, or pure digits with 4+ chars
+    non_digit_non_sep = re.sub(r'[0-9,.]', '', cleaned)
+    if non_digit_non_sep:
+        return False  # Contains letters → not a price
+    return has_sep or len(digits_only) >= 4
+
+
+def _is_text_line(line: str) -> bool:
+    """Check if a line is primarily text (more letters than digits)."""
+    alpha = sum(1 for c in line if c.isalpha())
+    digit = sum(1 for c in line if c.isdigit())
+    return alpha > digit
+
+
+# Minimum plausible unit price in VND for Vietnamese retail invoices
+_MIN_PRICE_VND = 500
+
+
 def parse_products_from_text(ocr_text: str) -> List[Dict]:
     """Parse invoice products from OCR text with tolerant heuristics."""
     items: List[Dict] = []
@@ -194,7 +217,7 @@ def parse_products_from_text(ocr_text: str) -> List[Dict]:
 
     lines = [line.strip() for line in ocr_text.splitlines() if line.strip()]
     
-    # First pass: single-line parsing for well-formatted invoices
+    # First pass: single-line parsing for well-formatted tabular invoices
     for line in lines:
         if len(line) < 5:
             continue
@@ -216,7 +239,7 @@ def parse_products_from_text(ocr_text: str) -> List[Dict]:
             except (ValueError, AttributeError):
                 pass
             else:
-                if name and qty > 0 and unit > 0:
+                if name and qty > 0 and unit >= _MIN_PRICE_VND:
                     items.append({
                         'product_name': name,
                         'quantity': qty,
@@ -244,31 +267,15 @@ def parse_products_from_text(ocr_text: str) -> List[Dict]:
             continue
         tokens = filtered_tokens
 
-        # Try: name + unit_price + total (Vietnamese format, no quantity column)
-        if len(tokens) >= 3:
-            total = _parse_money_token(tokens[-1])
-            unit = _parse_money_token(tokens[-2])
-            if total and unit and total >= unit:
-                qty = max(1, int(round(total / unit)))
-                name_tokens = tokens[:-2]
-                line_name = ' '.join(name_tokens).strip('-:•')
-                if line_name and len(line_name) > 2:
-                    items.append({
-                        'product_name': line_name,
-                        'quantity': qty,
-                        'unit_price': unit,
-                        'line_total': total
-                    })
-                    continue
-
-        # Try: name + qty + unit + total (explicit quantity)
+        # Try: name + qty + unit + total (explicit quantity) — check BEFORE 3-token
         if len(tokens) >= 4:
             total = _parse_money_token(tokens[-1])
             unit = _parse_money_token(tokens[-2])
             qty = _parse_int_token(tokens[-3])
             name_tokens = tokens[:-3]
             
-            if qty and unit and qty > 0 and unit > 0:
+            if (qty and unit and qty > 0 and unit >= _MIN_PRICE_VND
+                    and _is_price_token(tokens[-1]) and _is_price_token(tokens[-2])):
                 if total is None:
                     total = unit * qty
                 line_name = ' '.join(name_tokens).strip('-:•')
@@ -281,7 +288,26 @@ def parse_products_from_text(ocr_text: str) -> List[Dict]:
                     })
                     continue
 
-    # Second pass: multi-line parsing for OCR where each field is on separate line
+        # Try: name + unit_price + total (Vietnamese format, no quantity column)
+        if len(tokens) >= 3:
+            total = _parse_money_token(tokens[-1])
+            unit = _parse_money_token(tokens[-2])
+            if (total and unit and total >= unit and unit >= _MIN_PRICE_VND
+                    and _is_price_token(tokens[-1]) and _is_price_token(tokens[-2])):
+                qty = max(1, int(round(total / unit)))
+                name_tokens = tokens[:-2]
+                line_name = ' '.join(name_tokens).strip('-:•')
+                if line_name and len(line_name) > 2:
+                    items.append({
+                        'product_name': line_name,
+                        'quantity': qty,
+                        'unit_price': unit,
+                        'line_total': total
+                    })
+                    continue
+
+    # Second pass: multi-line parsing for OCR engines that return each field
+    # on a separate line (e.g., EasyOCR). Pattern: text → number → number
     if not items:
         buffer = []
         for line in lines:
@@ -289,37 +315,50 @@ def parse_products_from_text(ocr_text: str) -> List[Dict]:
             if any(skip in line_lower for skip in _SKIP_LINES):
                 continue
             
-            # Check if line is a pure money value or small quantity number
-            # Clean leading punctuation that OCR sometimes adds
+            # If line has more letters than digits, it's a product name
+            # But handle OCR-misread digits (0/O confusion): "0oo" or "OO0" are likely numbers
+            line_digits_normalized = line.replace('o', '0').replace('O', '0')
+            pure_digits = re.sub(r'[^0-9]', '', line_digits_normalized)
+            if len(line.strip()) <= 4 and pure_digits and len(pure_digits) >= len(line.strip()) * 0.5:
+                # Short line that's mostly digit-like — treat as number
+                val = float(pure_digits) if pure_digits else 0
+                if val > 0:
+                    buffer.append(('number', val) if val >= _MIN_PRICE_VND else ('qty', int(val)))
+                    continue
+            if _is_text_line(line):
+                buffer.append(('text', line.strip()))
+                continue
+            
+            # Pure numeric / price-like line
             line_clean = line.lstrip(',.;:')
             clean_val = re.sub(r'[^0-9]', '', line_clean)
-            if clean_val and len(clean_val) >= 1 and len(clean_val) <= 12:
-                val = float(clean_val)
-                # Prices typically have comma/dot formatting in source
-                has_separator = ',' in line_clean or '.' in line_clean
-                # Numbers >= 5 digits or with separators are likely prices
-                if len(clean_val) >= 5 or has_separator:
-                    buffer.append(('number', val))
-                # Small numbers (1-2 digits) without text context are quantities
-                elif len(clean_val) <= 2 and val < 100:
-                    buffer.append(('qty', int(val)))
-                # 3-4 digit numbers without separators might be part of product name (e.g., "4004")
-                # Only treat as price if it appears in isolation
-                elif len(line_clean.strip()) == len(clean_val):
-                    buffer.append(('number', val))
-                else:
-                    # Likely part of product name/code
+            if not clean_val:
+                if len(line) > 2:
                     buffer.append(('text', line.strip()))
-            elif len(line) > 2:
-                # Likely a product name or fragment
+                continue
+            
+            val = float(clean_val)
+            has_separator = ',' in line_clean or '.' in line_clean
+            
+            # Price: has separator or large number (>= 4 digits)
+            if (has_separator and val >= _MIN_PRICE_VND) or len(clean_val) >= 4:
+                buffer.append(('number', val))
+            # Small integer without separators → quantity
+            elif len(clean_val) <= 2 and val > 0 and val < 100 and not has_separator:
+                buffer.append(('qty', int(val)))
+            # Isolated 3-digit number → could be price or code
+            elif len(line_clean.strip()) == len(clean_val) and val > 0:
+                buffer.append(('number', val))
+            else:
                 buffer.append(('text', line.strip()))
         
-        # Process entire buffer after accumulation
+        # Process buffer: look for product patterns
         i = 0
         while i < len(buffer):
-            # Pattern 1: text* → qty → number → number (4-column invoice)
             found_match = False
-            for j in range(i, len(buffer) - 3):
+            
+            # Pattern 1: text+ → qty → number → number (4-field)
+            for j in range(i, min(i + 4, len(buffer) - 3)):
                 if (buffer[j][0] == 'text' and 
                     buffer[j+1][0] == 'qty' and 
                     buffer[j+2][0] == 'number' and 
@@ -331,7 +370,7 @@ def parse_products_from_text(ocr_text: str) -> List[Dict]:
                     unit = buffer[j+2][1]
                     total = buffer[j+3][1]
                     
-                    if total >= unit and unit > 0 and len(name) > 2 and qty > 0:
+                    if total >= unit and unit >= _MIN_PRICE_VND and len(name) > 2 and qty > 0:
                         items.append({
                             'product_name': name,
                             'quantity': qty,
@@ -342,9 +381,9 @@ def parse_products_from_text(ocr_text: str) -> List[Dict]:
                         found_match = True
                         break
             
-            # Pattern 2: text* → number → number (3-column invoice, no explicit qty)
+            # Pattern 2: text+ → number → number (3-field, derive qty)
             if not found_match:
-                for j in range(i, len(buffer) - 2):
+                for j in range(i, min(i + 4, len(buffer) - 2)):
                     if (buffer[j][0] == 'text' and 
                         buffer[j+1][0] == 'number' and 
                         buffer[j+2][0] == 'number'):
@@ -354,11 +393,9 @@ def parse_products_from_text(ocr_text: str) -> List[Dict]:
                         unit = buffer[j+1][1]
                         total = buffer[j+2][1]
                         
-                        # Allow small rounding errors in quantity calculation
-                        if total >= unit and unit > 0 and len(name) > 2:
+                        if total >= unit and unit >= _MIN_PRICE_VND and len(name) > 2:
                             qty = max(1, int(round(total / unit)))
-                            # Validate: recalculated total should be within 10% of OCR total
-                            if abs(qty * unit - total) / total < 0.1 or qty <= 50:
+                            if qty <= 200:  # Sanity check
                                 items.append({
                                     'product_name': name,
                                     'quantity': qty,
