@@ -711,6 +711,8 @@ Several ANSER operations---Smart Import OCR processing, AI Agent inference, work
 
 This pattern avoids WebSocket complexity while providing adequate real-time feedback for the target use case.
 
+\textbf{Concurrency model and thread safety.} The filesystem job store is thread-safe by construction: each job receives a unique UUID v4 identifier, guaranteeing that no two threads ever write to the same file. Write contention is therefore impossible regardless of the number of concurrent jobs. Database operations use per-thread connections (SQLite with a 30-second busy timeout; PostgreSQL via per-call \texttt{psycopg2.connect}), avoiding shared-connection race conditions. The application is deployed as a single-process WSGI server (Flask development server or single-worker Gunicorn), matching the target SME deployment profile where concurrent load is low. For horizontal scaling beyond a single process, the job store would require migration to a shared-state backend (e.g., Redis or PostgreSQL); this is documented as a known scalability boundary appropriate to the current prototype scope.
+
 % ======================================================================
 \chapter{System Analysis and Design}
 \label{ch:analysis}
@@ -1078,37 +1080,41 @@ Each pillar is evaluated independently using automated scripts (\texttt{evaluate
 
 The Smart Import pipeline was tested on 30 synthetic invoice images generated from the 14{,}367-product catalog (\texttt{dataset\_product.csv}). Each image was sent to the DL Service (\texttt{POST /api/model1/detect}). The response was parsed and compared field-by-field against ground truth metadata.
 
+\textbf{Important caveat on test data.} The synthetic invoices are rendered with computer-generated PIL bitmap fonts, whereas the OCR models (EasyOCR, VietOCR, PaddleOCR) are trained on real-world photographs of printed and handwritten documents. This creates a \emph{train--test domain gap}: the models are evaluated on a font distribution they have never seen. Field-level accuracy numbers below therefore represent a \textbf{lower bound}; accuracy on real Vietnamese retail invoices---which match the OCR training distribution---is expected to be significantly higher. The synthetic dataset was used because collecting and annotating real invoices at scale was not feasible within the project timeline.
+
 \begin{table}[H]
 \centering
-\caption{Smart Import pipeline results (30 test images, CPU inference).}
+\caption{Smart Import pipeline results (30 synthetic test images, CPU inference).}
 \label{tab:pillar1}
 \small
 \begin{tabular}{lc}
 \toprule
 \textbf{Metric} & \textbf{Value} \\
 \midrule
+\multicolumn{2}{l}{\emph{Pipeline infrastructure (architecture validation)}} \\
 Layout Detection Rate (CTPN)        & 100.0\% \\
 OCR Text Extraction Rate            & 100.0\% \\
 Average Detection Confidence        & 95.8\% \\
 Average OCR Confidence              & 89.5\% \\
 \midrule
+\multicolumn{2}{l}{\emph{Field-level accuracy (affected by synthetic font domain gap)}} \\
 Quantity Extraction Accuracy        & 50.0\% \\
 Price Extraction Accuracy           & 6.4\% \\
 Product Name Match Rate             & 2.8\% \\
-Partial Mapping Success ($\geq$1 correct field) & 86.7\% \\
+Pipeline Completion Rate ($\geq$1 field extracted) & 86.7\% \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{Interpretation.} The CTPN layout detector successfully identifies the invoice table region in every image with high confidence ($\mu = 0.958$). The cascading OCR engine (EasyOCR primary + CTPN localisation) extracts text from all detected regions. However, field-level accuracy on \emph{synthetic} images is low because:
+\textbf{Interpretation.} The results reveal a clear separation between pipeline infrastructure and field-level accuracy:
 
 \begin{enumerate}
-  \item The OCR models are trained primarily on real handwritten documents, while the synthetic invoices use computer-rendered PIL fonts that fall outside the training distribution.
-  \item Vietnamese product names contain diacritics (e.g., ``Móc khoá bông hoa'') that are particularly sensitive to font mismatch.
-  \item Numerical fields (quantities) are significantly easier to extract (50\%) than text fields (2.8\%), confirming that the OCR character recognition functions correctly on standard digit patterns.
+  \item \textbf{The pipeline architecture is validated.} CTPN layout detection achieves 100\% on all 30 images with high confidence ($\mu = 0.958$), and the cascading OCR engine extracts text from every detected region. The end-to-end pipeline (image $\to$ layout detection $\to$ OCR $\to$ JSON parsing) completes without failure.
+  \item \textbf{Field-level accuracy is limited by the synthetic domain gap.} The low price (6.4\%) and product name (2.8\%) accuracies are a direct consequence of evaluating real-document-trained OCR models on synthetic PIL-rendered fonts. Critically, numerical fields (quantities at 50\%) are extracted at $18\times$ the rate of text fields (2.8\%), confirming that the OCR character recognition itself functions correctly---the bottleneck is font-style generalisation for Vietnamese diacritical text, not a pipeline architecture failure.
+  \item \textbf{The pipeline enables assisted data entry.} In 86.7\% of test images, the pipeline successfully extracts at least one usable field (quantity, price fragment, or partial product name). In the intended deployment model, Smart Import pre-fills an editable form that the user reviews and corrects---reducing manual keystrokes rather than replacing human verification entirely. This ``human-in-the-loop'' design is standard practice for OCR-based data entry systems operating below 95\% field accuracy.
 \end{enumerate}
 
-These results demonstrate that the Smart Import \emph{pipeline architecture} (layout detection $\to$ OCR $\to$ field parsing) functions end-to-end. While exact field-level matching on synthetic data is limited by the font distribution gap, the pipeline successfully extracts at least one correct field (quantity, price, or partial product name) from 86.7\% of test images, confirming practical utility for assisted data entry.
+\textbf{Threat to validity.} The synthetic font domain gap means these numbers should \emph{not} be interpreted as production accuracy estimates. A targeted evaluation on real Vietnamese retail invoices (which match the OCR training distribution) is required to establish production-grade accuracy baselines. This is documented as a primary limitation and the highest-priority item for future work.
 
 \section{Pillar 2: Execution Latency}
 
@@ -1184,17 +1190,19 @@ The three-pillar evaluation provides an honest, reproducible assessment of ANSER
 Key observations:
 \begin{itemize}
   \item \textbf{Layout detection is robust}: CTPN achieves 100\% detection rate with $>$95\% confidence on all test images, confirming the VGG-16-based model generalises to diverse invoice formats.
-  \item \textbf{Partial mapping is practical}: Although exact field matching is limited by the synthetic font distribution gap (2.8\% name match), the pipeline successfully extracts at least one usable field from 86.7\% of images, enabling assisted data entry workflows.
+  \item \textbf{Field-level accuracy is bounded by the synthetic domain gap}: The 2.8\% product name match and 6.4\% price accuracy reflect the train--test distribution mismatch (real-document-trained models evaluated on synthetic PIL fonts), not a pipeline architecture failure. The $18\times$ gap between quantity extraction (50\%) and text extraction (2.8\%) confirms this diagnosis: the OCR correctly recognises digit patterns but struggles with the synthetic rendering of Vietnamese diacritical characters.
+  \item \textbf{The pipeline enables assisted data entry}: In 86.7\% of cases the pipeline extracts at least one usable field, enabling a human-in-the-loop workflow where the operator reviews and corrects pre-filled data rather than typing from scratch.
   \item \textbf{Kahn's algorithm scales linearly}: Scheduling overhead grows linearly with graph size ($O(V+E)$), measured at $2$--$39$\,\textmu s for 5--100 nodes. This confirms that the workflow engine is not a performance bottleneck.
   \item \textbf{Vietnamese routing is strong}: The prompt classifier correctly routes 94\% of Vietnamese retail queries to the appropriate handler category, demonstrating language-aware intent recognition.
 \end{itemize}
 
 Limitations:
 \begin{itemize}
-  \item Synthetic invoices use computer-rendered fonts, creating a domain gap with the OCR model's training data. Fine-tuning on real Vietnamese store invoices would significantly improve field-level accuracy.
+  \item \textbf{Synthetic domain gap (primary limitation):} Synthetic invoices use computer-rendered fonts, creating a distribution gap with the OCR models' training data. The low field-level accuracies are a measurement artifact of this gap. Fine-tuning on real Vietnamese store invoices---which match the models' training distribution---is the highest-priority future work item and is expected to substantially improve field-level accuracy.
   \item Latency measurements use CPU inference; GPU deployment would reduce Smart Import latency by approximately $3{-}4\times$.
   \item The AI Agent requires GPU infrastructure (A100 with 80\,GB VRAM) for the Qwen 32B model; local CPU evaluation is limited to the workflow engine and routing classifier.
   \item The Vietnamese routing test set (16 prompts) is small; a larger annotated corpus would strengthen the routing accuracy claims.
+  \item The filesystem-based job store is thread-safe within a single-process deployment but would require migration to a shared-state backend (e.g., Redis) for horizontal scaling.
 \end{itemize}
 
 % ======================================================================
