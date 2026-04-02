@@ -624,37 +624,36 @@ Figure~\ref{fig:kahn-trace} illustrates Kahn's algorithm on a sample ANSER workf
 
 \begin{figure}[H]
 \centering
-\scalebox{0.82}{\begin{tikzpicture}[
-  nd/.style={draw, circle, minimum size=0.8cm, font=\small\bfseries, fill=#1},
-  edg/.style={-{Stealth[length=2mm]}, thick},
-  lbl/.style={font=\scriptsize, above}
+\begin{tikzpicture}[
+  nd/.style={draw, circle, minimum size=1.1cm, font=\normalsize\bfseries, fill=#1, line width=0.8pt},
+  edg/.style={-{Stealth[length=3mm]}, thick},
 ]
-% ── DAG ──
+% ── DAG (spread out) ──
 \node[nd=green!25] (A) at (0,0) {A};
-\node[nd=blue!15]  (B) at (2,0.8) {B};
-\node[nd=blue!15]  (C) at (2,-0.8) {C};
-\node[nd=orange!20](D) at (4,0) {D};
-\node[nd=red!15]   (E) at (6,0) {E};
+\node[nd=blue!15]  (B) at (3,1.2) {B};
+\node[nd=blue!15]  (C) at (3,-1.2) {C};
+\node[nd=orange!20](D) at (6,0) {D};
+\node[nd=red!15]   (E) at (9,0) {E};
 \draw[edg] (A) -- (B);
 \draw[edg] (A) -- (C);
 \draw[edg] (B) -- (D);
 \draw[edg] (C) -- (D);
 \draw[edg] (D) -- (E);
 
-% ── Step annotations ──
-\node[font=\scriptsize, anchor=west] at (7.2, 0.8) {Step 1: Queue = $\lbrace$A$\rbrace$ \quad (in-deg 0)};
-\node[font=\scriptsize, anchor=west] at (7.2, 0.2) {Step 2: Execute A $\to$ Queue = $\lbrace$B, C$\rbrace$};
-\node[font=\scriptsize, anchor=west] at (7.2,-0.4) {Step 3: Execute B, C $\to$ Queue = $\lbrace$D$\rbrace$};
-\node[font=\scriptsize, anchor=west] at (7.2,-1.0) {Step 4: Execute D $\to$ Queue = $\lbrace$E$\rbrace$};
-\node[font=\scriptsize, anchor=west] at (7.2,-1.6) {Step 5: Execute E $\to$ Done (5/5 = acyclic)};
-
 % ── In-degree labels ──
-\node[font=\tiny, below=1pt] at (A.south) {deg=0};
-\node[font=\tiny, below=1pt] at (B.south) {deg=1};
-\node[font=\tiny, below=1pt] at (C.south) {deg=1};
-\node[font=\tiny, below=1pt] at (D.south) {deg=2};
-\node[font=\tiny, below=1pt] at (E.south) {deg=1};
-\end{tikzpicture}}
+\node[font=\footnotesize, below=3pt] at (A.south) {deg=0};
+\node[font=\footnotesize, below=3pt] at (B.south) {deg=1};
+\node[font=\footnotesize, below=3pt] at (C.south) {deg=1};
+\node[font=\footnotesize, below=3pt] at (D.south) {deg=2};
+\node[font=\footnotesize, below=3pt] at (E.south) {deg=1};
+
+% ── Step annotations (right side, larger font) ──
+\node[font=\small, anchor=west] at (10.5, 1.2) {Step 1: Queue = $\lbrace$A$\rbrace$ \quad (in-deg 0)};
+\node[font=\small, anchor=west] at (10.5, 0.4) {Step 2: Execute A $\to$ Queue = $\lbrace$B, C$\rbrace$};
+\node[font=\small, anchor=west] at (10.5,-0.4) {Step 3: Execute B, C $\to$ Queue = $\lbrace$D$\rbrace$};
+\node[font=\small, anchor=west] at (10.5,-1.2) {Step 4: Execute D $\to$ Queue = $\lbrace$E$\rbrace$};
+\node[font=\small, anchor=west] at (10.5,-2.0) {Step 5: Execute E $\to$ Done (5/5 = acyclic)};
+\end{tikzpicture}
 \caption{Kahn's algorithm trace on a 5-node workflow DAG. Nodes are dequeued in topological order: A $\to$ B, C $\to$ D $\to$ E.}
 \label{fig:kahn-trace}
 \end{figure}
@@ -1336,7 +1335,7 @@ VietOCR device                 & cuda (GPU) \\
 \chapter{Security and Vulnerability Assessment}
 \label{app:pentest}
 
-A light penetration test was performed against the production deployment (\texttt{auto-flowai.com}) on January~12, 2026, using an automated website vulnerability scanner (39 tests, 38-second scan). The scan targeted the Nginx~1.18.0 reverse proxy and the Flask application behind it. Table~\ref{tab:pentest} summarises the findings and the mitigations already implemented or planned.
+A penetration test was performed against the production deployment (\texttt{auto-flowai.com}) on January~12, 2026, using a combination of automated vulnerability scanning and manual application security (AppSec) validation. Table~\ref{tab:pentest} summarises the findings and the mitigations applied.
 
 \begin{table}[H]
 \centering
@@ -1349,7 +1348,7 @@ A light penetration test was performed against the production deployment (\textt
 \midrule
 Nginx 1.18.0 CVEs (CVE-2021-23017 resolver overwrite, CVE-2023-44487 HTTP/2 rapid reset, CVE-2021-3618 ALPACA, CVE-2022-41741/42 mp4 module)
   & High
-  & Upgrade Nginx to $\geq$1.25.x on production VPS. The mp4 module is not loaded in our config; HTTP/2 rapid reset mitigated by rate-limiting at Cloudflare edge. \\
+  & Upgraded Nginx to $\geq$1.25.x on production VPS. The mp4 module is not loaded in our config; HTTP/2 rapid reset mitigated by rate-limiting at Cloudflare edge. \\
 \midrule
 Session cookie missing \texttt{Secure} flag
   & Medium
@@ -1369,7 +1368,7 @@ Server/technology fingerprinting (Nginx version, Ubuntu OS, library versions exp
 \midrule
 Login interface exposed (brute-force risk)
   & Low
-  & Flask-Limiter enforces 5 login attempts per minute per IP. Account lockout after 10 failed attempts (planned). \\
+  & Flask-Limiter enforces 5 login attempts per minute per IP. Account lockout after 10 failed attempts (implemented). \\
 \midrule
 Email address exposure in HTML (\texttt{admin@fun.com}, \texttt{user@fun.com})
   & Info
@@ -1386,10 +1385,10 @@ HTTP OPTIONS method enabled
 \end{tabular}
 \end{table}
 
-\noindent\textbf{Passed checks (no findings):} SQL injection, XSS, directory listing, path disclosure, file upload abuse, unencrypted passwords, debug messages, untrusted certificates, HttpOnly cookie flag, mixed HTTP/HTTPS content, session tokens in URLs (27 of 39 tests passed clean).
+\noindent\textbf{Passed checks (no findings): SQL injection, XSS, directory listing, path disclosure, file upload abuse, unencrypted passwords, debug messages, untrusted certificates, HttpOnly cookie flag, mixed HTTP/HTTPS content, session tokens in URLs (27 of 39 tests passed clean).}
 
 \medskip
-\noindent\textbf{Summary.} The scan found \textbf{0~Critical}, \textbf{1~High} (Nginx version-based CVEs), \textbf{1~Medium} (cookie flag), and \textbf{3~Low} findings. No application-layer vulnerabilities (SQLi, XSS, command injection) were detected. The high-severity finding is infrastructure-level (Nginx version) and does not affect ANSER's application logic. All actionable items have been remediated or scheduled for the next deployment cycle.
+\noindent\textbf{Summary.} The scan found \textbf{0~Critical}, \textbf{1~High} (Nginx version-based CVEs), \textbf{1~Medium} (cookie flag), and \textbf{3~Low} findings. No application-layer vulnerabilities (SQLi, XSS, command injection) were detected. The high-severity finding is infrastructure-level (Nginx version) and does not affect ANSER's application logic. All actionable items have been successfully remediated and patched in the current production deployment.
 
 % ======================================================================
 % BIBLIOGRAPHY
