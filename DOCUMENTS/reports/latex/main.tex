@@ -620,39 +620,44 @@ ANSER's workflow engine supports 12 node types, covering Google Workspace integr
 
 Executing a DAG-based workflow requires a valid \emph{topological ordering}: an arrangement of nodes such that every node is executed only after all of its dependencies have completed. ANSER uses \textbf{Kahn's algorithm}~\cite{kahn1962}, a BFS-based topological sort, for this purpose.
 
-\textbf{Algorithm~1: Kahn's Topological Sort for Workflow Execution}
+Figure~\ref{fig:kahn-trace} illustrates Kahn's algorithm on a sample ANSER workflow. Nodes with in-degree~0 (no unresolved dependencies) enter a queue; each dequeued node executes, then decrements the in-degree of its neighbours. When a neighbour reaches in-degree~0 it is enqueued. If the total executed count equals $|V|$, the graph is acyclic; otherwise a cycle is reported.
 
-\begin{lstlisting}[caption={Kahn's algorithm as implemented in \texttt{core/workflow\_engine.py}.}, label={lst:kahn}]
-function execute_workflow(nodes, edges):
-    // Step 1: Build adjacency list and in-degree map
-    in_degree = {node.id: 0 for node in nodes}
-    adjacency = {node.id: [] for node in nodes}
-    for (source, target) in edges:
-        adjacency[source].append(target)
-        in_degree[target] += 1
+\begin{figure}[H]
+\centering
+\scalebox{0.82}{\begin{tikzpicture}[
+  nd/.style={draw, circle, minimum size=0.8cm, font=\small\bfseries, fill=#1},
+  edg/.style={-{Stealth[length=2mm]}, thick},
+  lbl/.style={font=\scriptsize, above}
+]
+% ── DAG ──
+\node[nd=green!25] (A) at (0,0) {A};
+\node[nd=blue!15]  (B) at (2,0.8) {B};
+\node[nd=blue!15]  (C) at (2,-0.8) {C};
+\node[nd=orange!20](D) at (4,0) {D};
+\node[nd=red!15]   (E) at (6,0) {E};
+\draw[edg] (A) -- (B);
+\draw[edg] (A) -- (C);
+\draw[edg] (B) -- (D);
+\draw[edg] (C) -- (D);
+\draw[edg] (D) -- (E);
 
-    // Step 2: Initialize queue with zero-in-degree nodes
-    queue = [n for n in nodes if in_degree[n.id] == 0]
-    context = {}   // shared data between nodes
-    executed = 0
+% ── Step annotations ──
+\node[font=\scriptsize, anchor=west] at (7.2, 0.8) {Step 1: Queue = $\lbrace$A$\rbrace$ \quad (in-deg 0)};
+\node[font=\scriptsize, anchor=west] at (7.2, 0.2) {Step 2: Execute A $\to$ Queue = $\lbrace$B, C$\rbrace$};
+\node[font=\scriptsize, anchor=west] at (7.2,-0.4) {Step 3: Execute B, C $\to$ Queue = $\lbrace$D$\rbrace$};
+\node[font=\scriptsize, anchor=west] at (7.2,-1.0) {Step 4: Execute D $\to$ Queue = $\lbrace$E$\rbrace$};
+\node[font=\scriptsize, anchor=west] at (7.2,-1.6) {Step 5: Execute E $\to$ Done (5/5 = acyclic)};
 
-    // Step 3: BFS execution
-    while queue is not empty:
-        node = queue.pop(0)
-        result = execute_node(node, context)
-        context[node.id] = result
-        executed += 1
-        for neighbor in adjacency[node.id]:
-            in_degree[neighbor] -= 1
-            if in_degree[neighbor] == 0:
-                queue.append(neighbor)
-
-    // Step 4: Cycle detection
-    if executed != len(nodes):
-        raise CycleDetectedError("Workflow contains a cycle")
-
-    return context
-\end{lstlisting}
+% ── In-degree labels ──
+\node[font=\tiny, below=1pt] at (A.south) {deg=0};
+\node[font=\tiny, below=1pt] at (B.south) {deg=1};
+\node[font=\tiny, below=1pt] at (C.south) {deg=1};
+\node[font=\tiny, below=1pt] at (D.south) {deg=2};
+\node[font=\tiny, below=1pt] at (E.south) {deg=1};
+\end{tikzpicture}}
+\caption{Kahn's algorithm trace on a 5-node workflow DAG. Nodes are dequeued in topological order: A $\to$ B, C $\to$ D $\to$ E.}
+\label{fig:kahn-trace}
+\end{figure}
 
 \textbf{Complexity Analysis:}
 
@@ -1327,6 +1332,64 @@ VietOCR device                 & cuda (GPU) \\
 \bottomrule
 \end{tabular}
 \end{table}
+
+\chapter{Security and Vulnerability Assessment}
+\label{app:pentest}
+
+A light penetration test was performed against the production deployment (\texttt{auto-flowai.com}) on January~12, 2026, using an automated website vulnerability scanner (39 tests, 38-second scan). The scan targeted the Nginx~1.18.0 reverse proxy and the Flask application behind it. Table~\ref{tab:pentest} summarises the findings and the mitigations already implemented or planned.
+
+\begin{table}[H]
+\centering
+\caption{Penetration test findings and remediations.}
+\label{tab:pentest}
+\footnotesize
+\begin{tabular}{p{5.2cm}lp{5.8cm}}
+\toprule
+\textbf{Vulnerability / Attack Vector} & \textbf{Severity} & \textbf{Mitigation / Remediation} \\
+\midrule
+Nginx 1.18.0 CVEs (CVE-2021-23017 resolver overwrite, CVE-2023-44487 HTTP/2 rapid reset, CVE-2021-3618 ALPACA, CVE-2022-41741/42 mp4 module)
+  & High
+  & Upgrade Nginx to $\geq$1.25.x on production VPS. The mp4 module is not loaded in our config; HTTP/2 rapid reset mitigated by rate-limiting at Cloudflare edge. \\
+\midrule
+Session cookie missing \texttt{Secure} flag
+  & Medium
+  & Flask-Talisman enforces HTTPS; added \texttt{SESSION\_COOKIE\_SECURE = True} in \texttt{core/config.py} for production. \\
+\midrule
+Unsafe CSP directives (\texttt{unsafe-eval}, \texttt{unsafe-inline}, wildcard \texttt{script-src})
+  & Medium
+  & CSP policy tightened: removed \texttt{unsafe-eval}, whitelisted CDN origins (cdnjs, jsDelivr) instead of wildcard. \texttt{unsafe-inline} retained for inline event handlers in workflow canvas (documented trade-off). \\
+\midrule
+Missing \texttt{Strict-Transport-Security} header
+  & Low
+  & Added \texttt{max-age=31536000; includeSubDomains} via Flask-Talisman \texttt{force\_https=True}. \\
+\midrule
+Server/technology fingerprinting (Nginx version, Ubuntu OS, library versions exposed)
+  & Low
+  & Nginx \texttt{server\_tokens off;} applied. Bootstrap/Font Awesome versions are client-side and non-sensitive. \\
+\midrule
+Login interface exposed (brute-force risk)
+  & Low
+  & Flask-Limiter enforces 5 login attempts per minute per IP. Account lockout after 10 failed attempts (planned). \\
+\midrule
+Email address exposure in HTML (\texttt{admin@fun.com}, \texttt{user@fun.com})
+  & Info
+  & These are demo/seed accounts, not real addresses. Removed from production templates. \\
+\midrule
+Missing \texttt{security.txt}
+  & Info
+  & Created \texttt{/.well-known/security.txt} with contact and disclosure policy. \\
+\midrule
+HTTP OPTIONS method enabled
+  & Info
+  & Acceptable; only \texttt{GET, HEAD, OPTIONS} allowed. No debug methods exposed. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\noindent\textbf{Passed checks (no findings):} SQL injection, XSS, directory listing, path disclosure, file upload abuse, unencrypted passwords, debug messages, untrusted certificates, HttpOnly cookie flag, mixed HTTP/HTTPS content, session tokens in URLs (27 of 39 tests passed clean).
+
+\medskip
+\noindent\textbf{Summary.} The scan found \textbf{0~Critical}, \textbf{1~High} (Nginx version-based CVEs), \textbf{1~Medium} (cookie flag), and \textbf{3~Low} findings. No application-layer vulnerabilities (SQLi, XSS, command injection) were detected. The high-severity finding is infrastructure-level (Nginx version) and does not affect ANSER's application logic. All actionable items have been remediated or scheduled for the next deployment cycle.
 
 % ======================================================================
 % BIBLIOGRAPHY
