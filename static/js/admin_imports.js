@@ -355,9 +355,9 @@ document.addEventListener('DOMContentLoaded', function() {
         ocrItemsBody.innerHTML = items.map((item, idx) => `
             <tr data-index="${idx}">
                 <td>
-                    <select class="form-select form-select-sm ocr-product-select" data-detected="${item.name || ''}">
+                    <select class="form-select form-select-sm ocr-product-select" data-detected="${item.product_name || ''}">
                         <option value="">-- Select or keep detected --</option>
-                        <option value="new" selected>${item.name || 'Unknown'} (new)</option>
+                        <option value="new" selected>${item.product_name || 'Unknown'} (new)</option>
                         ${productOptions}
                     </select>
                 </td>
