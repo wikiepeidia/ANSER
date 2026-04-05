@@ -21,6 +21,8 @@ def load_product_catalogs(catalog_file: Path):
                 data = json.load(handle)
                 if isinstance(data, dict):
                     return data
+                if isinstance(data, list):
+                    return {'default': data}
         except (OSError, ValueError) as exc:
             print(f"Warning: Unable to load product catalogs ({exc})")
     return {}

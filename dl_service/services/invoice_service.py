@@ -1,7 +1,9 @@
 from datetime import datetime
 import cv2
 
-from utils.invoice_processor import parse_products_from_text
+from utils.invoice_processor import parse_products_from_text, extract_products_from_text, load_product_catalogs, build_catalog_index
+from config import CATALOG_PATH
+from utils.data_processor import normalize_text
 from utils.database import save_invoice_to_db, get_invoices_from_db
 from utils.logger import get_logger
 from services.ocr_service import extract_text_from_image_bytes
@@ -18,6 +20,35 @@ accuracy_stats = {
     'ocr_precision_sum': 0.0,
     'ocr_precision_count': 0
 }
+
+# ── Catalog singleton (loaded once at import time) ─────────────────
+_product_catalogs = load_product_catalogs(CATALOG_PATH)
+_catalog_index = build_catalog_index(_product_catalogs)
+print(f'[INVOICE_SERVICE] Catalog loaded: {len(_catalog_index)} SKUs from {CATALOG_PATH}', flush=True)
+
+
+def _enrich_with_catalog(products, catalog_index):
+    """Match parsed product names against catalog. Keep qty/price/total from structural parser."""
+    for product in products:
+        raw_name = product.get('product_name', '')
+        norm_name = normalize_text(raw_name)
+        if len(norm_name) < 3:
+            continue
+        best_match = None
+        best_len = 0
+        for entry in catalog_index:
+            cat_norm = entry['name_normalized']
+            if not cat_norm or len(cat_norm) < 3:
+                continue
+            if cat_norm in norm_name or norm_name in cat_norm:
+                if len(cat_norm) > best_len:
+                    best_len = len(cat_norm)
+                    best_match = entry
+        if best_match and best_len >= 4:
+            product['product_id'] = best_match['product'].get('id')
+            product['product_name'] = best_match['product'].get('name', raw_name)
+    matched = sum(1 for p in products if p.get('product_id'))
+    print(f'[INVOICE_SERVICE] Catalog enrichment: {matched}/{len(products)} products matched', flush=True)
 
 
 def process_invoice_image(image):
@@ -75,7 +106,19 @@ def process_invoice_image(image):
                 
                 print(f"[INVOICE_SERVICE] Full OCR text:\n{text}\n{'='*80}", flush=True)
 
+                # Step 1: Structural parsing — correct qty/price/total via LINE_REGEX
                 parsed_products = parse_products_from_text(text)
+                print(f"[INVOICE_SERVICE] Structural parser found {len(parsed_products)} products", flush=True)
+
+                # Step 2: Enrich with catalog names/IDs (keeps parsed numbers)
+                if parsed_products and _catalog_index:
+                    _enrich_with_catalog(parsed_products, _catalog_index)
+                elif not parsed_products and _catalog_index:
+                    catalog_products, _ = extract_products_from_text(text, _catalog_index)
+                    if catalog_products:
+                        parsed_products = catalog_products
+                        print(f"[INVOICE_SERVICE] Fallback catalog extraction found {len(catalog_products)} products", flush=True)
+
                 print(f"[INVOICE_SERVICE] Parser found {len(parsed_products)} products", flush=True)
                 if parsed_products:
                     for idx, p in enumerate(parsed_products[:3], 1):
