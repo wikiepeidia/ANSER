@@ -17,14 +17,16 @@ from authlib.integrations.flask_client import OAuth
 
 # Core Imports
 from core.extensions import login_manager, csrf, limiter, db_manager
+from core.database import Database
 from core.models import User
 from core.auth import AuthManager
 from core.config import Config
 from core.utils import Utils
 from core import google_integration
-from core.workflow_engine import execute_workflow
+from core.services import workflow_service, ai_chat_service
 from core.services.dl_client import DLClient
 from core.services.analytics_service import analytics_service
+from core.services.service_errors import ServiceValidationError
 from core.automation_engine import AutomationEngine
 from core.agent_middleware import AgentMiddleware
 sys.stdout.reconfigure(encoding='utf-8')
@@ -969,21 +971,11 @@ def delete_scenario(scenario_id):
 @csrf.exempt
 def run_workflow():
     try:
-        workflow_data = request.json
-        
-        # Get token from current_user
-        token_info = None
-        if current_user.google_token:
-            try:
-                token_info = json.loads(current_user.google_token)
-            except Exception as e:
-                print(f"Error parsing google_token for user {current_user.id}: {e}")
-        
-        result = execute_workflow(workflow_data, token_info)
+        workflow_data = request.get_json(silent=True) or {}
+        result = workflow_service.execute_user_workflow(workflow_data, current_user.google_token)
         return jsonify(result)
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
-
 
 
 @app.route('/logout')
@@ -3128,88 +3120,62 @@ def list_google_files():
 @app.route('/api/workflows', methods=['GET'])
 @login_required
 def get_user_workflows():
+    conn = None
     try:
         conn = db.get_connection()
-        c = conn.cursor()
-        c.execute('SELECT id, name, data, created_at, updated_at FROM workflows WHERE user_id = ? ORDER BY updated_at DESC', (current_user.id,))
-        rows = c.fetchall()
-        conn.close()
-        
-        workflows = []
-        for row in rows:
-            workflows.append({
-                'id': row[0],
-                'name': row[1],
-                'data': json.loads(row[2]) if row[2] else {},
-                'created_at': row[3],
-                'updated_at': row[4]
-            })
+        workflows = workflow_service.list_workflows_for_user(conn, current_user.id)
         return jsonify({'success': True, 'workflows': workflows})
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
+    finally:
+        if conn:
+            conn.close()
 
 @app.route('/api/workflows', methods=['POST'])
 @login_required
 def save_workflow():
+    conn = None
     try:
-        data = request.get_json()
-        name = data.get('name', 'Untitled Workflow')
-        workflow_data = json.dumps(data.get('data', {}))
-        workflow_id = data.get('id')
-
+        payload = request.get_json(silent=True) or {}
         conn = db.get_connection()
-        c = conn.cursor()
-        
-        if workflow_id:
-            # Update existing
-            c.execute('UPDATE workflows SET name = ?, data = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?',
-                     (name, workflow_data, workflow_id, current_user.id))
-        else:
-            # Create new
-            c.execute('INSERT INTO workflows (user_id, name, data) VALUES (?, ?, ?)',
-                     (current_user.id, name, workflow_data))
-            workflow_id = c.lastrowid
-            
-        conn.commit()
-        conn.close()
-        
-        return jsonify({'success': True, 'id': workflow_id, 'message': 'Workflow saved successfully'})
+        result = workflow_service.save_workflow_for_user(conn, current_user.id, payload)
+        return jsonify({'success': True, 'id': result['id'], 'message': result['message']})
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
+    finally:
+        if conn:
+            conn.close()
 
 @app.route('/api/workflows/<int:workflow_id>', methods=['DELETE'])
 @login_required
 def delete_workflow(workflow_id):
+    conn = None
     try:
         conn = db.get_connection()
-        c = conn.cursor()
-        c.execute('DELETE FROM workflows WHERE id = ? AND user_id = ?', (workflow_id, current_user.id))
-        conn.commit()
-        conn.close()
-        return jsonify({'success': True, 'message': 'Workflow deleted'})
+        result = workflow_service.delete_workflow_for_user(conn, current_user.id, workflow_id)
+        return jsonify({'success': True, 'message': result['message']})
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
+    finally:
+        if conn:
+            conn.close()
 
 @app.route('/api/workflows/<int:workflow_id>', methods=['GET'])
 @login_required
 def get_single_workflow(workflow_id):
+    conn = None
     try:
         conn = db_manager.get_connection()
-        c = conn.cursor()
-        c.execute('SELECT id, name, data FROM workflows WHERE id = ?', (workflow_id,))
-        row = c.fetchone()
-        conn.close()
-        if row:
-            raw_data = row[2]
-            # Use standard json here
-            flow_data = json.loads(raw_data) if isinstance(raw_data, str) else raw_data
-            return jsonify({'success': True, 'data': flow_data, 'name': row[1]})
+        result = workflow_service.get_workflow_for_user(conn, current_user.id, workflow_id)
+        if result:
+            return jsonify({'success': True, 'data': result['data'], 'name': result['name']})
         return jsonify({'success': False}), 404
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
- 
+    finally:
+        if conn:
+            conn.close()
 
- 
 @app.route('/api/dl/detect', methods=['POST'])
 @login_required
 def api_dl_detect():
@@ -3464,59 +3430,66 @@ def background_ai_task(job_id, user_id, message):
 @login_required
 @csrf.exempt
 def ai_chat():
-    data = request.get_json()
-    msg = data.get('message', '').strip()
-    if not msg: return jsonify({'error': 'Empty message'}), 400
+    data = request.get_json(silent=True) or {}
+    try:
+        submitted = ai_chat_service.submit_chat_message(current_user.id, data.get('message', ''))
+    except ServiceValidationError:
+        return jsonify({'error': 'Empty message'}), 400
 
+    msg = submitted['message']
     db_manager.add_ai_message(current_user.id, 'user', msg)
 
-    greetings = ["xin chào", "hello", "hi", "chào"]
-    if any(msg.lower().startswith(g) for g in greetings) and len(msg) < 20:
-        reply = "Xin chào! Tôi là trợ lý ảo Project A. Tôi có thể giúp bạn tạo quy trình tự động hóa hoặc tra cứu dữ liệu."
+    reply = ai_chat_service.resolve_greeting_reply(msg)
+    if reply:
         db_manager.add_ai_message(current_user.id, 'assistant', reply)
         return jsonify({"status": "completed", "response": reply, "action": None})
 
-    job_id = str(uuid.uuid4())
-    save_job_file(job_id, {"status": "pending"})
-    threading.Thread(target=background_ai_task, args=(job_id, current_user.id, msg)).start()
-    return jsonify({"status": "processing", "job_id": job_id}) 
+    job_data = ai_chat_service.create_chat_job(current_user.id, msg, save_job_file)
+    threading.Thread(target=background_ai_task, args=(job_data["job_id"], current_user.id, msg)).start()
+    return jsonify({"status": "processing", "job_id": job_data["job_id"]})
 
 
 @app.route('/api/ai/history', methods=['GET'])
 @login_required
 def get_chat_history():
+    conn = None
     try:
         conn = db_manager.get_connection()
-        c = conn.cursor()
-        # FIX: Order by created_at ASC (Oldest first for chat log)
-        c.execute("SELECT role, content FROM ai_chat_history WHERE user_id = ? ORDER BY created_at ASC LIMIT 50", (current_user.id,))
-        rows = c.fetchall()
-        conn.close()
-        return jsonify({'history': [{'role': r[0], 'content': r[1]} for r in rows]})
+        history = ai_chat_service.fetch_chat_history(conn, current_user.id, limit=50)
+        return jsonify({'history': history})
     except Exception as e:
         print(f"History Error: {e}")
         return jsonify({'history': []})
+    finally:
+        if conn:
+            conn.close()
 
 @app.route('/api/ai/status/<job_id>', methods=['GET'])
 @login_required
 def ai_job_status(job_id):
+    try:
+        ai_chat_service.get_chat_job_status(job_id)
+    except ServiceValidationError:
+        return jsonify({"status": "failed", "error": "Job not found"}), 404
+
     job = load_job_file(job_id)
-    if not job: return jsonify({"status": "failed", "error": "Job not found"}), 404
+    if not job:
+        return jsonify({"status": "failed", "error": "Job not found"}), 404
     return jsonify(job)
 
 @app.route('/api/ai/history', methods=['DELETE'])
 @login_required
 def clear_chat_history():
+    conn = None
     try:
         conn = db_manager.get_connection()
-        c = conn.cursor()
-        c.execute("DELETE FROM ai_chat_history WHERE user_id = ?", (current_user.id,))
-        conn.commit()
-        conn.close()
+        ai_chat_service.clear_chat_history_rows(conn, current_user.id)
         return jsonify({'status': 'success', 'message': 'History cleared'})
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)}), 500
-
+    finally:
+        if conn:
+            conn.close()
 
 
 if __name__ == '__main__':
