@@ -23,10 +23,10 @@ from core.auth import AuthManager
 from core.config import Config
 from core.utils import Utils
 from core import google_integration
-from core.services import workflow_service, ai_chat_service
+from core.services import workflow_service, ai_chat_service, inventory_tx_service
 from core.services.dl_client import DLClient
 from core.services.analytics_service import analytics_service
-from core.services.service_errors import ServiceValidationError
+from core.services.service_errors import ServiceValidationError, ServiceInvariantError
 from core.automation_engine import AutomationEngine
 from core.agent_middleware import AgentMiddleware
 sys.stdout.reconfigure(encoding='utf-8')
@@ -1599,70 +1599,17 @@ def api_get_imports():
 @login_required
 def api_create_import():
     """Create a new import transaction"""
-    data = request.get_json()
-    supplier_name = data.get('supplier_name')
-    notes = data.get('notes')
-    items = data.get('items', [])
-
-    if not items:
-        return jsonify({'success': False, 'message': 'No items in import'}), 400
-
+    data = request.get_json(silent=True) or {}
     conn = db_manager.get_connection()
-    c = conn.cursor()
-    
-    try:
-        # Generate code
-        code = f"IMP-{datetime.now().strftime('%Y%m%d%H%M%S')}"
-        
-        # Calculate total
-        total_amount = sum(float(item['quantity']) * float(item['unit_price']) for item in items)
-        
-        # Create transaction
-        c.execute('''INSERT INTO import_transactions 
-                     (code, supplier_name, total_amount, notes, created_by)
-                     VALUES (?, ?, ?, ?, ?)''',
-                  (code, supplier_name, total_amount, notes, current_user.id))
-        import_id = c.lastrowid
-        
-        # Create details and update stock
-        for item in items:
-            product_id = item.get('product_id')
-            product_name = item.get('product_name') # Handle new products from OCR
-            quantity = int(item['quantity'])
-            unit_price = float(item['unit_price'])
-            total_price = quantity * unit_price
-            
-            # If product_id is missing (e.g. from OCR), try to find by name or create new
-            if not product_id and product_name:
-                # Try find by name
-                c.execute('SELECT id FROM products WHERE name = ?', (product_name,))
-                row = c.fetchone()
-                if row:
-                    product_id = row[0]
-                else:
-                    # Create new product
-                    # Generate a temp code
-                    p_code = f"P-{datetime.now().strftime('%H%M%S')}-{secrets.token_hex(2).upper()}"
-                    c.execute('''INSERT INTO products (code, name, price, stock_quantity, created_by)
-                                 VALUES (?, ?, ?, 0, ?)''', 
-                              (p_code, product_name, unit_price, current_user.id))
-                    product_id = c.lastrowid
 
-            if product_id:
-                c.execute('''INSERT INTO import_details 
-                             (import_id, product_id, quantity, unit_price, total_price)
-                             VALUES (?, ?, ?, ?, ?)''',
-                          (import_id, product_id, quantity, unit_price, total_price))
-                
-                # Update stock
-                c.execute('UPDATE products SET stock_quantity = stock_quantity + ? WHERE id = ?',
-                          (quantity, product_id))
-        
-        conn.commit()
-        return jsonify({'success': True, 'message': 'Import created successfully', 'id': import_id})
-        
+    try:
+        result = inventory_tx_service.create_import_transaction(conn, current_user.id, data)
+        return jsonify({'success': True, 'message': result['message'], 'id': result['id']})
+    except ServiceValidationError as e:
+        return jsonify({'success': False, 'message': str(e)}), 400
+    except ServiceInvariantError as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
     except Exception as e:
-        conn.rollback()
         return jsonify({'success': False, 'message': str(e)}), 500
     finally:
         conn.close()
@@ -1672,35 +1619,22 @@ def api_create_import():
 def api_get_import_details(import_id):
     """Get import transaction details"""
     conn = db_manager.get_connection()
-    c = conn.cursor()
-    
-    c.execute('SELECT * FROM import_transactions WHERE id = ?', (import_id,))
-    row = c.fetchone()
-    
-    if not row:
-        conn.close()
-        return jsonify({'success': False, 'message': 'Import not found'}), 404
-        
-    transaction = {
-        'id': row[0], 'code': row[1], 'supplier_name': row[2],
-        'total_amount': row[3], 'notes': row[4], 'status': row[5], 'created_at': row[7]
-    }
-    
-    c.execute('''SELECT d.*, p.name as product_name, p.code as product_code 
-                 FROM import_details d
-                 JOIN products p ON d.product_id = p.id
-                 WHERE d.import_id = ?''', (import_id,))
-    
-    details = []
-    for d_row in c.fetchall():
-        details.append({
-            'id': d_row[0], 'product_id': d_row[2], 'quantity': d_row[3],
-            'unit_price': d_row[4], 'total_price': d_row[5],
-            'product_name': d_row[6], 'product_code': d_row[7]
+
+    try:
+        result = inventory_tx_service.get_import_transaction_details(conn, import_id)
+        if not result:
+            return jsonify({'success': False, 'message': 'Import not found'}), 404
+        return jsonify({
+            'success': True,
+            'transaction': result['transaction'],
+            'details': result['details'],
         })
-        
-    conn.close()
-    return jsonify({'success': True, 'transaction': transaction, 'details': details})
+    except ServiceInvariantError as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+    finally:
+        conn.close()
 
 @app.route('/api/exports', methods=['GET'])
 @login_required
@@ -1725,69 +1659,22 @@ def api_get_exports():
 @login_required
 def api_create_export():
     """Create a new export transaction"""
-    data = request.get_json()
-    customer_id = data.get('customer_id')
-    notes = data.get('notes')
-    items = data.get('items', [])
-
-    if not items:
-        return jsonify({'success': False, 'message': 'No items in export'}), 400
-
+    data = request.get_json(silent=True) or {}
     conn = db_manager.get_connection()
-    c = conn.cursor()
-    
+
     try:
-        # Generate code
-        code = f"EXP-{datetime.now().strftime('%Y%m%d%H%M%S')}"
-        
-        # Calculate total
-        total_amount = sum(float(item['quantity']) * float(item['unit_price']) for item in items)
-        
-        # Create transaction
-        c.execute('''INSERT INTO export_transactions 
-                     (code, customer_id, total_amount, notes, created_by)
-                     VALUES (?, ?, ?, ?, ?)''',
-                  (code, customer_id, total_amount, notes, current_user.id))
-        export_id = c.lastrowid
-        
-        # Create details and update stock
-        updated_products = []
-        for item in items:
-            product_id = item['product_id']
-            quantity = int(item['quantity'])
-            unit_price = float(item['unit_price'])
-            total_price = quantity * unit_price
-            
-            # Check stock
-            c.execute('SELECT stock_quantity FROM products WHERE id = ?', (product_id,))
-            current_stock = c.fetchone()[0]
-            if current_stock < quantity:
-                raise Exception(f"Insufficient stock for product ID {product_id}")
-
-            c.execute('''INSERT INTO export_details 
-                         (export_id, product_id, quantity, unit_price, total_price)
-                         VALUES (?, ?, ?, ?, ?)''',
-                      (export_id, product_id, quantity, unit_price, total_price))
-            
-            # Update stock
-            new_stock = current_stock - quantity
-            c.execute('UPDATE products SET stock_quantity = ? WHERE id = ?',
-                      (new_stock, product_id))
-            updated_products.append((product_id, new_stock))
-        
-        conn.commit()
-        
-        # Trigger automations in background (or just call it, it's fast enough)
-        for pid, stock in updated_products:
-            try:
-                automation_engine.check_low_stock(pid, stock)
-            except Exception as e:
-                print(f"Error triggering automation: {e}")
-
-        return jsonify({'success': True, 'message': 'Export created successfully', 'id': export_id})
-        
+        result = inventory_tx_service.create_export_transaction(
+            conn,
+            current_user.id,
+            data,
+            automation_engine,
+        )
+        return jsonify({'success': True, 'message': result['message'], 'id': result['id']})
+    except ServiceValidationError as e:
+        return jsonify({'success': False, 'message': str(e)}), 400
+    except ServiceInvariantError as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
     except Exception as e:
-        conn.rollback()
         return jsonify({'success': False, 'message': str(e)}), 500
     finally:
         conn.close()
@@ -1797,40 +1684,22 @@ def api_create_export():
 def api_get_export_details(export_id):
     """Get export transaction details"""
     conn = db_manager.get_connection()
-    c = conn.cursor()
-    
-    c.execute('''SELECT e.*, c.name as customer_name, c.phone as customer_phone 
-                 FROM export_transactions e
-                 LEFT JOIN customers c ON e.customer_id = c.id
-                 WHERE e.id = ?''', (export_id,))
-    row = c.fetchone()
-    
-    if not row:
-        conn.close()
-        return jsonify({'success': False, 'message': 'Export not found'}), 404
-        
-    transaction = {
-        'id': row[0], 'code': row[1], 'customer_id': row[2],
-        'total_amount': row[3], 'notes': row[4], 'status': row[5],
-        'created_at': row[7], 'customer_name': row[8] if len(row) > 8 else '',
-        'customer_phone': row[9] if len(row) > 9 else ''
-    }
-    
-    c.execute('''SELECT d.*, p.name as product_name, p.code as product_code 
-                 FROM export_details d
-                 JOIN products p ON d.product_id = p.id
-                 WHERE d.export_id = ?''', (export_id,))
-    
-    details = []
-    for d_row in c.fetchall():
-        details.append({
-            'id': d_row[0], 'product_id': d_row[2], 'quantity': d_row[3],
-            'unit_price': d_row[4], 'total_price': d_row[5],
-            'product_name': d_row[6], 'product_code': d_row[7]
+
+    try:
+        result = inventory_tx_service.get_export_transaction_details(conn, export_id)
+        if not result:
+            return jsonify({'success': False, 'message': 'Export not found'}), 404
+        return jsonify({
+            'success': True,
+            'transaction': result['transaction'],
+            'details': result['details'],
         })
-        
-    conn.close()
-    return jsonify({'success': True, 'transaction': transaction, 'details': details})
+    except ServiceInvariantError as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+    finally:
+        conn.close()
 
 @app.route('/api/admin/analytics/data', methods=['GET'])
 @login_required
