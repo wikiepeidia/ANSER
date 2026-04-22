@@ -3,6 +3,7 @@
 from types import SimpleNamespace
 
 import app as app_module
+import routes.inventory_routes as inventory_routes
 
 
 class _ConnStub:
@@ -39,10 +40,10 @@ def test_api_create_import_delegates_to_inventory_service(monkeypatch):
 
     monkeypatch.setattr(app_module, "current_user", SimpleNamespace(id=55))
     monkeypatch.setattr(app_module, "db_manager", _DbManagerStub(conn))
-    monkeypatch.setattr(app_module.inventory_tx_service, "create_import_transaction", _fake_create_import)
+    monkeypatch.setattr(inventory_routes.inventory_tx_service, "create_import_transaction", _fake_create_import)
 
     response = _call_wrapped(
-        app_module.api_create_import,
+        inventory_routes.api_create_import,
         "/api/imports",
         {"items": [{"product_id": 1, "quantity": 2, "unit_price": 5}]},
     )
@@ -75,10 +76,10 @@ def test_api_create_export_delegates_to_inventory_service(monkeypatch):
     monkeypatch.setattr(app_module, "current_user", SimpleNamespace(id=56))
     monkeypatch.setattr(app_module, "db_manager", _DbManagerStub(conn))
     monkeypatch.setattr(app_module, "automation_engine", automation_stub)
-    monkeypatch.setattr(app_module.inventory_tx_service, "create_export_transaction", _fake_create_export)
+    monkeypatch.setattr(inventory_routes.inventory_tx_service, "create_export_transaction", _fake_create_export)
 
     response = _call_wrapped(
-        app_module.api_create_export,
+        inventory_routes.api_create_export,
         "/api/exports",
         {"items": [{"product_id": 1, "quantity": 1, "unit_price": 9}]},
     )
