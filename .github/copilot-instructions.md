@@ -63,4 +63,3 @@
 - Help first-time users: briefly explain what workflow you picked, what it does, and what the next sensible step is.
 - After completing any `gsd-*` request or any deliverable produced through GSD, offer the next sensible step instead of stopping abruptly.
 <!-- /GSD Configuration -->
-
