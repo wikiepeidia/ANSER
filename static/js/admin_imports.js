@@ -384,8 +384,8 @@ document.addEventListener('DOMContentLoaded', function() {
             
             rows.forEach(row => {
                 const nameInput = row.querySelector('.ocr-product-name');
-                const qtyInput = row.querySelectorAll('input')[0];
-                const priceInput = row.querySelectorAll('input')[1];
+                const qtyInput = row.querySelectorAll('input[type="number"]')[0];
+                const priceInput = row.querySelectorAll('input[type="number"]')[1];
                 
                 const productId = null;
                 const productName = nameInput ? nameInput.value.trim() || 'Unknown Product' : 'Unknown Product';
