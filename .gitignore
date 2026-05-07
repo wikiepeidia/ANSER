@@ -367,3 +367,4 @@ group_project_ai_ml.db
 # Claude Code / GSD planning — development-only, not for shared branches
 .claude/
 .planning/
+.tasks/
