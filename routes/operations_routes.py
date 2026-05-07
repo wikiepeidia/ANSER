@@ -1,21 +1,18 @@
 """Analytics, dashboard, reports, and automation routes extracted from main_routes.py."""
 
-import sys as _sys
+import app as app_module
 
 
-def _import_app_globals():
-    app_module = _sys.modules.get('app') or _sys.modules.get('__main__')
-    if app_module:
-        for _name, _value in vars(app_module).items():
-            if _name.startswith('__'):
-                continue
-            if _name in globals():
-                continue
-            globals()[_name] = _value
+# Reuse initialized objects/functions from app module during migration.
+for _name, _value in vars(app_module).items():
+    if _name.startswith('__'):
+        continue
+    if _name in globals():
+        continue
+    globals()[_name] = _value
 
 
 def register_operations_routes(app):
-    _import_app_globals()
     @app.route('/api/admin/analytics/data', methods=['GET'])
     @login_required
     def api_get_analytics_data():
