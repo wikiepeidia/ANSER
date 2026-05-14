@@ -1,0 +1,138 @@
+.settings-header-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    display: grid;
+    place-items: center;
+    color: #0f172a;
+}
+
+.settings-card {
+    border: 1px solid var(--border-color);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.settings-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md) !important;
+}
+
+.settings-icon-box {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: grid;
+    place-items: center;
+    color: #0f172a;
+}
+
+.settings-badge-group {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+/* Dark mode adjustments */
+[data-theme="dark"] .settings-header-icon,
+[data-theme="dark"] .settings-icon-box {
+    color: var(--gray-800); /* Inverted gray-800 is light text */
+}
+
+[data-theme="dark"] .card {
+    background-color: var(--surface-100);
+    border-color: var(--border-soft) !important;
+}
+
+[data-theme="dark"] .text-muted {
+    color: var(--gray-500) !important;
+}
+
+/* Button Theme Adaptations */
+.btn-outline-secondary {
+    color: var(--gray-600);
+    border-color: var(--border-soft);
+}
+
+.btn-outline-secondary:hover {
+    background-color: var(--surface-200);
+    color: var(--gray-900);
+    border-color: var(--gray-500);
+}
+
+[data-theme="dark"] .btn-outline-secondary {
+    color: var(--gray-500);
+    border-color: var(--border-soft);
+}
+
+[data-theme="dark"] .btn-outline-secondary:hover {
+    background-color: var(--surface-200);
+    color: var(--gray-900);
+}
+
+/* Fix List Group in Dark Mode */
+[data-theme="dark"] .list-group-item {
+    background-color: var(--surface-100);
+    border-color: var(--border-soft);
+    color: var(--gray-900);
+}
+[data-theme="dark"] .list-group-item.active {
+    background-color: var(--primary);
+    border-color: var(--primary);
+    color: #ffffff;
+}
+[data-theme="dark"] .list-group-item:not(.active):hover {
+    background-color: var(--surface-200);
+}
+
+/* Fix Card Backgrounds & Headers */
+[data-theme="dark"] .card-header.bg-white {
+    background-color: var(--surface-200) !important;
+    border-bottom-color: var(--border-soft);
+    color: var(--gray-900);
+}
+[data-theme="dark"] .card-body {
+    background-color: var(--surface-100);
+    color: var(--gray-900);
+}
+
+/* Fix Forms explicitly */
+[data-theme="dark"] .form-label {
+    color: var(--gray-900);
+}
+[data-theme="dark"] .form-control, 
+[data-theme="dark"] .form-select {
+    background-color: var(--input-bg);
+    border-color: var(--input-border);
+    color: var(--input-text);
+}
+
+/* Theme Option Active State */
+.theme-option.is-active[data-theme-option='system'] {
+    background-color: #0d6efd !important;
+    color: white !important;
+    border-color: #0d6efd !important;
+}
+
+.theme-option.is-active[data-theme-option='dark'] {
+    background-color: #6610f2 !important;
+    color: white !important;
+    border-color: #6610f2 !important;
+}
+
+.theme-option.is-active[data-theme-option='light'] {
+    background-color: #ffc107 !important;
+    color: black !important;
+    border-color: #ffc107 !important;
+}
+
+/* Theme Option Active State */
+.theme-option.is-active[data-theme-option='system'] {
+}
+
+.theme-option.is-active[data-theme-option='dark'] {
+}
+
+.theme-option.is-active[data-theme-option='light'] {
+}
+

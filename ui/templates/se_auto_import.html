@@ -1,0 +1,230 @@
+{% extends "base.html" %}
+
+{% block title %}SE - Auto Import - {{ project_name }}{% endblock %}
+
+{% block styles %}
+{{ super() }}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin_auto_import.css') }}">
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script src="{{ url_for('static', filename='js/admin_auto_import.js') }}" defer></script>
+{% endblock %}
+
+{% block content %}
+<div class="app-layout">
+    {% include 'components/sidebar.html' %}
+
+    <main class="app-content main-content auto-import-page">
+        <div
+            class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+            <h1 class="h2"><i class="fas fa-sync-alt"></i> SE - Auto Import</h1>
+            <button class="btn btn-primary" onclick="openAddAutomationModal()">
+                <i class="fas fa-plus"></i> Create automation
+            </button>
+        </div>
+
+        <div class="alert alert-info">
+            <i class="fas fa-magic"></i> <strong>Feature:</strong> Set up automation scenarios to auto-import when
+            product stock is below threshold or on scheduled intervals.
+        </div>
+
+        <div class="row mb-3">
+            <div class="col-md-4">
+                <div class="card text-white bg-primary">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="fas fa-robot"></i> Active automations</h5>
+                        <h2 id="activeAutomations" class="text-white">0</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card text-white bg-success">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="fas fa-check-circle"></i> Completed</h5>
+                        <h2 id="completedRuns" class="text-white">0</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card text-white bg-warning">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="fas fa-clock"></i> Last Run</h5>
+                        <h5 id="lastRun" class="text-white">None</h5>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Automation list</h5>
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Type</th>
+                                <th>Status</th>
+                                <th>Last Run</th>
+                                <th>Config</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="automationsTableBody">
+                            <tr>
+                                <td colspan="6" class="text-center">
+                                    No automations yet. Click "Create automation" to get started.
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header card-header-surface">
+                <h5><i class="fas fa-lightbulb"></i> Automation Suggestions</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <div class="card border-info">
+                            <div class="card-body">
+                                <h6 class="card-title"><i class="fas fa-warehouse"></i> Auto import on low stock
+                                </h6>
+                                <p class="card-text">Automatically create import orders when product stock is below
+                                    threshold.</p>
+                                <button class="btn btn-sm btn-info" onclick="useTemplate('low_stock')">
+                                    <i class="fas fa-plus"></i> Use template
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="card border-success">
+                            <div class="card-body">
+                                <h6 class="card-title"><i class="fas fa-calendar-alt"></i> Scheduled imports</h6>
+                                <p class="card-text">Automatically import on schedule: daily, weekly, monthly.</p>
+                                <button class="btn btn-sm btn-success" onclick="useTemplate('scheduled')">
+                                    <i class="fas fa-plus"></i> Use template
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<!-- Modal: Add Automation -->
+<div class="modal fade" id="automationModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Create new Automation</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="automationForm">
+                    <div class="mb-3">
+                        <label class="form-label">Automation name <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" name="name" required
+                            placeholder="e.g. Auto import when out of stock">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Automation type</label>
+                        <select class="form-select" name="type" id="automationTypeSelect" onchange="updateConfigUI()">
+                            <option value="low_stock">Low Stock Trigger</option>
+                            <option value="scheduled">Scheduled Import</option>
+                            <option value="smart_forecast">Smart Forecast (AI)</option>
+                        </select>
+                    </div>
+
+                    <!-- Dynamic Config UI based on type -->
+                    <div id="configLowStock" class="config-section">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Stock Threshold</label>
+                                <input type="number" class="form-control" id="cfgThreshold" value="10" min="1">
+                                <div class="form-text">Trigger when stock falls below this number</div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Reorder Quantity</label>
+                                <input type="number" class="form-control" id="cfgReorderQty" value="50" min="1">
+                                <div class="form-text">How many units to order</div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Apply to Products</label>
+                            <select class="form-select" id="cfgProductScope">
+                                <option value="all">All Products</option>
+                                <option value="category">By Category</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div id="configScheduled" class="config-section" style="display:none;">
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Frequency</label>
+                                <select class="form-select" id="cfgFrequency">
+                                    <option value="daily">Daily</option>
+                                    <option value="weekly" selected>Weekly</option>
+                                    <option value="monthly">Monthly</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Day</label>
+                                <select class="form-select" id="cfgDay">
+                                    <option value="monday">Monday</option>
+                                    <option value="tuesday">Tuesday</option>
+                                    <option value="wednesday">Wednesday</option>
+                                    <option value="thursday">Thursday</option>
+                                    <option value="friday">Friday</option>
+                                    <option value="saturday">Saturday</option>
+                                    <option value="sunday">Sunday</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Time</label>
+                                <input type="time" class="form-control" id="cfgTime" value="09:00">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="configForecast" class="config-section" style="display:none;">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Forecast Days Ahead</label>
+                                <input type="number" class="form-control" id="cfgLookAhead" value="30" min="7" max="90">
+                                <div class="form-text">How many days ahead to forecast</div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Auto Approve Orders</label>
+                                <select class="form-select" id="cfgAutoApprove">
+                                    <option value="false">No - Review First</option>
+                                    <option value="true">Yes - Auto Create</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" name="active" id="automationActive" checked>
+                        <label class="form-check-label" for="automationActive">Activate immediately</label>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="submitAutomation()">Save Automation</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

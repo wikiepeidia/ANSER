@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard - {{ project_name }}{% endblock %}
+
+{% block styles %}
+{{ super() }}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin_dashboard.css') }}">
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script src="{{ url_for('static', filename='js/admin_dashboard.js') }}" defer></script>
+{% endblock %}
+
+{% block content %}
+<div class="app-layout">
+    {% include 'components/sidebar.html' %}
+
+    <main class="app-content main-content">
+        <div class="dashboard-header">
+            <div class="header-title">
+                <h1><i class="fas fa-crown"></i> Admin Dashboard</h1>
+                <p>Welcome to the admin dashboard</p>
+            </div>
+        </div>
+
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="stat-card bg-gradient-danger">
+                    <div class="stat-icon"><i class="fas fa-users"></i></div>
+                    <div class="stat-content">
+                        <div class="stat-number" id="totalUsers">0</div>
+                        <div class="stat-label">Viewers</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card bg-gradient-warning">
+                    <div class="stat-icon"><i class="fas fa-user-tie"></i></div>
+                    <div class="stat-content">
+                        <div class="stat-number" id="totalManagers">0</div>
+                        <div class="stat-label">Managers</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card bg-gradient-primary">
+                    <div class="stat-icon"><i class="fas fa-box"></i></div>
+                    <div class="stat-content">
+                        <div class="stat-number" id="totalProducts">0</div>
+                        <div class="stat-label">Products</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card bg-gradient-success">
+                    <div class="stat-icon"><i class="fas fa-shopping-cart"></i></div>
+                    <div class="stat-content">
+                        <div class="stat-number" id="totalCustomers">0</div>
+                        <div class="stat-label">Customers</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mb-4">
+            <div class="col-12">
+                <h3 class="section-title"><i class="fas fa-bolt"></i> Quick Actions</h3>
+            </div>
+            <div class="col-md-3">
+                <a class="action-card action-analytics" href="{{ url_for('pages.admin_analytics') }}">
+                    <div class="action-icon"><i class="fas fa-chart-line"></i></div>
+                    <div class="action-content">
+                        <h4>Analytics & Reports</h4>
+                        <p>View revenue, traffic, profit</p>
+                    </div>
+                    <div class="action-arrow"><i class="fas fa-arrow-right"></i></div>
+                </a>
+            </div>
+            <div class="col-md-3">
+                <a class="action-card action-roles" href="{{ url_for('pages.admin_roles') }}">
+                    <div class="action-icon"><i class="fas fa-user-shield"></i></div>
+                    <div class="action-content">
+                        <h4>Manage Roles</h4>
+                        <p>Upgrade/Downgrade account User ↔ Manager</p>
+                    </div>
+                    <div class="action-arrow"><i class="fas fa-arrow-right"></i></div>
+                </a>
+            </div>
+            <div class="col-md-3">
+                <a class="action-card action-managers" href="{{ url_for('pages.admin_managers') }}">
+                    <div class="action-icon"><i class="fas fa-user-tie"></i></div>
+                    <div class="action-content">
+                        <h4>Manage Managers</h4>
+                        <p>Create and manage Manager accounts</p>
+                    </div>
+                    <div class="action-arrow"><i class="fas fa-arrow-right"></i></div>
+                </a>
+            </div>
+        </div>
+
+        <div class="row mb-4">
+            <div class="col-12">
+                <h3 class="section-title"><i class="fas fa-history"></i> Recent Activity</h3>
+            </div>
+            <div class="col-12">
+                <div class="activity-card">
+                    <div class="activity-list" id="recentActivities">
+                        <div class="text-center py-5">
+                            <div class="spinner-border text-primary" role="status"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6">
+                <div class="info-card">
+                    <h4><i class="fas fa-info-circle"></i> System Info</h4>
+                    <div class="info-item">
+                        <span class="info-label">Phiên bản:</span>
+                        <span class="info-value">v1.0.0</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Database:</span>
+                        <span class="info-value">{{ db_type }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Uptime:</span>
+                        <span class="info-value" id="systemUptime">--</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="info-card">
+                    <h4><i class="fas fa-shield-alt"></i> Security</h4>
+                    <div class="info-item">
+                        <span class="info-label">Authentication:</span>
+                        <span class="info-value"><i class="fas fa-check-circle text-success"></i> Enabled</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">HTTPS:</span>
+                        <span class="info-value"><i class="fas fa-times-circle text-warning"></i> Disabled</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Auto Backup:</span>
+                        <span class="info-value"><i class="fas fa-check-circle text-success"></i> Daily</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+{% endblock %}

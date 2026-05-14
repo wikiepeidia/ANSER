@@ -1,0 +1,176 @@
+/* Admin roles page specific styles */
+.main-content {
+    margin-left: 280px;
+    padding: 30px;
+    background: var(--surface-200);
+    min-height: 100vh;
+}
+
+.roles-page .card {
+    background: var(--surface-100);
+    border: 1px solid var(--border-soft);
+    border-radius: 16px;
+    box-shadow: 0 3px 18px rgba(15, 23, 42, 0.08);
+    transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.roles-page .card:hover {
+    box-shadow: 0 12px 35px rgba(15, 23, 42, 0.12);
+}
+
+.roles-page .card:not([class*='bg-']) .card-body,
+.roles-page .card:not([class*='bg-']) .card-title,
+.roles-page .card:not([class*='bg-']) .card-text {
+    color: var(--gray-900);
+}
+
+.roles-page .card-title i {
+    color: inherit;
+}
+
+.roles-page .table {
+    color: var(--gray-900);
+    border-color: var(--border-soft);
+}
+
+.roles-page .table thead th {
+    text-transform: uppercase;
+    font-size: 12px;
+    letter-spacing: 0.5px;
+    color: var(--table-header-color) !important;
+    font-weight: 700;
+    background: var(--surface-200);
+    border-bottom: 1px solid var(--border-soft);
+}
+
+.roles-page .table tbody td {
+    vertical-align: middle;
+    border-top: 1px solid var(--border-soft);
+}
+
+.roles-page .table tbody tr {
+    background: var(--surface-100);
+    transition: background 0.25s ease;
+}
+
+.roles-page .table tbody tr:nth-child(even) {
+    background: var(--surface-200);
+}
+
+.roles-page .table tbody tr:hover {
+    background: var(--surface-300);
+}
+
+.roles-page .alert {
+    background: var(--surface-200);
+    border: 1px solid var(--border-soft);
+    color: var(--gray-900);
+}
+
+.roles-page .alert i {
+    color: var(--primary);
+}
+
+.roles-page .nav-tabs .nav-link {
+    color: var(--gray-600);
+    border: none;
+    padding: 10px 20px;
+    background: var(--surface-100);
+    border-bottom: 1px solid var(--border-soft);
+}
+
+.roles-page .nav-tabs .nav-link.active {
+    color: var(--primary);
+    border-bottom: 3px solid var(--primary);
+    background: var(--surface-100);
+    font-weight: 700;
+}
+
+.roles-page .nav-tabs .nav-link:hover {
+    border-bottom: 3px solid var(--primary);
+    color: var(--primary);
+}
+
+.stats-card {
+    border-radius: 15px;
+    padding: 25px;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease;
+}
+
+.stats-card:hover {
+    transform: translateY(-5px);
+}
+
+.bg-gradient-danger {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+.bg-gradient-warning {
+    background: linear-gradient(135deg, #ffd89b 0%, #ff8a00 100%);
+    color: #1f1f1f;
+}
+
+.bg-gradient-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.stats-icon {
+    font-size: 48px;
+    opacity: 0.9;
+}
+
+.stats-info {
+    flex: 1;
+}
+
+.stats-number {
+    font-size: 32px;
+    font-weight: 700;
+    margin-bottom: 5px;
+}
+
+.stats-label {
+    font-size: 14px;
+    opacity: 0.9;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.nav-tabs .nav-link {
+    color: var(--gray-600);
+    border: none;
+    padding: 10px 20px;
+}
+
+.nav-tabs .nav-link.active {
+    color: var(--primary);
+    border-bottom: 3px solid var(--primary);
+    background: none;
+    font-weight: 700;
+}
+
+.nav-tabs .nav-link:hover {
+    border-bottom: 3px solid #764ba2;
+}
+
+.badge {
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.btn-action {
+    padding: 5px 12px;
+    font-size: 13px;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+}
+
+.btn-action:hover {
+    transform: scale(1.05);
+}

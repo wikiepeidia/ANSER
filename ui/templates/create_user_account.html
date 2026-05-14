@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+
+{% block title %}Create Employee Account - {{ project_name }}{% endblock %}
+
+{% block styles %}
+{{ super() }}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/create_user.css') }}">
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script src="{{ url_for('static', filename='js/create_user.js') }}" defer></script>
+{% endblock %}
+
+{% block content %}
+<div class="app-layout">
+    {% include 'components/sidebar.html' %}
+
+    <main class="app-content">
+        <header class="create-user-header">
+            <h1>Create Employee Account</h1>
+            <p>Create a new staff account for your store</p>
+        </header>
+
+        <div class="create-user-card">
+            <div class="info-box">
+                <p><i class="fas fa-info-circle"></i> <strong>Employee Permissions:</strong> Employee accounts have access
+                    to core features (Products, Import/Export) but cannot manage other users.</p>
+            </div>
+
+            <form id="createUserForm" method="POST" action="/api/create-user" novalidate>
+                <div class="form-section">
+                    <h3><i class="fas fa-user"></i> Basic Information</h3>
+
+                    <div class="form-group">
+                        <label for="email">Email <span style="color: #ef4444;">*</span></label>
+                        <input type="email" id="email" name="email" required placeholder="user@example.com">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="password">Password <span style="color: #ef4444;">*</span></label>
+                        <input type="password" id="password" name="password" required
+                            placeholder="At least 8 characters">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="first_name">First name</label>
+                        <input type="text" id="first_name" name="first_name" placeholder="Nguyễn Văn">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="last_name">Last name</label>
+                        <input type="text" id="last_name" name="last_name" placeholder="A">
+                    </div>
+                </div>
+
+                <!-- Role section hidden as there is only one role available -->
+                <input type="hidden" name="role" value="employee">
+                <!--
+                <div class="form-section">
+                    <h3><i class="fas fa-shield-alt"></i> Role & Permissions</h3>
+
+                    <div class="form-group">
+                        <label for="role">Role</label>
+                        <select id="role" name="role" disabled>
+                            <option value="employee" selected>Employee (Standard access)</option>
+                        </select>
+                        <small style="color: #6b7280; display: block; margin-top: 5px;">
+                            Default employee role: Products, Imports/Exports. No Manager analytics.
+                        </small>
+                    </div>
+                </div>
+                -->
+
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="window.history.back()">
+                        <i class="fas fa-times"></i> Cancel
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-check"></i> Create account
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <div class="create-user-card" style="margin-top: 30px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+                <h2 style="margin: 0;"><i class="fas fa-users"></i> Employee list</h2>
+                <button class="btn btn-secondary" onclick="loadUserList()">
+                    <i class="fas fa-sync-alt"></i> Reload
+                </button>
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <input type="text" id="searchUser" class="search-input" placeholder="Search by email or name...">
+            </div>
+
+            <div style="overflow-x: auto;">
+                <table class="user-table">
+                    <thead>
+                        <tr>
+                            <th>Email</th>
+                            <th>Full name</th>
+                            <th class="text-center">Role</th>
+                            <th class="text-center">Status</th>
+                            <th class="text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="userListBody">
+                        <tr>
+                            <td colspan="5" class="empty-state">
+                                <i class="fas fa-spinner fa-spin" style="font-size: 2rem; margin-bottom: 10px;"></i>
+                                <p>Loading list...</p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+</div>
+{% endblock %}

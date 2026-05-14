@@ -1,0 +1,24 @@
+[run]
+branch = True
+source =
+    app
+    core
+    routes
+omit =
+    tests/*
+    */__init__.py
+    dl_service/*
+    ai_agent_service/*
+    ui/*
+    static/*
+    .planning/*
+
+[report]
+show_missing = True
+skip_covered = False
+precision = 1
+exclude_lines =
+    pragma: no cover
+    if __name__ == .__main__.:
+    raise NotImplementedError
+    pass

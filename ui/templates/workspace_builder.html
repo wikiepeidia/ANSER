@@ -1,0 +1,566 @@
+{% extends "base.html" %}
+
+{% block title %}Workspace Builder{% endblock %}
+
+{% block body_class %}builder-page{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/builder.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/builder_tabs.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="builder-container" data-google-connected="{{ 'true' if current_user.google_token else 'false' }}">
+    <!-- Sidebar -->
+    <div class="tools-sidebar">
+        <div class="sidebar-header">
+            <a href="{{ url_for('pages.dashboard') }}" class="back-btn" title="Back to Dashboard">
+                <i class="fas fa-arrow-left"></i>
+            </a>
+            <div class="user-menu">
+                <div class="user-avatar">
+                    {% if current_user.avatar %}
+                    <img src="{{ current_user.avatar }}" alt="Avatar"
+                        style="width: 100%; height: 100%; border-radius: 50%;">
+                    {% else %}
+                    {{ current_user.first_name[0] if current_user.first_name else 'U' }}
+                    {% endif %}
+                </div>
+                <div style="flex: 1; overflow: hidden;">
+                    <div class="sidebar-title" style="margin: 0; font-size: 0.95rem;">{{ current_user.name }}</div>
+                    <div class="sidebar-subtitle"
+                        style="font-size: 0.8rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{
+                        current_user.email }}</div>
+                </div>
+            </div>
+            <div class="connection-status" style="padding: 0 10px; margin-bottom: 10px;">
+                {% if current_user.google_token %}
+                <div style="font-size: 0.75rem; color: #0F9D58; display: flex; align-items: center; gap: 5px;">
+                    <i class="fas fa-check-circle"></i> Google Connected
+                </div>
+                {% else %}
+                <a href="{{ url_for('google.google_connect') }}"
+                    style="font-size: 0.75rem; color: #F4B400; display: flex; align-items: center; gap: 5px; text-decoration: none; cursor: pointer;">
+                    <i class="fas fa-exclamation-circle"></i> Connect Google
+                </a>
+                {% endif %}
+            </div>
+            <div class="category-title" style="margin-top: 24px;">TOOLBOX</div>
+            <div class="search-box p-0 border-0">
+                <input type="text" id="toolSearch" class="search-input" placeholder="Search tools...">
+                <i class="fas fa-search search-icon"></i>
+            </div>
+
+            <!-- Tabs -->
+            <ul class="nav nav-tabs nav-fill mt-2 mb-2" id="builderTabs" role="tablist"
+                style="border-bottom: 1px solid var(--builder-border);">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active py-1" id="nodes-tab" data-bs-toggle="tab"
+                        data-bs-target="#nodes-pane" type="button" role="tab" style="font-size: 0.85rem;">Nodes</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link py-1" id="templates-tab" data-bs-toggle="tab"
+                        data-bs-target="#templates-pane" type="button" role="tab"
+                        style="font-size: 0.85rem;">Templates</button>
+                </li>
+            </ul>
+        </div>
+
+        <div class="tab-content" id="builderTabsContent" style="flex: 1; overflow-y: auto;">
+            <!-- Nodes Tab -->
+            <div class="tab-pane fade show active" id="nodes-pane" role="tabpanel" aria-labelledby="nodes-tab">
+                <div class="tools-list" id="toolList">
+                    <div class="category-title">RETAIL AI</div>
+                    <div class="tool-item" draggable="true" data-category="ai" data-type="invoice_ocr">
+                        <div class="tool-icon" style="background: #00BCD4;"><i class="fas fa-file-invoice"></i></div>
+                        <div class="tool-info">
+                            <div class="tool-name">OCR Invoice</div>
+                            <div class="tool-description">Upload & Extract Invoice Data</div>
+                        </div>
+                    </div>
+                    <div class="tool-item" draggable="true" data-category="ai" data-type="invoice_forecast">
+                        <div class="tool-icon" style="background: #673AB7;"><i class="fas fa-chart-line"></i></div>
+                        <div class="tool-info">
+                            <div class="tool-name">Predict Invoice</div>
+                            <div class="tool-description">Forecast Quantity (LSTM)</div>
+                        </div>
+                    </div>
+
+                    <div class="category-title">GOOGLE</div>
+                    <div class="tool-item" draggable="true" data-category="integration" data-type="google_sheet_read">
+                        <div class="tool-icon" style="background: #0F9D58;"><i class="fas fa-table"></i></div>
+                        <div class="tool-info">
+                            <div class="tool-name">Read Sheet</div>
+                            <div class="tool-description">Read data from Google Sheets</div>
+                        </div>
+                    </div>
+                    <div class="tool-item" draggable="true" data-category="integration" data-type="google_sheet_write">
+                        <div class="tool-icon" style="background: #0F9D58;"><i class="fas fa-pen"></i></div>
+                        <div class="tool-info">
+                            <div class="tool-name">Write Sheet</div>
+                            <div class="tool-description">Write data to Google Sheets</div>
+                        </div>
+                    </div>
+                    <div class="tool-item" draggable="true" data-category="integration" data-type="google_doc_read">
+                        <div class="tool-icon" style="background: #4285F4;"><i class="fas fa-file-alt"></i></div>
+                        <div class="tool-info">
+                            <div class="tool-name">Read Doc</div>
+                            <div class="tool-description">Read text from Google Docs</div>
+                        </div>
+                    </div>
+                    <div class="tool-item" draggable="true" data-category="integration" data-type="google_doc_write">
+                        <div class="tool-icon" style="background: #4285F4;"><i class="fas fa-file-signature"></i></div>
+                        <div class="tool-info">
+                            <div class="tool-name">Write Doc</div>
+                            <div class="tool-description">Write text to Google Docs</div>
+                        </div>
+                    </div>
+                    <div class="tool-item" draggable="true" data-category="integration" data-type="gmail_send">
+                        <div class="tool-icon" style="background: #EA4335;"><i class="fas fa-envelope"></i></div>
+                        <div class="tool-info">
+                            <div class="tool-name">Send Email</div>
+                            <div class="tool-description">Send via Gmail</div>
+                        </div>
+                    </div>
+
+
+
+                    <div class="category-title">INTEGRATIONS</div>
+                    <div class="tool-item" draggable="true" data-category="integration" data-type="make_webhook">
+                        <div class="tool-icon" style="background: #6f42c1;"><i class="fas fa-bolt"></i></div>
+                        <div class="tool-info">
+                            <div class="tool-name">Make.com</div>
+                            <div class="tool-description">Trigger Make webhook</div>
+                        </div>
+                    </div>
+                    <div class="tool-item" draggable="true" data-category="integration" data-type="slack_notify">
+                        <div class="tool-icon" style="background: #4A154B;"><i class="fab fa-slack"></i></div>
+                        <div class="tool-info">
+                            <div class="tool-name">Slack</div>
+                            <div class="tool-description">Send Slack message</div>
+                        </div>
+                    </div>
+                    <div class="tool-item" draggable="true" data-category="integration" data-type="discord_notify">
+                        <div class="tool-icon" style="background: #5865F2;"><i class="fab fa-discord"></i></div>
+                        <div class="tool-info">
+                            <div class="tool-name">Discord</div>
+                            <div class="tool-description">Send Discord webhook</div>
+                        </div>
+                    </div>
+
+                    <div class="category-title">LOGIC</div>
+                    <div class="tool-item" draggable="true" data-category="logic" data-type="filter">
+                        <div class="tool-icon" style="background: #FF9800;"><i class="fas fa-filter"></i></div>
+                        <div class="tool-info">
+                            <div class="tool-name">Filter</div>
+                            <div class="tool-description">Filter data stream</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Templates Tab -->
+            <div class="tab-pane fade" id="templates-pane" role="tabpanel" aria-labelledby="templates-tab">
+                <div class="tools-list">
+                    <div class="category-title">POPULAR TEMPLATES</div>
+
+                    <div class="tool-item template-item" data-template="invoice_scan">
+                        <div class="tool-icon" style="background: #00BCD4;"><i class="fas fa-file-invoice-dollar"></i>
+                        </div>
+                        <div class="tool-info">
+                            <div class="tool-name">Invoice Processing</div>
+                            <div class="tool-description">OCR Invoice -> AI Analysis -> Slack</div>
+                        </div>
+                    </div>
+
+                    <div class="tool-item template-item" data-template="customer_feedback">
+                        <div class="tool-icon" style="background: #E91E63;"><i class="fas fa-heart"></i></div>
+                        <div class="tool-info">
+                            <div class="tool-name">Customer Feedback</div>
+                            <div class="tool-description">Sheet -> Sentiment -> Alert Manager</div>
+                        </div>
+                    </div>
+
+                    <div class="tool-item template-item" data-template="low_stock_alert">
+                        <div class="tool-icon" style="background: #FF9800;"><i class="fas fa-boxes"></i></div>
+                        <div class="tool-info">
+                            <div class="tool-name">Low Stock Alert</div>
+                            <div class="tool-description">Check Stock -> Filter -> Email</div>
+                        </div>
+                    </div>
+
+                    <div class="tool-item template-item" data-template="daily_report">
+                        <div class="tool-icon" style="background: #4CAF50;"><i class="fas fa-calendar-check"></i></div>
+                        <div class="tool-info">
+                            <div class="tool-name">Daily Sales Report</div>
+                            <div class="tool-description">Fetch Sales -> Summarize -> Email</div>
+                        </div>
+                    </div>
+
+                    <div class="tool-item template-item" data-template="social_media_monitor">
+                        <div class="tool-icon" style="background: #2196F3;"><i class="fas fa-hashtag"></i></div>
+                        <div class="tool-info">
+                            <div class="tool-name">Social Monitor</div>
+                            <div class="tool-description">Monitor Brand -> Sentiment -> Sheet</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Canvas Area -->
+    <div class="builder-canvas">
+        <div class="canvas-header">
+            <div class="canvas-title">
+                <input type="text" value="Untitled Workflow" class="workflow-name-input">
+            </div>
+            <div class="canvas-actions">
+                <button class="action-btn" onclick="showTutorialModal()" style="color: #9C27B0; border-color: #9C27B0;">
+                    <i class="fas fa-graduation-cap"></i> Tutorial
+                </button>
+                <button class="action-btn" data-action="run-workflow" style="color: #4CAF50; border-color: #4CAF50;">
+                    <i class="fas fa-play"></i> Run
+                </button>
+                <button class="action-btn" data-action="pause-workflow" style="color: #FFC107; border-color: #FFC107;">
+                    <i class="fas fa-pause"></i> Pause
+                </button>
+                <button class="action-btn" data-action="cancel-workflow" style="color: #F44336; border-color: #F44336;">
+                    <i class="fas fa-stop"></i> Cancel
+                </button>
+                <button class="action-btn" data-action="save-workflow" style="color: #2196F3; border-color: #2196F3;">
+                    <i class="fas fa-save"></i> Save
+                </button>
+                <button class="action-btn" data-action="load-workflow" style="color: #FF9800; border-color: #FF9800;">
+                    <i class="fas fa-folder-open"></i> Load Scenario
+                </button>
+                <button class="action-btn" data-action="clear-canvas" style="color: #f44336; border-color: #f44336;">
+                    <i class="fas fa-trash"></i> Clear
+                </button>
+            </div>
+        </div>
+
+        <div class="canvas-viewport">
+
+            <div id="workflowCanvas" class="workflow-canvas">
+                <svg id="connectionLines" class="connections-svg"></svg>
+                <div id="dropZone" class="drop-zone">
+                    <div class="drop-icon">
+                        <i class="fas fa-plus-circle"></i>
+                    </div>
+                    <div class="drop-text">Drag and drop tools here</div>
+                </div>
+            </div>
+
+            <!-- Console Panel -->
+            <div id="consolePanel" class="console-panel minimized">
+                <div class="console-header" id="consoleHeader">
+                    <div class="console-title">
+                        <i class="fas fa-terminal"></i> Console Output
+                    </div>
+                    <div class="console-actions">
+                        <button id="clearConsole" class="console-action-btn" title="Clear Console">
+                            <i class="fas fa-ban"></i>
+                        </button>
+                        <button id="toggleConsole" class="console-action-btn" title="Toggle Console">
+                            <i class="fas fa-chevron-up"></i>
+                        </button>
+                    </div>
+                </div>
+                <div id="consoleContent" class="console-content">
+                    <div class="console-line system">System ready. Waiting for workflow execution...</div>
+                </div>
+                <div id="consoleResizer" class="console-resizer" title="Drag to resize console"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Property Panel -->
+    <div id="propertyPanel" class="property-panel">
+        <div class="panel-header">
+            <h3 id="selectedNodeTitle" class="property-title">Properties</h3>
+            <button id="closePropertyPanel" class="close-btn">&times;</button>
+        </div>
+        <div class="panel-content">
+            <div class="form-group">
+                <label>Name</label>
+                <input type="text" id="nodeName" class="form-control">
+            </div>
+            <div class="form-group">
+                <label>Description</label>
+                <textarea id="nodeDescription" class="form-control"></textarea>
+            </div>
+
+            <!-- Dynamic Settings Container -->
+            <div id="nodeSettings" class="dynamic-settings"></div>
+
+            <button id="saveNodeBtn" class="action-btn primary full-width" style="margin-top: 20px;">
+                Update Node
+            </button>
+        </div>
+    </div>
+
+    <!-- Load Workflow Modal -->
+    <div id="loadWorkflowModal" class="builder-modal">
+        <div class="builder-modal-content">
+            <div class="builder-modal-header">
+                <h3>Load Scenario</h3>
+                <span class="builder-close-modal">&times;</span>
+            </div>
+            <div class="builder-modal-body">
+                <div id="workflowList" class="workflow-list">
+                    <!-- Workflows will be populated here -->
+                    <div class="loading-spinner">Loading...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Google Drive Picker Modal -->
+    <div id="googlePickerModal" class="builder-modal">
+        <div class="builder-modal-content" style="max-width: 720px;">
+            <div class="builder-modal-header">
+                <h3>Select from Google Drive</h3>
+                <span class="builder-close-modal" data-close="googlePickerModal">&times;</span>
+            </div>
+            <div class="builder-modal-body">
+                <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                    <input type="text" id="googlePickerSearch" class="form-control" placeholder="Search by name...">
+                    <select id="googlePickerType" class="form-control" style="max-width: 180px;">
+                        <option value="sheets">Sheets</option>
+                        <option value="docs">Docs</option>
+                        <option value="files">All files</option>
+                    </select>
+                </div>
+                <div id="googlePickerStatus" class="picker-loading" style="display:none;">
+                    <div class="loading-spinner">Loading...</div>
+                    <div class="picker-progress"><span class="bar"></span></div>
+                </div>
+                <div id="googlePickerList" class="workflow-list" style="max-height: 360px; overflow: auto;"></div>
+                <div style="display:flex; justify-content: space-between; margin-top: 10px;">
+                    <button id="googlePickerLoadMore" class="action-btn" style="display:none;">Load more</button>
+                    <div style="flex:1"></div>
+                    <div style="display:flex; gap: 8px;">
+                        <button class="action-btn" data-close="googlePickerModal">Cancel</button>
+                        <button id="googlePickerSelect" class="action-btn primary" disabled>Select</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tutorial Modal -->
+<div class="modal fade" id="tutorialModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold">Welcome to Workflow Automation!</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body pt-2">
+                <p class="text-muted mb-4">It looks like you're new here. Would you like a quick tour on how to set up
+                    your first automation?</p>
+
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="card h-100 border-0 bg-light tutorial-card">
+                            <div class="card-body text-center p-4">
+                                <div class="mb-3 text-primary">
+                                    <i class="fab fa-slack fa-3x"></i>
+                                </div>
+                                <h5>Slack Integration</h5>
+                                <p class="small text-muted">Learn how to create a webhook to send notifications to Slack
+                                    channels.</p>
+                                <a href="https://api.slack.com/messaging/webhooks" target="_blank"
+                                    class="btn btn-outline-primary btn-sm stretched-link">View Guide</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card h-100 border-0 bg-light tutorial-card">
+                            <div class="card-body text-center p-4">
+                                <div class="mb-3 text-danger">
+                                    <i class="fab fa-google fa-3x"></i>
+                                </div>
+                                <h5>Gmail Automation</h5>
+                                <p class="small text-muted">Set up triggers for new emails and automate responses.</p>
+                                <a href="https://developers.google.com/gmail/api/guides" target="_blank"
+                                    class="btn btn-outline-danger btn-sm stretched-link">View Guide</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card h-100 border-0 bg-light tutorial-card">
+                            <div class="card-body text-center p-4">
+                                <div class="mb-3 text-success">
+                                    <i class="fas fa-file-excel fa-3x"></i>
+                                </div>
+                                <h5>Excel/Sheets Sync</h5>
+                                <p class="small text-muted">Automatically sync data between your database and
+                                    spreadsheets.</p>
+                                <a href="https://developers.google.com/workspace/sheets/api/guides/concepts?hl=vi"
+                                    target="_blank" class="btn btn-outline-success btn-sm stretched-link">API Guide</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card h-100 border-0 bg-light tutorial-card">
+                            <div class="card-body text-center p-4">
+                                <div class="mb-3 text-primary">
+                                    <i class="fab fa-discord fa-3x"></i>
+                                </div>
+                                <h5>Discord Integration</h5>
+                                <p class="small text-muted">Connect your workflow to Discord for real-time
+                                    notifications.
+                                </p>
+                                <a href="https://support.discord.com/hc/en-us/articles/228383668-Intro-to-Webhooks"
+                                    target="_blank" class="btn btn-outline-primary btn-sm stretched-link">API Guide</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <div class="form-check me-auto">
+                    <input class="form-check-input" type="checkbox" id="dontShowAgain">
+                    <label class="form-check-label text-muted small" for="dontShowAgain">
+                        Don't show this automatically again
+                    </label>
+                </div>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Maybe Later</button>
+                <button type="button" class="btn btn-primary" onclick="startInteractiveTutorial()">Start Tour</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Dark mode support for modal */
+    [data-theme="dark"] .modal-content {
+        background-color: var(--surface-100);
+        color: var(--gray-100);
+    }
+
+    [data-theme="dark"] .tutorial-card {
+        background-color: var(--surface-200) !important;
+    }
+
+    [data-theme="dark"] .text-muted {
+        color: var(--gray-400) !important;
+    }
+
+    [data-theme="dark"] .btn-close {
+        filter: invert(1) grayscale(100%) brightness(200%);
+    }
+</style>
+
+<!-- Interactive Tour Modal -->
+<div class="modal fade" id="tourStepsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <h5 class="modal-title"><i class="fas fa-map-signs text-primary"></i> Quick Tour</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="d-flex mb-3">
+                    <div class="me-3">
+                        <span class="badge bg-primary rounded-circle p-2"
+                            style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">1</span>
+                    </div>
+                    <div>
+                        <h6>Drag & Drop Tools</h6>
+                        <p class="text-muted small mb-0">Drag tools from the left sidebar onto the canvas to start
+                            building.</p>
+                    </div>
+                </div>
+                <div class="d-flex mb-3">
+                    <div class="me-3">
+                        <span class="badge bg-primary rounded-circle p-2"
+                            style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">2</span>
+                    </div>
+                    <div>
+                        <h6>Connect Nodes</h6>
+                        <p class="text-muted small mb-0">Drag from the right handle of one node to the left handle of
+                            another to create a flow.</p>
+                    </div>
+                </div>
+                <div class="d-flex mb-3">
+                    <div class="me-3">
+                        <span class="badge bg-primary rounded-circle p-2"
+                            style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">3</span>
+                    </div>
+                    <div>
+                        <h6>Configure Properties</h6>
+                        <p class="text-muted small mb-0">Click on any node to open the properties panel on the right and
+                            configure its settings.</p>
+                    </div>
+                </div>
+                <div class="d-flex">
+                    <div class="me-3">
+                        <span class="badge bg-primary rounded-circle p-2"
+                            style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">4</span>
+                    </div>
+                    <div>
+                        <h6>Run Workflow</h6>
+                        <p class="text-muted small mb-0">Click the "Run" button in the top right to execute your
+                            workflow and see the results.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-primary w-100" data-bs-dismiss="modal">Got it, let's
+                    build!</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Save Scenario Modal -->
+<div class="modal fade" id="saveScenarioModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <h5 class="modal-title">Save Automation</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="saveScenarioName" class="form-label">Name</label>
+                    <input type="text" class="form-control" id="saveScenarioName" placeholder="Enter automation name">
+                </div>
+                <div class="mb-3">
+                    <label for="saveScenarioDescription" class="form-label">Description (Optional)</label>
+                    <textarea class="form-control" id="saveScenarioDescription" rows="3"
+                        placeholder="What does this automation do?"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="confirmSaveScenarioBtn">Save</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- Loading Modal -->
+<div class="modal fade" id="loadingModal" data-bs-backdrop="static" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content border-0 bg-transparent shadow-none">
+            <div class="modal-body text-center">
+                <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <h5 class="mt-3 text-white" style="text-shadow: 0 2px 4px rgba(0,0,0,0.5);">Loading Workflow...</h5>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/workspace_builder.js') }}?v=9999"></script>
+{% endblock %}

@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - {{ project_name }}</title>
+    <!-- Favicons -->
+    <link rel="icon" href="{{ url_for('static', filename='img/favicon.svg') }}" type="image/svg+xml">
+    <link rel="shortcut icon" href="{{ url_for('static', filename='img/favicon.svg') }}">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='img/favicon.svg') }}">
+    <meta name="theme-color" content="#00a688">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body>
+    <div class="dashboard">
+        <div class="header">
+            <h1>Welcome to your dashboard</h1>
+            <p>Hello <strong>{{ user }}</strong> ({{ role }})</p>
+        </div>
+
+        <div class="dashboard-content">
+            <h2>You're signed in successfully.</h2>
+            <p>This is the {{ project_name }} dashboard.</p>
+
+            <div class="actions">
+                <a href="{{ url_for('logout') }}" class="btn-logout">Sign out</a>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

@@ -1,0 +1,441 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Panel - Workflow Automation for Retail{% endblock %}
+
+{% block styles %}
+{{ super() }}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin_workspace.css') }}">
+{% endblock %}
+
+{% block content %}
+{% set first_initial = (current_user.first_name|default(''))[:1] %}
+{% set last_initial = (current_user.last_name|default(''))[:1] %}
+{% set user_initials = (first_initial ~ last_initial)|upper %}
+{% if not user_initials %}
+{% set user_initials = ((current_user.email|default('A'))[:1])|upper %}
+{% endif %}
+<div class="workspace-container">
+    <!-- Activity Bar -->
+    <div class="activity-bar">
+        <a href="{{ url_for('pages.dashboard') }}" class="activity-item" title="Back to Dashboard">
+            <i class="fas fa-arrow-left"></i>
+        </a>
+        <div class="activity-item active" title="Explorer" data-view="explorer">
+            <i class="fas fa-folder"></i>
+        </div>
+        <div class="activity-item" title="Search" data-view="search">
+            <i class="fas fa-search"></i>
+        </div>
+        <div class="activity-item" title="Source Control" data-view="git">
+            <i class="fas fa-code-branch"></i>
+        </div>
+        <div class="activity-item" title="Run and Debug" data-view="debug">
+            <i class="fas fa-play"></i>
+        </div>
+        <div class="activity-item" title="Extensions" data-view="extensions">
+            <i class="fas fa-th-large"></i>
+        </div>
+        <div class="activity-item" title="Scenarios" data-view="scenarios">
+            <i class="fas fa-theater-masks"></i>
+        </div>
+
+        <div class="activity-spacer"></div>
+
+        <div class="user-menu">
+            <div class="user-avatar" title="{{ current_user.first_name }} {{ current_user.last_name }}">
+                {{ user_initials }}
+            </div>
+        </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div>
+                <div class="sidebar-title">Admin Panel</div>
+                <div class="sidebar-subtitle">System Management</div>
+            </div>
+            <div class="user-menu">
+                <div class="user-avatar">{{ user_initials }}</div>
+                <a href="{{ url_for('main.logout') }}" class="logout-btn">
+                    <i class="fas fa-sign-out-alt"></i>
+                    Logout
+                </a>
+            </div>
+        </div>
+
+        <div class="sidebar-content">
+            <!-- Workspace Tree -->
+            <div class="tree-item expanded" data-type="workspace">
+                <div class="tree-item-content">
+                    <div class="tree-expand">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="tree-label">{{ current_user.first_name }}'s Workspace</div>
+                    <div class="tree-badge">12</div>
+                </div>
+                <div class="tree-children">
+                    <!-- Personal Items -->
+                    <div class="tree-item" data-type="folder">
+                        <div class="tree-item-content">
+                            <div class="tree-expand">
+                                <i class="fas fa-chevron-right"></i>
+                            </div>
+                            <div class="tree-icon">
+                                <i class="fas fa-folder"></i>
+                            </div>
+                            <div class="tree-label">Todo Lists</div>
+                            <div class="tree-badge">5</div>
+                        </div>
+                        <div class="tree-children">
+                            <div class="tree-item" data-type="file">
+                                <div class="tree-item-content">
+                                    <div class="tree-expand"></div>
+                                    <div class="tree-icon">
+                                        <i class="fas fa-check-square"></i>
+                                    </div>
+                                    <div class="tree-label">Daily Tasks</div>
+                                </div>
+                            </div>
+                            <div class="tree-item" data-type="file">
+                                <div class="tree-item-content">
+                                    <div class="tree-expand"></div>
+                                    <div class="tree-icon">
+                                        <i class="fas fa-calendar-week"></i>
+                                    </div>
+                                    <div class="tree-label">Weekly Goals</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="tree-item" data-type="folder">
+                        <div class="tree-item-content">
+                            <div class="tree-expand">
+                                <i class="fas fa-chevron-right"></i>
+                            </div>
+                            <div class="tree-icon">
+                                <i class="fas fa-sticky-note"></i>
+                            </div>
+                            <div class="tree-label">Notes</div>
+                            <div class="tree-badge">7</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Team Workspaces -->
+            <div class="tree-item" data-type="workspace">
+                <div class="tree-item-content">
+                    <div class="tree-expand">
+                        <i class="fas fa-chevron-right"></i>
+                    </div>
+                    <div class="tree-icon workspace-type-team">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="tree-label">Development Team</div>
+                    <div class="tree-badge">8</div>
+                </div>
+            </div>
+
+            <!-- Project Workspaces -->
+            <div class="tree-item" data-type="workspace">
+                <div class="tree-item-content">
+                    <div class="tree-expand">
+                        <i class="fas fa-chevron-right"></i>
+                    </div>
+                    <div class="tree-icon workspace-type-project">
+                        <i class="fas fa-project-diagram"></i>
+                    </div>
+                    <div class="tree-label">{{ project_name }}</div>
+                    <div class="tree-badge">15</div>
+                </div>
+            </div>
+
+            <!-- Scenario Workspaces -->
+            <div class="tree-item" data-type="workspace">
+                <div class="tree-item-content">
+                    <div class="tree-expand">
+                        <i class="fas fa-chevron-right"></i>
+                    </div>
+                    <div class="tree-icon workspace-type-scenario">
+                        <i class="fas fa-theater-masks"></i>
+                    </div>
+                    <div class="tree-label">Marketing Campaign</div>
+                    <div class="tree-badge">6</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Tab Bar -->
+        <div class="tab-bar">
+            <div class="tab active">
+                <div class="tab-icon">
+                    <i class="fas fa-home"></i>
+                </div>
+                <span>Welcome</span>
+                <div class="tab-close">
+                    <i class="fas fa-times"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Editor Area -->
+        <div class="editor-area">
+            <div class="welcome-screen">
+                <div class="welcome-logo" aria-label="{{ project_name }} emblem">
+                    <i class="fas fa-rocket" aria-hidden="true"></i>
+                </div>
+                <h1 class="welcome-title">Welcome to {{ project_name }}</h1>
+                <p class="welcome-subtitle">
+                    An intelligent workspace to help you organize work efficiently with a layered structure and powerful
+                    connected channels.
+                </p>
+
+                <div class="welcome-actions">
+                    <a href="#" class="action-card" onclick="createNewItem('todo')">
+                        <div class="action-icon">
+                            <i class="fas fa-plus"></i>
+                        </div>
+                        <div class="action-title">Create new Todo</div>
+                        <div class="action-description">
+                            Add a task and track progress
+                        </div>
+                    </a>
+
+                    <a href="#" class="action-card" onclick="createNewItem('note')">
+                        <div class="action-icon">
+                            <i class="fas fa-edit"></i>
+                        </div>
+                        <div class="action-title">Create new Note</div>
+                        <div class="action-description">
+                            Jot down ideas and save information
+                        </div>
+                    </a>
+
+                    <a href="#" class="action-card" onclick="createWorkspace()">
+                        <div class="action-icon">
+                            <i class="fas fa-layer-group"></i>
+                        </div>
+                        <div class="action-title">Create Workspace</div>
+                        <div class="action-description">
+                            Initialize a new workspace
+                        </div>
+                    </a>
+
+                    <a href="#" class="action-card" onclick="openScenarios()">
+                        <div class="action-icon">
+                            <i class="fas fa-theater-masks"></i>
+                        </div>
+                        <div class="action-title">Manage Scenarios</div>
+                        <div class="action-description">
+                            Create and orchestrate workflow scenarios
+                        </div>
+                    </a>
+
+                    <a href="{{ url_for('pages.workspace') }}#scenarioAccessBoard" class="action-card" data-paid-scenario-card
+                        onclick="openPaidScenarioBilling(event)">
+                        <div class="action-icon">
+                            <i class="fas fa-credit-card"></i>
+                        </div>
+                        <div class="action-title">Paid Scenario (Manager/Admin)</div>
+                        <div class="action-description">
+                            This is a paid section · Click to go to the payment page before granting access
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Status Bar -->
+        <div class="status-bar">
+            <div class="status-left">
+                <div class="status-item">
+                    <i class="fas fa-code-branch"></i>
+                    main
+                </div>
+                <div class="status-item">
+                    <i class="fas fa-sync"></i>
+                    Synced
+                </div>
+                <div class="status-item">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    0 problems
+                </div>
+            </div>
+            <div class="status-right">
+                <div class="status-item">
+                    {{ current_user.email }}
+                </div>
+                <div class="status-item">
+                    <i class="fas fa-wifi"></i>
+                    Online
+                </div>
+                <div class="status-item">
+                    <i class="fas fa-bell"></i>
+                    3
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Context Menu (Hidden by default) -->
+<div class="context-menu" id="contextMenu" style="display: none;">
+    <div class="context-item" onclick="contextAction('new-file')">
+        <i class="fas fa-file"></i>
+        New Todo
+    </div>
+    <div class="context-item" onclick="contextAction('new-folder')">
+        <i class="fas fa-sticky-note"></i>
+        New Note
+    </div>
+    <div class="context-separator"></div>
+    <div class="context-item" onclick="contextAction('rename')">
+        <i class="fas fa-edit"></i>
+        Rename
+    </div>
+    <div class="context-item" onclick="contextAction('delete')">
+        <i class="fas fa-trash"></i>
+        Delete
+    </div>
+</div>
+
+<!-- Create Item Modal -->
+<div class="modal" id="createItemModal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="modalTitle">Create New Item</h3>
+            <span class="modal-close" onclick="closeModal('createItemModal')">&times;</span>
+        </div>
+        <div class="modal-body">
+            <form id="itemForm">
+                <div class="form-group">
+                    <label for="itemTitle">Title *</label>
+                    <input type="text" id="itemTitle" name="title" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="itemDescription">Description</label>
+                    <textarea id="itemDescription" name="description" rows="3"></textarea>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="itemType">Type</label>
+                        <select id="itemType" name="type">
+                            <option value="task">Task</option>
+                            <option value="note">Note</option>
+                            <option value="reminder">Reminder</option>
+                            <option value="idea">Idea</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="itemPriority">Priority</label>
+                        <select id="itemPriority" name="priority">
+                            <option value="low">Low</option>
+                            <option value="medium" selected>Medium</option>
+                            <option value="high">High</option>
+                            <option value="urgent">Urgent</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="itemStatus">Status</label>
+                    <select id="itemStatus" name="status">
+                        <option value="todo" selected>To Do</option>
+                        <option value="in-progress">In Progress</option>
+                        <option value="done">Done</option>
+                        <option value="archived">Archived</option>
+                    </select>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="closeModal('createItemModal')">Cancel</button>
+            <button type="button" class="btn btn-primary" onclick="saveItem()">Save</button>
+        </div>
+    </div>
+</div>
+
+<!-- Create Workspace Modal -->
+<div class="modal" id="createWorkspaceModal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Create New Workspace</h3>
+            <span class="modal-close" onclick="closeModal('createWorkspaceModal')">&times;</span>
+        </div>
+        <div class="modal-body">
+            <form id="workspaceForm">
+                <div class="form-group">
+                    <label for="workspaceName">Workspace Name *</label>
+                    <input type="text" id="workspaceName" name="name" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="workspaceType">Type</label>
+                    <select id="workspaceType" name="type">
+                        <option value="personal">Personal</option>
+                        <option value="team">Team</option>
+                        <option value="project">Project</option>
+                        <option value="scenario">Scenario</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="workspaceDescription">Description</label>
+                    <textarea id="workspaceDescription" name="description" rows="3"></textarea>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="closeModal('createWorkspaceModal')">Cancel</button>
+            <button type="button" class="btn btn-primary" onclick="saveWorkspace()">Create Workspace</button>
+        </div>
+    </div>
+</div>
+
+<!-- Item Detail Panel -->
+<div class="item-detail-panel" id="itemDetailPanel" style="display: none;">
+    <div class="panel-header">
+        <h4 id="itemDetailTitle">Item Details</h4>
+        <button class="panel-close" onclick="closeItemDetail()">&times;</button>
+    </div>
+    <div class="panel-content">
+        <div class="item-meta">
+            <span class="item-type" id="itemDetailType">Task</span>
+            <span class="item-priority" id="itemDetailPriority">Medium</span>
+            <span class="item-status" id="itemDetailStatus">To Do</span>
+        </div>
+        <div class="item-description" id="itemDetailDescription">
+            No description available
+        </div>
+        <div class="item-actions">
+            <button class="btn btn-small btn-primary" onclick="editCurrentItem()">
+                <i class="fas fa-edit"></i> Edit
+            </button>
+            <button class="btn btn-small btn-danger" onclick="deleteCurrentItem()">
+                <i class="fas fa-trash"></i> Delete
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script src="{{ url_for('static', filename='js/admin_workspace.js') }}" defer></script>
+<script>
+    function openPaidScenarioBilling(event) {
+        if (event && event.preventDefault) {
+            event.preventDefault();
+        }
+        window.location.href = '/wallet#planGrid';
+    }
+</script>
+{% endblock %}

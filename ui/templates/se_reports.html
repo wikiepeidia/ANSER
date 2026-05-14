@@ -1,0 +1,200 @@
+{% extends "base.html" %}
+
+{% block title %}SE - Revenue & Expense Reports - {{ project_name }}{% endblock %}
+
+{% block styles %}
+{{ super() }}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin_reports.css') }}">
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script src="{{ url_for('static', filename='js/admin_reports.js') }}" defer></script>
+{% endblock %}
+
+{% block content %}
+<div class="app-layout">
+    {% include 'components/sidebar.html' %}
+
+    <main class="app-content main-content reports-page">
+        <div
+            class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+            <h1 class="h2"><i class="fas fa-file-invoice-dollar"></i> SE - Revenue & Expense Reports</h1>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#scheduleReportModal">
+                <i class="fas fa-calendar-plus"></i> Schedule report
+            </button>
+        </div>
+
+        <div class="row mb-3">
+            <div class="col-md-3">
+                <div class="card text-white bg-success">
+                    <div class="card-body">
+                        <h6 class="card-title">Revenue (This month)</h6>
+                        <h2 id="monthRevenue">0 VND</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-white bg-danger">
+                    <div class="card-body">
+                        <h6 class="card-title">Expense (This month)</h6>
+                        <h2 id="monthExpense">0 VND</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-white bg-primary">
+                    <div class="card-body">
+                        <h6 class="card-title">Profit</h6>
+                        <h2 id="monthProfit">0 VND</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-white bg-warning">
+                    <div class="card-body">
+                        <h6 class="card-title">Reports sent</h6>
+                        <h2 id="reportsSent">0</h2>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mb-3">
+            <div class="card-body">
+                <h5 class="card-title">Scheduled reports</h5>
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Report Name</th>
+                                <th>Type</th>
+                                <th>Frequency</th>
+                                <th>Channel</th>
+                                <th>Status</th>
+                                <th>Last Sent</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="scheduledReportsBody">
+                            <tr>
+                                <td colspan="7" class="text-center">
+                                    No scheduled reports yet. Click "Schedule report" to get started.
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header card-header-surface">
+                <h5><i class="fas fa-chart-line"></i> Revenue & Expense Chart</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="revenueChart" height="80"></canvas>
+                <p class="text-center text-muted mt-3">
+                    <i class="fas fa-chart-bar"></i> Charts will display once revenue and expense data is available
+                </p>
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header card-header-surface">
+                <h5><i class="fas fa-lightbulb"></i> Report Templates</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <div class="card text-white bg-primary">
+                            <div class="card-body">
+                                <h6 class="card-title"><i class="fas fa-calendar-day"></i> Daily report</h6>
+                                <p class="card-text">Aggregate daily revenue & expense, sent at 18:00 daily.</p>
+                                <button class="btn btn-sm btn-primary" onclick="alert('Template: Daily Report')">
+                                    <i class="fas fa-plus"></i> Use
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="card text-white bg-success">
+                            <div class="card-body">
+                                <h6 class="card-title"><i class="fas fa-calendar-week"></i> Weekly report</h6>
+                                <p class="card-text">7-day summary of revenue & expense, sent every Sunday.</p>
+                                <button class="btn btn-sm btn-success" onclick="alert('Template: Weekly Report')">
+                                    <i class="fas fa-plus"></i> Use
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="card text-white bg-info">
+                            <div class="card-body">
+                                <h6 class="card-title"><i class="fas fa-calendar-alt"></i> Monthly report</h6>
+                                <p class="card-text">Detailed end-of-month report, sent on the 1st of each month.</p>
+                                <button class="btn btn-sm btn-info" onclick="alert('Template: Monthly Report')">
+                                    <i class="fas fa-plus"></i> Use
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<!-- Schedule Report Modal -->
+<div class="modal fade" id="scheduleReportModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Schedule New Report</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="scheduleReportForm">
+                    <div class="mb-3">
+                        <label class="form-label">Report Name</label>
+                        <input type="text" class="form-control" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Report Type</label>
+                        <select class="form-select" name="report_type" required>
+                            <option value="revenue_expense">Revenue & Expense Summary</option>
+                            <option value="inventory">Inventory Status</option>
+                            <option value="customer_activity">Customer Activity</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Frequency</label>
+                        <select class="form-select" name="frequency" required>
+                            <option value="daily">Daily</option>
+                            <option value="weekly">Weekly</option>
+                            <option value="monthly">Monthly</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Delivery Channel</label>
+                        <select class="form-select" name="channel" required>
+                            <option value="email">Email</option>
+                            <option value="slack">Slack</option>
+                            <option value="download">Save to Files</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Recipients (comma separated)</label>
+                        <input type="text" class="form-control" name="recipients" placeholder="email@example.com">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="submitScheduleReport()">Schedule</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

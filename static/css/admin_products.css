@@ -1,0 +1,134 @@
+/* Admin products page layout tweaks */
+.main-content {
+    margin-left: 260px;
+}
+
+/* Scoped products page styles to match global dark mode variables */
+.products-page .card {
+    background: var(--surface-100) !important;
+    border: 1px solid var(--border-soft);
+    border-radius: 16px;
+    box-shadow: 0 3px 18px rgba(15, 23, 42, 0.08);
+    transition: background 0.3s ease, border-color 0.2s ease;
+}
+
+.products-page .card:not([class*='bg-']) .card-body,
+.products-page .card:not([class*='bg-']) .card-title,
+.products-page .card:not([class*='bg-']) .card-text {
+    color: var(--gray-900);
+}
+
+.products-page .table {
+    color: var(--gray-900) !important;
+    border-color: var(--border-soft) !important;
+    background: var(--surface-100) !important;
+}
+
+.products-page .table thead th {
+    text-transform: uppercase;
+    font-size: 12px;
+    letter-spacing: 0.5px;
+    color: var(--table-header-color);
+    font-weight: 700;
+    background: var(--surface-200);
+    border-bottom: 1px solid var(--border-soft);
+}
+
+.products-page .table tbody td {
+    vertical-align: middle;
+    border-top: 1px solid var(--border-soft);
+}
+
+/* Force all table cell text color to use theme variables (higher specificity, fallback to !important) */
+.products-page .table tbody td,
+.products-page .table tbody td * {
+    color: var(--gray-900) !important;
+}
+
+html[data-theme='dark'] .products-page .table tbody td,
+body.dark-mode .products-page .table tbody td,
+html[data-theme='dark'] .products-page .table tbody td *,
+body.dark-mode .products-page .table tbody td * {
+    color: var(--gray-900) !important;
+}
+
+.products-page .table tbody tr {
+    background: var(--surface-100) !important;
+    transition: background 0.25s ease;
+}
+
+.products-page .table tbody tr:nth-child(even) {
+    background: var(--surface-200);
+}
+
+.products-page .table tbody tr:hover {
+    background: var(--surface-300);
+}
+
+/* Modal scoping — modals are appended to body, so we add a helper class and target it */
+.products-modal .modal-content {
+    background: var(--surface-100);
+    color: var(--gray-900);
+    border: 1px solid var(--border-soft);
+}
+
+.products-modal .modal-header,
+.products-modal .modal-footer {
+    border-color: var(--border-soft);
+}
+
+.products-modal .form-control,
+.products-modal .form-select {
+    background: var(--surface-100);
+    border: 1px solid var(--border-soft);
+    color: var(--gray-900);
+}
+
+.products-modal .form-control:focus,
+.products-modal .form-select:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+    background: var(--surface-100);
+}
+
+/* Dark-mode adjustments */
+html[data-theme='dark'] .products-page .card,
+body.dark-mode .products-page .card {
+    background: var(--surface-100);
+    border-color: var(--border-strong);
+}
+
+html[data-theme='dark'] .products-modal .modal-content,
+body.dark-mode .products-modal .modal-content {
+    background: var(--surface-100);
+    color: var(--gray-900);
+    border-color: var(--border-strong);
+}
+
+html[data-theme='dark'] .products-page .table,
+body.dark-mode .products-page .table {
+    background: var(--surface-100) !important;
+    color: var(--gray-900) !important;
+    border-color: var(--border-strong) !important;
+}
+
+html[data-theme='dark'] .products-page .table thead th,
+body.dark-mode .products-page .table thead th {
+    color: var(--table-header-color);
+    background: var(--surface-100);
+}
+
+html[data-theme='dark'] .products-page .table tbody tr,
+body.dark-mode .products-page .table tbody tr {
+    background: var(--surface-100) !important;
+}
+
+html[data-theme='dark'] .products-page .table tbody tr:nth-child(even),
+body.dark-mode .products-page .table tbody tr:nth-child(even) {
+    background: var(--surface-200);
+}
+
+html[data-theme='dark'] .products-page .table tbody tr:hover,
+body.dark-mode .products-page .table tbody tr:hover {
+    background: var(--surface-300);
+}

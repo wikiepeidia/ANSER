@@ -1,0 +1,84 @@
+/* Admin Customers page specific styles */
+.main-content {
+    margin-left: 260px;
+    padding: 30px;
+    background: var(--surface-200);
+    min-height: 100vh;
+}
+
+.customers-page .card {
+    background: var(--surface-100);
+    border: 1px solid var(--border-soft);
+    border-radius: 16px;
+    box-shadow: 0 3px 18px rgba(15, 23, 42, 0.08);
+    transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.customers-page .card:hover {
+    box-shadow: 0 12px 35px rgba(15, 23, 42, 0.12);
+}
+
+.customers-page .card:not([class*='bg-']) .card-body,
+.customers-page .card:not([class*='bg-']) .card-title,
+.customers-page .card:not([class*='bg-']) .card-text {
+    color: var(--gray-900);
+}
+
+.customers-page .table {
+    color: var(--gray-900);
+    border-color: var(--border-soft);
+}
+
+.customers-page .table thead th {
+    text-transform: uppercase;
+    font-size: 12px;
+    letter-spacing: 0.5px;
+    color: var(--table-header-color) !important;
+    font-weight: 700;
+    background: var(--surface-200);
+    border-bottom: 1px solid var(--border-soft);
+}
+
+.customers-page .table tbody td {
+    vertical-align: middle;
+    border-top: 1px solid var(--border-soft);
+}
+
+.customers-page .table tbody tr {
+    background: var(--surface-100);
+    transition: background 0.25s ease;
+}
+
+.customers-page .table tbody tr:nth-child(even) {
+    background: var(--surface-200);
+}
+
+.customers-page .table tbody tr:hover {
+    background: var(--surface-300);
+}
+
+.customers-page .modal-content {
+    background: var(--surface-100);
+    color: var(--gray-900);
+    border: 1px solid var(--border-soft);
+}
+
+.customers-page .modal-header,
+.customers-page .modal-footer {
+    border-color: var(--border-soft);
+}
+
+.customers-page .form-control,
+.customers-page .form-select {
+    background: var(--surface-100);
+    border: 1px solid var(--border-soft);
+    color: var(--gray-900);
+}
+
+.customers-page .form-control:focus,
+.customers-page .form-select:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.25);
+    background: var(--surface-100);
+    color: var(--gray-900);
+}
