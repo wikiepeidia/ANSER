@@ -28,16 +28,10 @@ config = Config()
 
 def _configure_oauth(app):
     """Configure Google OAuth inside the factory (D-04)."""
-    import json
-    try:
-        with open('secrets/google_oauth.json') as f:
-            oauth_secrets = json.load(f)
-            app.config['GOOGLE_CLIENT_ID'] = oauth_secrets.get('GOOGLE_CLIENT_ID')
-            app.config['GOOGLE_CLIENT_SECRET'] = oauth_secrets.get('GOOGLE_CLIENT_SECRET')
-    except FileNotFoundError:
-        print('Warning: secrets/google_oauth.json not found. OAuth will not work.')
-        app.config['GOOGLE_CLIENT_ID'] = os.environ.get('GOOGLE_CLIENT_ID')
-        app.config['GOOGLE_CLIENT_SECRET'] = os.environ.get('GOOGLE_CLIENT_SECRET')
+    app.config['GOOGLE_CLIENT_ID'] = os.environ.get('GOOGLE_CLIENT_ID')
+    app.config['GOOGLE_CLIENT_SECRET'] = os.environ.get('GOOGLE_CLIENT_SECRET')
+    if not app.config['GOOGLE_CLIENT_ID']:
+        print('Warning: GOOGLE_CLIENT_ID not set in environment. OAuth will not work.')
 
     oauth_client = OAuth(app)
     google = oauth_client.register(
