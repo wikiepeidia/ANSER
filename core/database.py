@@ -18,17 +18,17 @@ class PGShimCursor:
         self.rowcount = -1
 
     def execute(self, query, params=None):
-        if params is None: params = ()
+        has_params = params is not None and len(params) > 0
         query = query.replace('?', '%s')
         is_insert = query.strip().upper().startswith('INSERT')
         try:
             if is_insert and 'RETURNING' not in query.upper():
                 query += " RETURNING id"
-                self._cursor.execute(query, params)
+                self._cursor.execute(query, params) if has_params else self._cursor.execute(query)
                 row = self._cursor.fetchone()
                 if row: self.lastrowid = row[0]
             else:
-                self._cursor.execute(query, params)
+                self._cursor.execute(query, params) if has_params else self._cursor.execute(query)
                 self.lastrowid = None
             self.rowcount = self._cursor.rowcount
             return self
@@ -38,7 +38,7 @@ class PGShimCursor:
                     if hasattr(self._cursor, 'connection'): self._cursor.connection.rollback()
                 except: pass
                 clean_query = query.replace(" RETURNING id", "")
-                self._cursor.execute(clean_query, params)
+                self._cursor.execute(clean_query, params) if has_params else self._cursor.execute(clean_query)
                 self.lastrowid = None
                 return self
             raise e

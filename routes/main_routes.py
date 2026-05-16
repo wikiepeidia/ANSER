@@ -6,7 +6,8 @@ from core.services.customer_service import (
     create_customer, delete_customer, get_all_customers, update_customer,
 )
 from core.services.product_service import (
-    create_product, delete_product, get_all_products, update_product,
+    create_product, delete_product, get_all_products, import_products_from_excel,
+    update_product,
 )
 
 main_bp = Blueprint('main', __name__)
@@ -101,3 +102,27 @@ def api_update_product(product_id):
 def api_delete_product(product_id):
     delete_product(product_id)
     return jsonify({'success': True, 'message': 'Xóa sản phẩm thành công'})
+
+
+@main_bp.route('/api/products/import-excel', methods=['POST'])
+@login_required
+def api_import_products_excel():
+    if 'file' not in request.files:
+        return jsonify({'success': False, 'message': 'Không có file được gửi lên'}), 400
+    file = request.files['file']
+    if not file.filename:
+        return jsonify({'success': False, 'message': 'Chưa chọn file'}), 400
+    if not file.filename.lower().endswith(('.xlsx', '.xls')):
+        return jsonify({'success': False, 'message': 'Chỉ chấp nhận file .xlsx hoặc .xls'}), 400
+    try:
+        result = import_products_from_excel(file, current_user.id)
+        total = result['inserted'] + result['updated']
+        return jsonify({
+            'success': True,
+            'message': f"Import thành công: {result['inserted']} thêm mới, {result['updated']} cập nhật, {result['skipped']} bỏ qua",
+            **result,
+        })
+    except ValueError as e:
+        return jsonify({'success': False, 'message': str(e)}), 400
+    except Exception as e:
+        return jsonify({'success': False, 'message': f'Lỗi server: {e}'}), 500
