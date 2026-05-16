@@ -167,7 +167,120 @@ function showAlert(type, message) {
     setTimeout(() => alertDiv.remove(), 5000);
 }
 
-document.addEventListener('DOMContentLoaded', loadProducts);
+document.addEventListener('DOMContentLoaded', () => {
+    loadProducts();
+    initDropZone();
+});
+
+// ── Excel Import ──────────────────────────────────────────────────────────
+
+function openImportExcelModal() {
+    clearExcelFile();
+    document.getElementById('importResult').classList.add('d-none');
+    new bootstrap.Modal(document.getElementById('importExcelModal')).show();
+}
+
+function initDropZone() {
+    const zone = document.getElementById('dropZone');
+    const input = document.getElementById('excelFileInput');
+    if (!zone || !input) return;
+
+    input.addEventListener('change', () => {
+        if (input.files[0]) setExcelFile(input.files[0]);
+    });
+
+    zone.addEventListener('dragover', e => {
+        e.preventDefault();
+        zone.classList.add('drag-over');
+    });
+    zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+    zone.addEventListener('drop', e => {
+        e.preventDefault();
+        zone.classList.remove('drag-over');
+        const file = e.dataTransfer.files[0];
+        if (file) setExcelFile(file);
+    });
+}
+
+function setExcelFile(file) {
+    if (!/\.(xlsx|xls)$/i.test(file.name)) {
+        showAlert('error', 'Chỉ chấp nhận file .xlsx hoặc .xls');
+        return;
+    }
+    document.getElementById('selectedFileName').textContent = file.name;
+    document.getElementById('selectedFileInfo').classList.remove('d-none');
+    document.getElementById('dropZone').style.display = 'none';
+    document.getElementById('btnImport').disabled = false;
+    document.getElementById('excelFileInput')._file = file;
+}
+
+function clearExcelFile() {
+    document.getElementById('selectedFileInfo').classList.add('d-none');
+    document.getElementById('dropZone').style.display = '';
+    document.getElementById('btnImport').disabled = true;
+    document.getElementById('excelFileInput').value = '';
+    document.getElementById('excelFileInput')._file = null;
+}
+
+async function submitImportExcel() {
+    const input = document.getElementById('excelFileInput');
+    const file = input._file || input.files[0];
+    if (!file) return;
+
+    const btn = document.getElementById('btnImport');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Đang xử lý...';
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+        const csrf = document.querySelector('meta[name="csrf-token"]').content;
+        const res = await fetch('/api/products/import-excel', {
+            method: 'POST',
+            headers: { 'X-CSRFToken': csrf },
+            body: formData,
+        });
+        const data = await res.json();
+        showImportResult(data);
+        if (data.success) loadProducts();
+    } catch (e) {
+        showImportResult({ success: false, message: 'Lỗi kết nối: ' + e.message });
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-upload me-1"></i>Import';
+    }
+}
+
+function showImportResult(data) {
+    const box = document.getElementById('importResult');
+    box.classList.remove('d-none');
+
+    if (!data.success) {
+        box.innerHTML = `<div class="alert alert-danger mb-0"><i class="fas fa-times-circle me-2"></i>${data.message}</div>`;
+        return;
+    }
+
+    const errors = (data.errors || []).map(e =>
+        `<li>${e}</li>`
+    ).join('');
+
+    box.innerHTML = `
+        <div class="result-stat stat-inserted">
+            <i class="fas fa-plus-circle"></i> Thêm mới: <strong>${data.inserted}</strong> sản phẩm
+        </div>
+        <div class="result-stat stat-updated">
+            <i class="fas fa-sync-alt"></i> Cập nhật: <strong>${data.updated}</strong> sản phẩm
+        </div>
+        <div class="result-stat stat-skipped">
+            <i class="fas fa-minus-circle"></i> Bỏ qua: <strong>${data.skipped}</strong> dòng
+        </div>
+        ${errors ? `<div class="result-stat stat-errors flex-column align-items-start">
+            <div><i class="fas fa-exclamation-triangle me-1"></i>Lỗi (${data.errors.length}):</div>
+            <ul class="mb-0 mt-1 ps-3">${errors}</ul>
+        </div>` : ''}
+    `;
+}
 
 // Fallback: apply inline table row backgrounds in case style overrides still force light backgrounds
 function syncProductsTableTheme() {

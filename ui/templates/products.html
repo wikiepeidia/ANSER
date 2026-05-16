@@ -20,9 +20,14 @@
         <div
             class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
             <h1 class="h2"><i class="fas fa-box"></i> Product Management</h1>
-            <button class="btn btn-primary" onclick="openAddProductModal()">
-                <i class="fas fa-plus"></i> Add Product
-            </button>
+            <div class="d-flex gap-2">
+                <button class="btn btn-success" onclick="openImportExcelModal()">
+                    <i class="fas fa-file-excel"></i> Import Excel
+                </button>
+                <button class="btn btn-primary" onclick="openAddProductModal()">
+                    <i class="fas fa-plus"></i> Add Product
+                </button>
+            </div>
         </div>
 
         <div class="card">
@@ -53,6 +58,71 @@
             </div>
         </div>
     </main>
+</div>
+
+<!-- Modal: Import Excel -->
+<div class="modal fade products-modal" id="importExcelModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-file-excel text-success me-2"></i>Import sản phẩm từ Excel</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+
+                <!-- Drag & Drop Zone -->
+                <div id="dropZone" class="excel-drop-zone" onclick="document.getElementById('excelFileInput').click()">
+                    <div class="drop-zone-icon"><i class="fas fa-cloud-upload-alt"></i></div>
+                    <p class="drop-zone-text">Kéo thả file vào đây hoặc <span class="text-primary">chọn file</span></p>
+                    <p class="drop-zone-hint">Chấp nhận: .xlsx, .xls</p>
+                    <input type="file" id="excelFileInput" accept=".xlsx,.xls" style="display:none">
+                </div>
+
+                <!-- File đã chọn -->
+                <div id="selectedFileInfo" class="selected-file-info d-none">
+                    <i class="fas fa-file-excel text-success"></i>
+                    <span id="selectedFileName"></span>
+                    <button class="btn btn-sm btn-link text-danger p-0 ms-2" onclick="clearExcelFile()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+
+                <!-- Hướng dẫn cột -->
+                <div class="excel-guide mt-3">
+                    <p class="mb-1 fw-semibold">Cấu trúc file Excel:</p>
+                    <div class="table-responsive">
+                        <table class="table table-sm table-bordered mb-0 guide-table">
+                            <thead>
+                                <tr>
+                                    <th>code</th><th>name <span class="text-danger">*</span></th>
+                                    <th>category</th><th>unit</th>
+                                    <th>price</th><th>stock_quantity</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>SP001</td><td>Mì tôm</td>
+                                    <td>Thực phẩm</td><td>Thùng</td>
+                                    <td>85000</td><td>100</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <small class="text-muted">Nếu <code>code</code> đã tồn tại → tự động cập nhật. Chỉ <code>name</code> là bắt buộc.</small>
+                </div>
+
+                <!-- Kết quả import -->
+                <div id="importResult" class="import-result d-none mt-3"></div>
+
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                <button type="button" class="btn btn-success" id="btnImport" onclick="submitImportExcel()" disabled>
+                    <i class="fas fa-upload me-1"></i>Import
+                </button>
+            </div>
+        </div>
+    </div>
 </div>
 
 <!-- Modal: Add/Edit Product -->
