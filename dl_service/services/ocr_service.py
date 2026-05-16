@@ -1,7 +1,6 @@
 from io import BytesIO
 import logging
 import os
-import json
 from typing import Optional
 
 # Fix PaddlePaddle PIR compiler crash on Windows CPU (oneDNN + PIR incompatibility)
@@ -40,33 +39,20 @@ def _vietocr_ocr(image: Image.Image) -> Optional[dict]:
 
 
 def _get_brain_url():
-    """Load the Brain (AI Agent Service) base URL from secrets/ai_config.json."""
+    """Load the Brain (AI Agent Service) base URL from environment."""
     global _brain_url, _brain_disabled
     if _brain_disabled:
         return None
     if _brain_url is not None:
         return _brain_url
-    try:
-        config_paths = [
-            os.path.join(os.getcwd(), 'secrets', 'ai_config.json'),
-            os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 'secrets', 'ai_config.json'),
-        ]
-        for p in config_paths:
-            if os.path.exists(p):
-                with open(p, 'r') as f:
-                    conf = json.load(f)
-                    url = conf.get('HF_BASE_URL', '').rstrip('/')
-                    if url:
-                        _brain_url = url
-                        logger.info("Brain OCR endpoint discovered: %s/ocr", _brain_url)
-                        return _brain_url
-        _brain_disabled = True
-        logger.info("No ai_config.json found; Brain VLM OCR disabled")
-        return None
-    except Exception as exc:
-        _brain_disabled = True
-        logger.info("Failed to load Brain URL: %s", exc)
-        return None
+    url = os.environ.get('HF_BASE_URL', '').rstrip('/')
+    if url:
+        _brain_url = url
+        logger.info("Brain OCR endpoint discovered: %s/ocr", _brain_url)
+        return _brain_url
+    _brain_disabled = True
+    logger.info("HF_BASE_URL not set; Brain VLM OCR disabled")
+    return None
 
 
 def _brain_vlm_ocr(image: Image.Image) -> Optional[dict]:

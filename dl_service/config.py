@@ -4,6 +4,9 @@ Centralized configuration for the entire application
 """
 import os
 from pathlib import Path
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Base Directory
 BASE_DIR = Path(__file__).resolve().parent

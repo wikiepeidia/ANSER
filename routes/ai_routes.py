@@ -54,10 +54,8 @@ def background_ai_task(job_id, user_id, message):
         mw = AgentMiddleware(db)
         history_str = db.get_ai_history(user_id, limit=6)
 
-        with open('secrets/ai_config.json') as f:
-            conf = json.load(f)
-            url = conf.get('HF_BASE_URL').rstrip('/') + '/chat'
-            token = conf.get('HF_TOKEN')
+        url = os.environ.get('HF_BASE_URL', '').rstrip('/') + '/chat'
+        token = os.environ.get('HF_TOKEN')
 
         system_context = mw.get_system_context()
         full_msg = (
@@ -118,9 +116,7 @@ def ai_upload():
 
     file = request.files['file']
     try:
-        with open('secrets/ai_config.json') as f:
-            ai_config = json.load(f)
-            hf_base_url = ai_config.get('HF_BASE_URL').rstrip('/')
+        hf_base_url = os.environ.get('HF_BASE_URL', '').rstrip('/')
 
         files = {'file': (file.filename, file.read(), file.mimetype)}
         data = {'user_id': current_user.id, 'store_id': 1}
