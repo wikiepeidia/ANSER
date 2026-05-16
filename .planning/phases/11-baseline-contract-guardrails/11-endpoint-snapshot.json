@@ -1,0 +1,294 @@
+{
+  "phase": "11",
+  "name": "baseline-contract-guardrails",
+  "source_manifest": ".planning/phases/11-baseline-contract-guardrails/11-endpoint-manifest.json",
+  "snapshot": {
+    "generated_at": "2026-04-16T04:24:50.507486+00:00",
+    "entries": [
+      {
+        "id": "page-home",
+        "group": "pages",
+        "path": "/",
+        "expected_methods": [
+          "GET"
+        ],
+        "actual_methods": [
+          "GET"
+        ],
+        "found": true,
+        "missing_methods": [],
+        "unexpected_methods": []
+      },
+      {
+        "id": "ai-chat",
+        "group": "ai",
+        "path": "/api/ai/chat",
+        "expected_methods": [
+          "POST"
+        ],
+        "actual_methods": [
+          "POST"
+        ],
+        "found": true,
+        "missing_methods": [],
+        "unexpected_methods": []
+      },
+      {
+        "id": "ai-history",
+        "group": "ai",
+        "path": "/api/ai/history",
+        "expected_methods": [
+          "DELETE",
+          "GET"
+        ],
+        "actual_methods": [
+          "DELETE",
+          "GET"
+        ],
+        "found": true,
+        "missing_methods": [],
+        "unexpected_methods": []
+      },
+      {
+        "id": "ai-status",
+        "group": "ai",
+        "path": "/api/ai/status/<job_id>",
+        "expected_methods": [
+          "GET"
+        ],
+        "actual_methods": [
+          "GET"
+        ],
+        "found": true,
+        "missing_methods": [],
+        "unexpected_methods": []
+      },
+      {
+        "id": "ai-upload",
+        "group": "ai",
+        "path": "/api/ai/upload",
+        "expected_methods": [
+          "POST"
+        ],
+        "actual_methods": [
+          "POST"
+        ],
+        "found": true,
+        "missing_methods": [],
+        "unexpected_methods": []
+      },
+      {
+        "id": "exports-list-create",
+        "group": "import_export",
+        "path": "/api/exports",
+        "expected_methods": [
+          "GET",
+          "POST"
+        ],
+        "actual_methods": [
+          "GET",
+          "POST"
+        ],
+        "found": true,
+        "missing_methods": [],
+        "unexpected_methods": []
+      },
+      {
+        "id": "exports-detail",
+        "group": "import_export",
+        "path": "/api/exports/<int:export_id>",
+        "expected_methods": [
+          "GET"
+        ],
+        "actual_methods": [
+          "GET"
+        ],
+        "found": true,
+        "missing_methods": [],
+        "unexpected_methods": []
+      },
+      {
+        "id": "imports-list-create",
+        "group": "import_export",
+        "path": "/api/imports",
+        "expected_methods": [
+          "GET",
+          "POST"
+        ],
+        "actual_methods": [
+          "GET",
+          "POST"
+        ],
+        "found": true,
+        "missing_methods": [],
+        "unexpected_methods": []
+      },
+      {
+        "id": "imports-detail",
+        "group": "import_export",
+        "path": "/api/imports/<int:import_id>",
+        "expected_methods": [
+          "GET"
+        ],
+        "actual_methods": [
+          "GET"
+        ],
+        "found": true,
+        "missing_methods": [],
+        "unexpected_methods": []
+      },
+      {
+        "id": "auth-session",
+        "group": "auth",
+        "path": "/api/session",
+        "expected_methods": [
+          "GET"
+        ],
+        "actual_methods": [
+          "GET"
+        ],
+        "found": true,
+        "missing_methods": [],
+        "unexpected_methods": []
+      },
+      {
+        "id": "workflow-execute",
+        "group": "workflow",
+        "path": "/api/workflow/execute",
+        "expected_methods": [
+          "POST"
+        ],
+        "actual_methods": [
+          "POST"
+        ],
+        "found": true,
+        "missing_methods": [],
+        "unexpected_methods": []
+      },
+      {
+        "id": "workflow-list-create",
+        "group": "workflow",
+        "path": "/api/workflows",
+        "expected_methods": [
+          "GET",
+          "POST"
+        ],
+        "actual_methods": [
+          "GET",
+          "POST"
+        ],
+        "found": true,
+        "missing_methods": [],
+        "unexpected_methods": []
+      },
+      {
+        "id": "workflow-detail",
+        "group": "workflow",
+        "path": "/api/workflows/<int:workflow_id>",
+        "expected_methods": [
+          "DELETE",
+          "GET"
+        ],
+        "actual_methods": [
+          "DELETE",
+          "GET"
+        ],
+        "found": true,
+        "missing_methods": [],
+        "unexpected_methods": []
+      },
+      {
+        "id": "auth-google-connect",
+        "group": "auth",
+        "path": "/auth/connect/google",
+        "expected_methods": [
+          "GET"
+        ],
+        "actual_methods": [
+          "GET"
+        ],
+        "found": true,
+        "missing_methods": [],
+        "unexpected_methods": []
+      },
+      {
+        "id": "auth-google-callback",
+        "group": "auth",
+        "path": "/auth/google/callback",
+        "expected_methods": [
+          "GET"
+        ],
+        "actual_methods": [
+          "GET"
+        ],
+        "found": true,
+        "missing_methods": [],
+        "unexpected_methods": []
+      },
+      {
+        "id": "auth-google-login",
+        "group": "auth",
+        "path": "/auth/login/google",
+        "expected_methods": [
+          "GET"
+        ],
+        "actual_methods": [
+          "GET"
+        ],
+        "found": true,
+        "missing_methods": [],
+        "unexpected_methods": []
+      },
+      {
+        "id": "page-dashboard",
+        "group": "pages",
+        "path": "/dashboard",
+        "expected_methods": [
+          "GET"
+        ],
+        "actual_methods": [
+          "GET"
+        ],
+        "found": true,
+        "missing_methods": [],
+        "unexpected_methods": []
+      },
+      {
+        "id": "page-exports",
+        "group": "pages",
+        "path": "/exports",
+        "expected_methods": [
+          "GET"
+        ],
+        "actual_methods": [
+          "GET"
+        ],
+        "found": true,
+        "missing_methods": [],
+        "unexpected_methods": []
+      },
+      {
+        "id": "page-imports",
+        "group": "pages",
+        "path": "/imports",
+        "expected_methods": [
+          "GET"
+        ],
+        "actual_methods": [
+          "GET"
+        ],
+        "found": true,
+        "missing_methods": [],
+        "unexpected_methods": []
+      }
+    ],
+    "summary": {
+      "total": 19,
+      "found": 19,
+      "missing_path_count": 0,
+      "method_mismatch_count": 0,
+      "missing_paths": [],
+      "method_mismatches": []
+    }
+  }
+}

@@ -1,0 +1,297 @@
+{
+  "phase": "11",
+  "name": "baseline-contract-guardrails",
+  "version": "1.0",
+  "description": "Curated source-of-truth endpoint manifest for Phase 11 contract guardrails.",
+  "endpoints": [
+    {
+      "id": "auth-session",
+      "group": "auth",
+      "path": "/api/session",
+      "methods": [
+        "GET"
+      ],
+      "response_keys_any": [
+        "success",
+        "message"
+      ],
+      "smoke": {
+        "method": "GET",
+        "sample_path": "/api/session",
+        "expected_status": [
+          200,
+          401
+        ]
+      }
+    },
+    {
+      "id": "auth-google-connect",
+      "group": "auth",
+      "path": "/auth/connect/google",
+      "methods": [
+        "GET"
+      ]
+    },
+    {
+      "id": "auth-google-login",
+      "group": "auth",
+      "path": "/auth/login/google",
+      "methods": [
+        "GET"
+      ]
+    },
+    {
+      "id": "auth-google-callback",
+      "group": "auth",
+      "path": "/auth/google/callback",
+      "methods": [
+        "GET"
+      ]
+    },
+    {
+      "id": "workflow-list-create",
+      "group": "workflow",
+      "path": "/api/workflows",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "smoke": {
+        "method": "OPTIONS",
+        "sample_path": "/api/workflows",
+        "expected_status": [
+          200,
+          204
+        ]
+      }
+    },
+    {
+      "id": "workflow-detail",
+      "group": "workflow",
+      "path": "/api/workflows/<int:workflow_id>",
+      "methods": [
+        "GET",
+        "DELETE"
+      ],
+      "smoke": {
+        "method": "OPTIONS",
+        "sample_path": "/api/workflows/1",
+        "expected_status": [
+          200,
+          204
+        ]
+      }
+    },
+    {
+      "id": "workflow-execute",
+      "group": "workflow",
+      "path": "/api/workflow/execute",
+      "methods": [
+        "POST"
+      ],
+      "smoke": {
+        "method": "OPTIONS",
+        "sample_path": "/api/workflow/execute",
+        "expected_status": [
+          200,
+          204
+        ]
+      }
+    },
+    {
+      "id": "ai-chat",
+      "group": "ai",
+      "path": "/api/ai/chat",
+      "methods": [
+        "POST"
+      ],
+      "smoke": {
+        "method": "OPTIONS",
+        "sample_path": "/api/ai/chat",
+        "expected_status": [
+          200,
+          204
+        ]
+      }
+    },
+    {
+      "id": "ai-status",
+      "group": "ai",
+      "path": "/api/ai/status/<job_id>",
+      "methods": [
+        "GET"
+      ],
+      "smoke": {
+        "method": "OPTIONS",
+        "sample_path": "/api/ai/status/test-job",
+        "expected_status": [
+          200,
+          204
+        ]
+      }
+    },
+    {
+      "id": "ai-history",
+      "group": "ai",
+      "path": "/api/ai/history",
+      "methods": [
+        "GET",
+        "DELETE"
+      ],
+      "smoke": {
+        "method": "OPTIONS",
+        "sample_path": "/api/ai/history",
+        "expected_status": [
+          200,
+          204
+        ]
+      }
+    },
+    {
+      "id": "ai-upload",
+      "group": "ai",
+      "path": "/api/ai/upload",
+      "methods": [
+        "POST"
+      ],
+      "smoke": {
+        "method": "OPTIONS",
+        "sample_path": "/api/ai/upload",
+        "expected_status": [
+          200,
+          204
+        ]
+      }
+    },
+    {
+      "id": "imports-list-create",
+      "group": "import_export",
+      "path": "/api/imports",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "smoke": {
+        "method": "OPTIONS",
+        "sample_path": "/api/imports",
+        "expected_status": [
+          200,
+          204
+        ]
+      }
+    },
+    {
+      "id": "imports-detail",
+      "group": "import_export",
+      "path": "/api/imports/<int:import_id>",
+      "methods": [
+        "GET"
+      ],
+      "smoke": {
+        "method": "OPTIONS",
+        "sample_path": "/api/imports/1",
+        "expected_status": [
+          200,
+          204
+        ]
+      }
+    },
+    {
+      "id": "exports-list-create",
+      "group": "import_export",
+      "path": "/api/exports",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "smoke": {
+        "method": "OPTIONS",
+        "sample_path": "/api/exports",
+        "expected_status": [
+          200,
+          204
+        ]
+      }
+    },
+    {
+      "id": "exports-detail",
+      "group": "import_export",
+      "path": "/api/exports/<int:export_id>",
+      "methods": [
+        "GET"
+      ],
+      "smoke": {
+        "method": "OPTIONS",
+        "sample_path": "/api/exports/1",
+        "expected_status": [
+          200,
+          204
+        ]
+      }
+    },
+    {
+      "id": "page-home",
+      "group": "pages",
+      "path": "/",
+      "methods": [
+        "GET"
+      ],
+      "smoke": {
+        "method": "GET",
+        "sample_path": "/",
+        "expected_status": [
+          200,
+          302
+        ]
+      }
+    },
+    {
+      "id": "page-dashboard",
+      "group": "pages",
+      "path": "/dashboard",
+      "methods": [
+        "GET"
+      ],
+      "smoke": {
+        "method": "GET",
+        "sample_path": "/dashboard",
+        "expected_status": [
+          200,
+          302
+        ]
+      }
+    },
+    {
+      "id": "page-imports",
+      "group": "pages",
+      "path": "/imports",
+      "methods": [
+        "GET"
+      ],
+      "smoke": {
+        "method": "GET",
+        "sample_path": "/imports",
+        "expected_status": [
+          200,
+          302
+        ]
+      }
+    },
+    {
+      "id": "page-exports",
+      "group": "pages",
+      "path": "/exports",
+      "methods": [
+        "GET"
+      ],
+      "smoke": {
+        "method": "GET",
+        "sample_path": "/exports",
+        "expected_status": [
+          200,
+          302
+        ]
+      }
+    }
+  ]
+}
