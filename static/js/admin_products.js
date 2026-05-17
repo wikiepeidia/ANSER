@@ -21,15 +21,19 @@ function renderProductsTable() {
     const tbody = document.getElementById('productsTableBody');
 
     if (productsData.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="8" class="text-center">No products found</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="9" class="text-center">No products found</td></tr>';
         syncProductsTableTheme();
         return;
     }
 
     tbody.innerHTML = productsData
-        .map(
-            product => `
+        .map(product => {
+            const imgCell = product.image_url
+                ? `<img src="${product.image_url}" alt="${product.name}" class="product-thumb" onerror="this.style.display='none'">`
+                : `<span class="text-muted" style="font-size:0.75rem">—</span>`;
+            return `
         <tr>
+            <td class="text-center">${imgCell}</td>
             <td><strong>${product.code}</strong></td>
             <td>${product.name}</td>
             <td>${product.category || '-'}</td>
@@ -48,9 +52,8 @@ function renderProductsTable() {
                     <i class="fas fa-trash"></i>
                 </button>
             </td>
-        </tr>
-    `
-        )
+        </tr>`;
+        })
         .join('');
     // Re-apply inline row backgrounds to the new table rows
     syncProductsTableTheme();
@@ -68,6 +71,8 @@ function openAddProductModal() {
     document.getElementById('productPrice').value = '0';
     document.getElementById('productStock').value = '0';
     document.getElementById('productDescription').value = '';
+    document.getElementById('productImageUrl').value = '';
+    document.getElementById('productImagePreview').classList.add('d-none');
     new bootstrap.Modal(document.getElementById('productModal')).show();
 }
 
@@ -86,6 +91,15 @@ function editProduct(id) {
     document.getElementById('productPrice').value = product.price;
     document.getElementById('productStock').value = product.stock_quantity;
     document.getElementById('productDescription').value = product.description || '';
+    const imgUrl = product.image_url || '';
+    document.getElementById('productImageUrl').value = imgUrl;
+    const preview = document.getElementById('productImagePreview');
+    if (imgUrl) {
+        preview.querySelector('img').src = imgUrl;
+        preview.classList.remove('d-none');
+    } else {
+        preview.classList.add('d-none');
+    }
     new bootstrap.Modal(document.getElementById('productModal')).show();
 }
 
@@ -97,13 +111,14 @@ async function saveProduct() {
     const price = parseFloat(document.getElementById('productPrice').value);
     const stock_quantity = parseInt(document.getElementById('productStock').value, 10);
     const description = document.getElementById('productDescription').value.trim();
+    const image_url = document.getElementById('productImageUrl').value.trim();
 
     if (!code || !name) {
-           showAlert('error', 'Please fill in the required fields');
+        showAlert('error', 'Please fill in the required fields');
         return;
     }
 
-    const payload = { code, name, category, unit, price, stock_quantity, description };
+    const payload = { code, name, category, unit, price, stock_quantity, description, image_url };
 
     try {
         let response;
@@ -170,12 +185,25 @@ function showAlert(type, message) {
 document.addEventListener('DOMContentLoaded', () => {
     loadProducts();
     initDropZone();
+
+    // Live preview for image URL input
+    document.getElementById('productImageUrl').addEventListener('input', function () {
+        const preview = document.getElementById('productImagePreview');
+        const img = preview.querySelector('img');
+        const url = this.value.trim();
+        if (url) {
+            img.src = url;
+            preview.classList.remove('d-none');
+        } else {
+            preview.classList.add('d-none');
+        }
+    });
 });
 
 // ── Excel Import ──────────────────────────────────────────────────────────
 
 function openImportExcelModal() {
-    clearExcelFile();
+    goBackToStep1();
     document.getElementById('importResult').classList.add('d-none');
     new bootstrap.Modal(document.getElementById('importExcelModal')).show();
 }
@@ -210,35 +238,134 @@ function setExcelFile(file) {
     document.getElementById('selectedFileName').textContent = file.name;
     document.getElementById('selectedFileInfo').classList.remove('d-none');
     document.getElementById('dropZone').style.display = 'none';
-    document.getElementById('btnImport').disabled = false;
+    document.getElementById('btnNext').disabled = false;
     document.getElementById('excelFileInput')._file = file;
 }
 
 function clearExcelFile() {
     document.getElementById('selectedFileInfo').classList.add('d-none');
     document.getElementById('dropZone').style.display = '';
-    document.getElementById('btnImport').disabled = true;
+    document.getElementById('btnNext').disabled = true;
     document.getElementById('excelFileInput').value = '';
     document.getElementById('excelFileInput')._file = null;
 }
 
-async function submitImportExcel() {
+function goBackToStep1() {
+    clearExcelFile();
+    document.getElementById('importStep1').classList.remove('d-none');
+    document.getElementById('importStep2').classList.add('d-none');
+    document.getElementById('importResult').classList.add('d-none');
+    document.getElementById('mappingRows').innerHTML = '';
+    document.getElementById('btnNext').classList.remove('d-none');
+    document.getElementById('btnBack').classList.add('d-none');
+    document.getElementById('btnImport').classList.add('d-none');
+    document.getElementById('importStepBadge').textContent = 'Bước 1/2';
+}
+
+async function previewColumnMapping() {
     const input = document.getElementById('excelFileInput');
     const file = input._file || input.files[0];
     if (!file) return;
+
+    const btn = document.getElementById('btnNext');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Đang đọc...';
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+        const res = await fetch('/api/products/import-excel/preview', {
+            method: 'POST',
+            body: formData,
+        });
+        const data = await res.json();
+
+        if (!data.success) {
+            showAlert('error', data.message || 'Không đọc được file');
+            return;
+        }
+
+        // Lưu file_id — import sẽ dùng lại temp file, không upload lại
+        input._fileId = data.file_id || null;
+
+        renderMappingRows(data.mapping, data.field_labels);
+
+        document.getElementById('importStep1').classList.add('d-none');
+        document.getElementById('importStep2').classList.remove('d-none');
+        document.getElementById('btnNext').classList.add('d-none');
+        document.getElementById('btnBack').classList.remove('d-none');
+        document.getElementById('btnImport').classList.remove('d-none');
+        document.getElementById('importStepBadge').textContent = 'Bước 2/2';
+    } catch (e) {
+        showAlert('error', 'Lỗi kết nối: ' + e.message);
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = 'Tiếp theo <i class="fas fa-arrow-right ms-1"></i>';
+    }
+}
+
+function renderMappingRows(mapping, fieldLabels) {
+    const fieldOptions = Object.entries(fieldLabels)
+        .map(([val, label]) => `<option value="${val}">${label}</option>`)
+        .join('');
+
+    const rows = mapping.map(item => {
+        const samples = (item.samples || []).join(', ') || '<span class="text-muted">—</span>';
+        const selected = item.suggested || '';
+        const selectHtml = `
+            <select class="form-select form-select-sm col-map-select" data-original="${item.original}">
+                <option value="">— Bỏ qua cột này —</option>
+                ${Object.entries(fieldLabels).map(([val, label]) =>
+                    `<option value="${val}"${val === selected ? ' selected' : ''}>${label}</option>`
+                ).join('')}
+            </select>`;
+        return `
+            <tr>
+                <td><code>${item.original}</code></td>
+                <td class="text-muted" style="font-size:0.8rem">${samples}</td>
+                <td>${selectHtml}</td>
+            </tr>`;
+    }).join('');
+
+    document.getElementById('mappingRows').innerHTML = rows;
+}
+
+async function submitImportExcel() {
+    const input = document.getElementById('excelFileInput');
+
+    // Collect column mapping from dropdowns
+    const columnMap = {};
+    document.querySelectorAll('.col-map-select').forEach(sel => {
+        if (sel.value) columnMap[sel.dataset.original] = sel.value;
+    });
+
+    // Require at least the name field to be mapped
+    if (!Object.values(columnMap).includes('name')) {
+        showAlert('error', 'Vui lòng chọn cột ứng với <strong>Tên sản phẩm</strong> trước khi import.');
+        return;
+    }
 
     const btn = document.getElementById('btnImport');
     btn.disabled = true;
     btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Đang xử lý...';
 
     const formData = new FormData();
-    formData.append('file', file);
+    formData.append('column_map', JSON.stringify(columnMap));
+
+    if (input._fileId) {
+        // Dùng temp file server đã lưu — không upload lại
+        formData.append('file_id', input._fileId);
+    } else {
+        // Fallback: upload file (trường hợp không có file_id)
+        const file = input._file || input.files[0];
+        if (!file) { showImportResult({ success: false, message: 'Không tìm thấy file' }); return; }
+        formData.append('file', file);
+    }
 
     try {
-        const csrf = document.querySelector('meta[name="csrf-token"]').content;
         const res = await fetch('/api/products/import-excel', {
             method: 'POST',
-            headers: { 'X-CSRFToken': csrf },
             body: formData,
         });
         const data = await res.json();
@@ -261,9 +388,7 @@ function showImportResult(data) {
         return;
     }
 
-    const errors = (data.errors || []).map(e =>
-        `<li>${e}</li>`
-    ).join('');
+    const errors = (data.errors || []).map(e => `<li>${e}</li>`).join('');
 
     box.innerHTML = `
         <div class="result-stat stat-inserted">

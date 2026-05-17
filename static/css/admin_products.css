@@ -1,3 +1,23 @@
+/* ── Product image thumbnail in table ────────────────────────────────── */
+.product-thumb {
+    width: 48px;
+    height: 48px;
+    object-fit: cover;
+    border-radius: 6px;
+    border: 1px solid var(--border-soft);
+}
+
+/* Preview image inside the Add/Edit modal */
+.product-img-preview {
+    max-width: 160px;
+    max-height: 160px;
+    object-fit: contain;
+    border: 1px solid var(--border-soft);
+    border-radius: 8px;
+    padding: 4px;
+    background: var(--surface-200);
+}
+
 /* ── Excel Import Modal ───────────────────────────────────────────────── */
 .excel-drop-zone {
     border: 2px dashed var(--border-soft);
@@ -61,6 +81,11 @@
 .guide-table td {
     color: var(--gray-900);
     font-size: 0.8rem;
+}
+
+/* Column mapping select in step 2 */
+.col-map-select {
+    font-size: 0.82rem;
 }
 
 .import-result .result-stat {
