@@ -165,7 +165,8 @@ class Database:
                 description TEXT,
                 created_by INTEGER,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                image_url TEXT
             );
             CREATE TABLE IF NOT EXISTS import_transactions (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
