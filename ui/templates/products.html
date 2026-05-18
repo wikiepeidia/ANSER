@@ -119,6 +119,18 @@
                 <!-- Kết quả import -->
                 <div id="importResult" class="import-result d-none mt-3"></div>
 
+                <!-- Màn hình lỗi import -->
+                <div id="importError" class="d-none text-center py-4">
+                    <div class="import-error-icon mb-3">
+                        <i class="fas fa-times-circle"></i>
+                    </div>
+                    <h5 class="import-error-title mb-2">Không thể import file này</h5>
+                    <p id="importErrorMessage" class="import-error-message mb-4"></p>
+                    <button type="button" class="btn btn-outline-primary" onclick="goBackToStep1()">
+                        <i class="fas fa-redo me-2"></i>Chọn file khác
+                    </button>
+                </div>
+
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>

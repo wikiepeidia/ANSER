@@ -88,6 +88,26 @@
     font-size: 0.82rem;
 }
 
+/* Import error state */
+.import-error-icon {
+    font-size: 3.5rem;
+    color: #dc3545;
+}
+
+.import-error-title {
+    color: var(--gray-900);
+    font-weight: 600;
+}
+
+.import-error-message {
+    color: var(--gray-500, #6c757d);
+    font-size: 0.9rem;
+    max-width: 400px;
+    margin-left: auto;
+    margin-right: auto;
+    line-height: 1.6;
+}
+
 .import-result .result-stat {
     display: flex;
     align-items: center;
