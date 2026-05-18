@@ -173,6 +173,13 @@ def import_products_from_excel(file_storage, created_by, column_map=None):
     except Exception as e:
         raise ValueError(f'Không đọc được file Excel: {e}')
 
+    MAX_ROWS = 2000
+    if len(df) > MAX_ROWS:
+        raise ValueError(
+            f'File có {len(df):,} dòng, vượt giới hạn {MAX_ROWS:,} sản phẩm/lần import. '
+            f'Vui lòng chia nhỏ file thành nhiều phần và import từng phần.'
+        )
+
     # Đồng bộ với preview: strip tên cột để column_map key luôn khớp
     df.columns = [str(c).strip() for c in df.columns]
 

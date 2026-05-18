@@ -73,6 +73,7 @@ def create_app(config_object=None):
     flask_app.config['JSON_AS_ASCII'] = False
     flask_app.config['RATELIMIT_ENABLED'] = False
     flask_app.config['RATELIMIT_DEFAULT_LIMITS'] = ['20000 per day', '5000 per hour']
+    flask_app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0  # disable static file cache in dev
 
     # ── OAuth ──────────────────────────────────────────────────────────────
     _configure_oauth(flask_app)

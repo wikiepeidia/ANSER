@@ -255,11 +255,14 @@ function goBackToStep1() {
     document.getElementById('importStep1').classList.remove('d-none');
     document.getElementById('importStep2').classList.add('d-none');
     document.getElementById('importResult').classList.add('d-none');
+    document.getElementById('importError').classList.add('d-none');
     document.getElementById('mappingRows').innerHTML = '';
     document.getElementById('btnNext').classList.remove('d-none');
     document.getElementById('btnBack').classList.add('d-none');
     document.getElementById('btnImport').classList.add('d-none');
-    document.getElementById('importStepBadge').textContent = 'Bước 1/2';
+    const badge = document.getElementById('importStepBadge');
+    badge.textContent = 'Bước 1/2';
+    badge.className = 'badge bg-secondary ms-2 fs-6';
 }
 
 async function previewColumnMapping() {
@@ -353,15 +356,16 @@ async function submitImportExcel() {
     const formData = new FormData();
     formData.append('column_map', JSON.stringify(columnMap));
 
-    if (input._fileId) {
-        // Dùng temp file server đã lưu — không upload lại
-        formData.append('file_id', input._fileId);
-    } else {
-        // Fallback: upload file (trường hợp không có file_id)
-        const file = input._file || input.files[0];
-        if (!file) { showImportResult({ success: false, message: 'Không tìm thấy file' }); return; }
-        formData.append('file', file);
+    const file = input._file || input.files[0];
+    if (!file) {
+        const msg = 'Không tìm thấy file, vui lòng chọn lại.';
+        showImportResult({ success: false, message: msg });
+        showAlert('error', msg);
+        return;
     }
+    // Luôn gửi kèm file — server dùng file_id nếu còn hợp lệ, fallback sang file nếu server restart
+    formData.append('file', file);
+    if (input._fileId) formData.append('file_id', input._fileId);
 
     try {
         const res = await fetch('/api/products/import-excel', {
@@ -369,14 +373,30 @@ async function submitImportExcel() {
             body: formData,
         });
         const data = await res.json();
-        showImportResult(data);
-        if (data.success) loadProducts();
+        if (!data.success) {
+            showImportError(data.message);
+        } else {
+            showImportResult(data);
+            loadProducts();
+        }
     } catch (e) {
-        showImportResult({ success: false, message: 'Lỗi kết nối: ' + e.message });
+        showImportError('Lỗi kết nối: ' + e.message);
     } finally {
         btn.disabled = false;
         btn.innerHTML = '<i class="fas fa-upload me-1"></i>Import';
     }
+}
+
+function showImportError(message) {
+    // Ẩn step 2, hiện màn hình lỗi toàn phần
+    document.getElementById('importStep2').classList.add('d-none');
+    document.getElementById('importResult').classList.add('d-none');
+    document.getElementById('btnImport').classList.add('d-none');
+    document.getElementById('btnBack').classList.add('d-none');
+    document.getElementById('importErrorMessage').textContent = message;
+    document.getElementById('importError').classList.remove('d-none');
+    document.getElementById('importStepBadge').textContent = 'Lỗi';
+    document.getElementById('importStepBadge').className = 'badge bg-danger ms-2 fs-6';
 }
 
 function showImportResult(data) {
