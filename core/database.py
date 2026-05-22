@@ -1,8 +1,8 @@
 import sqlite3
-import hashlib
 import re
 from datetime import datetime
 from .config import Config
+import bcrypt
 
 # Compatibility shim
 try:
@@ -108,6 +108,7 @@ class Database:
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 email TEXT UNIQUE NOT NULL,
                 password TEXT NOT NULL,
+                password_version INTEGER DEFAULT 0,
                 name TEXT,
                 role TEXT DEFAULT 'user',
                 avatar TEXT,
@@ -368,14 +369,14 @@ class Database:
     def create_user(self, email, password, name, role="user", first_name=None, last_name=None, manager_id=None):
         conn = self.get_connection()
         c = conn.cursor()
-        hashed_pw = hashlib.sha256(password.encode()).hexdigest()
+        hashed_pw = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
         try:
             columns = self.get_table_columns("users", cursor=c)
             if 'first_name' in columns:
-                c.execute('INSERT INTO users (email, password, name, role, first_name, last_name, manager_id) VALUES (?, ?, ?, ?, ?, ?, ?)', 
+                c.execute('INSERT INTO users (email, password, password_version, name, role, first_name, last_name, manager_id) VALUES (?, ?, 1, ?, ?, ?, ?, ?)',
                          (email, hashed_pw, name, role, first_name, last_name, manager_id))
             else:
-                c.execute('INSERT INTO users (email, password, name, role, manager_id) VALUES (?, ?, ?, ?, ?)', 
+                c.execute('INSERT INTO users (email, password, password_version, name, role, manager_id) VALUES (?, ?, 1, ?, ?, ?)',
                          (email, hashed_pw, name, role, manager_id))
             user_id = c.lastrowid
             conn.commit()

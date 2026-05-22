@@ -1,31 +1,67 @@
-import hashlib
 from functools import wraps
 from flask import session, redirect, url_for, flash, request, jsonify
 from core.google_integration import send_email
+import bcrypt
 
 class AuthManager:
     def __init__(self, database):
         self.db = database
-    
+
     @staticmethod
     def hash_password(password):
-        return hashlib.sha256(password.encode()).hexdigest()
-    
+        return bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
+
+    @staticmethod
+    def verify_password(password, hashed):
+        try:
+            return bcrypt.checkpw(password.encode(), hashed.encode() if isinstance(hashed, str) else hashed)
+        except Exception:
+            return False
+
     def verify_user(self, email, password):
         conn = self.db.get_connection()
         try:
             c = conn.cursor()
-            hashed_pw = AuthManager.hash_password(password)
-            # Check if google_token column exists (it should, but for safety in query)
-            # We assume schema is updated.
-            c.execute('SELECT id, email, name, avatar, role, google_token FROM users WHERE email = ? AND password = ?', 
-                     (email, hashed_pw))
+            c.execute('SELECT id, email, name, avatar, role, google_token, password, password_version FROM users WHERE email = ?',
+                     (email,))
             user = c.fetchone()
-            
+
+            if not user:
+                return None
+
+            stored_pw = user[6]
+            password_version = user[7] if len(user) > 7 else 0
+
+            # Old sha256 hashes have version 0, bcrypt hashes have version 1
+            if password_version == 0:
+                # Legacy sha256 hash — verify then rehash on next login
+                import hashlib
+                legacy_hash = hashlib.sha256(password.encode()).hexdigest()
+                if legacy_hash != stored_pw:
+                    return None
+                # Rehash with bcrypt for next login
+                new_hash = AuthManager.hash_password(password)
+                c.execute('UPDATE users SET password = ?, password_version = 1 WHERE id = ?', (new_hash, user[0]))
+                conn.commit()
+            else:
+                # Modern bcrypt hash
+                if not AuthManager.verify_password(password, stored_pw):
+                    return None
+
+            return {
+                'id': user[0],
+                'email': user[1],
+                'first_name': user[2].split()[0] if user[2] else '',
+                'last_name': ' '.join(user[2].split()[1:]) if user[2] and len(user[2].split()) > 1 else '',
+                'avatar': user[3],
+                'role': user[4],
+                'google_token': user[5]
+            }
+
             if user:
                 return {
                     'id': user[0],
-                    'email': user[1], 
+                    'email': user[1],
                     'first_name': user[2].split()[0] if user[2] else '',
                     'last_name': ' '.join(user[2].split()[1:]) if user[2] and len(user[2].split()) > 1 else '',
                     'avatar': user[3],
@@ -45,15 +81,14 @@ class AuthManager:
         try:
             hashed_pw = AuthManager.hash_password(password)
             full_name = f"{first_name} {last_name}"
-            
-            # Check columns
+
             columns = self.db.get_table_columns('users', cursor=c)
-            
+
             if 'manager_id' in columns:
-                c.execute('INSERT INTO users (name, email, password, role, manager_id) VALUES (?, ?, ?, ?, ?)', 
+                c.execute('INSERT INTO users (name, email, password, password_version, role, manager_id) VALUES (?, ?, ?, 1, ?, ?)',
                          (full_name, email, hashed_pw, role, manager_id))
             else:
-                c.execute('INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)', 
+                c.execute('INSERT INTO users (name, email, password, password_version, role) VALUES (?, ?, ?, 1, ?)',
                          (full_name, email, hashed_pw, role))
                 
             user_id = c.lastrowid
