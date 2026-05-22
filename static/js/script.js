@@ -537,6 +537,40 @@ window.addEventListener('offline', function() {
 });
 
 /**
+ * Desktop Sidebar Collapse Toggle
+ * Persists collapsed state in localStorage.
+ */
+document.addEventListener('DOMContentLoaded', function () {
+    const collapseBtn = document.getElementById('sidebar-collapse-toggle');
+    const sidebar = document.getElementById('main-sidebar');
+
+    if (collapseBtn && sidebar) {
+        // Restore saved state
+        const savedCollapsed = localStorage.getItem('sidebar-collapsed') === 'true';
+        if (savedCollapsed) {
+            sidebar.classList.add('collapsed');
+            applyContentOffset(true);
+        }
+
+        collapseBtn.addEventListener('click', function () {
+            const isCollapsed = sidebar.classList.toggle('collapsed');
+            localStorage.setItem('sidebar-collapsed', isCollapsed);
+            applyContentOffset(isCollapsed);
+        });
+
+        function applyContentOffset(collapsed) {
+            document.querySelectorAll('.app-content, .main-content, .scenario-main, .permissions-main').forEach(function (el) {
+                if (collapsed) {
+                    el.classList.add('sidebar-collapsed');
+                } else {
+                    el.classList.remove('sidebar-collapsed');
+                }
+            });
+        }
+    }
+});
+
+/**
  * Mobile Sidebar Toggle
  */
 document.addEventListener('DOMContentLoaded', function() {
