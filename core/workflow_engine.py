@@ -5,6 +5,39 @@ from .google_integration import read_sheet, read_doc, write_doc, write_sheet, se
 from .make_integration import trigger_webhook
 from .services.dl_client import DLClient
 
+def safe_resolve(obj, path_str):
+    """
+    Safely traverses obj using a path like ".field[0][1].subfield".
+    Only allows dict key lookup (.key) and integer list indexing ([n]).
+    Never calls eval() or getattr() — prevents Remote Code Execution.
+    Returns None if any step in the path fails.
+    """
+    if not path_str:
+        return obj
+
+    # Tokenize: match ".identifier" or "[digits]" only
+    tokens = re.findall(r'\.([A-Za-z_]\w*|\d+)|\[(\d+)\]', path_str)
+
+    current = obj
+    for dot_key, bracket_idx in tokens:
+        if current is None:
+            return None
+        try:
+            if bracket_idx:
+                current = current[int(bracket_idx)]
+            elif dot_key:
+                if isinstance(current, dict):
+                    current = current.get(dot_key)
+                elif isinstance(current, (list, tuple)):
+                    current = current[int(dot_key)]
+                else:
+                    return None
+        except (KeyError, IndexError, ValueError, TypeError):
+            return None
+
+    return current
+
+
 def resolve_template(template_str, context):
     """
     Replaces {{nodeId.path}} with actual values from context.
@@ -12,67 +45,37 @@ def resolve_template(template_str, context):
     """
     if not template_str:
         return ""
-    
-    # --- Direct Object Reference Optimization ---
+
+    # Direct Object Reference Optimization
     # If the template is EXACTLY "{{...}}", return the object directly.
-    # This allows passing Lists/Dicts between nodes without stringification issues.
+    # This allows passing Lists/Dicts between nodes without stringification.
     if isinstance(template_str, str) and template_str.startswith('{{') and template_str.endswith('}}') and template_str.count('{{') == 1:
         path = template_str[2:-2].strip()
-        parts = path.split('.')
-        node_id = parts[0]
-        
-        if node_id in context:
-            try:
-                rest = path[len(node_id):]
-                expr = f"ctx['{node_id}']{rest}"
-                return eval(expr, {"ctx": context})
-            except Exception as e:
-                print(f"Direct Template Error: {e}")
-                # Fallback to regex replacement if eval fails
-                pass
+        node_id = path.split('.')[0]
 
-    # If it's a JSON string, try to parse it first to handle structure
-    # But we need to resolve strings inside it.
-    # Simple approach: Regex replace on the string representation
-    
+        if node_id in context:
+            rest = path[len(node_id):]
+            result = safe_resolve(context[node_id], rest)
+            if result is not None:
+                return result
+
     def replacer(match):
-        path = match.group(1) # e.g. "1.data[0][0]"
-        parts = path.split('.')
-        node_id = parts[0]
-        
+        path = match.group(1)
+        node_id = path.split('.')[0]
+
         if node_id not in context:
             return "null"
-            
-        value = context[node_id]
-        
-        # Traverse the rest of the path (very basic implementation)
-        # This supports .field but not [index] properly in this simple regex version
-        # For a robust solution, we'd use a library like Jinja2
-        
-        # Hacky support for list access in the string like "data[0]"
-        # We will just eval it (DANGEROUS in prod, okay for test PoC)
-        try:
-            # Construct a python expression: context['1']['data'][0]
-            # We need to map the path string to python accessors
-            
-            # Remove node_id from path
-            rest = path[len(node_id):] # e.g. ".data[0][0]"
-            
-            # Evaluate context[node_id] + rest
-            # We wrap context access in a safe way
-            expr = f"ctx['{node_id}']{rest}"
-            res = eval(expr, {"ctx": context})
-            return str(res)
-        except Exception as e:
-            print(f"Template Error: {e}")
-            return "null"
 
-    # Replace {{...}}
+        rest = path[len(node_id):]
+        result = safe_resolve(context[node_id], rest)
+
+        return "null" if result is None else str(result)
+
     resolved_str = re.sub(r'\{\{(.*?)\}\}', replacer, template_str)
-    
+
     try:
         return json.loads(resolved_str)
-    except:
+    except Exception:
         return resolved_str
 
 def execute_workflow(workflow_data, token_info=None):

@@ -381,12 +381,178 @@ body.dark-mode .social-btn {
     width: 280px;
     z-index: 100;
     overflow-y: auto;
+    overflow-x: hidden;
     background: var(--sidebar-bg);
     border-right: 1px solid var(--sidebar-border);
     box-shadow: 4px 0 20px var(--card-shadow-color);
     backdrop-filter: blur(12px);
     color: var(--sidebar-text);
-    transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* ── Sidebar collapse toggle button ── */
+.sidebar-collapse-btn {
+    position: absolute;
+    top: 16px;
+    right: -14px;
+    width: 28px;
+    height: 28px;
+    background: var(--primary);
+    color: #fff;
+    border: none;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 101;
+    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.4);
+    transition: transform 0.3s ease, background 0.2s ease;
+    font-size: 11px;
+}
+
+.sidebar-collapse-btn:hover {
+    background: var(--primary-dark);
+}
+
+/* When collapsed, flip the chevron and shift button */
+.modern-sidebar.collapsed .sidebar-collapse-btn {
+    right: -14px;
+}
+
+.modern-sidebar.collapsed .sidebar-collapse-btn i {
+    transform: rotate(180deg);
+}
+
+/* ── Collapsed state (64px icons-only) ── */
+.modern-sidebar.collapsed {
+    width: 64px;
+}
+
+/* Hide text elements when collapsed */
+.modern-sidebar.collapsed .brand-text,
+.modern-sidebar.collapsed .user-info,
+.modern-sidebar.collapsed .menu-label,
+.modern-sidebar.collapsed .menu-arrow,
+.modern-sidebar.collapsed .section-title span,
+.modern-sidebar.collapsed .logout-label {
+    display: none;
+}
+
+/* Center the brand icon */
+.modern-sidebar.collapsed .sidebar-brand {
+    justify-content: center;
+    padding: 20px 12px;
+}
+
+.modern-sidebar.collapsed .brand-icon {
+    margin-right: 0;
+}
+
+/* Center the user avatar */
+.modern-sidebar.collapsed .user-profile-card {
+    justify-content: center;
+    padding: 16px 12px;
+}
+
+.modern-sidebar.collapsed .user-avatar-lg {
+    margin-right: 0;
+}
+
+/* Center menu items, hide border animation */
+.modern-sidebar.collapsed .menu-container {
+    padding: 12px 8px;
+}
+
+.modern-sidebar.collapsed .menu-item {
+    justify-content: center;
+    padding: 10px;
+    margin-bottom: 4px;
+    position: relative;
+}
+
+.modern-sidebar.collapsed .menu-item:hover {
+    transform: none;
+}
+
+.modern-sidebar.collapsed .menu-icon {
+    margin-right: 0;
+    width: 36px;
+    height: 36px;
+}
+
+.modern-sidebar.collapsed .section-title {
+    justify-content: center;
+    padding: 6px 0;
+}
+
+/* Tooltip on hover when collapsed */
+.modern-sidebar.collapsed .menu-item[data-tooltip]::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    left: calc(100% + 12px);
+    top: 50%;
+    transform: translateY(-50%);
+    background: var(--gray-900);
+    color: #fff;
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s ease;
+    z-index: 200;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+.modern-sidebar.collapsed .menu-item[data-tooltip]:hover::after {
+    opacity: 1;
+}
+
+/* Logout button when collapsed */
+.modern-sidebar.collapsed .logout-button {
+    justify-content: center;
+    padding: 10px;
+    position: relative;
+}
+
+.modern-sidebar.collapsed .logout-button[data-tooltip]::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    left: calc(100% + 12px);
+    top: 50%;
+    transform: translateY(-50%);
+    background: var(--gray-900);
+    color: #fff;
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s ease;
+    z-index: 200;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+.modern-sidebar.collapsed .logout-button[data-tooltip]:hover::after {
+    opacity: 1;
+}
+
+/* Adjust all content areas when sidebar is collapsed */
+.app-content.sidebar-collapsed,
+.main-content.sidebar-collapsed,
+.scenario-main.sidebar-collapsed,
+.permissions-main.sidebar-collapsed {
+    margin-left: 64px;
+}
+
+/* Smooth transition for all main content areas */
+.main-content,
+.scenario-main,
+.permissions-main {
+    transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .modern-sidebar::-webkit-scrollbar {

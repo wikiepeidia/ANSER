@@ -4,6 +4,9 @@
 <div id="sidebar-overlay" class="sidebar-overlay"></div>
 
 <nav class="modern-sidebar" id="main-sidebar">
+    <button id="sidebar-collapse-toggle" class="sidebar-collapse-btn" aria-label="Collapse sidebar">
+        <i class="fas fa-chevron-left" id="sidebar-collapse-icon"></i>
+    </button>
     <div class="sidebar-brand">
         <div class="brand-icon">
             <i class="fas fa-rocket"></i>
@@ -43,19 +46,19 @@
                 <i class="fas fa-crown"></i>
                 <span>Platform Administration</span>
             </div>
-            <a class="menu-item" href="{{ url_for('pages.admin_dashboard') }}">
+            <a class="menu-item" href="{{ url_for('pages.admin_dashboard') }}" data-tooltip="Admin Dashboard">
                 <div class="menu-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);"><i
                         class="fas fa-tachometer-alt"></i></div>
                 <div class="menu-label">Admin Dashboard</div>
                 <div class="menu-arrow"><i class="fas fa-chevron-right"></i></div>
             </a>
-            <a class="menu-item" href="{{ url_for('pages.admin_analytics') }}">
+            <a class="menu-item" href="{{ url_for('pages.admin_analytics') }}" data-tooltip="Analytics & Reports">
                 <div class="menu-icon" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);"><i
                         class="fas fa-chart-line"></i></div>
                 <div class="menu-label">Analytics & Reports</div>
                 <div class="menu-arrow"><i class="fas fa-chevron-right"></i></div>
             </a>
-            <a class="menu-item" href="{{ url_for('pages.admin_subscriptions') }}">
+            <a class="menu-item" href="{{ url_for('pages.admin_subscriptions') }}" data-tooltip="Manage Subscriptions">
                 <div class="menu-icon" style="background: linear-gradient(135deg, #ffd89b 0%, #ff8a00 100%);"><i
                         class="fas fa-credit-card"></i></div>
                 <div class="menu-label">Manage Subscriptions</div>
@@ -71,20 +74,20 @@
                 <i class="fas fa-store"></i>
                 <span>My Store Management</span>
             </div>
-            <a class="menu-item" href="{{ url_for('pages.dashboard') }}">
+            <a class="menu-item" href="{{ url_for('pages.dashboard') }}" data-tooltip="Store Dashboard">
                 <div class="menu-icon" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);"><i
                         class="fas fa-chart-pie"></i></div>
                 <div class="menu-label">Store Dashboard</div>
                 <div class="menu-arrow"><i class="fas fa-chevron-right"></i></div>
             </a>
-            <a class="menu-item" href="{{ url_for('pages.create_user_account') }}">
+            <a class="menu-item" href="{{ url_for('pages.create_user_account') }}" data-tooltip="Manage Employees">
                 <div class="menu-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);"><i
                         class="fas fa-users-cog"></i></div>
                 <div class="menu-label">Manage Employees</div>
                 <div class="menu-arrow"><i class="fas fa-chevron-right"></i></div>
             </a>
             {% if user.role != 'admin' %}
-            <a class="menu-item" href="{{ url_for('wallet.wallet_dashboard') }}">
+            <a class="menu-item" href="{{ url_for('wallet.wallet_dashboard') }}" data-tooltip="Wallet & Plans">
                 <div class="menu-icon" style="background: linear-gradient(135deg, #1f2937 0%, #111827 100%);"><i
                         class="fas fa-wallet"></i></div>
                 <div class="menu-label">Wallet & Plans</div>
@@ -101,7 +104,7 @@
                 <i class="fas fa-store"></i>
                 <span>Business Management</span>
             </div>
-            <a class="menu-item" href="{{ url_for('pages.customers') }}">
+            <a class="menu-item" href="{{ url_for('pages.customers') }}" data-tooltip="Customers">
                 <div class="menu-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);"><i
                         class="fas fa-users"></i></div>
                 <div class="menu-label">Customers</div>
@@ -116,19 +119,19 @@
                 <i class="fas fa-rocket"></i>
                 <span>Workspace</span>
             </div>
-            <a class="menu-item" href="{{ url_for('pages.workspace') }}">
+            <a class="menu-item" href="{{ url_for('pages.workspace') }}" data-tooltip="Workspace Hub">
                 <div class="menu-icon" style="background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);"><i
                         class="fas fa-paint-brush"></i></div>
                 <div class="menu-label">Workspace Hub</div>
                 <div class="menu-arrow"><i class="fas fa-chevron-right"></i></div>
             </a>
-            <a class="menu-item" href="{{ url_for('pages.scenarios') }}">
+            <a class="menu-item" href="{{ url_for('pages.scenarios') }}" data-tooltip="Automation Scenarios">
                 <div class="menu-icon" style="background: linear-gradient(135deg, #89f7fe 0%, #66a6ff 100%);"><i
                         class="fas fa-project-diagram"></i></div>
                 <div class="menu-label">Automation Scenarios</div>
                 <div class="menu-arrow"><i class="fas fa-chevron-right"></i></div>
             </a>
-            <a class="menu-item" href="{{ url_for('pages.settings') }}">
+            <a class="menu-item" href="{{ url_for('pages.settings') }}" data-tooltip="Settings">
                 <div class="menu-icon" style="background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%);"><i
                         class="fas fa-cog"></i></div>
                 <div class="menu-label">Settings</div>
@@ -138,9 +141,9 @@
 
         <!-- Logout -->
         <div class="menu-footer">
-            <a class="logout-button" href="{{ url_for('main.logout') }}">
+            <a class="logout-button" href="{{ url_for('main.logout') }}" data-tooltip="Logout">
                 <i class="fas fa-sign-out-alt"></i>
-                <span>Logout</span>
+                <span class="logout-label">Logout</span>
             </a>
         </div>
     </div>
