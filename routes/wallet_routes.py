@@ -1,4 +1,6 @@
 """Wallet, subscription, and profile routes — wallet_bp Blueprint."""
+import sqlite3
+
 from flask import Blueprint, jsonify, render_template, request
 from flask_login import current_user, login_required
 
@@ -20,11 +22,14 @@ def wallet_dashboard():
 @wallet_bp.route('/api/user/wallet')
 @login_required
 def api_get_wallet():
+    conn = db_manager.get_connection()
     try:
-        data = get_wallet_data(current_user.id)
+        data = get_wallet_data(conn, current_user.id)
         return jsonify({'success': True, **data})
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
+    finally:
+        conn.close()
 
 
 @wallet_bp.route('/api/session')
@@ -89,13 +94,16 @@ def api_topup_wallet():
     method = (data.get('method') or 'bank_transfer').strip()
     reference = (data.get('reference') or '').strip()[:120]
     note = (data.get('note') or '').strip()[:200]
+    conn = db_manager.get_connection()
     try:
-        create_topup_request(current_user.id, amount, method, reference, note)
+        create_topup_request(conn, current_user.id, amount, method, reference, note)
         return jsonify({'success': True, 'message': 'Yêu cầu nạp tiền đã được gửi. Admin sẽ xác nhận sớm.'})
     except ValueError as e:
         return jsonify({'success': False, 'message': str(e)}), 400
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
+    finally:
+        conn.close()
 
 
 @wallet_bp.route('/api/admin/wallet/withdraw', methods=['POST'])
@@ -115,13 +123,16 @@ def api_admin_withdraw():
     note = (data.get('note') or '').strip()
     if not bank_name or not account_number or not account_name:
         return jsonify({'success': False, 'message': 'Vui lòng cung cấp đầy đủ thông tin ngân hàng'}), 400
+    conn = db_manager.get_connection()
     try:
-        create_withdrawal(current_user.id, amount, bank_name, account_number, account_name, note)
+        create_withdrawal(conn, current_user.id, amount, bank_name, account_number, account_name, note)
         return jsonify({'success': True, 'message': 'Yêu cầu rút tiền đã được gửi.'})
     except ValueError as e:
         return jsonify({'success': False, 'message': str(e)}), 400
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
+    finally:
+        conn.close()
 
 
 @wallet_bp.route('/api/user/subscription/upgrade', methods=['POST'])
@@ -129,14 +140,17 @@ def api_admin_withdraw():
 def api_upgrade_subscription():
     data = request.get_json() or {}
     plan_key = str(data.get('plan', ''))
+    conn = db_manager.get_connection()
     try:
-        result = upgrade_subscription(current_user.id, plan_key)
+        result = upgrade_subscription(conn, current_user.id, plan_key)
         return jsonify({'success': True, 'message': 'Nâng cấp thành công.',
                         'balance': result['new_balance'], 'expires_at': result['expires_at']})
     except ValueError as e:
         return jsonify({'success': False, 'message': str(e)}), 400
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
+    finally:
+        conn.close()
 
 
 @wallet_bp.route('/api/user/subscription/auto-renew', methods=['POST'])
@@ -146,13 +160,16 @@ def api_user_toggle_auto_renew():
     enabled = data.get('enabled')
     if enabled is None:
         return jsonify({'success': False, 'message': 'Tham số không hợp lệ: enabled'}), 400
+    conn = db_manager.get_connection()
     try:
-        toggle_auto_renew(current_user.id, bool(enabled))
+        toggle_auto_renew(conn, current_user.id, bool(enabled))
         return jsonify({'success': True, 'message': 'Đã cập nhật tự động gia hạn'})
     except ValueError as e:
         return jsonify({'success': False, 'message': str(e)}), 400
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
+    finally:
+        conn.close()
 
 
 @wallet_bp.route('/api/admin/wallet/pending', methods=['GET'])
@@ -160,11 +177,15 @@ def api_user_toggle_auto_renew():
 def api_admin_pending_wallet_transactions():
     if not hasattr(current_user, 'role') or current_user.role != 'admin':
         return jsonify({'success': False, 'message': 'Không có quyền truy cập'}), 403
+    conn = db_manager.get_connection()
+    conn.row_factory = sqlite3.Row
     try:
-        transactions = get_pending_transactions()
+        transactions = get_pending_transactions(conn)
         return jsonify({'success': True, 'transactions': transactions})
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
+    finally:
+        conn.close()
 
 
 @wallet_bp.route('/api/admin/wallet/pending/<int:transaction_id>', methods=['POST'])
@@ -175,8 +196,9 @@ def api_admin_process_wallet_transaction(transaction_id):
     data = request.get_json() or {}
     action = data.get('action')
     note = (data.get('note') or '').strip()
+    conn = db_manager.get_connection()
     try:
-        process_transaction(transaction_id, action,
+        process_transaction(conn, transaction_id, action,
                             current_user.id, current_user.email, note)
         msg = 'Giao dịch đã được duyệt và ví đã được cập nhật.' if action == 'approve' else 'Giao dịch đã bị từ chối.'
         return jsonify({'success': True, 'message': msg})
@@ -184,3 +206,5 @@ def api_admin_process_wallet_transaction(transaction_id):
         return jsonify({'success': False, 'message': str(e)}), 400
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
+    finally:
+        conn.close()

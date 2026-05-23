@@ -4,8 +4,6 @@ import sqlite3
 
 import pandas as pd
 
-from core.extensions import db_manager
-
 # Từ khoá nhận diện từng field — dùng cho auto-detect
 _FIELD_KEYWORDS = {
     'name':           {'tên', 'name', 'product', 'item', 'hàng', 'hang', 'sản', 'san', 'phẩm', 'pham'},
@@ -50,7 +48,6 @@ def detect_column_mapping(raw_columns):
     result = []
     used_fields = set()
 
-    # Tính điểm cho tất cả cặp (cột, field) trước — chọn pair tốt nhất
     scores = []
     normalized_cols = [_normalize_col(c) for c in raw_columns]
 
@@ -64,8 +61,7 @@ def detect_column_mapping(raw_columns):
                 col_scores[field] = score
         scores.append((orig, norm, col_scores))
 
-    # Greedy assignment: pair có điểm cao nhất trước
-    assigned = {}  # col → field
+    assigned = {}
     all_pairs = []
     for orig, norm, col_scores in scores:
         for field, score in col_scores.items():
@@ -83,21 +79,19 @@ def detect_column_mapping(raw_columns):
         result.append({
             'original': orig,
             'normalized': norm,
-            'suggested': assigned.get(orig),   # None = không đoán được
+            'suggested': assigned.get(orig),
         })
 
     return result
 
 
-def get_all_products():
-    conn = db_manager.get_connection()
+def get_all_products(conn):
     c = conn.cursor()
     c.execute(
         'SELECT id, code, name, category, unit, price, stock_quantity, description, created_at, image_url'
         ' FROM products ORDER BY created_at DESC'
     )
     rows = c.fetchall()
-    conn.close()
     return [
         {'id': r[0], 'code': r[1], 'name': r[2], 'category': r[3],
          'unit': r[4], 'price': r[5], 'stock_quantity': r[6],
@@ -106,8 +100,7 @@ def get_all_products():
     ]
 
 
-def create_product(code, name, category, unit, price, stock_quantity, description, created_by, image_url=''):
-    conn = db_manager.get_connection()
+def create_product(conn, code, name, category, unit, price, stock_quantity, description, created_by, image_url=''):
     c = conn.cursor()
     try:
         c.execute(
@@ -119,12 +112,12 @@ def create_product(code, name, category, unit, price, stock_quantity, descriptio
         return True, None
     except sqlite3.IntegrityError:
         return False, 'Product code already exists'
-    finally:
-        conn.close()
+    except Exception:
+        conn.rollback()
+        raise
 
 
-def update_product(product_id, name, category, unit, price, stock_quantity, description, image_url=''):
-    conn = db_manager.get_connection()
+def update_product(conn, product_id, name, category, unit, price, stock_quantity, description, image_url=''):
     c = conn.cursor()
     try:
         c.execute(
@@ -133,16 +126,19 @@ def update_product(product_id, name, category, unit, price, stock_quantity, desc
             (name, category, unit, price, stock_quantity, description, image_url or None, product_id),
         )
         conn.commit()
-    finally:
-        conn.close()
+    except Exception:
+        conn.rollback()
+        raise
 
 
-def delete_product(product_id):
-    conn = db_manager.get_connection()
+def delete_product(conn, product_id):
     c = conn.cursor()
-    c.execute('DELETE FROM products WHERE id=?', (product_id,))
-    conn.commit()
-    conn.close()
+    try:
+        c.execute('DELETE FROM products WHERE id=?', (product_id,))
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
 
 
 def _get_next_sp_number(cursor):
@@ -157,7 +153,7 @@ def _get_next_sp_number(cursor):
     return max(numbers, default=0) + 1
 
 
-def import_products_from_excel(file_storage, created_by, column_map=None):
+def import_products_from_excel(conn, file_storage, created_by, column_map=None):
     """Upsert products from an uploaded Excel file.
 
     column_map: dict {tên_cột_gốc: field_name} do user xác nhận.
@@ -180,7 +176,6 @@ def import_products_from_excel(file_storage, created_by, column_map=None):
             f'Vui lòng chia nhỏ file thành nhiều phần và import từng phần.'
         )
 
-    # Đồng bộ với preview: strip tên cột để column_map key luôn khớp
     df.columns = [str(c).strip() for c in df.columns]
 
     if column_map:
@@ -196,13 +191,10 @@ def import_products_from_excel(file_storage, created_by, column_map=None):
 
     result = {'inserted': 0, 'updated': 0, 'skipped': 0, 'errors': []}
 
-    conn = db_manager.get_connection()
     c = conn.cursor()
     try:
         # ── Bước 1: Load toàn bộ sản phẩm hiện có vào memory (1 query) ──────
         c.execute('SELECT id, code, name FROM products')
-        # existing_by_code[code]       = (id, code)
-        # existing_by_name[name_lower] = (id, code)
         existing_by_code = {}
         existing_by_name = {}
         for pid, pcode, pname in c.fetchall():
@@ -214,8 +206,8 @@ def import_products_from_excel(file_storage, created_by, column_map=None):
         next_sp_num = _get_next_sp_number(c)
 
         # ── Bước 2: Phân loại từng dòng trong Python (không query DB) ────────
-        to_update = []  # (code, name, category, unit, price, stock, desc, img, id)
-        to_insert = []  # (code, name, category, unit, price, stock, desc, created_by, img)
+        to_update = []
+        to_insert = []
 
         for i, row in df.iterrows():
             row_num = i + 2
@@ -238,7 +230,6 @@ def import_products_from_excel(file_storage, created_by, column_map=None):
                 result['skipped'] += 1
                 continue
 
-            # Ưu tiên match theo code, fallback sang name
             existing_rec = existing_by_code.get(code_val) if code_val else None
             if existing_rec is None:
                 existing_rec = existing_by_name.get(name.lower())
@@ -251,7 +242,6 @@ def import_products_from_excel(file_storage, created_by, column_map=None):
                     next_sp_num += 1
                 to_update.append((final_code, name, category, unit, price, stock,
                                   description, image_url or None, existing_id))
-                # Cập nhật cache để xử lý đúng nếu file có dòng trùng nhau
                 existing_by_name[name.lower()] = (existing_id, final_code)
                 if final_code:
                     existing_by_code[final_code] = (existing_id, final_code)
@@ -262,13 +252,12 @@ def import_products_from_excel(file_storage, created_by, column_map=None):
                     next_sp_num += 1
                 to_insert.append((final_code, name, category, unit, price, stock,
                                   description, created_by, image_url or None))
-                # Đánh dấu vào cache để dòng trùng tiếp theo trong file được update
                 existing_by_name[name.lower()] = (None, final_code)
                 if final_code:
                     existing_by_code[final_code] = (None, final_code)
                 result['inserted'] += 1
 
-        # ── Bước 3: Bulk execute (1 query mỗi loại) ──────────────────────────
+        # ── Bước 3: Bulk execute ──────────────────────────────────────────────
         if to_update:
             c.executemany(
                 '''UPDATE products SET code=?, name=?, category=?, unit=?, price=?,
@@ -289,7 +278,5 @@ def import_products_from_excel(file_storage, created_by, column_map=None):
     except Exception:
         conn.rollback()
         raise
-    finally:
-        conn.close()
 
     return result

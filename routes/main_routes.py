@@ -6,7 +6,7 @@ import uuid
 
 from flask import Blueprint, flash, jsonify, redirect, request, url_for
 from flask_login import current_user, login_required, logout_user
-from core.extensions import csrf
+from core.extensions import csrf, db_manager
 
 from core.services.customer_service import (
     create_customer, delete_customer, get_all_customers, update_customer,
@@ -35,7 +35,11 @@ def logout():
 @main_bp.route('/api/customers', methods=['GET'])
 @login_required
 def api_get_customers():
-    return jsonify({'success': True, 'customers': get_all_customers()})
+    conn = db_manager.get_connection()
+    try:
+        return jsonify({'success': True, 'customers': get_all_customers(conn)})
+    finally:
+        conn.close()
 
 
 @main_bp.route('/api/customers', methods=['POST'])
@@ -44,31 +48,43 @@ def api_create_customer():
     data = request.get_json()
     if not data or 'code' not in data or 'name' not in data:
         return jsonify({'success': False, 'message': 'Thiếu các trường bắt buộc'}), 400
-    ok, err = create_customer(
-        data['code'], data['name'], data.get('phone', ''), data.get('email', ''),
-        data.get('address', ''), data.get('notes', ''), current_user.id,
-    )
-    if ok:
-        return jsonify({'success': True, 'message': 'Tạo khách hàng thành công'})
-    return jsonify({'success': False, 'message': err}), 400
+    conn = db_manager.get_connection()
+    try:
+        ok, err = create_customer(
+            conn, data['code'], data['name'], data.get('phone', ''), data.get('email', ''),
+            data.get('address', ''), data.get('notes', ''), current_user.id,
+        )
+        if ok:
+            return jsonify({'success': True, 'message': 'Tạo khách hàng thành công'})
+        return jsonify({'success': False, 'message': err}), 400
+    finally:
+        conn.close()
 
 
 @main_bp.route('/api/customers/<int:customer_id>', methods=['PUT'])
 @login_required
 def api_update_customer(customer_id):
     data = request.get_json()
-    update_customer(
-        customer_id, data['name'], data.get('phone', ''), data.get('email', ''),
-        data.get('address', ''), data.get('notes', ''),
-    )
-    return jsonify({'success': True, 'message': 'Cập nhật khách hàng thành công'})
+    conn = db_manager.get_connection()
+    try:
+        update_customer(
+            conn, customer_id, data['name'], data.get('phone', ''), data.get('email', ''),
+            data.get('address', ''), data.get('notes', ''),
+        )
+        return jsonify({'success': True, 'message': 'Cập nhật khách hàng thành công'})
+    finally:
+        conn.close()
 
 
 @main_bp.route('/api/customers/<int:customer_id>', methods=['DELETE'])
 @login_required
 def api_delete_customer(customer_id):
-    delete_customer(customer_id)
-    return jsonify({'success': True, 'message': 'Xóa khách hàng thành công'})
+    conn = db_manager.get_connection()
+    try:
+        delete_customer(conn, customer_id)
+        return jsonify({'success': True, 'message': 'Xóa khách hàng thành công'})
+    finally:
+        conn.close()
 
 
 # ── Products ───────────────────────────────────────────────────────────────
@@ -76,7 +92,11 @@ def api_delete_customer(customer_id):
 @main_bp.route('/api/products', methods=['GET'])
 @login_required
 def api_get_products():
-    return jsonify({'success': True, 'products': get_all_products()})
+    conn = db_manager.get_connection()
+    try:
+        return jsonify({'success': True, 'products': get_all_products(conn)})
+    finally:
+        conn.close()
 
 
 @main_bp.route('/api/products', methods=['POST'])
@@ -85,33 +105,45 @@ def api_create_product():
     data = request.get_json()
     if not data or 'code' not in data or 'name' not in data:
         return jsonify({'success': False, 'message': 'Thiếu các trường bắt buộc'}), 400
-    ok, err = create_product(
-        data['code'], data['name'], data.get('category', ''), data.get('unit', 'cái'),
-        data.get('price', 0), data.get('stock_quantity', 0), data.get('description', ''),
-        current_user.id, data.get('image_url', ''),
-    )
-    if ok:
-        return jsonify({'success': True, 'message': 'Tạo sản phẩm thành công'})
-    return jsonify({'success': False, 'message': err}), 400
+    conn = db_manager.get_connection()
+    try:
+        ok, err = create_product(
+            conn, data['code'], data['name'], data.get('category', ''), data.get('unit', 'cái'),
+            data.get('price', 0), data.get('stock_quantity', 0), data.get('description', ''),
+            current_user.id, data.get('image_url', ''),
+        )
+        if ok:
+            return jsonify({'success': True, 'message': 'Tạo sản phẩm thành công'})
+        return jsonify({'success': False, 'message': err}), 400
+    finally:
+        conn.close()
 
 
 @main_bp.route('/api/products/<int:product_id>', methods=['PUT'])
 @login_required
 def api_update_product(product_id):
     data = request.get_json()
-    update_product(
-        product_id, data['name'], data.get('category', ''), data.get('unit', 'cái'),
-        data.get('price', 0), data.get('stock_quantity', 0), data.get('description', ''),
-        data.get('image_url', ''),
-    )
-    return jsonify({'success': True, 'message': 'Cập nhật sản phẩm thành công'})
+    conn = db_manager.get_connection()
+    try:
+        update_product(
+            conn, product_id, data['name'], data.get('category', ''), data.get('unit', 'cái'),
+            data.get('price', 0), data.get('stock_quantity', 0), data.get('description', ''),
+            data.get('image_url', ''),
+        )
+        return jsonify({'success': True, 'message': 'Cập nhật sản phẩm thành công'})
+    finally:
+        conn.close()
 
 
 @main_bp.route('/api/products/<int:product_id>', methods=['DELETE'])
 @login_required
 def api_delete_product(product_id):
-    delete_product(product_id)
-    return jsonify({'success': True, 'message': 'Xóa sản phẩm thành công'})
+    conn = db_manager.get_connection()
+    try:
+        delete_product(conn, product_id)
+        return jsonify({'success': True, 'message': 'Xóa sản phẩm thành công'})
+    finally:
+        conn.close()
 
 
 @main_bp.route('/api/products/import-excel/preview', methods=['POST'])
@@ -206,7 +238,6 @@ def api_import_products_excel():
                 pass
 
     if file_source is None:
-        # Fallback: file được upload trực tiếp
         if 'file' not in request.files or not request.files['file'].filename:
             return jsonify({'success': False, 'message': 'Không có file'}), 400
         f = request.files['file']
@@ -214,8 +245,9 @@ def api_import_products_excel():
             return jsonify({'success': False, 'message': 'Chỉ chấp nhận .xlsx hoặc .xls'}), 400
         file_source = f
 
+    conn = db_manager.get_connection()
     try:
-        result = import_products_from_excel(file_source, current_user.id, column_map=column_map)
+        result = import_products_from_excel(conn, file_source, current_user.id, column_map=column_map)
         return jsonify({
             'success': True,
             'message': f"Import thành công: {result['inserted']} thêm mới, {result['updated']} cập nhật, {result['skipped']} bỏ qua",
@@ -226,5 +258,6 @@ def api_import_products_excel():
     except Exception as e:
         return jsonify({'success': False, 'message': f'Lỗi server: {e}'}), 500
     finally:
+        conn.close()
         if hasattr(file_source, 'close'):
             file_source.close()

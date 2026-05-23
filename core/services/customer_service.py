@@ -1,15 +1,11 @@
 """Customer CRUD — service layer extracted from main_routes."""
 import sqlite3
 
-from core.extensions import db_manager
 
-
-def get_all_customers():
-    conn = db_manager.get_connection()
+def get_all_customers(conn):
     c = conn.cursor()
     c.execute('SELECT * FROM customers ORDER BY created_at DESC')
     rows = c.fetchall()
-    conn.close()
     return [
         {'id': r[0], 'code': r[1], 'name': r[2], 'phone': r[3],
          'email': r[4], 'address': r[5], 'notes': r[6], 'created_at': r[8]}
@@ -17,8 +13,7 @@ def get_all_customers():
     ]
 
 
-def create_customer(code, name, phone, email, address, notes, created_by):
-    conn = db_manager.get_connection()
+def create_customer(conn, code, name, phone, email, address, notes, created_by):
     c = conn.cursor()
     try:
         c.execute(
@@ -30,12 +25,12 @@ def create_customer(code, name, phone, email, address, notes, created_by):
         return True, None
     except sqlite3.IntegrityError:
         return False, 'Customer code already exists'
-    finally:
-        conn.close()
+    except Exception:
+        conn.rollback()
+        raise
 
 
-def update_customer(customer_id, name, phone, email, address, notes):
-    conn = db_manager.get_connection()
+def update_customer(conn, customer_id, name, phone, email, address, notes):
     c = conn.cursor()
     try:
         c.execute(
@@ -44,13 +39,16 @@ def update_customer(customer_id, name, phone, email, address, notes):
             (name, phone, email, address, notes, customer_id),
         )
         conn.commit()
-    finally:
-        conn.close()
+    except Exception:
+        conn.rollback()
+        raise
 
 
-def delete_customer(customer_id):
-    conn = db_manager.get_connection()
+def delete_customer(conn, customer_id):
     c = conn.cursor()
-    c.execute('DELETE FROM customers WHERE id=?', (customer_id,))
-    conn.commit()
-    conn.close()
+    try:
+        c.execute('DELETE FROM customers WHERE id=?', (customer_id,))
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
