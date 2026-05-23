@@ -6,6 +6,9 @@ from core.extensions import db_manager
 from core.services.workspace_service import (
     create_item, create_workspace, delete_item, get_workspace_items, update_item,
 )
+from core.logger import get_logger
+
+logger = get_logger(__name__)
 
 workspace_bp = Blueprint('workspaces', __name__)
 
@@ -110,8 +113,7 @@ def get_scenarios():
     try:
         return jsonify({'success': True, 'scenarios': db_manager.get_scenarios(current_user.id)})
     except Exception as e:
-        import traceback
-        traceback.print_exc()
+        logger.error("Error fetching scenarios for user %s: %s", current_user.id, e, exc_info=True)
         return jsonify({'success': False, 'message': str(e)}), 500
 
 
@@ -132,7 +134,7 @@ def get_scenario(scenario_id):
 def create_scenario():
     try:
         data = request.get_json()
-        print(f'Creating scenario for user {current_user.id}: {data.get("name")}')
+        logger.info("Creating scenario for user %s: %s", current_user.id, data.get("name"))
         scenario_id = db_manager.create_scenario(
             user_id=current_user.id,
             name=data.get('name'),
@@ -142,8 +144,7 @@ def create_scenario():
         )
         return jsonify({'success': True, 'message': 'Tạo kịch bản thành công', 'id': scenario_id})
     except Exception as e:
-        import traceback
-        traceback.print_exc()
+        logger.error("Error creating scenario for user %s: %s", current_user.id, e, exc_info=True)
         return jsonify({'success': False, 'message': str(e)}), 500
 
 

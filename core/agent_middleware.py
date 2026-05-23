@@ -1,7 +1,12 @@
 import json
 import re
 try: from json_repair import repair_json
-except: repair_json = None
+except Exception: repair_json = None
+
+from core.logger import get_logger
+
+logger = get_logger(__name__)
+
 
 class AgentMiddleware:
     def __init__(self, db_manager):
@@ -13,7 +18,7 @@ class AgentMiddleware:
         [TOOLS]
         'google_sheet_read': {sheetId, range}
         'gmail_send': {to, subject, body}
-        
+
         [PROTOCOL]
         Output JSON with "action": "create_workflow".
         """
@@ -26,24 +31,25 @@ class AgentMiddleware:
             try:
                 c.execute("SELECT table_name FROM information_schema.tables WHERE table_schema='public'")
                 tables = [r[0] for r in c.fetchall()]
-            except:
+            except Exception:
                 c.execute("SELECT name FROM sqlite_master WHERE type='table'")
                 tables = [r[0] for r in c.fetchall()]
             return "Tables: " + ", ".join(tables)
-        except: return ""
+        except Exception:
+            return ""
         finally:
             if 'conn' in locals(): conn.close()
 
     def process_ai_response(self, ai_text, user_id):
         # 1. Try to find JSON
         json_data = None
-        
+
         # Regex for markdown
         match = re.search(r'```json\s*(\{.*?\})\s*```', ai_text, re.DOTALL)
         if match:
             try: json_data = json.loads(match.group(1))
-            except: pass
-        
+            except json.JSONDecodeError: pass
+
         # Regex for raw JSON
         if not json_data:
             try:
@@ -52,17 +58,17 @@ class AgentMiddleware:
                 if start != -1 and end != -1:
                     if repair_json: json_data = json.loads(repair_json(ai_text[start:end]))
                     else: json_data = json.loads(ai_text[start:end])
-            except: pass
+            except json.JSONDecodeError: pass
 
         # 2. If JSON found, execute and RETURN CLEAN TEXT
         if json_data and isinstance(json_data, dict):
             action = json_data.get('action')
-            
+
             if action == 'create_workflow':
                 result = self._handle_create_workflow(json_data, user_id)
                 # result[0] is the clean message ("✅ Created..."), result[1] is metadata
-                return result 
-            
+                return result
+
             if action == 'query_db':
                 return self._handle_query_db(json_data, user_id)
 
@@ -73,20 +79,20 @@ class AgentMiddleware:
         name = data.get('name', 'AI Flow')
         payload = data.get('payload', {})
         if 'nodes' not in payload and 'nodes' in data: payload = data
-        
+
         # Fix Nodes
         nodes = payload.get('nodes', [])
         for i, n in enumerate(nodes):
             n['id'] = str(n.get('id', i+1))
             if 'position' not in n: n['position'] = {"x": 100+(i*200), "y": 100}
-            
+
         # Fix Edges
         edges = []
         for e in payload.get('edges', []):
             edges.append({"from": str(e.get('from')), "to": str(e.get('to'))})
-            
+
         final_data = {"nodes": nodes, "edges": edges}
-        
+
         conn = self.db.get_connection()
         c = conn.cursor()
         try:
@@ -98,11 +104,12 @@ class AgentMiddleware:
                 c.execute('INSERT INTO workflows (user_id, name, data, created_at, updated_at) VALUES (?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)', (user_id, name, js))
                 wid = c.lastrowid
             conn.commit()
-            
+
             # --- THE FIX: Return a User-Friendly Message, NOT JSON ---
             return f"✅ **Quy trình đã được tạo!**\n\nTên: {name}", {"action": "workflow_created", "id": wid}
-            
+
         except Exception as e:
+            logger.error("Failed to create workflow for user %s: %s", user_id, e, exc_info=True)
             return f"Error: {e}", None
         finally: conn.close()
 

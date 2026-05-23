@@ -4,6 +4,54 @@
 
 ---
 
+## Cài đặt lần đầu
+
+### 1. Yêu cầu hệ thống
+
+| Công cụ | Phiên bản tối thiểu |
+|---|---|
+| Python | 3.10+ |
+| pip | 23+ |
+
+### 2. Cài dependencies
+
+```bash
+pip install -r package/requirements.txt
+pip install bcrypt
+```
+
+### 3. Tạo file `.env`
+
+```bash
+cp .env.example .env
+```
+
+Mở `.env` và điền giá trị thật:
+
+| Biến | Bắt buộc | Lấy ở đâu |
+|---|---|---|
+| `FLASK_ENV` | **Có** | Để `development` khi chạy local |
+| `SECRET_KEY` | **Có** | Chạy: `python -c "import secrets; print(secrets.token_hex(32))"` |
+| `POSTGRES_URL` | **Có** | Neon / Supabase / PostgreSQL local |
+| `GOOGLE_CLIENT_ID` | Chỉ cần Google Login | Google Cloud Console |
+| `GOOGLE_CLIENT_SECRET` | Chỉ cần Google Login | Google Cloud Console |
+| `HF_BASE_URL` | Chỉ cần AI chat | URL ngrok hoặc HuggingFace Space |
+| `HF_TOKEN` | Chỉ cần AI chat | HuggingFace → Settings → Tokens |
+| `GA_PROPERTY_ID` | Chỉ cần Analytics | Google Analytics |
+
+> Chỉ cần `SECRET_KEY` + `POSTGRES_URL` là app lên được. Các tính năng Google OAuth, AI chat, Analytics cần thêm biến tương ứng.
+
+### 4. Đặt file secrets thủ công
+
+Đặt vào thư mục `secrets/` — **không commit lên Git**:
+
+| File | Dùng cho | Cách lấy |
+|---|---|---|
+| `secrets/analytics_service_account.json` | Google Analytics | Google Cloud → Service Account → JSON key |
+| `secrets/token adminmail.json` | Gửi email chào mừng | Chạy `secrets/generate token for welcome mail.py` |
+
+---
+
 ## Khởi động nhanh
 
 ```bash

@@ -5,6 +5,9 @@ from flask_login import login_user
 
 from core.extensions import db_manager, limiter
 from core.models import User
+from core.logger import get_logger
+
+logger = get_logger(__name__)
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -24,7 +27,7 @@ def signin():
                     user_data['first_name'], user_data['last_name'],
                     user_data.get('role', 'user'), user_data.get('google_token')
                 )
-                print(">>> Login:", user.email, "role =", user.role)
+                logger.info("Login: %s role=%s", user.email, user.role)
                 login_user(user, remember=True)
                 session.permanent = True
                 db_manager.log_activity(user.id, 'Login', f'User {user.email} logged in', request.remote_addr)
@@ -34,9 +37,7 @@ def signin():
                 return redirect(url_for('pages.workspace'))
             flash('Email hoặc mật khẩu không đúng!', 'error')
         except Exception as e:
-            print(f"Login Error: {e}")
-            import traceback
-            traceback.print_exc()
+            logger.error("Login error: %s", e, exc_info=True)
             flash('Đã xảy ra lỗi không mong muốn. Vui lòng thử lại sau.', 'error')
     return render_template('signin.html')
 
@@ -51,7 +52,7 @@ def signup():
         first_name = request.form['first_name']
         last_name = request.form['last_name']
         phone = request.form.get('phone', '')
-        print(f"DEBUG: Registering user {email} with role='manager'")
+        logger.info("Registering user %s with role='manager'", email)
         success, message = auth_manager.register_user(email, password, first_name, last_name, phone, role='manager')
         if success:
             try:

@@ -231,7 +231,8 @@ __marimo__/
 uploads/
 
 # Log files
-logs/
+logs/*.log
+logs/*.log.*
 
 # Flask instance folder (contains sensitive config)
 instance/

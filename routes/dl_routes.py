@@ -4,6 +4,9 @@ from flask import Blueprint, jsonify, request
 from flask_login import login_required
 
 from core.services.dl_client import DLClient
+from core.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 dl_bp = Blueprint("dl", __name__)
@@ -37,7 +40,7 @@ def api_dl_detect():
 
         return jsonify({'success': True, 'data': result})
     except Exception as e:
-        print(f"DL Proxy Error: {e}")
+        logger.error("DL detect proxy error: %s", e, exc_info=True)
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
@@ -58,7 +61,7 @@ def api_dl_forecast():
 
         return jsonify({'success': True, 'data': result})
     except Exception as e:
-        print(f"DL Proxy Error (Forecast): {e}")
+        logger.error("DL forecast proxy error: %s", e, exc_info=True)
         return jsonify({'success': False, 'error': str(e)}), 500
 
 

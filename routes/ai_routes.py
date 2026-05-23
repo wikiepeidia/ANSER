@@ -11,8 +11,10 @@ from flask_login import current_user, login_required
 
 from core.agent_middleware import AgentMiddleware
 from core.database import Database
-from core.extensions import csrf
 from core.services.service_errors import ServiceValidationError
+from core.logger import get_logger
+
+logger = get_logger(__name__)
 
 ai_bp = Blueprint("ai", __name__)
 
@@ -42,12 +44,11 @@ def load_job_file(job_id):
 
 def background_ai_task(job_id, user_id, message):
     import json
-    import traceback
 
     try:
         save_job_file(job_id, {'status': 'processing', 'start_time': time.time()})
     except Exception as e:
-        print(f"[ERROR] Failed to save initial job file: {e}\\n{traceback.format_exc()}")
+        logger.error("Failed to save initial job file for job %s: %s", job_id, e, exc_info=True)
 
     try:
         db = Database()
@@ -92,16 +93,14 @@ def background_ai_task(job_id, user_id, message):
 
         full_trace = traceback.format_exc()
         exc_type, _, _ = sys.exc_info()
-        print(f"[CRITICAL] Bg Thread Error: {e}")
-        print(f"[CRITICAL] Error Type: {exc_type}")
-        print(f"[CRITICAL] Full Traceback:\\n{full_trace}")
+        logger.critical("Background AI thread error for job %s: %s (type: %s)", job_id, e, exc_type, exc_info=True)
         try:
             save_job_file(
                 job_id,
                 {'status': 'failed', 'error': str(e), 'error_type': str(exc_type), 'traceback': full_trace},
             )
         except Exception as save_err:
-            print(f"[CRITICAL] Failed to save job file: {save_err}")
+            logger.critical("Failed to save job file for job %s: %s", job_id, save_err, exc_info=True)
             with open(os.path.join(JOBS_DIR, f"{job_id}.json"), 'w') as f:
                 escaped = full_trace.replace(chr(34), chr(39))
                 f.write(f'{{"status":"failed","error":"{str(e)}","traceback":"{escaped}"}}')
@@ -109,7 +108,6 @@ def background_ai_task(job_id, user_id, message):
 
 @ai_bp.route('/api/ai/upload', methods=['POST'])
 @login_required
-@csrf.exempt
 def ai_upload():
     if 'file' not in request.files:
         return jsonify({'error': 'No file'}), 400
@@ -152,7 +150,6 @@ def ai_upload():
 
 @ai_bp.route('/api/ai/chat', methods=['POST'])
 @login_required
-@csrf.exempt
 def ai_chat():
     data = request.get_json(silent=True) or {}
     try:
@@ -182,7 +179,7 @@ def get_chat_history():
         history = _app_module().ai_chat_service.fetch_chat_history(conn, current_user.id, limit=50)
         return jsonify({'history': history})
     except Exception as e:
-        print(f"History Error: {e}")
+        logger.error("Error fetching chat history for user %s: %s", current_user.id, e, exc_info=True)
         return jsonify({'history': []})
     finally:
         if conn:

@@ -8,8 +8,8 @@ class Config:
     # Project/branding configuration
     PROJECT_NAME = "Workflow Automation for Retail"
 
-    # Default secret key (override with environment variable in production)
-    SECRET_KEY = os.environ.get('SECRET_KEY', "change_me_random_key")
+    # Must be overridden via SECRET_KEY env var in production
+    SECRET_KEY = os.environ.get('SECRET_KEY', 'change_me_random_key')
 
     # Database Configuration
     DATABASE_PATH = os.environ.get('DATABASE_PATH', 'group_project_ai_ml.db')
