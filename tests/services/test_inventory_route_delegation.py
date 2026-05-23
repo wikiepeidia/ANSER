@@ -39,7 +39,7 @@ def test_api_create_import_delegates_to_inventory_service(monkeypatch):
         return {"message": "Import created successfully", "id": 101}
 
     monkeypatch.setattr(app_module, "current_user", SimpleNamespace(id=55))
-    monkeypatch.setattr(app_module, "db_manager", _DbManagerStub(conn))
+    monkeypatch.setattr(app_module, "db_manager", _DbManagerStub(conn), raising=False)
     monkeypatch.setattr(inventory_routes.inventory_tx_service, "create_import_transaction", _fake_create_import)
 
     response = _call_wrapped(
@@ -74,8 +74,8 @@ def test_api_create_export_delegates_to_inventory_service(monkeypatch):
         return {"message": "Export created successfully", "id": 202}
 
     monkeypatch.setattr(app_module, "current_user", SimpleNamespace(id=56))
-    monkeypatch.setattr(app_module, "db_manager", _DbManagerStub(conn))
-    monkeypatch.setattr(app_module, "automation_engine", automation_stub)
+    monkeypatch.setattr(app_module, "db_manager", _DbManagerStub(conn), raising=False)
+    monkeypatch.setattr(app_module, "automation_engine", automation_stub, raising=False)
     monkeypatch.setattr(inventory_routes.inventory_tx_service, "create_export_transaction", _fake_create_export)
 
     response = _call_wrapped(

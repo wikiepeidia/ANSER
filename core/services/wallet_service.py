@@ -1,10 +1,8 @@
 """Wallet business logic — extracted from wallet_routes."""
 import json
-import sqlite3
 from datetime import datetime, timedelta
 
 from core.config import Config
-from core.extensions import db_manager
 from core.helpers import (
     SUBSCRIPTION_PLANS, format_display_datetime, format_plan_dict,
     parse_db_datetime, parse_metadata,
@@ -25,49 +23,44 @@ def _ensure_wallet(cursor, conn, user_id):
     conn.commit()
 
 
-def get_wallet_data(user_id):
-    conn = db_manager.get_connection()
+def get_wallet_data(conn, user_id):
     c = conn.cursor()
-    try:
-        _ensure_wallet(c, conn, user_id)
-        c.execute('SELECT balance, currency, updated_at FROM wallets WHERE user_id = ?', (user_id,))
-        row = c.fetchone()
-        wallet = {
-            'balance': row[0] if row else 0,
-            'currency': row[1] if row else 'VND',
-            'updated_at': format_display_datetime(row[2]) if row else None,
-        }
-        c.execute(
-            'SELECT subscription_type, amount, start_date, end_date, status, auto_renew '
-            'FROM manager_subscriptions WHERE user_id = ?', (user_id,)
-        )
-        sub = c.fetchone()
-        subscription = {
-            'subscription_type': sub[0], 'amount': sub[1],
-            'start_date': format_display_datetime(sub[2]),
-            'end_date': format_display_datetime(sub[3]),
-            'status': sub[4], 'auto_renew': sub[5],
-        } if sub else None
-        c.execute(
-            'SELECT id, amount, type, status, created_at FROM wallet_transactions '
-            'WHERE user_id = ? ORDER BY created_at DESC LIMIT 10', (user_id,)
-        )
-        transactions = [
-            {'id': r[0], 'amount': r[1], 'type': r[2], 'status': r[3],
-             'created_at': format_display_datetime(r[4])}
-            for r in c.fetchall()
-        ]
-        plans = {key: format_plan_dict(key) for key in SUBSCRIPTION_PLANS}
-        return {'wallet': wallet, 'subscription': subscription,
-                'transactions': transactions, 'plans': plans}
-    finally:
-        conn.close()
+    _ensure_wallet(c, conn, user_id)
+    c.execute('SELECT balance, currency, updated_at FROM wallets WHERE user_id = ?', (user_id,))
+    row = c.fetchone()
+    wallet = {
+        'balance': row[0] if row else 0,
+        'currency': row[1] if row else 'VND',
+        'updated_at': format_display_datetime(row[2]) if row else None,
+    }
+    c.execute(
+        'SELECT subscription_type, amount, start_date, end_date, status, auto_renew '
+        'FROM manager_subscriptions WHERE user_id = ?', (user_id,)
+    )
+    sub = c.fetchone()
+    subscription = {
+        'subscription_type': sub[0], 'amount': sub[1],
+        'start_date': format_display_datetime(sub[2]),
+        'end_date': format_display_datetime(sub[3]),
+        'status': sub[4], 'auto_renew': sub[5],
+    } if sub else None
+    c.execute(
+        'SELECT id, amount, type, status, created_at FROM wallet_transactions '
+        'WHERE user_id = ? ORDER BY created_at DESC LIMIT 10', (user_id,)
+    )
+    transactions = [
+        {'id': r[0], 'amount': r[1], 'type': r[2], 'status': r[3],
+         'created_at': format_display_datetime(r[4])}
+        for r in c.fetchall()
+    ]
+    plans = {key: format_plan_dict(key) for key in SUBSCRIPTION_PLANS}
+    return {'wallet': wallet, 'subscription': subscription,
+            'transactions': transactions, 'plans': plans}
 
 
-def create_topup_request(user_id, amount, method, reference, note):
+def create_topup_request(conn, user_id, amount, method, reference, note):
     if amount < 50000:
         raise ValueError('Minimum amount is 50,000 VND')
-    conn = db_manager.get_connection()
     c = conn.cursor()
     try:
         _ensure_wallet(c, conn, user_id)
@@ -79,14 +72,14 @@ def create_topup_request(user_id, amount, method, reference, note):
             (user_id, amount, 'topup', method, reference or None, note or None, metadata),
         )
         conn.commit()
-    finally:
-        conn.close()
+    except Exception:
+        conn.rollback()
+        raise
 
 
-def create_withdrawal(user_id, amount, bank_name, account_number, account_name, note):
+def create_withdrawal(conn, user_id, amount, bank_name, account_number, account_name, note):
     if amount < 100000:
         raise ValueError('Minimum withdrawal amount is 100,000 VND')
-    conn = db_manager.get_connection()
     c = conn.cursor()
     try:
         _ensure_wallet(c, conn, user_id)
@@ -109,15 +102,12 @@ def create_withdrawal(user_id, amount, bank_name, account_number, account_name, 
     except Exception:
         conn.rollback()
         raise
-    finally:
-        conn.close()
 
 
-def upgrade_subscription(user_id, plan_key):
+def upgrade_subscription(conn, user_id, plan_key):
     plan = SUBSCRIPTION_PLANS.get(plan_key)
     if not plan:
         raise ValueError('Invalid plan')
-    conn = db_manager.get_connection()
     c = conn.cursor()
     try:
         _ensure_wallet(c, conn, user_id)
@@ -179,12 +169,9 @@ def upgrade_subscription(user_id, plan_key):
     except Exception:
         conn.rollback()
         raise
-    finally:
-        conn.close()
 
 
-def toggle_auto_renew(user_id, enabled):
-    conn = db_manager.get_connection()
+def toggle_auto_renew(conn, user_id, enabled):
     c = conn.cursor()
     try:
         c.execute('SELECT id FROM manager_subscriptions WHERE user_id = ?', (user_id,))
@@ -198,43 +185,36 @@ def toggle_auto_renew(user_id, enabled):
     except Exception:
         conn.rollback()
         raise
-    finally:
-        conn.close()
 
 
-def get_pending_transactions():
-    conn = db_manager.get_connection()
-    conn.row_factory = sqlite3.Row
+def get_pending_transactions(conn):
+    """conn.row_factory phải được set thành sqlite3.Row trước khi gọi hàm này."""
     c = conn.cursor()
-    try:
-        c.execute(
-            '''SELECT wt.id, wt.user_id, wt.amount, wt.currency, wt.type, wt.status, wt.method,
-                      wt.reference, wt.notes, wt.metadata, wt.created_at,
-                      u.name AS user_name, u.email AS user_email
-               FROM wallet_transactions wt
-               JOIN users u ON wt.user_id = u.id
-               WHERE wt.status = 'pending' ORDER BY wt.created_at ASC'''
-        )
-        result = []
-        for row in c.fetchall():
-            metadata = parse_metadata(row['metadata'])
-            result.append({
-                'id': row['id'], 'user_id': row['user_id'], 'user_name': row['user_name'],
-                'user_email': row['user_email'], 'amount': row['amount'], 'currency': row['currency'],
-                'type': row['type'], 'status': row['status'], 'method': row['method'],
-                'reference': row['reference'], 'notes': row['notes'], 'metadata': metadata,
-                'plan_label': metadata.get('plan') or metadata.get('target_plan'),
-                'created_at': format_display_datetime(row['created_at']),
-            })
-        return result
-    finally:
-        conn.close()
+    c.execute(
+        '''SELECT wt.id, wt.user_id, wt.amount, wt.currency, wt.type, wt.status, wt.method,
+                  wt.reference, wt.notes, wt.metadata, wt.created_at,
+                  u.name AS user_name, u.email AS user_email
+           FROM wallet_transactions wt
+           JOIN users u ON wt.user_id = u.id
+           WHERE wt.status = 'pending' ORDER BY wt.created_at ASC'''
+    )
+    result = []
+    for row in c.fetchall():
+        metadata = parse_metadata(row['metadata'])
+        result.append({
+            'id': row['id'], 'user_id': row['user_id'], 'user_name': row['user_name'],
+            'user_email': row['user_email'], 'amount': row['amount'], 'currency': row['currency'],
+            'type': row['type'], 'status': row['status'], 'method': row['method'],
+            'reference': row['reference'], 'notes': row['notes'], 'metadata': metadata,
+            'plan_label': metadata.get('plan') or metadata.get('target_plan'),
+            'created_at': format_display_datetime(row['created_at']),
+        })
+    return result
 
 
-def process_transaction(transaction_id, action, admin_id, admin_email, note):
+def process_transaction(conn, transaction_id, action, admin_id, admin_email, note):
     if action not in ('approve', 'reject'):
         raise ValueError('Invalid action')
-    conn = db_manager.get_connection()
     c = conn.cursor()
     try:
         c.execute(
@@ -272,5 +252,3 @@ def process_transaction(transaction_id, action, admin_id, admin_email, note):
     except Exception:
         conn.rollback()
         raise
-    finally:
-        conn.close()

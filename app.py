@@ -11,6 +11,7 @@ from authlib.integrations.flask_client import OAuth
 
 # Core Imports
 from core.extensions import login_manager, csrf, limiter, db_manager
+from flask_login import current_user
 from core.models import User
 from core.auth import AuthManager
 from core.config import Config

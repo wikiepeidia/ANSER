@@ -5,6 +5,7 @@ import os
 from flask import Blueprint, current_app, jsonify, render_template, request
 from flask_login import current_user, login_required
 
+from core.extensions import db_manager
 from core.services.sales_service import create_sale, delete_sale, get_sales_history
 from core.logger import get_logger
 
@@ -48,9 +49,10 @@ def search_products():
 @login_required
 def api_create_sale():
     data = request.json or {}
+    conn = db_manager.get_connection()
     try:
         create_sale(
-            current_user.id, data.get('total_amount'), data.get('amount_given'),
+            conn, current_user.id, data.get('total_amount'), data.get('amount_given'),
             data.get('change_amount'), data.get('items', []),
             data.get('payment_method', 'cash'), data.get('workspace_id'),
             data.get('category', 'Retail'),
@@ -59,6 +61,8 @@ def api_create_sale():
     except Exception as e:
         logger.error("Error creating sale for user %s: %s", current_user.id, e, exc_info=True)
         return jsonify({'success': False, 'message': str(e)}), 500
+    finally:
+        conn.close()
 
 
 @sales_bp.route('/api/sales/history', methods=['GET'])
@@ -66,22 +70,28 @@ def api_create_sale():
 def api_get_sales_history():
     search_query = request.args.get('q', '').strip()
     limit = request.args.get('limit', 10, type=int)
+    conn = db_manager.get_connection()
     try:
-        history = get_sales_history(current_user.id, search_query, limit)
+        history = get_sales_history(conn, current_user.id, search_query, limit)
         return jsonify(history)
     except Exception as e:
         logger.error("Error fetching sales history for user %s: %s", current_user.id, e, exc_info=True)
         return jsonify({'error': str(e)}), 500
+    finally:
+        conn.close()
 
 
 @sales_bp.route('/api/sales/history/<int:sale_id>', methods=['DELETE'])
 @login_required
 def api_delete_sale(sale_id):
+    conn = db_manager.get_connection()
     try:
-        delete_sale(sale_id)
+        delete_sale(conn, sale_id)
         return jsonify({'success': True, 'message': 'Xóa giao dịch thành công'})
     except LookupError as e:
         return jsonify({'success': False, 'message': str(e)}), 404
     except Exception as e:
         logger.error("Error deleting sale %s: %s", sale_id, e, exc_info=True)
         return jsonify({'success': False, 'message': str(e)}), 500
+    finally:
+        conn.close()
