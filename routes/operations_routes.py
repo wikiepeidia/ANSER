@@ -10,6 +10,9 @@ from core.services.operations_service import (
     delete_scheduled_report, get_automations, get_dashboard_stats,
     get_report_stats, get_scheduled_reports, update_automation,
 )
+from core.logger import get_logger
+
+logger = get_logger(__name__)
 
 operations_bp = Blueprint('operations', __name__)
 
@@ -25,9 +28,9 @@ def api_get_analytics_data():
             cache_file = os.path.join(os.getcwd(), 'secrets', 'ga_cache.json')
             if os.path.exists(cache_file):
                 os.remove(cache_file)
-                print('Cache cleared via force param')
-        except Exception as e:
-            print('Failed to clear cache via force param:', e)
+                logger.info("Analytics cache cleared via force param")
+        except OSError as e:
+            logger.warning("Failed to clear analytics cache via force param: %s", e)
     return jsonify(analytics_service.get_report(property_id))
 
 

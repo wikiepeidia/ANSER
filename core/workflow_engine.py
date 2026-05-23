@@ -4,6 +4,9 @@ import os
 from .google_integration import read_sheet, read_doc, write_doc, write_sheet, send_email
 from .make_integration import trigger_webhook
 from .services.dl_client import DLClient
+from core.logger import get_logger
+
+logger = get_logger(__name__)
 
 def safe_resolve(obj, path_str):
     """
@@ -84,7 +87,7 @@ def execute_workflow(workflow_data, token_info=None):
     """
     logs = []
     def log(msg):
-        print(msg)
+        logger.info(msg)
         logs.append(msg)
 
     nodes = {str(n['id']): n for n in workflow_data.get('nodes', [])}
@@ -190,7 +193,7 @@ def execute_workflow(workflow_data, token_info=None):
                     if isinstance(resolved_data, str):
                         try:
                             data_to_write = json.loads(resolved_data)
-                        except:
+                        except json.JSONDecodeError:
                             # Fallback: treat as single cell if JSON fails
                             data_to_write = [[resolved_data]]
                     elif isinstance(resolved_data, list):
@@ -468,6 +471,7 @@ def execute_workflow(workflow_data, token_info=None):
             
         except Exception as e:
             log(f"Error in Node {node_id}: {str(e)}")
+            logger.error("Workflow node %s execution error: %s", node_id, e, exc_info=True)
             node_results[node_id] = {"status": "error", "error": str(e)}
             # Stop execution on error? For now, yes.
             return {"status": "failed", "node_results": node_results, "error_node": node_id, "logs": logs}

@@ -3,6 +3,9 @@ import re
 from datetime import datetime
 from .config import Config
 import bcrypt
+from core.logger import get_logger
+
+logger = get_logger(__name__)
 
 # Compatibility shim
 try:
@@ -36,7 +39,8 @@ class PGShimCursor:
             if is_insert and 'RETURNING id' in query:
                 try:
                     if hasattr(self._cursor, 'connection'): self._cursor.connection.rollback()
-                except: pass
+                except Exception:
+                    pass
                 clean_query = query.replace(" RETURNING id", "")
                 self._cursor.execute(clean_query, params) if has_params else self._cursor.execute(clean_query)
                 self.lastrowid = None
@@ -88,9 +92,9 @@ class Database:
         finally:
             if should_close:
                 try: cursor.close()
-                except: pass
+                except Exception: pass
                 try: conn.close()
-                except: pass
+                except Exception: pass
 
     def get_connection(self):
         if self.use_postgres:
@@ -435,7 +439,8 @@ class Database:
             conn.commit()
             conn.close()
             return True
-        except: return False
+        except Exception:
+            return False
 
     # --- AI MEMORY METHODS (FIXED) ---
     def add_ai_message(self, user_id, role, content):
@@ -448,7 +453,7 @@ class Database:
                      (user_id, role, content))
             conn.commit()
         except Exception as e:
-            print(f"⚠️ Memory Save Error: {e}")
+            logger.error("Memory save error for user %s: %s", user_id, e, exc_info=True)
         finally:
             conn.close()
 
@@ -470,7 +475,7 @@ class Database:
             
             return "\n".join(history)
         except Exception as e:
-            print(f"⚠️ Memory Fetch Error: {e}")
+            logger.error("Memory fetch error for user %s: %s", user_id, e, exc_info=True)
             return ""
         finally:
             conn.close()
@@ -502,7 +507,7 @@ class Database:
             
             conn.commit()
         except Exception as e:
-            print(f"❌ DB Attachment Error: {e}")
+            logger.error("DB attachment save error for user %s, file %s: %s", user_id, filename, e, exc_info=True)
         finally:
             conn.close()
 
@@ -537,7 +542,7 @@ class Database:
                 })
             return scenarios
         except Exception as e:
-            print(f"Error fetching scenarios: {e}")
+            logger.error("Error fetching scenarios for user %s: %s", user_id, e, exc_info=True)
             return []
         finally:
             conn.close()

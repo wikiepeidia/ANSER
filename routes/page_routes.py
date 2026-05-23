@@ -4,6 +4,9 @@ from flask_login import current_user, login_required
 
 from core.config import Config
 from core.extensions import db_manager
+from core.logger import get_logger
+
+logger = get_logger(__name__)
 
 page_bp = Blueprint('pages', __name__)
 
@@ -84,7 +87,7 @@ def settings():
             for row in cursor.fetchall():
                 all_settings[row[0]] = row[1]
     except Exception as e:
-        print(f'Error fetching settings: {e}')
+        logger.error("Error fetching settings: %s", e, exc_info=True)
     return render_template('settings.html', user=current_user, settings_sections=config, all_settings=all_settings)
 
 

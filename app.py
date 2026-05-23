@@ -19,8 +19,9 @@ from core.agent_middleware import AgentMiddleware
 
 sys.stdout.reconfigure(encoding='utf-8')
 
-# Allow OAuth over HTTP for local development
-os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
+# Allow OAuth over HTTP only in local development
+if os.environ.get('FLASK_ENV') == 'development':
+    os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 
 # Module-level globals kept for backward-compat (populated by create_app)
 config = Config()
@@ -63,7 +64,10 @@ def create_app(config_object=None):
     flask_app.wsgi_app = ProxyFix(flask_app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 
     # ── Configuration ─────────────────────────────────────────────────────
-    flask_app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'change_me_to_a_secure_random_value')
+    _secret = os.environ.get('SECRET_KEY', 'change_me_to_a_secure_random_value')
+    if _secret == 'change_me_to_a_secure_random_value' and os.environ.get('FLASK_ENV') != 'development':
+        raise RuntimeError("SECRET_KEY must be set to a secure value in production.")
+    flask_app.config['SECRET_KEY'] = _secret
     flask_app.config['WTF_CSRF_ENABLED'] = True
     flask_app.secret_key = flask_app.config['SECRET_KEY']
     flask_app.config['SESSION_COOKIE_SECURE'] = False
@@ -83,11 +87,33 @@ def create_app(config_object=None):
         flask_app,
         force_https=False,
         content_security_policy={
-            'default-src': ["'self'", '*'],
-            'script-src': ["'self'", "'unsafe-inline'", "'unsafe-eval'", '*'],
-            'style-src': ["'self'", "'unsafe-inline'", '*'],
-            'img-src': ["'self'", 'data:', '*'],
-            'font-src': ["'self'", '*'],
+            'default-src': ["'self'"],
+            'script-src': [
+                "'self'",
+                "'unsafe-inline'",
+                'https://www.googletagmanager.com',
+                'https://www.google-analytics.com',
+                'https://cdn.jsdelivr.net',
+            ],
+            'style-src': [
+                "'self'",
+                "'unsafe-inline'",
+                'https://fonts.googleapis.com',
+                'https://cdnjs.cloudflare.com',
+                'https://cdn.jsdelivr.net',
+            ],
+            'img-src': [
+                "'self'",
+                'data:',
+                'https://www.googletagmanager.com',
+                'https://www.google-analytics.com',
+            ],
+            'font-src': [
+                "'self'",
+                'https://fonts.gstatic.com',
+                'https://cdnjs.cloudflare.com',
+            ],
+            'connect-src': ["'self'", 'https://www.google-analytics.com'],
             'object-src': ["'none'"],
             'frame-ancestors': ["'none'"],
         },

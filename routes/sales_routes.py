@@ -6,6 +6,9 @@ from flask import Blueprint, current_app, jsonify, render_template, request
 from flask_login import current_user, login_required
 
 from core.services.sales_service import create_sale, delete_sale, get_sales_history
+from core.logger import get_logger
+
+logger = get_logger(__name__)
 
 sales_bp = Blueprint('sales', __name__)
 
@@ -37,7 +40,7 @@ def search_products():
             ][:5]
         return jsonify(results)
     except Exception as e:
-        print(f'Error searching products: {e}')
+        logger.error("Error searching products: %s", e, exc_info=True)
         return jsonify([])
 
 
@@ -54,7 +57,7 @@ def api_create_sale():
         )
         return jsonify({'success': True, 'message': 'Ghi lại giao dịch thành công'})
     except Exception as e:
-        print(f'Error creating sale: {e}')
+        logger.error("Error creating sale for user %s: %s", current_user.id, e, exc_info=True)
         return jsonify({'success': False, 'message': str(e)}), 500
 
 
@@ -67,9 +70,7 @@ def api_get_sales_history():
         history = get_sales_history(current_user.id, search_query, limit)
         return jsonify(history)
     except Exception as e:
-        print(f'Error fetching history: {e}')
-        import traceback
-        traceback.print_exc()
+        logger.error("Error fetching sales history for user %s: %s", current_user.id, e, exc_info=True)
         return jsonify({'error': str(e)}), 500
 
 
@@ -82,5 +83,5 @@ def api_delete_sale(sale_id):
     except LookupError as e:
         return jsonify({'success': False, 'message': str(e)}), 404
     except Exception as e:
-        print(f'Error deleting sale: {e}')
+        logger.error("Error deleting sale %s: %s", sale_id, e, exc_info=True)
         return jsonify({'success': False, 'message': str(e)}), 500

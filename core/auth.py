@@ -2,6 +2,9 @@ from functools import wraps
 from flask import session, redirect, url_for, flash, request, jsonify
 from core.google_integration import send_email
 import bcrypt
+from core.logger import get_logger
+
+logger = get_logger(__name__)
 
 class AuthManager:
     def __init__(self, database):
@@ -70,7 +73,7 @@ class AuthManager:
                 }
             return None
         except Exception as e:
-            print(f"Error verifying user: {e}")
+            logger.error("Error verifying user: %s", e, exc_info=True)
             return None
         finally:
             conn.close()
@@ -122,11 +125,11 @@ Trân trọng,
 """
                 send_email(email, subject, body)
             except Exception as e:
-                print(f"Failed to send welcome email: {e}")
+                logger.warning("Failed to send welcome email to %s: %s", email, e)
 
             return True, "Đăng ký thành công!"
         except Exception as e:
-            print(f"Error creating user: {e}")
+            logger.error("Error creating user %s: %s", email, e, exc_info=True)
             return False, "Email đã được sử dụng!"
         finally:
             conn.close()
@@ -150,7 +153,7 @@ Trân trọng,
                 }
             return None
         except Exception as e:
-            print(f"Error getting user by id: {e}")
+            logger.error("Error getting user by id %s: %s", user_id, e, exc_info=True)
             return None
         finally:
             conn.close()

@@ -8,6 +8,9 @@ from flask_login import current_user, login_required, login_user
 from core.extensions import db_manager
 from core import google_integration
 from core.models import User
+from core.logger import get_logger
+
+logger = get_logger(__name__)
 
 google_bp = Blueprint('google', __name__)
 
@@ -25,7 +28,7 @@ def google_connect():
 @google_bp.route('/auth/login/google')
 def google_login():
     redirect_uri = url_for('google.google_authorize', _external=True)
-    print(f'DEBUG: Generated Redirect URI: {redirect_uri}')
+    logger.info("Generated Redirect URI: %s", redirect_uri)
     google = current_app.extensions['google']
     return google.authorize_redirect(redirect_uri, access_type='offline',
                                      prompt='consent', include_granted_scopes='true')
@@ -34,7 +37,7 @@ def google_login():
 @google_bp.route('/auth/google/callback')
 def google_authorize():
     try:
-        print(f'DEBUG: Callback URL: {request.url}')
+        logger.info("OAuth callback URL: %s", request.url)
         google = current_app.extensions['google']
         auth_manager = current_app.extensions['auth_manager']
         token = google.authorize_access_token()
@@ -107,14 +110,14 @@ def google_authorize():
                  'Your personal productivity space'),
             )
             conn.commit()
-            print(f'Created new user from Google: {email}')
+            logger.info("Created new user from Google: %s", email)
             try:
                 subject = 'Welcome to Workflow Automation for Retail!'
                 body = (f'Hello {first_name},\n\nWelcome to Workflow Automation for Retail! '
                         'Your account has been created via Google Login.\n\nBest regards,\nThe Team')
                 google_integration.send_email(email, subject, body)
             except Exception as e:
-                print(f'Failed to send welcome email: {e}')
+                logger.warning("Failed to send welcome email to %s: %s", email, e)
 
         conn.close()
         user_data = auth_manager.get_user_by_id(user_id)
@@ -133,9 +136,7 @@ def google_authorize():
         return redirect(url_for('pages.workspace'))
 
     except Exception as e:
-        print(f'Lỗi OAuth: {e}')
-        import traceback
-        traceback.print_exc()
+        logger.error("OAuth error: %s", e, exc_info=True)
         flash(f'Google login failed. Please try again. ({str(e)})', 'error')
         return redirect(url_for('auth.signin'))
 
