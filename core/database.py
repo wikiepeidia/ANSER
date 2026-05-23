@@ -14,6 +14,25 @@ except Exception:
     SessionLocal = None
     Base = None
 
+# Matches single-quoted strings, double-quoted identifiers, or a standalone ?.
+# Alternation is left-to-right: quoted content is consumed first so any ?
+# inside quotes never reaches the capture group.
+_PG_PLACEHOLDER_RE = re.compile(
+    r"'(?:[^'\\]|\\.)*'"   # single-quoted string literal
+    r'|"(?:[^"\\]|\\.)*"'  # double-quoted identifier
+    r'|(\?)',               # standalone parameter placeholder
+    re.DOTALL,
+)
+
+
+def _to_pg(query: str) -> str:
+    """Replace SQLite ? placeholders with psycopg2 %s, skipping ? inside quoted strings."""
+    return _PG_PLACEHOLDER_RE.sub(
+        lambda m: '%s' if m.group(1) is not None else m.group(0),
+        query,
+    )
+
+
 class PGShimCursor:
     def __init__(self, cursor):
         self._cursor = cursor
@@ -22,7 +41,7 @@ class PGShimCursor:
 
     def execute(self, query, params=None):
         has_params = params is not None and len(params) > 0
-        query = query.replace('?', '%s')
+        query = _to_pg(query)
         is_insert = query.strip().upper().startswith('INSERT')
         try:
             if is_insert and 'RETURNING' not in query.upper():
@@ -48,7 +67,7 @@ class PGShimCursor:
             raise e
 
     def executemany(self, query, params_seq):
-        query = query.replace('?', '%s')
+        query = _to_pg(query)
         self._cursor.executemany(query, params_seq)
         return self
 
