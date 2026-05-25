@@ -9,7 +9,12 @@ def get_workspace_items(workspace_id, user_id):
         c.execute('SELECT id FROM workspaces WHERE id=? AND user_id=?', (workspace_id, user_id))
         if not c.fetchone():
             raise PermissionError('Workspace not found or access denied')
-        c.execute('SELECT * FROM items WHERE workspace_id=? ORDER BY created_at DESC', (workspace_id,))
+        c.execute(
+            'SELECT id, workspace_id, title, description, type, status,'
+            ' priority, assignee_id, due_date, created_at, updated_at'
+            ' FROM items WHERE workspace_id=? ORDER BY created_at DESC',
+            (workspace_id,),
+        )
         return [
             {'id': r[0], 'title': r[2], 'description': r[3], 'type': r[4],
              'status': r[5], 'priority': r[6], 'created_at': r[9]}

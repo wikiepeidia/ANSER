@@ -81,7 +81,9 @@ class PGShimConnection:
     def __init__(self, conn):
         self._conn = conn
         self.row_factory = None
-    def cursor(self): return PGShimCursor(self._conn.cursor())
+    def cursor(self):
+        import psycopg2.extras
+        return PGShimCursor(self._conn.cursor(cursor_factory=psycopg2.extras.DictCursor))
     def commit(self): self._conn.commit()
     def rollback(self): self._conn.rollback()
     def close(self): self._conn.close()
@@ -118,10 +120,13 @@ class Database:
     def get_connection(self):
         if self.use_postgres:
             import psycopg2
+            import psycopg2.extras
             conn = psycopg2.connect(Config.POSTGRES_URL)
             return PGShimConnection(conn)
         else:
-            return sqlite3.connect(self.db_path, timeout=30.0)
+            conn = sqlite3.connect(self.db_path, timeout=30.0)
+            conn.row_factory = sqlite3.Row
+            return conn
     
     def init_database(self):
         conn = self.get_connection()
@@ -416,7 +421,11 @@ class Database:
     def get_user_workspaces(self, user_id):
         conn = self.get_connection()
         c = conn.cursor()
-        c.execute('SELECT * FROM workspaces WHERE user_id = ? ORDER BY created_at', (user_id,))
+        c.execute(
+            'SELECT id, user_id, name, type, description, is_active, created_at'
+            ' FROM workspaces WHERE user_id = ? ORDER BY created_at',
+            (user_id,),
+        )
         workspaces = c.fetchall()
         conn.close()
         return workspaces

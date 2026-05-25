@@ -94,7 +94,11 @@ def get_import_transaction_details(db_conn, import_id):
     cursor = db_conn.cursor()
 
     try:
-        cursor.execute("SELECT * FROM import_transactions WHERE id = ?", (import_id,))
+        cursor.execute(
+            'SELECT id, code, supplier_name, total_amount, notes, status, created_by, created_at'
+            ' FROM import_transactions WHERE id = ?',
+            (import_id,),
+        )
         row = cursor.fetchone()
         if not row:
             return None
@@ -110,10 +114,11 @@ def get_import_transaction_details(db_conn, import_id):
         }
 
         cursor.execute(
-            """SELECT d.*, p.name as product_name, p.code as product_code
-               FROM import_details d
-               JOIN products p ON d.product_id = p.id
-               WHERE d.import_id = ?""",
+            'SELECT d.id, d.import_id, d.product_id, d.quantity, d.unit_price, d.total_price,'
+            ' p.name AS product_name, p.code AS product_code'
+            ' FROM import_details d'
+            ' JOIN products p ON d.product_id = p.id'
+            ' WHERE d.import_id = ?',
             (import_id,),
         )
 
@@ -214,10 +219,12 @@ def get_export_transaction_details(db_conn, export_id):
 
     try:
         cursor.execute(
-            """SELECT e.*, c.name as customer_name, c.phone as customer_phone
-               FROM export_transactions e
-               LEFT JOIN customers c ON e.customer_id = c.id
-               WHERE e.id = ?""",
+            'SELECT e.id, e.code, e.customer_id, e.total_amount, e.notes, e.status,'
+            ' e.created_by, e.created_at,'
+            ' c.name AS customer_name, c.phone AS customer_phone'
+            ' FROM export_transactions e'
+            ' LEFT JOIN customers c ON e.customer_id = c.id'
+            ' WHERE e.id = ?',
             (export_id,),
         )
         row = cursor.fetchone()
@@ -237,10 +244,11 @@ def get_export_transaction_details(db_conn, export_id):
         }
 
         cursor.execute(
-            """SELECT d.*, p.name as product_name, p.code as product_code
-               FROM export_details d
-               JOIN products p ON d.product_id = p.id
-               WHERE d.export_id = ?""",
+            'SELECT d.id, d.export_id, d.product_id, d.quantity, d.unit_price, d.total_price,'
+            ' p.name AS product_name, p.code AS product_code'
+            ' FROM export_details d'
+            ' JOIN products p ON d.product_id = p.id'
+            ' WHERE d.export_id = ?',
             (export_id,),
         )
 

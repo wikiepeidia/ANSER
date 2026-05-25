@@ -4,7 +4,10 @@ import sqlite3
 
 def get_all_customers(conn):
     c = conn.cursor()
-    c.execute('SELECT * FROM customers ORDER BY created_at DESC')
+    c.execute(
+        'SELECT id, code, name, phone, email, address, notes, created_by, created_at, updated_at'
+        ' FROM customers ORDER BY created_at DESC'
+    )
     rows = c.fetchall()
     return [
         {'id': r[0], 'code': r[1], 'name': r[2], 'phone': r[3],
