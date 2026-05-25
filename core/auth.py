@@ -32,8 +32,8 @@ class AuthManager:
             if not user:
                 return None
 
-            stored_pw = user[6]
-            password_version = user[7] if len(user) > 7 else 0
+            stored_pw = user['password']
+            password_version = user['password_version'] or 0
 
             # Old sha256 hashes have version 0, bcrypt hashes have version 1
             if password_version == 0:
@@ -44,7 +44,7 @@ class AuthManager:
                     return None
                 # Rehash with bcrypt for next login
                 new_hash = AuthManager.hash_password(password)
-                c.execute('UPDATE users SET password = ?, password_version = 1 WHERE id = ?', (new_hash, user[0]))
+                c.execute('UPDATE users SET password = ?, password_version = 1 WHERE id = ?', (new_hash, user['id']))
                 conn.commit()
             else:
                 # Modern bcrypt hash
@@ -52,26 +52,14 @@ class AuthManager:
                     return None
 
             return {
-                'id': user[0],
-                'email': user[1],
-                'first_name': user[2].split()[0] if user[2] else '',
-                'last_name': ' '.join(user[2].split()[1:]) if user[2] and len(user[2].split()) > 1 else '',
-                'avatar': user[3],
-                'role': user[4],
-                'google_token': user[5]
+                'id': user['id'],
+                'email': user['email'],
+                'first_name': user['name'].split()[0] if user['name'] else '',
+                'last_name': ' '.join(user['name'].split()[1:]) if user['name'] and len(user['name'].split()) > 1 else '',
+                'avatar': user['avatar'],
+                'role': user['role'],
+                'google_token': user['google_token'],
             }
-
-            if user:
-                return {
-                    'id': user[0],
-                    'email': user[1],
-                    'first_name': user[2].split()[0] if user[2] else '',
-                    'last_name': ' '.join(user[2].split()[1:]) if user[2] and len(user[2].split()) > 1 else '',
-                    'avatar': user[3],
-                    'role': user[4],
-                    'google_token': user[5]
-                }
-            return None
         except Exception as e:
             logger.error("Error verifying user: %s", e, exc_info=True)
             return None
@@ -143,13 +131,13 @@ Trân trọng,
             
             if user:
                 return {
-                    'id': user[0],
-                    'email': user[1], 
-                    'first_name': user[2].split()[0] if user[2] else '',
-                    'last_name': ' '.join(user[2].split()[1:]) if user[2] and len(user[2].split()) > 1 else '',
-                    'avatar': user[3],
-                    'role': user[4],
-                    'google_token': user[5]
+                    'id': user['id'],
+                    'email': user['email'],
+                    'first_name': user['name'].split()[0] if user['name'] else '',
+                    'last_name': ' '.join(user['name'].split()[1:]) if user['name'] and len(user['name'].split()) > 1 else '',
+                    'avatar': user['avatar'],
+                    'role': user['role'],
+                    'google_token': user['google_token'],
                 }
             return None
         except Exception as e:

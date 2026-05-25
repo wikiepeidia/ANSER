@@ -29,9 +29,9 @@ def get_wallet_data(conn, user_id):
     c.execute('SELECT balance, currency, updated_at FROM wallets WHERE user_id = ?', (user_id,))
     row = c.fetchone()
     wallet = {
-        'balance': row[0] if row else 0,
-        'currency': row[1] if row else 'VND',
-        'updated_at': format_display_datetime(row[2]) if row else None,
+        'balance': row['balance'] if row else 0,
+        'currency': row['currency'] if row else 'VND',
+        'updated_at': format_display_datetime(row['updated_at']) if row else None,
     }
     c.execute(
         'SELECT subscription_type, amount, start_date, end_date, status, auto_renew '
@@ -39,18 +39,18 @@ def get_wallet_data(conn, user_id):
     )
     sub = c.fetchone()
     subscription = {
-        'subscription_type': sub[0], 'amount': sub[1],
-        'start_date': format_display_datetime(sub[2]),
-        'end_date': format_display_datetime(sub[3]),
-        'status': sub[4], 'auto_renew': sub[5],
+        'subscription_type': sub['subscription_type'], 'amount': sub['amount'],
+        'start_date': format_display_datetime(sub['start_date']),
+        'end_date': format_display_datetime(sub['end_date']),
+        'status': sub['status'], 'auto_renew': sub['auto_renew'],
     } if sub else None
     c.execute(
         'SELECT id, amount, type, status, created_at FROM wallet_transactions '
         'WHERE user_id = ? ORDER BY created_at DESC LIMIT 10', (user_id,)
     )
     transactions = [
-        {'id': r[0], 'amount': r[1], 'type': r[2], 'status': r[3],
-         'created_at': format_display_datetime(r[4])}
+        {'id': r['id'], 'amount': r['amount'], 'type': r['type'], 'status': r['status'],
+         'created_at': format_display_datetime(r['created_at'])}
         for r in c.fetchall()
     ]
     plans = {key: format_plan_dict(key) for key in SUBSCRIPTION_PLANS}
@@ -85,7 +85,7 @@ def create_withdrawal(conn, user_id, amount, bank_name, account_number, account_
         _ensure_wallet(c, conn, user_id)
         c.execute('SELECT balance FROM wallets WHERE user_id = ?', (user_id,))
         row = c.fetchone()
-        balance = float(row[0]) if row else 0
+        balance = float(row['balance']) if row else 0
         if amount > balance:
             raise ValueError('Insufficient balance')
         c.execute('UPDATE wallets SET balance=balance-?, updated_at=CURRENT_TIMESTAMP WHERE user_id=?',
@@ -113,7 +113,7 @@ def upgrade_subscription(conn, user_id, plan_key):
         _ensure_wallet(c, conn, user_id)
         c.execute('SELECT balance FROM wallets WHERE user_id = ?', (user_id,))
         row = c.fetchone()
-        balance = row[0] if row else 0
+        balance = row['balance'] if row else 0
         if balance < plan['amount']:
             raise ValueError('Insufficient wallet balance')
         now = datetime.utcnow()
@@ -122,12 +122,12 @@ def upgrade_subscription(conn, user_id, plan_key):
             'FROM manager_subscriptions WHERE user_id = ?', (user_id,)
         )
         existing = c.fetchone()
-        current_end = parse_db_datetime(existing[3]) if existing else None
+        current_end = parse_db_datetime(existing['end_date']) if existing else None
         new_start = current_end if current_end and current_end > now else now
         new_end = new_start + timedelta(days=plan['days'])
         start_str = new_start.strftime('%Y-%m-%d %H:%M:%S')
         end_str = new_end.strftime('%Y-%m-%d %H:%M:%S')
-        auto_renew = existing[5] if existing and existing[5] is not None else 0
+        auto_renew = existing['auto_renew'] if existing and existing['auto_renew'] is not None else 0
         if existing:
             c.execute(
                 '''UPDATE manager_subscriptions SET subscription_type=?, amount=?, start_date=?,
@@ -164,7 +164,7 @@ def upgrade_subscription(conn, user_id, plan_key):
         )
         conn.commit()
         c.execute('SELECT balance FROM wallets WHERE user_id = ?', (user_id,))
-        new_balance = c.fetchone()[0]
+        new_balance = c.fetchone()['balance']
         return {'new_balance': new_balance, 'expires_at': format_display_datetime(end_str)}
     except Exception:
         conn.rollback()
@@ -224,21 +224,21 @@ def process_transaction(conn, transaction_id, action, admin_id, admin_email, not
         row = c.fetchone()
         if not row:
             raise LookupError('Transaction not found')
-        if row[5] != 'pending':
+        if row['status'] != 'pending':
             raise ValueError('Transaction already processed')
-        metadata = parse_metadata(row[6])
+        metadata = parse_metadata(row['metadata'])
         metadata.update({'admin_id': admin_id, 'admin_email': admin_email,
                          'admin_action_at': datetime.utcnow().isoformat()})
         if note:
             metadata['admin_note'] = note
         if action == 'approve':
             if Config.USE_POSTGRES:
-                c.execute("INSERT INTO wallets (user_id, balance, currency) VALUES (?, 0, 'VND') ON CONFLICT (user_id) DO NOTHING", (row[1],))
+                c.execute("INSERT INTO wallets (user_id, balance, currency) VALUES (?, 0, 'VND') ON CONFLICT (user_id) DO NOTHING", (row['user_id'],))
             else:
-                c.execute("INSERT OR IGNORE INTO wallets (user_id, balance, currency) VALUES (?, 0, 'VND')", (row[1],))
-            if row[2] != 0:
+                c.execute("INSERT OR IGNORE INTO wallets (user_id, balance, currency) VALUES (?, 0, 'VND')", (row['user_id'],))
+            if row['amount'] != 0:
                 c.execute('UPDATE wallets SET balance=balance+?, updated_at=CURRENT_TIMESTAMP WHERE user_id=?',
-                          (row[2], row[1]))
+                          (row['amount'], row['user_id']))
             c.execute(
                 "UPDATE wallet_transactions SET status='completed', metadata=?, updated_at=CURRENT_TIMESTAMP WHERE id=?",
                 (json.dumps(metadata), transaction_id),

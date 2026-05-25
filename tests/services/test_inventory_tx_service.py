@@ -10,6 +10,7 @@ from core.services.service_errors import ServiceValidationError
 
 def _new_conn():
     conn = sqlite3.connect(":memory:")
+    conn.row_factory = sqlite3.Row
     conn.execute(
         """
         CREATE TABLE products (

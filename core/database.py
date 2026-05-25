@@ -48,7 +48,7 @@ class PGShimCursor:
                 query += " RETURNING id"
                 self._cursor.execute(query, params) if has_params else self._cursor.execute(query)
                 row = self._cursor.fetchone()
-                if row: self.lastrowid = row[0]
+                if row: self.lastrowid = row['id']
             else:
                 self._cursor.execute(query, params) if has_params else self._cursor.execute(query)
                 self.lastrowid = None
@@ -105,10 +105,10 @@ class Database:
         try:
             if self.use_postgres:
                 cursor.execute("SELECT column_name FROM information_schema.columns WHERE table_name = %s", (table_name,))
-                columns = [row[0] for row in cursor.fetchall()]
+                columns = [row['column_name'] for row in cursor.fetchall()]
             else:
                 cursor.execute(f"PRAGMA table_info({table_name})")
-                columns = [row[1] for row in cursor.fetchall()]
+                columns = [row['name'] for row in cursor.fetchall()]
             return columns
         finally:
             if should_close:
@@ -368,30 +368,41 @@ class Database:
         conn = self.get_connection()
         c = conn.cursor()
         try:
-            # Check columns to valid safely or just select *? 
-            # Safer to select specific columns, assuming schema is up to date (we ran fix scripts)
             c.execute('SELECT id, email, name, avatar, theme, role, first_name, last_name, google_token FROM users WHERE id = ?', (user_id,))
             user = c.fetchone()
+            if user:
+                return {
+                    'id': user['id'],
+                    'email': user['email'],
+                    'name': user['name'],
+                    'avatar': user['avatar'],
+                    'theme': user['theme'],
+                    'role': user['role'],
+                    'first_name': user['first_name'],
+                    'last_name': user['last_name'],
+                    'google_token': user['google_token'],
+                }
         except Exception:
-            # Fallback for old schema if columns missing (though we should have them)
-            c.execute('SELECT id, email, name, avatar, theme, role FROM users WHERE id = ?', (user_id,))
-            user = c.fetchone()
-            if user: # Pad with None
-                user = user + (None, None, None)
-
-        conn.close()
-        if user:
-            return {
-                'id': user[0], 
-                'email': user[1], 
-                'name': user[2], 
-                'avatar': user[3], 
-                'theme': user[4], 
-                'role': user[5],
-                'first_name': user[6],
-                'last_name': user[7],
-                'google_token': user[8]
-            }
+            # Fallback for old schema missing extended columns
+            try:
+                c.execute('SELECT id, email, name, avatar, theme, role FROM users WHERE id = ?', (user_id,))
+                user = c.fetchone()
+                if user:
+                    return {
+                        'id': user['id'],
+                        'email': user['email'],
+                        'name': user['name'],
+                        'avatar': user['avatar'],
+                        'theme': user['theme'],
+                        'role': user['role'],
+                        'first_name': None,
+                        'last_name': None,
+                        'google_token': None,
+                    }
+            except Exception:
+                pass
+        finally:
+            conn.close()
         return None
 
     def create_user(self, email, password, name, role="user", first_name=None, last_name=None, manager_id=None):
@@ -436,7 +447,7 @@ class Database:
         c.execute('''SELECT u.id, u.name, u.email, u.role, '' as permissions FROM users u''')
         users = []
         for row in c.fetchall():
-            users.append({'id': row[0], 'name': row[1], 'email': row[2], 'role': row[3], 'permissions': []})
+            users.append({'id': row['id'], 'name': row['name'], 'email': row['email'], 'role': row['role'], 'permissions': []})
         conn.close()
         return users
         
@@ -449,8 +460,8 @@ class Database:
                 'FROM activity_logs ORDER BY created_at DESC LIMIT ?', (limit,)
             )
             return [
-                {'id': r[0], 'user_id': r[1], 'action': r[2],
-                 'details': r[3], 'ip_address': r[4], 'created_at': r[5]}
+                {'id': r['id'], 'user_id': r['user_id'], 'action': r['action'],
+                 'details': r['details'], 'ip_address': r['ip_address'], 'created_at': r['created_at']}
                 for r in c.fetchall()
             ]
         except Exception:
@@ -498,8 +509,8 @@ class Database:
             
             history = []
             for r in reversed(rows):
-                role_name = "User" if r[0] == 'user' else "AI"
-                history.append(f"{role_name}: {r[1]}")
+                role_name = "User" if r['role'] == 'user' else "AI"
+                history.append(f"{role_name}: {r['content']}")
             
             return "\n".join(history)
         except Exception as e:
@@ -515,12 +526,12 @@ class Database:
             # Get or Create Session
             c.execute("SELECT id FROM chat_sessions WHERE user_id = ? ORDER BY last_active DESC LIMIT 1", (user_id,))
             row = c.fetchone()
-            if row: 
-                sid = row[0]
+            if row:
+                sid = row['id']
             else:
                 if self.use_postgres:
                     c.execute("INSERT INTO chat_sessions (user_id, workspace_id, title) VALUES (%s, %s, 'New Chat') RETURNING id", (user_id, workspace_id))
-                    sid = c.fetchone()[0]
+                    sid = c.fetchone()['id']
                 else:
                     c.execute("INSERT INTO chat_sessions (user_id, workspace_id, title) VALUES (?, ?, 'New Chat')", (user_id, workspace_id))
                     sid = c.lastrowid
@@ -561,12 +572,12 @@ class Database:
             scenarios = []
             for row in rows:
                 scenarios.append({
-                    'id': row[0],
-                    'name': row[1],
-                    'description': row[2],
-                    'updated_at': row[3],
-                    'data': row[4],
-                    'steps': row[4]
+                    'id': row['id'],
+                    'name': row['name'],
+                    'description': row['description'],
+                    'updated_at': row['updated_at'],
+                    'data': row['data'],
+                    'steps': row['data'],
                 })
             return scenarios
         except Exception as e:
@@ -583,13 +594,13 @@ class Database:
             row = c.fetchone()
             if row:
                 return {
-                    'id': row[0],
-                    'name': row[1],
-                    'description': row[2],
-                    'updated_at': row[3],
-                    'data': row[4],
-                    'steps': row[4],
-                    'user_id': row[5]
+                    'id': row['id'],
+                    'name': row['name'],
+                    'description': row['description'],
+                    'updated_at': row['updated_at'],
+                    'data': row['data'],
+                    'steps': row['data'],
+                    'user_id': row['user_id'],
                 }
             return None
         finally:
