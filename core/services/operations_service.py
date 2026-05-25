@@ -11,13 +11,13 @@ def get_dashboard_stats(user_id):
     try:
         today = datetime.now()
         start_of_month = today.replace(day=1, hour=0, minute=0, second=0, microsecond=0).strftime('%Y-%m-%d %H:%M:%S')
-        c.execute('SELECT SUM(total_amount) FROM export_transactions WHERE created_at >= ?', (start_of_month,))
-        revenue = c.fetchone()[0] or 0
+        c.execute('SELECT SUM(total_amount) AS total FROM export_transactions WHERE created_at >= ?', (start_of_month,))
+        revenue = c.fetchone()['total'] or 0
         start_of_day = today.replace(hour=0, minute=0, second=0, microsecond=0).strftime('%Y-%m-%d %H:%M:%S')
-        c.execute('SELECT COUNT(*) FROM export_transactions WHERE created_at >= ?', (start_of_day,))
-        new_orders = c.fetchone()[0] or 0
-        c.execute('SELECT COUNT(*) FROM workflows WHERE user_id = ?', (user_id,))
-        active_projects = c.fetchone()[0] or 0
+        c.execute('SELECT COUNT(*) AS cnt FROM export_transactions WHERE created_at >= ?', (start_of_day,))
+        new_orders = c.fetchone()['cnt'] or 0
+        c.execute('SELECT COUNT(*) AS cnt FROM workflows WHERE user_id = ?', (user_id,))
+        active_projects = c.fetchone()['cnt'] or 0
         return {'revenue': revenue, 'new_orders': new_orders, 'active_projects': active_projects}
     finally:
         conn.close()
@@ -29,12 +29,12 @@ def get_report_stats():
     try:
         today = datetime.now()
         start_of_month = today.replace(day=1, hour=0, minute=0, second=0, microsecond=0).strftime('%Y-%m-%d %H:%M:%S')
-        c.execute('SELECT SUM(total_amount) FROM export_transactions WHERE created_at >= ?', (start_of_month,))
-        revenue = c.fetchone()[0] or 0
-        c.execute('SELECT SUM(total_amount) FROM import_transactions WHERE created_at >= ?', (start_of_month,))
-        expense = c.fetchone()[0] or 0
-        c.execute('SELECT COUNT(*) FROM scheduled_reports WHERE last_sent_at >= ?', (start_of_month,))
-        reports_sent = c.fetchone()[0] or 0
+        c.execute('SELECT SUM(total_amount) AS total FROM export_transactions WHERE created_at >= ?', (start_of_month,))
+        revenue = c.fetchone()['total'] or 0
+        c.execute('SELECT SUM(total_amount) AS total FROM import_transactions WHERE created_at >= ?', (start_of_month,))
+        expense = c.fetchone()['total'] or 0
+        c.execute('SELECT COUNT(*) AS cnt FROM scheduled_reports WHERE last_sent_at >= ?', (start_of_month,))
+        reports_sent = c.fetchone()['cnt'] or 0
         return {'revenue': revenue, 'expense': expense,
                 'profit': revenue - expense, 'reports_sent': reports_sent}
     finally:
@@ -51,8 +51,9 @@ def get_scheduled_reports():
             ' FROM scheduled_reports ORDER BY created_at DESC'
         )
         return [
-            {'id': r[0], 'name': r[1], 'report_type': r[2], 'frequency': r[3],
-             'channel': r[4], 'recipients': r[5], 'status': r[6], 'last_sent_at': r[7]}
+            {'id': r['id'], 'name': r['name'], 'report_type': r['report_type'],
+             'frequency': r['frequency'], 'channel': r['channel'], 'recipients': r['recipients'],
+             'status': r['status'], 'last_sent_at': r['last_sent_at']}
             for r in c.fetchall()
         ]
     finally:
@@ -96,9 +97,10 @@ def get_automations():
             ' FROM se_automations ORDER BY created_at DESC'
         )
         return [
-            {'id': r[0], 'name': r[1], 'type': r[2],
-             'config': json.loads(r[3]) if r[3] else {},
-             'status': 'active' if r[4] else 'inactive', 'enabled': bool(r[4]), 'last_run': r[5]}
+            {'id': r['id'], 'name': r['name'], 'type': r['type'],
+             'config': json.loads(r['config']) if r['config'] else {},
+             'status': 'active' if r['enabled'] else 'inactive', 'enabled': bool(r['enabled']),
+             'last_run': r['last_run']}
             for r in c.fetchall()
         ]
     finally:

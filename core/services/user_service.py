@@ -22,8 +22,8 @@ def get_all_users(role_filter=None):
                     'FROM users ORDER BY created_at DESC'
                 )
             return [
-                {'id': r[0], 'email': r[1], 'first_name': r[2] or '',
-                 'last_name': r[3] or '', 'role': r[4], 'created_at': r[5]}
+                {'id': r['id'], 'email': r['email'], 'first_name': r['first_name'] or '',
+                 'last_name': r['last_name'] or '', 'role': r['role'], 'created_at': r['created_at']}
                 for r in c.fetchall()
             ]
         else:
@@ -37,7 +37,8 @@ def get_all_users(role_filter=None):
                     'SELECT id, email, name, role, created_at FROM users ORDER BY created_at DESC'
                 )
             return [
-                {'id': r[0], 'email': r[1], 'name': r[2] or '', 'role': r[3], 'created_at': r[4]}
+                {'id': r['id'], 'email': r['email'], 'name': r['name'] or '',
+                 'role': r['role'], 'created_at': r['created_at']}
                 for r in c.fetchall()
             ]
     finally:
@@ -60,8 +61,8 @@ def get_users_for_manager(manager_id, role_filter=None):
             query += ' ORDER BY created_at DESC'
             c.execute(query, tuple(params))
             return [
-                {'id': r[0], 'email': r[1], 'first_name': r[2] or '',
-                 'last_name': r[3] or '', 'role': r[4], 'created_at': r[5]}
+                {'id': r['id'], 'email': r['email'], 'first_name': r['first_name'] or '',
+                 'last_name': r['last_name'] or '', 'role': r['role'], 'created_at': r['created_at']}
                 for r in c.fetchall()
             ]
         else:
@@ -73,7 +74,8 @@ def get_users_for_manager(manager_id, role_filter=None):
             query += ' ORDER BY created_at DESC'
             c.execute(query, tuple(params))
             return [
-                {'id': r[0], 'email': r[1], 'name': r[2] or '', 'role': r[3], 'created_at': r[4]}
+                {'id': r['id'], 'email': r['email'], 'name': r['name'] or '',
+                 'role': r['role'], 'created_at': r['created_at']}
                 for r in c.fetchall()
             ]
     finally:
@@ -89,7 +91,7 @@ def delete_user(user_id):
         row = c.fetchone()
         if not row:
             raise LookupError('User not found')
-        if row[0] != 'user':
+        if row['role'] != 'user':
             raise PermissionError('Can only delete regular users')
         c.execute('DELETE FROM users WHERE id = ?', (user_id,))
         conn.commit()
@@ -142,7 +144,7 @@ def set_user_role(user_id, new_role, actor_id, actor_ip, action_label):
         row = c.fetchone()
         if not row:
             raise LookupError('User not found')
-        if row[0] == 'admin':
+        if row['role'] == 'admin':
             raise PermissionError('Cannot change admin role')
         c.execute('UPDATE users SET role = ? WHERE id = ?', (new_role, user_id))
         conn.commit()

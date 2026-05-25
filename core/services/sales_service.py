@@ -39,7 +39,7 @@ def get_sales_history(conn, user_id, search_query='', limit=10):
     history = []
     for row in c.fetchall():
         try:
-            raw = row[4]
+            raw = row['items']
             if not raw:
                 items = []
             elif isinstance(raw, str):
@@ -56,10 +56,10 @@ def get_sales_history(conn, user_id, search_query='', limit=10):
             items = []
             item_count = 0
         history.append({
-            'id': row[0],
-            'date': format_display_datetime(row[1]) or str(row[1]),
-            'amount': row[2],
-            'payment_method': row[3] or 'Cash',
+            'id': row['id'],
+            'date': format_display_datetime(row['created_at']) or str(row['created_at']),
+            'amount': row['total_amount'],
+            'payment_method': row['payment_method'] or 'Cash',
             'item_count': item_count,
             'items': items,
         })
