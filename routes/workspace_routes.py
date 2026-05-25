@@ -20,7 +20,8 @@ def get_workspaces():
         auth_manager = current_app.extensions['auth_manager']
         workspaces = auth_manager.get_user_workspaces(current_user.id)
         return jsonify([
-            {'id': w[0], 'name': w[2], 'type': w[3], 'description': w[4], 'created_at': w[6]}
+            {'id': w['id'], 'name': w['name'], 'type': w['type'],
+             'description': w['description'], 'created_at': w['created_at']}
             for w in workspaces
         ])
     except Exception as e:

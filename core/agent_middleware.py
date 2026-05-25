@@ -30,10 +30,10 @@ class AgentMiddleware:
             c = conn.cursor()
             try:
                 c.execute("SELECT table_name FROM information_schema.tables WHERE table_schema='public'")
-                tables = [r[0] for r in c.fetchall()]
+                tables = [r['table_name'] for r in c.fetchall()]
             except Exception:
                 c.execute("SELECT name FROM sqlite_master WHERE type='table'")
-                tables = [r[0] for r in c.fetchall()]
+                tables = [r['name'] for r in c.fetchall()]
             return "Tables: " + ", ".join(tables)
         except Exception:
             return ""
@@ -99,7 +99,7 @@ class AgentMiddleware:
             js = json.dumps(final_data)
             if hasattr(self.db, 'use_postgres') and self.db.use_postgres:
                 c.execute('INSERT INTO workflows (user_id, name, data, created_at, updated_at) VALUES (%s, %s, %s, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP) RETURNING id', (user_id, name, js))
-                wid = c.fetchone()[0]
+                wid = c.fetchone()['id']
             else:
                 c.execute('INSERT INTO workflows (user_id, name, data, created_at, updated_at) VALUES (?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)', (user_id, name, js))
                 wid = c.lastrowid

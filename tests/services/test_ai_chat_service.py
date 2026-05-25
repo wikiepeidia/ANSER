@@ -6,9 +6,23 @@ import core.services.ai_chat_service as ai_chat_service
 from core.services.service_errors import ServiceValidationError
 
 
+_HISTORY_COLS = ('role', 'content')
+
+
+class _HistoryRow(dict):
+    def __init__(self, values):
+        super().__init__(zip(_HISTORY_COLS, values))
+        self._values = list(values)
+
+    def __getitem__(self, key):
+        if isinstance(key, int):
+            return self._values[key]
+        return super().__getitem__(key)
+
+
 class _HistoryCursor:
     def __init__(self, rows):
-        self.rows = rows
+        self.rows = [_HistoryRow(r) if isinstance(r, tuple) else r for r in rows]
         self.executed = []
 
     def execute(self, query, params):

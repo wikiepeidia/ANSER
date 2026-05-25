@@ -85,7 +85,7 @@ def settings():
             cursor = conn.cursor()
             cursor.execute('SELECT key, value FROM system_settings')
             for row in cursor.fetchall():
-                all_settings[row[0]] = row[1]
+                all_settings[row['key']] = row['value']
     except Exception as e:
         logger.error("Error fetching settings: %s", e, exc_info=True)
     return render_template('settings.html', user=current_user, settings_sections=config, all_settings=all_settings)
