@@ -93,9 +93,9 @@ def get_all_products(conn):
     )
     rows = c.fetchall()
     return [
-        {'id': r[0], 'code': r[1], 'name': r[2], 'category': r[3],
-         'unit': r[4], 'price': r[5], 'stock_quantity': r[6],
-         'description': r[7], 'created_at': r[8], 'image_url': r[9]}
+        {'id': r['id'], 'code': r['code'], 'name': r['name'], 'category': r['category'],
+         'unit': r['unit'], 'price': r['price'], 'stock_quantity': r['stock_quantity'],
+         'description': r['description'], 'created_at': r['created_at'], 'image_url': r['image_url']}
         for r in rows
     ]
 

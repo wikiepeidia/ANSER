@@ -75,7 +75,7 @@ def get_chat_history_rows(db_conn, user_id, limit=50):
 def fetch_chat_history(db_conn, user_id, limit=50):
     """Return formatted chat history suitable for HTTP JSON responses."""
     rows = get_chat_history_rows(db_conn, user_id, limit=limit)
-    return [{"role": row[0], "content": row[1]} for row in rows]
+    return [{"role": row['role'], "content": row['content']} for row in rows]
 
 
 def clear_chat_history_rows(db_conn, user_id):

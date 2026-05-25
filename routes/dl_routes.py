@@ -87,7 +87,7 @@ def api_get_product_sales_history(product_id):
         )
 
         rows = c.fetchall()
-        series = [r[0] for r in rows][::-1]
+        series = [r['quantity'] for r in rows][::-1]
 
         return jsonify({'success': True, 'series': series})
     except Exception as e:

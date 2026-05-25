@@ -10,8 +10,9 @@ def get_all_customers(conn):
     )
     rows = c.fetchall()
     return [
-        {'id': r[0], 'code': r[1], 'name': r[2], 'phone': r[3],
-         'email': r[4], 'address': r[5], 'notes': r[6], 'created_at': r[8]}
+        {'id': r['id'], 'code': r['code'], 'name': r['name'], 'phone': r['phone'],
+         'email': r['email'], 'address': r['address'], 'notes': r['notes'],
+         'created_at': r['created_at']}
         for r in rows
     ]
 
