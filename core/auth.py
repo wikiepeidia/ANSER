@@ -161,7 +161,11 @@ Trân trọng,
     def get_user_workspaces(self, user_id):
         conn = self.db.get_connection()
         c = conn.cursor()
-        c.execute('SELECT * FROM workspaces WHERE user_id = ? ORDER BY created_at', (user_id,))
+        c.execute(
+            'SELECT id, user_id, name, type, description, is_active, created_at'
+            ' FROM workspaces WHERE user_id = ? ORDER BY created_at',
+            (user_id,),
+        )
         workspaces = c.fetchall()
         conn.close()
         return workspaces

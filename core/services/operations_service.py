@@ -45,7 +45,11 @@ def get_scheduled_reports():
     conn = db_manager.get_connection()
     c = conn.cursor()
     try:
-        c.execute('SELECT * FROM scheduled_reports ORDER BY created_at DESC')
+        c.execute(
+            'SELECT id, name, report_type, frequency, channel, recipients,'
+            ' status, last_sent_at, created_by, created_at'
+            ' FROM scheduled_reports ORDER BY created_at DESC'
+        )
         return [
             {'id': r[0], 'name': r[1], 'report_type': r[2], 'frequency': r[3],
              'channel': r[4], 'recipients': r[5], 'status': r[6], 'last_sent_at': r[7]}
@@ -87,7 +91,10 @@ def get_automations():
     conn = db_manager.get_connection()
     c = conn.cursor()
     try:
-        c.execute('SELECT * FROM se_automations ORDER BY created_at DESC')
+        c.execute(
+            'SELECT id, name, type, config, enabled, last_run, created_by, created_at'
+            ' FROM se_automations ORDER BY created_at DESC'
+        )
         return [
             {'id': r[0], 'name': r[1], 'type': r[2],
              'config': json.loads(r[3]) if r[3] else {},

@@ -22,7 +22,10 @@ def api_get_imports():
     """Get all import transactions."""
     conn = _app_module().db_manager.get_connection()
     c = conn.cursor()
-    c.execute('SELECT * FROM import_transactions ORDER BY created_at DESC')
+    c.execute(
+        'SELECT id, code, supplier_name, total_amount, notes, status, created_by, created_at'
+        ' FROM import_transactions ORDER BY created_at DESC'
+    )
     imports = []
     for row in c.fetchall():
         imports.append(
@@ -93,9 +96,11 @@ def api_get_exports():
     conn = _app_module().db_manager.get_connection()
     c = conn.cursor()
     c.execute(
-        '''SELECT e.*, c.name as customer_name FROM export_transactions e
-                 LEFT JOIN customers c ON e.customer_id = c.id
-                 ORDER BY e.created_at DESC'''
+        'SELECT e.id, e.code, e.customer_id, e.total_amount, e.notes, e.status,'
+        ' e.created_by, e.created_at, c.name AS customer_name'
+        ' FROM export_transactions e'
+        ' LEFT JOIN customers c ON e.customer_id = c.id'
+        ' ORDER BY e.created_at DESC'
     )
     exports = []
     for row in c.fetchall():
