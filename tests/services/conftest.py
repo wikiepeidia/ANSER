@@ -3,6 +3,18 @@
 import pytest
 
 
+class _StubRow:
+    """Row stub that satisfies both row[0] and row['col'] access patterns."""
+
+    _DEFAULT = 5
+
+    def __getitem__(self, key):
+        return self._DEFAULT
+
+    def __bool__(self):
+        return True
+
+
 class _CursorStub:
     def __init__(self):
         self.lastrowid = 1
@@ -14,7 +26,7 @@ class _CursorStub:
         return []
 
     def fetchone(self):
-        return (5,)
+        return _StubRow()
 
 
 class _DBStub:

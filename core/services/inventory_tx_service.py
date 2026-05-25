@@ -104,13 +104,13 @@ def get_import_transaction_details(db_conn, import_id):
             return None
 
         transaction = {
-            "id": row[0],
-            "code": row[1],
-            "supplier_name": row[2],
-            "total_amount": row[3],
-            "notes": row[4],
-            "status": row[5],
-            "created_at": row[7],
+            "id": row['id'],
+            "code": row['code'],
+            "supplier_name": row['supplier_name'],
+            "total_amount": row['total_amount'],
+            "notes": row['notes'],
+            "status": row['status'],
+            "created_at": row['created_at'],
         }
 
         cursor.execute(
@@ -126,13 +126,13 @@ def get_import_transaction_details(db_conn, import_id):
         for d_row in cursor.fetchall():
             details.append(
                 {
-                    "id": d_row[0],
-                    "product_id": d_row[2],
-                    "quantity": d_row[3],
-                    "unit_price": d_row[4],
-                    "total_price": d_row[5],
-                    "product_name": d_row[6],
-                    "product_code": d_row[7],
+                    "id": d_row['id'],
+                    "product_id": d_row['product_id'],
+                    "quantity": d_row['quantity'],
+                    "unit_price": d_row['unit_price'],
+                    "total_price": d_row['total_price'],
+                    "product_name": d_row['product_name'],
+                    "product_code": d_row['product_code'],
                 }
             )
 
@@ -176,7 +176,7 @@ def create_export_transaction(db_conn, user_id, payload, automation_engine=None)
             if not stock_row:
                 raise ServiceValidationError(f"Product not found for product ID {product_id}")
 
-            current_stock = stock_row[0]
+            current_stock = stock_row['stock_quantity']
             if current_stock < quantity:
                 raise ServiceValidationError(f"Insufficient stock for product ID {product_id}")
 
@@ -232,15 +232,15 @@ def get_export_transaction_details(db_conn, export_id):
             return None
 
         transaction = {
-            "id": row[0],
-            "code": row[1],
-            "customer_id": row[2],
-            "total_amount": row[3],
-            "notes": row[4],
-            "status": row[5],
-            "created_at": row[7],
-            "customer_name": row[8] if len(row) > 8 else "",
-            "customer_phone": row[9] if len(row) > 9 else "",
+            "id": row['id'],
+            "code": row['code'],
+            "customer_id": row['customer_id'],
+            "total_amount": row['total_amount'],
+            "notes": row['notes'],
+            "status": row['status'],
+            "created_at": row['created_at'],
+            "customer_name": row['customer_name'] or "",
+            "customer_phone": row['customer_phone'] or "",
         }
 
         cursor.execute(
@@ -256,13 +256,13 @@ def get_export_transaction_details(db_conn, export_id):
         for d_row in cursor.fetchall():
             details.append(
                 {
-                    "id": d_row[0],
-                    "product_id": d_row[2],
-                    "quantity": d_row[3],
-                    "unit_price": d_row[4],
-                    "total_price": d_row[5],
-                    "product_name": d_row[6],
-                    "product_code": d_row[7],
+                    "id": d_row['id'],
+                    "product_id": d_row['product_id'],
+                    "quantity": d_row['quantity'],
+                    "unit_price": d_row['unit_price'],
+                    "total_price": d_row['total_price'],
+                    "product_name": d_row['product_name'],
+                    "product_code": d_row['product_code'],
                 }
             )
 
