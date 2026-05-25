@@ -46,18 +46,18 @@ def list_workflows_for_user(db_conn, user_id):
     workflows = []
     for row in rows:
         parsed = {}
-        if row[2]:
+        if row['data']:
             try:
-                parsed = json.loads(row[2]) if isinstance(row[2], str) else row[2]
+                parsed = json.loads(row['data']) if isinstance(row['data'], str) else row['data']
             except Exception:
                 parsed = {}
         workflows.append(
             {
-                "id": row[0],
-                "name": row[1],
+                "id": row['id'],
+                "name": row['name'],
                 "data": parsed,
-                "created_at": row[3],
-                "updated_at": row[4],
+                "created_at": row['created_at'],
+                "updated_at": row['updated_at'],
             }
         )
     return workflows
@@ -126,9 +126,9 @@ def get_workflow_for_user(db_conn, user_id, workflow_id):
     if not row:
         return None
 
-    raw_data = row[2]
+    raw_data = row['data']
     flow_data = json.loads(raw_data) if isinstance(raw_data, str) else raw_data
     return {
         "data": flow_data,
-        "name": row[1],
+        "name": row['name'],
     }

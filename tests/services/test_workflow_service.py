@@ -4,9 +4,25 @@ import core.services.workflow_service as workflow_service
 from core.services.service_errors import ServiceValidationError
 
 
+_WORKFLOW_COLS = ('id', 'name', 'data', 'created_at', 'updated_at')
+
+
+class _WorkflowRow(dict):
+    """Tuple-initialised dict that also supports positional access."""
+
+    def __init__(self, values):
+        super().__init__(zip(_WORKFLOW_COLS, values))
+        self._values = list(values)
+
+    def __getitem__(self, key):
+        if isinstance(key, int):
+            return self._values[key]
+        return super().__getitem__(key)
+
+
 class _WorkflowCursor:
     def __init__(self, rows=None, lastrowid=0):
-        self.rows = rows or []
+        self.rows = [_WorkflowRow(r) if isinstance(r, tuple) else r for r in (rows or [])]
         self.lastrowid = lastrowid
         self.executed = []
 

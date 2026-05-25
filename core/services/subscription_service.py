@@ -19,10 +19,11 @@ def get_all_subscriptions():
     rows = c.fetchall()
     conn.close()
     return [
-        {'id': r[0], 'user_id': r[1], 'subscription_type': r[2], 'amount': r[3],
-         'start_date': r[4], 'end_date': r[5], 'status': r[6],
-         'auto_renew': bool(r[7]) if r[7] is not None else False,
-         'user_name': r[8], 'user_email': r[9]}
+        {'id': r['id'], 'user_id': r['user_id'], 'subscription_type': r['subscription_type'],
+         'amount': r['amount'], 'start_date': r['start_date'], 'end_date': r['end_date'],
+         'status': r['status'],
+         'auto_renew': bool(r['auto_renew']) if r['auto_renew'] is not None else False,
+         'user_name': r['name'], 'user_email': r['email']}
         for r in rows
     ]
 
@@ -65,9 +66,9 @@ def extend_subscription(user_id, plan_type, payment_method, transaction_id=None)
         row = c.fetchone()
         now = datetime.now()
         start_date = now
-        if row and row[0]:
+        if row and row['end_date']:
             try:
-                current_end = datetime.strptime(row[0], '%Y-%m-%d')
+                current_end = datetime.strptime(row['end_date'], '%Y-%m-%d')
                 if current_end > now:
                     start_date = current_end
             except ValueError:
@@ -125,9 +126,10 @@ def get_subscription_history():
     rows = c.fetchall()
     conn.close()
     return [
-        {'id': r[0], 'user_id': r[1], 'subscription_type': r[2], 'amount': r[3],
-         'payment_date': r[4], 'payment_method': r[5], 'transaction_id': r[6],
-         'status': r[7], 'user_name': r[8]}
+        {'id': r['id'], 'user_id': r['user_id'], 'subscription_type': r['subscription_type'],
+         'amount': r['amount'], 'payment_date': r['payment_date'],
+         'payment_method': r['payment_method'], 'transaction_id': r['transaction_id'],
+         'status': r['status'], 'user_name': r['name']}
         for r in rows
     ]
 
@@ -143,7 +145,8 @@ def check_expired_subscriptions():
         )
         expired = c.fetchall()
         count = 0
-        for (uid,) in expired:
+        for row in expired:
+            uid = row['user_id']
             c.execute(
                 "UPDATE manager_subscriptions SET status='expired', updated_at=CURRENT_TIMESTAMP WHERE user_id=?",
                 (uid,)
