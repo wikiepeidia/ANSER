@@ -164,6 +164,11 @@ class Database:
             return conn
     
     def init_database(self):
+        """Create SQLite schema for local development.
+
+        PostgreSQL (NeonDB) schema is managed by Alembic — run:
+            python -m alembic upgrade head
+        """
         conn = self.get_connection()
         c = conn.cursor()
         c.executescript('''
