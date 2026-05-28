@@ -16,5 +16,8 @@
       "Bash(node \"$HOME/.claude/get-shit-done/bin/gsd-tools.cjs\" generate-claude-md)",
       "Bash(node \"$HOME/.claude/get-shit-done/bin/gsd-tools.cjs\" commit \"docs: create roadmap \\(5 phases\\)\" --files .planning/ROADMAP.md .planning/STATE.md .planning/REQUIREMENTS.md CLAUDE.md)"
     ]
-  }
+  },
+  "disabledMcpjsonServers": [
+    "grapuco"
+  ]
 }

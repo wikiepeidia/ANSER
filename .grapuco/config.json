@@ -1,0 +1,24 @@
+{
+  "repoId": "a013c7de-6e8b-4f5b-bcdd-3efdc7857100",
+  "repoName": "ANSER_Merged",
+  "server": "https://api.grapuco.com",
+  "language": "python",
+  "features": {
+    "embeddings": true,
+    "dataFlowAnalysis": true
+  },
+  "ignore": [
+    "node_modules",
+    "dist",
+    ".next",
+    ".git",
+    ".grapuco",
+    "__pycache__",
+    "vendor",
+    "target",
+    "build"
+  ],
+  "workspaceId": "502697fa-3816-4429-b31d-2c880cac1ca1",
+  "workspaceName": "ANSER_Merged",
+  "lastPush": "2026-05-23T18:26:36.189Z"
+}
