@@ -1,5 +1,6 @@
 import sqlite3
 import re
+import threading
 from datetime import datetime
 from .config import Config
 import bcrypt
@@ -78,23 +79,58 @@ class PGShimCursor:
     def __getattr__(self, name): return getattr(self._cursor, name)
 
 class PGShimConnection:
-    def __init__(self, conn):
+    def __init__(self, conn, pool):
         self._conn = conn
+        self._pool = pool
+        self._closed = False
         self.row_factory = None
+
     def cursor(self):
         import psycopg2.extras
         return PGShimCursor(self._conn.cursor(cursor_factory=psycopg2.extras.DictCursor))
-    def commit(self): self._conn.commit()
-    def rollback(self): self._conn.rollback()
-    def close(self): self._conn.close()
+
+    def commit(self):
+        self._conn.commit()
+
+    def rollback(self):
+        self._conn.rollback()
+
+    def close(self):
+        if self._closed:
+            return
+        self._closed = True
+        try:
+            self._conn.rollback()  # return conn to pool in clean state
+        except Exception:
+            pass
+        if self._pool is not None:
+            self._pool.putconn(self._conn)
+        else:
+            self._conn.close()
 
 class Database:
     def __init__(self):
         self.db_path = Config.DATABASE_PATH
         self.use_postgres = getattr(Config, 'USE_POSTGRES', False)
-        # Only init if not Postgres to avoid schema conflicts, or use migration scripts
+        self._pg_pool = None
+        self._pg_pool_lock = threading.Lock()
         if not self.use_postgres:
             self.init_database()
+
+    def _get_pg_pool(self):
+        """Lazily create the PostgreSQL connection pool on first use."""
+        if self._pg_pool is not None:
+            return self._pg_pool
+        with self._pg_pool_lock:
+            if self._pg_pool is None:
+                import psycopg2.pool
+                self._pg_pool = psycopg2.pool.ThreadedConnectionPool(
+                    minconn=1,
+                    maxconn=10,
+                    dsn=Config.POSTGRES_URL,
+                )
+                logger.info("PostgreSQL connection pool initialized (min=1, max=10)")
+        return self._pg_pool
 
     def get_table_columns(self, table_name, cursor=None):
         should_close = False
@@ -119,10 +155,9 @@ class Database:
 
     def get_connection(self):
         if self.use_postgres:
-            import psycopg2
-            import psycopg2.extras
-            conn = psycopg2.connect(Config.POSTGRES_URL)
-            return PGShimConnection(conn)
+            pool = self._get_pg_pool()
+            raw = pool.getconn()
+            return PGShimConnection(raw, pool)
         else:
             conn = sqlite3.connect(self.db_path, timeout=30.0)
             conn.row_factory = sqlite3.Row
