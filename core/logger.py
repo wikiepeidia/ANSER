@@ -88,6 +88,15 @@ if not any(isinstance(h, logging.StreamHandler) and h is not logging.lastResort 
 # Set root level; individual loggers can override this
 _root.setLevel(logging.DEBUG)
 
+# Werkzeug startup messages (Running on, CTRL+C, etc.) must appear as plain text.
+# Detach from root so they don't get JSON-formatted.
+_werkzeug = logging.getLogger('werkzeug')
+_werkzeug.propagate = False
+_werkzeug_plain = logging.StreamHandler()
+_werkzeug_plain.setFormatter(logging.Formatter('%(message)s'))
+_werkzeug.addHandler(_werkzeug_plain)
+_werkzeug.addHandler(_file_handler)
+
 
 def get_logger(name: str) -> logging.Logger:
     """Return a named logger that writes JSON to logs/app.log and stdout.
