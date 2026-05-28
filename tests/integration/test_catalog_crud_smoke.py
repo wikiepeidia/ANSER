@@ -37,7 +37,8 @@ def _create_test_schema(db_path):
             description TEXT,
             created_by INTEGER,
             created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-            updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+            updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            image_url TEXT
         )'''
     )
     cursor.execute(
