@@ -16,8 +16,9 @@ def get_workspace_items(workspace_id, user_id):
             (workspace_id,),
         )
         return [
-            {'id': r[0], 'title': r[2], 'description': r[3], 'type': r[4],
-             'status': r[5], 'priority': r[6], 'created_at': r[9]}
+            {'id': r['id'], 'title': r['title'], 'description': r['description'],
+             'type': r['type'], 'status': r['status'], 'priority': r['priority'],
+             'created_at': r['created_at']}
             for r in c.fetchall()
         ]
     finally:

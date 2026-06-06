@@ -116,7 +116,7 @@ def upgrade_subscription(conn, user_id, plan_key):
         balance = row['balance'] if row else 0
         if balance < plan['amount']:
             raise ValueError('Insufficient wallet balance')
-        now = datetime.utcnow()
+        now = datetime.now()
         c.execute(
             'SELECT subscription_type, amount, start_date, end_date, status, auto_renew '
             'FROM manager_subscriptions WHERE user_id = ?', (user_id,)
@@ -148,7 +148,7 @@ def upgrade_subscription(conn, user_id, plan_key):
         )
         c.execute('UPDATE wallets SET balance=balance-?, updated_at=CURRENT_TIMESTAMP WHERE user_id=?',
                   (plan['amount'], user_id))
-        txn_id = f"SUB-{user_id}-{int(datetime.utcnow().timestamp())}"
+        txn_id = f"SUB-{user_id}-{int(datetime.now().timestamp())}"
         c.execute(
             '''INSERT INTO subscription_history
                (user_id, subscription_type, amount, payment_method, transaction_id, status, notes)
@@ -228,7 +228,7 @@ def process_transaction(conn, transaction_id, action, admin_id, admin_email, not
             raise ValueError('Transaction already processed')
         metadata = parse_metadata(row['metadata'])
         metadata.update({'admin_id': admin_id, 'admin_email': admin_email,
-                         'admin_action_at': datetime.utcnow().isoformat()})
+                         'admin_action_at': datetime.now().isoformat()})
         if note:
             metadata['admin_note'] = note
         if action == 'approve':
