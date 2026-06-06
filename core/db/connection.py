@@ -2,6 +2,7 @@
 import sqlite3
 import re
 import threading
+from contextlib import contextmanager
 
 from core.config import Config
 from core.logger import get_logger
@@ -129,9 +130,9 @@ class Database:
             if self._pg_pool is None:
                 import psycopg2.pool
                 self._pg_pool = psycopg2.pool.ThreadedConnectionPool(
-                    minconn=1, maxconn=10, dsn=Config.POSTGRES_URL,
+                    minconn=2, maxconn=10, dsn=Config.POSTGRES_URL,
                 )
-                logger.info("PostgreSQL connection pool initialized (min=1, max=10)")
+                logger.info("PostgreSQL connection pool initialized (min=2, max=10)")
         return self._pg_pool
 
     def get_connection(self):
@@ -141,6 +142,15 @@ class Database:
         conn = sqlite3.connect(self.db_path, timeout=30.0)
         conn.row_factory = sqlite3.Row
         return conn
+
+    @contextmanager
+    def get_db_connection(self):
+        """Yield a connection and guarantee it's returned to the pool on exit."""
+        conn = self.get_connection()
+        try:
+            yield conn
+        finally:
+            conn.close()
 
     def get_table_columns(self, table_name, cursor=None):
         should_close = False
@@ -448,8 +458,7 @@ class Database:
         finally:
             conn.close()
 
-    def verify_user(self, email, password):
-        pass  # handled by AuthManager.verify_user in core/auth.py
+    # verify_user is handled by AuthManager.verify_user in core/auth.py
 
     def get_user_workspaces(self, user_id):
         conn = self.get_connection()

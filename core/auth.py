@@ -25,15 +25,29 @@ class AuthManager:
         conn = self.db.get_connection()
         try:
             c = conn.cursor()
-            c.execute('SELECT id, email, name, avatar, role, google_token, password, password_version FROM users WHERE email = ?',
-                     (email,))
-            user = c.fetchone()
+            
+            # ─────────────────────────────────────────────────────────────
+            # DEFENSIVE: Try to select password_version; if column doesn't
+            # exist (PostgreSQL missing column), fall back to legacy sha256
+            # ─────────────────────────────────────────────────────────────
+            try:
+                c.execute('SELECT id, email, name, avatar, role, google_token, password, password_version FROM users WHERE email = ?',
+                         (email,))
+                user = c.fetchone()
+                password_version_available = True
+            except Exception as schema_err:
+                # Column doesn't exist — fetch without it and assume version 0
+                logger.warning("password_version column not found (schema error: %s) — falling back to legacy mode", schema_err)
+                c.execute('SELECT id, email, name, avatar, role, google_token, password FROM users WHERE email = ?',
+                         (email,))
+                user = c.fetchone()
+                password_version_available = False
 
             if not user:
                 return None
 
             stored_pw = user['password']
-            password_version = user['password_version'] or 0
+            password_version = 0 if not password_version_available else (user['password_version'] or 0)
 
             # Old sha256 hashes have version 0, bcrypt hashes have version 1
             if password_version == 0:
@@ -42,10 +56,15 @@ class AuthManager:
                 legacy_hash = hashlib.sha256(password.encode()).hexdigest()
                 if legacy_hash != stored_pw:
                     return None
-                # Rehash with bcrypt for next login
-                new_hash = AuthManager.hash_password(password)
-                c.execute('UPDATE users SET password = ?, password_version = 1 WHERE id = ?', (new_hash, user['id']))
-                conn.commit()
+                # Rehash with bcrypt for next login (if column exists)
+                if password_version_available:
+                    new_hash = AuthManager.hash_password(password)
+                    try:
+                        c.execute('UPDATE users SET password = ?, password_version = 1 WHERE id = ?', (new_hash, user['id']))
+                        conn.commit()
+                    except Exception as update_err:
+                        logger.warning("Failed to update password_version: %s", update_err)
+                        conn.rollback()
             else:
                 # Modern bcrypt hash
                 if not AuthManager.verify_password(password, stored_pw):
@@ -74,12 +93,23 @@ class AuthManager:
             full_name = f"{first_name} {last_name}"
 
             columns = self.db.get_table_columns('users', cursor=c)
+            has_password_version = 'password_version' in columns
+            has_manager_id = 'manager_id' in columns
 
-            if 'manager_id' in columns:
+            # ─────────────────────────────────────────────────────────────
+            # DEFENSIVE: Build INSERT based on available columns
+            # ─────────────────────────────────────────────────────────────
+            if has_password_version and has_manager_id:
                 c.execute('INSERT INTO users (name, email, password, password_version, role, manager_id) VALUES (?, ?, ?, 1, ?, ?)',
                          (full_name, email, hashed_pw, role, manager_id))
-            else:
+            elif has_password_version:
                 c.execute('INSERT INTO users (name, email, password, password_version, role) VALUES (?, ?, ?, 1, ?)',
+                         (full_name, email, hashed_pw, role))
+            elif has_manager_id:
+                c.execute('INSERT INTO users (name, email, password, role, manager_id) VALUES (?, ?, ?, ?, ?)',
+                         (full_name, email, hashed_pw, role, manager_id))
+            else:
+                c.execute('INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)',
                          (full_name, email, hashed_pw, role))
                 
             user_id = c.lastrowid

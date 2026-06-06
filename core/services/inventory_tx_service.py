@@ -45,26 +45,43 @@ def create_import_transaction(db_conn, user_id, payload):
         )
         import_id = cursor.lastrowid
 
+        products_updated = 0
+        products_created = 0
+
         for item in items:
             product_id = item.get("product_id")
+            product_code = item.get("product_code")
             product_name = item.get("product_name")
             quantity = int(item["quantity"])
             unit_price = float(item["unit_price"])
             total_price = quantity * unit_price
 
-            if not product_id and product_name:
-                cursor.execute("SELECT id FROM products WHERE name = ?", (product_name,))
-                row = cursor.fetchone()
-                if row:
-                    product_id = row[0]
-                else:
-                    p_code = f"P-{datetime.now().strftime('%H%M%S')}-{secrets.token_hex(2).upper()}"
-                    cursor.execute(
-                        """INSERT INTO products (code, name, price, stock_quantity, created_by)
-                           VALUES (?, ?, ?, 0, ?)""",
-                        (p_code, product_name, unit_price, user_id),
-                    )
-                    product_id = cursor.lastrowid
+            if not product_id:
+                # Look up by code first, then by name
+                if product_code:
+                    cursor.execute("SELECT id FROM products WHERE code = ?", (product_code,))
+                    row = cursor.fetchone()
+                    if row:
+                        product_id = row[0]
+                        products_updated += 1
+
+                if not product_id and product_name:
+                    cursor.execute("SELECT id FROM products WHERE name = ?", (product_name,))
+                    row = cursor.fetchone()
+                    if row:
+                        product_id = row[0]
+                        products_updated += 1
+                    else:
+                        p_code = product_code or f"P-{datetime.now().strftime('%H%M%S')}-{secrets.token_hex(2).upper()}"
+                        cursor.execute(
+                            """INSERT INTO products (code, name, price, stock_quantity, created_by)
+                               VALUES (?, ?, ?, 0, ?)""",
+                            (p_code, product_name, unit_price, user_id),
+                        )
+                        product_id = cursor.lastrowid
+                        products_created += 1
+            else:
+                products_updated += 1
 
             if product_id:
                 cursor.execute(
@@ -79,7 +96,12 @@ def create_import_transaction(db_conn, user_id, payload):
                 )
 
         db_conn.commit()
-        return {"id": import_id, "message": "Import created successfully"}
+        return {
+            "id": import_id,
+            "message": "Import created successfully",
+            "products_updated": products_updated,
+            "products_created": products_created,
+        }
 
     except ServiceValidationError:
         db_conn.rollback()

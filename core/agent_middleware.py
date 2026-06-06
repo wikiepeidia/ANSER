@@ -1,6 +1,8 @@
 import json
 import re
-try: from json_repair import repair_json
+
+try: 
+    from json_repair import repair_json
 except Exception: repair_json = None
 
 from core.logger import get_logger

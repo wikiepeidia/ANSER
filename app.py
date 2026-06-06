@@ -118,10 +118,10 @@ def create_app(config_object=None):
             'object-src': ["'none'"],
             'frame-ancestors': ["'none'"],
         },
-        strict_transport_security=True,
+        strict_transport_security=False,  # HTTP local dev — enable in prod via reverse proxy
         frame_options='DENY',
         x_content_type_options=True,
-        session_cookie_secure=True,
+        session_cookie_secure=False,  # must be False when running on HTTP
         force_file_save=False,
     )
 
@@ -193,6 +193,12 @@ def create_app(config_object=None):
         flash('Security check failed. Please refresh the page and try again.', 'error')
         referer = request.referrer or url_for('auth.signin')
         return redirect(referer)
+
+    @flask_app.errorhandler(Exception)
+    def handle_api_exception(error):
+        if request.path.startswith('/api/'):
+            return jsonify({'success': False, 'message': str(error)}), 500
+        raise error
 
     # ── Blueprint registration ─────────────────────────────────────────────
     from routes.auth_routes import auth_bp

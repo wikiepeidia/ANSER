@@ -64,15 +64,36 @@ function updateStats() {
     document.getElementById('totalAmount').textContent = total.toLocaleString('en-US') + ' VND';
 }
 
+function buildImportSuccessMessage(data, itemCount, supplierName, source) {
+    const updated = data.products_updated || 0;
+    const created = data.products_created || 0;
+    const parts = [];
+    if (updated > 0) parts.push(`${updated} sản phẩm cập nhật tồn kho`);
+    if (created > 0) parts.push(`${created} sản phẩm mới được thêm`);
+    const summary = parts.length > 0 ? parts.join(', ') : `${itemCount} sản phẩm đã xử lý`;
+    return `${summary}${source ? ` (${source})` : ''}. Nhà cung cấp: ${supplierName || '-'}`;
+}
+
 function showAlert(type, message) {
     const alertDiv = document.createElement('div');
-    alertDiv.className = `alert alert-${type === 'success' ? 'success' : 'danger'} alert-dismissible fade show`;
+    const alertClass = type === 'success' ? 'success' : (type === 'warning' ? 'warning' : 'danger');
+    alertDiv.className = `alert alert-${alertClass} alert-dismissible fade show`;
+    alertDiv.style.position = 'fixed';
+    alertDiv.style.top = '20px';
+    alertDiv.style.right = '20px';
+    alertDiv.style.zIndex = '9999';
+    alertDiv.style.minWidth = '350px';
     alertDiv.innerHTML = `
+        <strong>${type === 'success' ? '✅ Thành công!' : '❌ Lỗi!'}</strong><br>
         ${message}
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     `;
-    document.querySelector('main').insertBefore(alertDiv, document.querySelector('main').firstChild);
-    setTimeout(() => alertDiv.remove(), 5000);
+    document.body.appendChild(alertDiv);
+    console.log(`[${type.toUpperCase()}] ${message}`);
+    setTimeout(() => {
+        alertDiv.classList.remove('show');
+        setTimeout(() => alertDiv.remove(), 300);
+    }, 7000);
 }
 
 // Create Import Logic
@@ -151,7 +172,18 @@ async function submitImport() {
             form.reset();
             document.getElementById('importItemsBody').innerHTML = '';
             loadImports();
-            showAlert('success', 'Import created successfully');
+            
+            // Show success modal
+            const successMessage = document.getElementById('successMessage');
+            successMessage.textContent = buildImportSuccessMessage(data, items.length, supplier_name, null);
+
+            const successModal = new bootstrap.Modal(document.getElementById('successModal'));
+            successModal.show();
+
+            // Auto-close after 5 seconds
+            setTimeout(() => {
+                successModal.hide();
+            }, 5000);
         } else {
             alert(data.message);
         }
@@ -430,7 +462,18 @@ document.addEventListener('DOMContentLoaded', function() {
                     const modal = bootstrap.Modal.getInstance(document.getElementById('ocrImportModal'));
                     modal.hide();
                     loadImports(); // Reload table
-                    showAlert('success', 'Import created successfully!');
+                    
+                    // Show success modal
+                    const successMessage = document.getElementById('successMessage');
+                    successMessage.textContent = buildImportSuccessMessage(data, items.length, payload.supplier_name, 'OCR');
+                    
+                    const successModal = new bootstrap.Modal(document.getElementById('successModal'));
+                    successModal.show();
+                    
+                    // Auto-close after 5 seconds
+                    setTimeout(() => {
+                        successModal.hide();
+                    }, 5000);
                     
                     // Reset OCR form
                     if (ocrItemsBody) ocrItemsBody.innerHTML = '';
@@ -450,4 +493,247 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+
+// Excel Import Logic
+document.addEventListener('DOMContentLoaded', function() {
+    const excelFile = document.getElementById('excelFile');
+    const excelLoading = document.getElementById('excelLoading');
+    const excelPreview = document.getElementById('excelPreview');
+    const excelItemsBody = document.getElementById('excelItemsBody');
+    const btnUploadExcel = document.getElementById('btnUploadExcel');
+    const btnClearExcelFile = document.getElementById('btnClearExcelFile');
+    const excelWarnings = document.getElementById('excelWarnings');
+    
+    let parsedData = null;
+    
+    if (excelFile) {
+        excelFile.addEventListener('change', async function(e) {
+            const file = e.target.files[0];
+            if (!file) {
+                excelPreview.style.display = 'none';
+                btnUploadExcel.disabled = true;
+                parsedData = null;
+                return;
+            }
+            
+            // Show loading
+            excelLoading.style.display = 'block';
+            excelPreview.style.display = 'none';
+            btnUploadExcel.disabled = true;
+            
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            try {
+                const response = await fetch('/api/imports/upload/excel', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    parsedData = data.items;
+                    renderExcelPreview(data.items);
+                    excelPreview.style.display = 'block';
+                    btnUploadExcel.disabled = false;
+                    
+                    // Show warnings if any
+                    if (data.warnings && data.warnings.length > 0) {
+                        excelWarnings.innerHTML = '<strong>Warnings:</strong><br>' + data.warnings.join('<br>');
+                        excelWarnings.style.display = 'block';
+                    } else {
+                        excelWarnings.style.display = 'none';
+                    }
+                } else {
+                    alert('Error parsing Excel file: ' + data.error);
+                    excelFile.value = '';
+                    excelPreview.style.display = 'none';
+                    btnUploadExcel.disabled = true;
+                    parsedData = null;
+                }
+            } catch (error) {
+                console.error('Excel upload error:', error);
+                alert('Error uploading Excel file: ' + error.message);
+                excelFile.value = '';
+                excelPreview.style.display = 'none';
+                btnUploadExcel.disabled = true;
+                parsedData = null;
+            } finally {
+                excelLoading.style.display = 'none';
+            }
+        });
+    }
+    
+    if (btnClearExcelFile) {
+        btnClearExcelFile.addEventListener('click', function() {
+            excelFile.value = '';
+            excelPreview.style.display = 'none';
+            btnUploadExcel.disabled = true;
+            excelItemsBody.innerHTML = '';
+            excelWarnings.style.display = 'none';
+            parsedData = null;
+        });
+    }
+    
+    function renderExcelPreview(items) {
+        if (!items || items.length === 0) {
+            excelItemsBody.innerHTML = '<tr><td colspan="5" class="text-center">No items found</td></tr>';
+            return;
+        }
+        
+        excelItemsBody.innerHTML = items.map((item, idx) => `
+            <tr data-index="${idx}">
+                <td>
+                    <input type="text" class="form-control form-control-sm" value="${item.product_code || ''}" placeholder="Product code" data-field="product_code">
+                </td>
+                <td>
+                    <input type="text" class="form-control form-control-sm" value="${item.product_name || ''}" placeholder="Product name" data-field="product_name">
+                </td>
+                <td>
+                    <input type="number" class="form-control form-control-sm" value="${item.quantity || 0}" min="0" data-field="quantity">
+                </td>
+                <td>
+                    <input type="number" class="form-control form-control-sm" value="${item.unit_price || 0}" min="0" data-field="unit_price">
+                </td>
+                <td>
+                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="this.closest('tr').remove()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </td>
+            </tr>
+        `).join('');
+    }
+});
+
+// Excel Import Submit Function
+async function submitExcelImport() {
+    console.log('📤 Submitting Excel import...');
+    const form = document.getElementById('excelImportForm');
+    if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
+    }
+    
+    const supplier_name = form.querySelector('[name="supplier_name"]').value;
+    const notes = form.querySelector('[name="notes"]').value;
+    
+    // Collect edited data from preview table
+    const items = [];
+    document.querySelectorAll('#excelItemsBody tr').forEach(row => {
+        const product_code = row.querySelector('[data-field="product_code"]')?.value || '';
+        const product_name = row.querySelector('[data-field="product_name"]')?.value || '';
+        const quantity = parseFloat(row.querySelector('[data-field="quantity"]')?.value || 0);
+        const unit_price = parseFloat(row.querySelector('[data-field="unit_price"]')?.value || 0);
+        
+        if (product_code && quantity > 0 && unit_price > 0) {
+            items.push({ product_code, product_name, quantity, unit_price });
+        }
+    });
+    
+    console.log(`📦 Prepared ${items.length} items for import`, items);
+    
+    if (items.length === 0) {
+        showAlert('warning', 'Vui lòng đảm bảo ít nhất 1 sản phẩm có mã, số lượng và giá');
+        return;
+    }
+    
+    const btnUploadExcel = document.getElementById('btnUploadExcel');
+    const originalText = btnUploadExcel.innerHTML;
+    
+    try {
+        btnUploadExcel.disabled = true;
+        btnUploadExcel.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Đang tạo...';
+        
+        console.log('🔄 Calling API /api/imports...');
+        // Create import with the parsed items
+        const response = await fetch('/api/imports', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
+            },
+            body: JSON.stringify({ supplier_name, notes, items })
+        });
+        
+        console.log(`📡 API Response Status: ${response.status}`);
+        const data = await response.json();
+        console.log('📨 API Response Data:', data);
+        
+        if (data.success) {
+            console.log('✅ Import successful!');
+            // Hide modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('excelImportModal'));
+            modal.hide();
+            
+            // Reset form
+            form.reset();
+            document.getElementById('excelItemsBody').innerHTML = '';
+            document.getElementById('excelPreview').style.display = 'none';
+            document.getElementById('excelFile').value = '';
+            
+            // Reload imports table
+            loadImports();
+            
+            // Update success message
+            const successMessage = document.getElementById('successMessage');
+            successMessage.textContent = buildImportSuccessMessage(data, items.length, supplier_name, 'Excel');
+            
+            console.log('🎯 Opening success modal...');
+            
+            // Small delay then show modal
+            setTimeout(() => {
+                try {
+                    const successModalElement = document.getElementById('successModal');
+                    if (successModalElement) {
+                        // Force remove any previous instances
+                        const existingModal = bootstrap.Modal.getInstance(successModalElement);
+                        if (existingModal) existingModal.dispose();
+                        
+                        // Create and show new modal
+                        const successModal = new bootstrap.Modal(successModalElement, {
+                            backdrop: 'static',
+                            keyboard: false
+                        });
+                        successModal.show();
+                        console.log('✅ Modal shown successfully!');
+                        
+                        // Auto-close after 4 seconds
+                        setTimeout(() => {
+                            console.log('⏰ Auto-closing modal...');
+                            successModal.hide();
+                        }, 4000);
+                    } else {
+                        console.error('❌ Modal element not found');
+                        showAlert('success', `✨ Đã nhập thành công ${items.length} sản phẩm từ file Excel`);
+                    }
+                } catch (e) {
+                    console.error('❌ Error showing modal:', e);
+                    showAlert('success', `✨ Đã nhập thành công ${items.length} sản phẩm từ file Excel`);
+                }
+            }, 300);
+        } else {
+            console.error('❌ Import failed:', data.message);
+            showAlert('danger', 'Lỗi tạo import: ' + data.message);
+        }
+    } catch (error) {
+        console.error('🔴 Exception:', error);
+        showAlert('danger', 'Lỗi: ' + error.message);
+    } finally {
+        btnUploadExcel.disabled = false;
+        btnUploadExcel.innerHTML = originalText;
+    }
+}
+
+// Download Excel Template
+function downloadExcelTemplate() {
+    try {
+        window.location.href = '/api/imports/download/template';
+    } catch (error) {
+        alert('Error downloading template: ' + error.message);
+    }
+}
 

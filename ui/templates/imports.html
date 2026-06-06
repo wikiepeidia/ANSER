@@ -5,6 +5,20 @@
 {% block styles %}
 {{ super() }}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/admin_imports.css') }}">
+<style>
+    #successModal .modal-dialog {
+        z-index: 9999;
+    }
+    #successModal .modal-backdrop {
+        z-index: 9998;
+    }
+    #successModal .modal-content {
+        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    }
+    #successModal {
+        z-index: 9999 !important;
+    }
+</style>
 {% endblock %}
 
 {% block scripts %}
@@ -27,6 +41,9 @@
                 </button>
                 <button class="btn btn-info text-white me-2" data-bs-toggle="modal" data-bs-target="#ocrImportModal">
                     <i class="fas fa-magic"></i> OCR Invoice
+                </button>
+                <button class="btn btn-success me-2" data-bs-toggle="modal" data-bs-target="#excelImportModal">
+                    <i class="fas fa-file-excel"></i> Import Excel
                 </button>
                 <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createImportModal">
                     <i class="fas fa-plus"></i> Create Import
@@ -241,6 +258,98 @@
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                 <button type="button" class="btn btn-primary" id="btnSaveOcrImport" disabled>Create Import</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Excel Import Modal -->
+<div class="modal fade" id="excelImportModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-file-excel"></i> Import from Excel</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> Upload an Excel file (.xlsx) with product import data.
+                    <a href="javascript:downloadExcelTemplate()" class="alert-link"><i class="fas fa-download"></i> Download Template</a>
+                </div>
+
+                <form id="excelImportForm">
+                    <div class="mb-3">
+                        <label class="form-label">Supplier Name</label>
+                        <input type="text" class="form-control" name="supplier_name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Notes</label>
+                        <textarea class="form-control" name="notes" rows="2"></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Excel File</label>
+                        <div class="input-group">
+                            <input type="file" class="form-control" id="excelFile" accept=".xlsx,.xls" required>
+                            <button type="button" class="btn btn-outline-secondary" id="btnClearExcelFile">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        <small class="text-muted">Supported formats: Excel (.xlsx, .xls)</small>
+                    </div>
+
+                    <div id="excelLoading" style="display:none;">
+                        <div class="progress mb-2" style="height: 25px;">
+                            <div id="excelProgressBar" class="progress-bar progress-bar-striped progress-bar-animated"
+                                role="progressbar" style="width: 50%">Processing...</div>
+                        </div>
+                    </div>
+
+                    <div id="excelPreview" style="display:none;">
+                        <h6>Preview Data <small class="text-muted">(editable)</small>:</h6>
+                        <div class="table-responsive">
+                            <table class="table table-sm table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th>Product Code</th>
+                                        <th>Product Name</th>
+                                        <th width="80">Quantity</th>
+                                        <th width="120">Unit Price</th>
+                                        <th width="40"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="excelItemsBody"></tbody>
+                            </table>
+                        </div>
+                        <div id="excelWarnings" class="alert alert-warning small" style="display:none;"></div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="btnUploadExcel" onclick="submitExcelImport()" disabled>
+                    <i class="fas fa-upload"></i> Upload & Create Import
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Success Modal -->
+<div class="modal fade" id="successModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-body text-center py-5">
+                <div class="mb-4">
+                    <div style="font-size: 64px; color: #28a745;">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                </div>
+                <h4 class="mb-3 text-success"><strong>Đã cập nhật sản phẩm thành công</strong></h4>
+                <p class="text-muted mb-4" id="successMessage">Các sản phẩm đã được nhập vào kho thành công</p>
+                <button type="button" class="btn btn-success btn-lg" data-bs-dismiss="modal">
+                    <i class="fas fa-check"></i> Đóng
+                </button>
             </div>
         </div>
     </div>
