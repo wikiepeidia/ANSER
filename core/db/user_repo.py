@@ -149,9 +149,65 @@ class UserRepo:
             for row in c.fetchall()
         ]
 
+    def get_all_users(self, role_filter=None):
+        c = self.conn.cursor()
+        query = 'SELECT id, email, first_name, last_name, role, created_at FROM users'
+        params = []
+        if role_filter:
+            query += ' WHERE role = ?'
+            params.append(role_filter)
+        query += ' ORDER BY created_at DESC'
+        
+        try:
+            c.execute(query, tuple(params))
+        except Exception:
+            # Fallback for legacy schema
+            query = query.replace('first_name, last_name', 'name')
+            c.execute(query, tuple(params))
+            
+        return [self._standardize_user(row, include_created_at=True) for row in c.fetchall()]
+
+    def get_users_for_manager(self, manager_id, role_filter=None):
+        c = self.conn.cursor()
+        query = 'SELECT id, email, first_name, last_name, role, created_at FROM users WHERE manager_id = ?'
+        params = [manager_id]
+        if role_filter:
+            query += ' AND role = ?'
+            params.append(role_filter)
+        query += ' ORDER BY created_at DESC'
+        
+        try:
+            c.execute(query, tuple(params))
+        except Exception:
+            # Fallback for legacy schema
+            query = query.replace('first_name, last_name', 'name')
+            c.execute(query, tuple(params))
+            
+        return [self._standardize_user(row, include_created_at=True) for row in c.fetchall()]
+
+    def delete_user(self, user_id):
+        c = self.conn.cursor()
+        try:
+            c.execute('DELETE FROM users WHERE id = ?', (user_id,))
+            self.conn.commit()
+            return True
+        except Exception:
+            self.conn.rollback()
+            raise
+
+    def set_user_role(self, user_id, new_role):
+        c = self.conn.cursor()
+        try:
+            c.execute('UPDATE users SET role = ? WHERE id = ?', (new_role, user_id))
+            self.conn.commit()
+            return True
+        except Exception:
+            self.conn.rollback()
+            raise
+
     # ── helpers ──────────────────────────────────────────────────────────────
 
-    def _standardize_user(self, row, include_password=False):
+    def _standardize_user(self, row, include_password=False, include_created_at=False):
         """Standardize user dictionary schema."""
         # Handle cases where name might be full name or just first name
         name = row.get('name', '')
@@ -169,10 +225,14 @@ class UserRepo:
             'email': row['email'],
             'first_name': first_name,
             'last_name': last_name,
+            'name': f"{first_name} {last_name}".strip(),
             'role': row.get('role', 'user'),
             'google_token': row.get('google_token'),
             'avatar': row.get('avatar'),
         }
+
+        if include_created_at:
+            user['created_at'] = row.get('created_at')
 
         if include_password:
             user['password'] = row.get('password')

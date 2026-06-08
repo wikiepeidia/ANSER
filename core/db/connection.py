@@ -487,6 +487,34 @@ class Database:
         finally:
             conn.close()
 
+    def get_all_users(self, role_filter=None):
+        conn = self.get_connection()
+        try:
+            return self._user_repo(conn).get_all_users(role_filter)
+        finally:
+            conn.close()
+
+    def get_users_for_manager(self, manager_id, role_filter=None):
+        conn = self.get_connection()
+        try:
+            return self._user_repo(conn).get_users_for_manager(manager_id, role_filter)
+        finally:
+            conn.close()
+
+    def delete_user(self, user_id):
+        conn = self.get_connection()
+        try:
+            return self._user_repo(conn).delete_user(user_id)
+        finally:
+            conn.close()
+
+    def set_user_role(self, user_id, new_role):
+        conn = self.get_connection()
+        try:
+            return self._user_repo(conn).set_user_role(user_id, new_role)
+        finally:
+            conn.close()
+
     # Activity
 
     def get_recent_activities(self, limit=20):
