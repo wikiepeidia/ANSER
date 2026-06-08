@@ -16,15 +16,11 @@ admin_user_bp = Blueprint('admin_users', __name__)
 def admin_get_users():
     if not hasattr(current_user, 'role') or current_user.role != 'admin':
         return jsonify({'success': False, 'message': 'Không có quyền truy cập'}), 403
-    conn = db_manager.get_connection()
-    c = conn.cursor()
-    c.execute('SELECT id, email, name, role, created_at FROM users ORDER BY created_at DESC')
-    users = c.fetchall()
-    conn.close()
-    return jsonify({'success': True, 'users': [
-        {'id': u[0], 'email': u[1], 'name': u[2], 'role': u[3], 'created_at': u[4]}
-        for u in users
-    ]})
+    try:
+        users = get_all_users()
+        return jsonify({'success': True, 'users': users})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
 
 
 @admin_user_bp.route('/api/admin/activity')
@@ -53,7 +49,16 @@ def admin_create_manager():
     if not data or 'email' not in data or 'name' not in data or 'password' not in data:
         return jsonify({'success': False, 'message': 'Thiếu các trường bắt buộc'}), 400
     try:
-        user_id = db_manager.create_user(data['email'], data['password'], data['name'], role='manager')
+        # Split name for the new create_user signature
+        name_parts = data['name'].split()
+        first_name = name_parts[0] if name_parts else ''
+        last_name = ' '.join(name_parts[1:]) if len(name_parts) > 1 else ''
+        
+        user_id = db_manager.create_user(
+            data['email'], data['password'], 
+            first_name=first_name, last_name=last_name, 
+            role='manager'
+        )
         return jsonify({'success': True, 'message': 'Tạo manager thành công', 'user_id': user_id})
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 400
@@ -70,10 +75,10 @@ def create_user():
     try:
         first_name = data.get('first_name', '')
         last_name = data.get('last_name', '')
-        full_name = f'{first_name} {last_name}'.strip() or data['email'].split('@')[0]
         user_id = db_manager.create_user(
-            data['email'], data['password'], full_name, role='employee',
-            first_name=first_name, last_name=last_name, manager_id=current_user.id,
+            data['email'], data['password'], 
+            first_name=first_name, last_name=last_name, 
+            role='employee', manager_id=current_user.id,
         )
         return jsonify({'success': True, 'message': 'Tạo tài khoản nhân viên thành công', 'user_id': user_id})
     except Exception as e:
