@@ -22,32 +22,13 @@ class AuthManager:
             return False
 
     def verify_user(self, email, password):
-        conn = self.db.get_connection()
         try:
-            c = conn.cursor()
-            
-            # ─────────────────────────────────────────────────────────────
-            # DEFENSIVE: Try to select password_version; if column doesn't
-            # exist (PostgreSQL missing column), fall back to legacy sha256
-            # ─────────────────────────────────────────────────────────────
-            try:
-                c.execute('SELECT id, email, name, avatar, role, google_token, password, password_version FROM users WHERE email = ?',
-                         (email,))
-                user = c.fetchone()
-                password_version_available = True
-            except Exception as schema_err:
-                # Column doesn't exist — fetch without it and assume version 0
-                logger.warning("password_version column not found (schema error: %s) — falling back to legacy mode", schema_err)
-                c.execute('SELECT id, email, name, avatar, role, google_token, password FROM users WHERE email = ?',
-                         (email,))
-                user = c.fetchone()
-                password_version_available = False
-
+            user = self.db.get_user_by_email(email)
             if not user:
                 return None
 
-            stored_pw = user['password']
-            password_version = 0 if not password_version_available else (user['password_version'] or 0)
+            stored_pw = user.get('password')
+            password_version = user.get('password_version', 0)
 
             # Old sha256 hashes have version 0, bcrypt hashes have version 1
             if password_version == 0:
@@ -56,25 +37,20 @@ class AuthManager:
                 legacy_hash = hashlib.sha256(password.encode()).hexdigest()
                 if legacy_hash != stored_pw:
                     return None
-                # Rehash with bcrypt for next login (if column exists)
-                if password_version_available:
-                    new_hash = AuthManager.hash_password(password)
-                    try:
-                        c.execute('UPDATE users SET password = ?, password_version = 1 WHERE id = ?', (new_hash, user['id']))
-                        conn.commit()
-                    except Exception as update_err:
-                        logger.warning("Failed to update password_version: %s", update_err)
-                        conn.rollback()
+                # Rehash with bcrypt for next login
+                new_hash = AuthManager.hash_password(password)
+                self.db.update_password(user['id'], new_hash, version=1)
             else:
                 # Modern bcrypt hash
                 if not AuthManager.verify_password(password, stored_pw):
                     return None
 
+            # Return standardized user dictionary (without password)
             return {
                 'id': user['id'],
                 'email': user['email'],
-                'first_name': user['name'].split()[0] if user['name'] else '',
-                'last_name': ' '.join(user['name'].split()[1:]) if user['name'] and len(user['name'].split()) > 1 else '',
+                'first_name': user['first_name'],
+                'last_name': user['last_name'],
                 'avatar': user['avatar'],
                 'role': user['role'],
                 'google_token': user['google_token'],
@@ -82,45 +58,17 @@ class AuthManager:
         except Exception as e:
             logger.error("Error verifying user: %s", e, exc_info=True)
             return None
-        finally:
-            conn.close()
     
     def register_user(self, email, password, first_name, last_name, phone='', role='manager', manager_id=None):
-        conn = self.db.get_connection()
-        c = conn.cursor()
         try:
-            hashed_pw = AuthManager.hash_password(password)
-            full_name = f"{first_name} {last_name}"
-
-            columns = self.db.get_table_columns('users', cursor=c)
-            has_password_version = 'password_version' in columns
-            has_manager_id = 'manager_id' in columns
-
-            # ─────────────────────────────────────────────────────────────
-            # DEFENSIVE: Build INSERT based on available columns
-            # ─────────────────────────────────────────────────────────────
-            if has_password_version and has_manager_id:
-                c.execute('INSERT INTO users (name, email, password, password_version, role, manager_id) VALUES (?, ?, ?, 1, ?, ?)',
-                         (full_name, email, hashed_pw, role, manager_id))
-            elif has_password_version:
-                c.execute('INSERT INTO users (name, email, password, password_version, role) VALUES (?, ?, ?, 1, ?)',
-                         (full_name, email, hashed_pw, role))
-            elif has_manager_id:
-                c.execute('INSERT INTO users (name, email, password, role, manager_id) VALUES (?, ?, ?, ?, ?)',
-                         (full_name, email, hashed_pw, role, manager_id))
-            else:
-                c.execute('INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)',
-                         (full_name, email, hashed_pw, role))
-                
-            user_id = c.lastrowid
-            
-            # Create default personal workspace
-            c.execute('''INSERT INTO workspaces (user_id, name, type, description) 
-                        VALUES (?, ?, ?, ?)''',
-                     (user_id, f"{first_name}'s Personal Workspace", 'personal', 
-                      'Your personal productivity space'))
-            
-            conn.commit()
+            user_id = self.db.create_user(
+                email=email,
+                password=password,
+                first_name=first_name,
+                last_name=last_name,
+                role=role,
+                manager_id=manager_id
+            )
             
             # Send Welcome Email
             try:
@@ -147,46 +95,31 @@ Trân trọng,
 
             return True, "Đăng ký thành công!"
         except Exception as e:
+            if 'Email exists' in str(e):
+                return False, "Email đã được sử dụng!"
             logger.error("Error creating user %s: %s", email, e, exc_info=True)
-            return False, "Email đã được sử dụng!"
-        finally:
-            conn.close()
+            return False, f"Lỗi đăng ký: {str(e)}"
     
     def get_user_by_id(self, user_id):
-        conn = self.db.get_connection()
         try:
-            c = conn.cursor()
-            c.execute('SELECT id, email, name, avatar, role, google_token FROM users WHERE id = ?', (user_id,))
-            user = c.fetchone()
-            
-            if user:
-                return {
-                    'id': user['id'],
-                    'email': user['email'],
-                    'first_name': user['name'].split()[0] if user['name'] else '',
-                    'last_name': ' '.join(user['name'].split()[1:]) if user['name'] and len(user['name'].split()) > 1 else '',
-                    'avatar': user['avatar'],
-                    'role': user['role'],
-                    'google_token': user['google_token'],
-                }
-            return None
+            return self.db.get_user_by_id(user_id)
         except Exception as e:
             logger.error("Error getting user by id %s: %s", user_id, e, exc_info=True)
             return None
-        finally:
-            conn.close()
+
+    def get_user_by_email(self, email):
+        try:
+            return self.db.get_user_by_email(email)
+        except Exception as e:
+            logger.error("Error getting user by email %s: %s", email, e, exc_info=True)
+            return None
     
     def get_user_workspaces(self, user_id):
-        conn = self.db.get_connection()
-        c = conn.cursor()
-        c.execute(
-            'SELECT id, user_id, name, type, description, is_active, created_at'
-            ' FROM workspaces WHERE user_id = ? ORDER BY created_at',
-            (user_id,),
-        )
-        workspaces = c.fetchall()
-        conn.close()
-        return workspaces
+        try:
+            return self.db.get_user_workspaces(user_id)
+        except Exception as e:
+            logger.error("Error getting user workspaces for %s: %s", user_id, e, exc_info=True)
+            return []
     
     @staticmethod
     def login_required(f):

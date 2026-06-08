@@ -448,13 +448,26 @@ class Database:
         finally:
             conn.close()
 
-    def create_user(self, email, password, name, role='user',
-                    first_name=None, last_name=None, manager_id=None):
+    def get_user_by_email(self, email):
+        conn = self.get_connection()
+        try:
+            return self._user_repo(conn).get_user_by_email(email)
+        finally:
+            conn.close()
+
+    def create_user(self, email, password, first_name, last_name, role='user', manager_id=None):
         conn = self.get_connection()
         try:
             return self._user_repo(conn).create_user(
-                email, password, name, role, first_name, last_name, manager_id,
+                email, password, first_name, last_name, role, manager_id,
             )
+        finally:
+            conn.close()
+
+    def update_password(self, user_id, hashed_password, version=1):
+        conn = self.get_connection()
+        try:
+            return self._user_repo(conn).update_password(user_id, hashed_password, version)
         finally:
             conn.close()
 
