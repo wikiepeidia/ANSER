@@ -1,6 +1,7 @@
 import json
 import re
 import os
+from collections import deque
 from .google_integration import read_sheet, read_doc, write_doc, write_sheet, send_email
 from .make_integration import trigger_webhook
 from .services.dl_client import DLClient
@@ -110,11 +111,11 @@ def execute_workflow(workflow_data, token_info=None):
             in_degree[target] += 1
             
     # 2. Topological Sort (Kahn's Algorithm)
-    queue = [node_id for node_id in nodes if in_degree[node_id] == 0]
+    queue = deque([node_id for node_id in nodes if in_degree[node_id] == 0])
     execution_order = []
     
     while queue:
-        current_id = queue.pop(0)
+        current_id = queue.popleft()
         execution_order.append(current_id)
         
         for neighbor in adj_list[current_id]:
