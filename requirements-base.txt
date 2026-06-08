@@ -34,3 +34,7 @@ passlib[bcrypt]
 python-dotenv
 psycopg2-binary
 gdown
+
+# Async Tasks
+redis>=5.0.0
+rq>=1.16.0
