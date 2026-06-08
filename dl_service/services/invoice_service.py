@@ -1,4 +1,5 @@
 from datetime import datetime
+from collections import deque
 import cv2
 
 from utils.invoice_processor import parse_products_from_text, extract_products_from_text, load_product_catalogs, build_catalog_index
@@ -12,7 +13,7 @@ from services.layout_service import detect_layout_regions, crop_region, get_layo
 logger = get_logger(__name__)
 
 # Storage for invoice history (in-memory),backward compatibility
-invoice_history = []
+invoice_history = deque(maxlen=50)
 
 accuracy_stats = {
     'layout_conf_sum': 0.0,
@@ -188,8 +189,6 @@ def process_invoice_image(image):
 
     # save to memory history (backward compatibility)
     invoice_history.append(invoice_data)
-    if len(invoice_history) > 50:#Keep50 invoices
-        invoice_history.pop(0)
 
     logger.info(f"[MODEL 1] Invoice detection completed:")
     logger.info(f" - Invoice ID: {invoice_data['invoice_id']}")
@@ -268,8 +267,7 @@ def get_invoice_history(limit=10):
 
 def clear_invoice_history():
     
-    global invoice_history
-    invoice_history = []
+    invoice_history.clear()
 
     try:
         from utils.database import clear_database
