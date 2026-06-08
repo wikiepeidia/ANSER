@@ -1,7 +1,7 @@
 ---
 name: gsd-ai-researcher
 description: "Researches a chosen AI framework's official docs to produce implementation-ready guidance — best practices, syntax, core patterns, and pitfalls distilled for the specific use case. Writes the Framework Quick Reference and Implementation Guidance sections of AI-SPEC.md. Spawned by /gsd-ai-integration-phase orchestrator."
-tools: read_file, write_file, run_shell_command, search_file_content, glob, web_fetch, google_web_search
+tools: read_file, write_file, replace, run_shell_command, search_file_content, glob, web_fetch, google_web_search
 color: #34D399
 ---
 
@@ -35,7 +35,7 @@ works via Bash and produces equivalent output.
 </documentation_lookup>
 
 <required_reading>
-Read `.agent/get-shit-done/references/ai-frameworks.md` for framework profiles and known pitfalls before fetching docs.
+Read `.agent/gsd-core/references/ai-frameworks.md` for framework profiles and known pitfalls before fetching docs.
 </required_reading>
 
 <input>

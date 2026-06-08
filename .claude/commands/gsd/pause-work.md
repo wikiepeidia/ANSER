@@ -1,11 +1,12 @@
 ---
-name: gsd:pause-work
+name: gsd-pause-work
 description: Create context handoff when pausing work mid-phase
 argument-hint: "[--report]"
 allowed-tools:
   - Read
   - Write
   - Bash
+requires: [phase, progress]
 ---
 
 <objective>
@@ -20,7 +21,7 @@ Routes to the pause-work workflow which handles:
 </objective>
 
 <execution_context>
-@C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.claude/get-shit-done/workflows/pause-work.md
+@C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.claude/gsd-core/workflows/pause-work.md
 </execution_context>
 
 <context>
@@ -29,7 +30,7 @@ State and phase progress are gathered in-workflow with targeted reads.
 
 <process>
 If `--report` is in $ARGUMENTS:
-Read and execute `C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.claude/get-shit-done/workflows/session-report.md` end-to-end.
+Read and execute `C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.claude/gsd-core/workflows/session-report.md` end-to-end.
 
 **Follow the pause-work workflow**.
 

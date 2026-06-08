@@ -9,6 +9,7 @@ color: yellow
 #       hooks:
 #         - type: command
 #           command: "true"
+effort: low
 ---
 
 <role>

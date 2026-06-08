@@ -1,7 +1,7 @@
 ---
 name: gsd-ui-researcher
 description: "Produces UI-SPEC.md design contract for frontend phases. Reads upstream artifacts, detects design system state, asks only unanswered questions. Spawned by /gsd-ui-phase orchestrator."
-tools: read_file, write_file, run_shell_command, search_file_content, glob, google_web_search, web_fetch
+tools: read_file, write_file, replace, run_shell_command, search_file_content, glob, google_web_search, web_fetch
 color: #E879F9
 ---
 
@@ -221,7 +221,7 @@ Scan the output for suspicious patterns:
 
 ## Output: UI-SPEC.md
 
-Use template from `.agent/get-shit-done/templates/UI-SPEC.md`.
+Use template from `.agent/gsd-core/templates/UI-SPEC.md`.
 
 Write to: `$PHASE_DIR/$PADDED_PHASE-UI-SPEC.md`
 
@@ -280,14 +280,27 @@ Batch questions into a single interaction where possible.
 
 ## Step 5: Compile UI-SPEC.md
 
-Read template: `.agent/get-shit-done/templates/UI-SPEC.md`
+Read template: `.agent/gsd-core/templates/UI-SPEC.md`
 
 Fill all sections. Write to `$PHASE_DIR/$PADDED_PHASE-UI-SPEC.md`.
+
+**Write contract (hard rules — must follow):**
+
+This file is the canonical output of this agent. The orchestrator reads `$PHASE_DIR/$PADDED_PHASE-UI-SPEC.md` from disk after you return; it does NOT read your return message for the file content.
+
+1. **Default: write the whole file in a single `Write` call.** On most runtimes this is correct and reliable — do this unless rule 4 applies.
+2. **Do NOT return the UI-SPEC.md content in your response.** Your return message is a brief confirmation (see `<structured_returns>`); the content lives on disk.
+3. **Do NOT use `Bash(cat << 'EOF')` or heredoc** for file creation. Use the `Write` tool.
+4. **Large-file / truncation fallback.** Some runtimes (e.g. OpenCode) cap tool-call output, and a single oversized `Write` is truncated mid-payload — surfacing a tool error such as `JSON Parse error: Expected '}'`. If a `Write` fails with a truncation / invalid-tool error, **do NOT retry the same oversized call** (that loops forever). Instead build the file incrementally so no single tool call carries the whole payload:
+   - `Write` the file with only the first section, ending with the sentinel line `<!-- gsd-write-continue -->`.
+   - `Read` the file, then `Edit` it, replacing `<!-- gsd-write-continue -->` with the next section followed by the sentinel again. Repeat, one section per `Edit`.
+   - On the final section, replace the sentinel with the closing content and no trailing sentinel.
+5. **If writing still fails, surface the actual error in your return message.** **Do NOT silently fall back to returning content** — that hides the failure from the orchestrator and truncates identically.
 
 ## Step 6: Commit (optional)
 
 ```bash
-gsd-sdk query commit "docs($PHASE): UI design contract" --files "$PHASE_DIR/$PADDED_PHASE-UI-SPEC.md"
+gsd-tools query commit "docs($PHASE): UI design contract" --files "$PHASE_DIR/$PADDED_PHASE-UI-SPEC.md"
 ```
 
 ## Step 7: Return Structured Result

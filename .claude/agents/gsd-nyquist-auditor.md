@@ -9,6 +9,7 @@ tools:
   - Glob
   - Grep
 color: "#8B5CF6"
+effort: low
 ---
 
 <role>

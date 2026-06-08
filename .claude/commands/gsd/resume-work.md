@@ -1,5 +1,5 @@
 ---
-name: gsd:resume-work
+name: gsd-resume-work
 description: Resume work from previous session with full context restoration
 allowed-tools:
   - Read
@@ -22,7 +22,7 @@ Routes to the resume-project workflow which handles:
   </objective>
 
 <execution_context>
-@C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.claude/get-shit-done/workflows/resume-project.md
+@C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.claude/gsd-core/workflows/resume-project.md
 </execution_context>
 
 <process>

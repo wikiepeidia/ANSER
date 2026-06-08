@@ -9,6 +9,7 @@ color: purple
 #       hooks:
 #         - type: command
 #           command: "npx eslint --fix $FILE 2>/dev/null || true"
+effort: xhigh
 ---
 
 <role>
@@ -202,7 +203,7 @@ Track coverage as you go.
 **Integer phases (1, 2, 3):** Planned milestone work.
 
 **Decimal phases (2.1, 2.2):** Urgent insertions after planning.
-- Created via `/gsd-insert-phase`
+- Created via `/gsd-phase --insert`
 - Execute between integers: 1 → 1.1 → 1.2 → 2
 
 **Starting number:**
@@ -215,11 +216,11 @@ Read granularity from config.json. Granularity controls compression tolerance.
 
 | Granularity | Typical Phases | What It Means |
 |-------------|----------------|---------------|
-| Coarse | 3-5 | Combine aggressively, critical path only |
-| Standard | 5-8 | Balanced grouping |
-| Fine | 8-12 | Let natural boundaries stand |
+| Coarse | 2-4 | Combine aggressively, critical path only |
+| Standard | 4-6 | Balanced grouping (tightened from 5-8 in 2026-05; downstream observation that the prior baseline encouraged ~15-20% over-fragmentation, often manifesting as thin "maintenance" phases that would have been better folded into a neighbor) |
+| Fine | 6-10 | Let natural boundaries stand |
 
-**Key:** Derive phases from work, then apply granularity as compression guidance. Don't pad small projects or compress complex ones.
+**Key:** Derive phases from work, then apply granularity as compression guidance. Don't pad small projects or compress complex ones. When a phase you are about to write would have a single requirement, an internal-quality goal ("improve X", "refactor Y", "add tests for Z"), or success criteria that read as tasks rather than user-observable outcomes, prefer to fold it into the most-related neighbor instead of creating a standalone phase.
 
 ## Good Phase Patterns
 
@@ -374,11 +375,11 @@ This annotation is consumed by downstream workflows (`new-project`, `progress`) 
 | 2. Name | 0/2 | Not started | - |
 ```
 
-Reference full template: `C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.claude/get-shit-done/templates/roadmap.md`
+Reference full template: `C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.claude/gsd-core/templates/roadmap.md`
 
 ## STATE.md Structure
 
-Use template from `C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.claude/get-shit-done/templates/state.md`.
+Use template from `C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.claude/gsd-core/templates/state.md`.
 
 Key sections:
 - Project Reference (core value, current focus)
@@ -560,7 +561,7 @@ When files are written and returning to orchestrator:
 
 ### Files Ready for Review
 
-User can review actual files in the editor or via SDK queries (e.g. `gsd-sdk query roadmap.analyze` and `gsd-sdk query state.load`) instead of ad-hoc shell `cat`.
+User can review actual files in the editor or via SDK queries (e.g. `gsd-tools query roadmap.analyze` and `gsd-tools query state.load`) instead of ad-hoc shell `cat`.
 
 {If gaps found during creation:}
 

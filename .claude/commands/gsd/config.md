@@ -1,5 +1,5 @@
 ---
-name: gsd:config
+name: gsd-config
 description: Configure GSD settings — workflow toggles, advanced knobs, integrations, and model profile
 argument-hint: "[--advanced | --integrations | --profile <name>]"
 allowed-tools:
@@ -7,6 +7,7 @@ allowed-tools:
   - Write
   - Bash
   - AskUserQuestion
+requires: [code-review, review, settings]
 ---
 
 <objective>
@@ -26,14 +27,14 @@ Mode routing:
 | (none) | Interactive 5-question common-case config prompt | settings |
 | --advanced | Power-user knobs: planning, execution, discussion, cross-AI, git, runtime | settings-advanced |
 | --integrations | API keys (Brave/Firecrawl/Exa), review CLI routing, agent skills | settings-integrations |
-| --profile &lt;name&gt; | Switch model profile without interactive prompt | gsd-sdk config-set-model-profile |
+| --profile &lt;name&gt; | Switch model profile without interactive prompt | gsd-tools query config-set-model-profile |
 
 </routing>
 
 <execution_context>
-@C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.claude/get-shit-done/workflows/settings.md
-@C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.claude/get-shit-done/workflows/settings-advanced.md
-@C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.claude/get-shit-done/workflows/settings-integrations.md
+@C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.claude/gsd-core/workflows/settings.md
+@C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.claude/gsd-core/workflows/settings-advanced.md
+@C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.claude/gsd-core/workflows/settings-integrations.md
 </execution_context>
 
 <context>
@@ -43,10 +44,8 @@ Parse the first token of $ARGUMENTS:
 - If it is `--advanced`: strip the flag, execute settings-advanced workflow
 - If it is `--integrations`: strip the flag, execute settings-integrations workflow
 - If it starts with `--profile`: extract the profile name (remainder after `--profile`), then:
-  1. **Pre-flight check (#2439):** verify `gsd-sdk` is on PATH via `command -v gsd-sdk`.
-     If absent, emit the install hint `Install GSD via 'npm i -g get-shit-done'` and stop —
-     do NOT invoke `gsd-sdk` directly (avoids the opaque `command not found: gsd-sdk` failure).
-  2. Run: `gsd-sdk query config-set-model-profile <profile-name> --raw` and display the output verbatim.
+  1. Verify `gsd-tools` is on PATH via `command -v gsd-tools`; if absent, emit the install hint `Install GSD via 'npm i -g @opengsd/gsd-core'` and stop.
+  2. Run: `gsd-tools query config-set-model-profile <profile-name> --raw` and display the output verbatim.
 - Otherwise: execute settings workflow (no argument needed)
 </context>
 

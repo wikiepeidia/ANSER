@@ -1,11 +1,12 @@
 ---
-name: gsd:thread
+name: gsd-thread
 description: Manage persistent context threads for cross-session work
 argument-hint: "[list [--open | --resolved] | close <slug> | status <slug> | name | description]"
 allowed-tools:
   - Read
   - Write
   - Bash
+requires: [phase]
 ---
 
 <objective>
@@ -15,7 +16,7 @@ doesn't belong to any specific phase.
 </objective>
 
 <execution_context>
-@C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.claude/get-shit-done/workflows/thread.md
+@C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.claude/gsd-core/workflows/thread.md
 </execution_context>
 
 <process>

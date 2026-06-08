@@ -1,7 +1,7 @@
 ---
 name: gsd-ai-researcher
 description: Researches a chosen AI framework's official docs to produce implementation-ready guidance — best practices, syntax, core patterns, and pitfalls distilled for the specific use case. Writes the Framework Quick Reference and Implementation Guidance sections of AI-SPEC.md. Spawned by /gsd-ai-integration-phase orchestrator.
-tools: Read, Write, Bash, Grep, Glob, WebFetch, WebSearch, mcp__context7__*
+tools: Read, Write, Edit, Bash, Grep, Glob, WebFetch, WebSearch, mcp__context7__*
 color: "#34D399"
 # hooks:
 #   PostToolUse:
@@ -9,6 +9,7 @@ color: "#34D399"
 #       hooks:
 #         - type: command
 #           command: "echo 'AI-SPEC written' 2>/dev/null || true"
+effort: high
 ---
 
 <role>
@@ -40,7 +41,7 @@ works via Bash and produces equivalent output.
 </documentation_lookup>
 
 <required_reading>
-Read `C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.claude/get-shit-done/references/ai-frameworks.md` for framework profiles and known pitfalls before fetching docs.
+Read `C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.claude/gsd-core/references/ai-frameworks.md` for framework profiles and known pitfalls before fetching docs.
 </required_reading>
 
 <input>
