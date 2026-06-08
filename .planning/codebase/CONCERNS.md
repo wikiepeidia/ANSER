@@ -1,235 +1,311 @@
 # Codebase Concerns
 
-**Analysis Date:** 2026-05-16
+**Analysis Date:** 2026-06-08
+
+## Tech Debt
+
+**Database schema split across multiple sources:**
+- Issue: Schema definitions live in `core/db/connection.py`, `migrations/versions/001_initial_schema.py`, `migrations/001_add_password_version.py`, and `package/migrate_to_postgres.py`, with route and service code referencing columns/tables that are not present in all definitions.
+- Files: `core/db/connection.py`, `migrations/versions/001_initial_schema.py`, `migrations/001_add_password_version.py`, `package/migrate_to_postgres.py`, `routes/google_routes.py`, `core/automation_engine.py`
+- Impact: New database setup paths diverge. Features such as Google login, password migration, and automation procurement can fail depending on which schema path initialized the database.
+- Fix approach: Treat Alembic migrations under `migrations/versions/` as the canonical schema, add missing migrations for referenced fields/tables, and remove ad hoc DDL from package/setup scripts or generate it from the canonical migrations.
+
+**Database facade mixes connection, migration, schema, and repository concerns:**
+- Issue: `core/db/connection.py` owns SQLite creation, PostgreSQL pooling, cursor shimming, placeholder rewriting, facade methods, and table initialization in one module.
+- Files: `core/db/connection.py`
+- Impact: The PostgreSQL shim rewrites SQL placeholders and appends `RETURNING id` to inserts, making behavior sensitive to query text and primary-key assumptions. Connection lifecycle and schema setup are hard to change without affecting service behavior.
+- Fix approach: Split connection management, schema/migration setup, and repository facades into separate modules. Use a real PostgreSQL query path instead of regex placeholder conversion inside `PGShimCursor`.
+
+**App factory is coupled to module-level globals:**
+- Issue: `app.py` creates `config`, `app`, `current_user`, `db_manager`, and services at module scope, while route modules import the live `app` module through helper functions.
+- Files: `app.py`, `core/extensions.py`, `routes/workflow_routes.py`, `routes/inventory_routes.py`, `routes/ai_routes.py`
+- Impact: Import order determines runtime state. Tests rely on monkeypatching module globals, and production setup can initialize the database before app configuration is fully applied.
+- Fix approach: Keep application state in Flask extensions, `g`, or dependency-injected service factories. Route modules should use `current_app` and request-scoped dependencies rather than importing `app` module globals.
+
+**Large frontend modules concentrate workflow complexity:**
+- Issue: `static/js/workspace_builder.js` is a large stateful builder script that handles graph state, DOM rendering, execution previews, file uploads, logging, and mock fallbacks in one file.
+- Files: `static/js/workspace_builder.js`, `static/js/admin_products.js`, `static/js/admin_subscriptions.js`, `static/js/scenarios.js`
+- Impact: Behavior changes are difficult to isolate, and this surface is omitted from coverage. Mock/demo data can hide backend failures during manual testing.
+- Fix approach: Split builder state, rendering, API calls, and mock/demo behavior into focused modules. Add browser-level or DOM-level tests for workflow building and admin UI flows.
+
+**Mock and fallback behavior is reachable from production code paths:**
+- Issue: Several integrations fall back to mock responses or silently initialized local models when credentials, data, or model files are missing.
+- Files: `core/google_integration.py`, `static/js/admin_products.js`, `static/js/admin_subscriptions.js`, `dl_service/services/model_loader.py`, `dl_service/services/forecast_service.py`, `dl_service/api/history_routes.py`
+- Impact: Failed integrations can appear successful with mock data, untrained models, or placeholder responses. This creates false confidence in demos and masks production misconfiguration.
+- Fix approach: Gate mocks behind an explicit development/demo flag, return clear integration errors by default, and expose model readiness status separately from successful prediction status.
+
+## Known Bugs
+
+**Password reset stores a hash format that login does not verify:**
+- Symptoms: A user whose password is reset through `core/services/user_service.py` can receive a Werkzeug password hash while `core/auth.py` verifies versioned bcrypt hashes.
+- Files: `core/auth.py`, `core/services/user_service.py`
+- Trigger: Call `UserService.reset_password()` for a user whose `password_version` is `1`, then attempt password login through the bcrypt verifier.
+- Workaround: Not detected.
+
+**Google OAuth references schema fields that are missing from canonical schema definitions:**
+- Symptoms: Google login and account linking query or update `google_email`, but the initial SQLite/Alembic/package schemas do not define that column.
+- Files: `routes/google_routes.py`, `core/db/connection.py`, `migrations/versions/001_initial_schema.py`, `package/migrate_to_postgres.py`
+- Trigger: Use `/auth/google` or `/auth/google/callback` against a database initialized from the current initial schema.
+- Workaround: Manually alter the users table to add the expected Google account fields.
+
+**Google-created accounts use a different password hashing scheme:**
+- Symptoms: New users created by Google login receive a Werkzeug password hash while the login path expects versioned bcrypt hashes.
+- Files: `routes/google_routes.py`, `core/auth.py`
+- Trigger: Create a user through the Google callback path, then later attempt password authentication for that account.
+- Workaround: Force a reset path that writes a compatible bcrypt hash once `UserService.reset_password()` is corrected.
+
+**Automation procurement references missing tables and columns:**
+- Symptoms: Low-stock automation queries `products.import_price`, reads from `suppliers`, and inserts `supplier_id` into `import_transactions`, but the current schemas do not define those fields/tables.
+- Files: `core/automation_engine.py`, `core/db/connection.py`, `migrations/versions/001_initial_schema.py`
+- Trigger: Execute automation rules that call low-stock procurement or scheduled import logic.
+- Workaround: Not detected.
+
+**Sales deletion is not scoped to the current user:**
+- Symptoms: Sales history reads are user-scoped, but deletion uses only `sale_id`.
+- Files: `core/services/sales_service.py`, `routes/sales_routes.py`
+- Trigger: Submit a delete request for a sale ID belonging to another user while authenticated.
+- Workaround: Restrict access at the database or service layer before exposing sales IDs across users.
+
+**Product and customer records are globally readable and mutable despite creator fields:**
+- Symptoms: Product and customer creation records `created_by`, but list/update/delete/import functions do not filter by owner or role.
+- Files: `routes/main_routes.py`, `core/services/product_service.py`, `core/services/customer_service.py`
+- Trigger: Any authenticated user loads products/customers or calls update/delete APIs using IDs from shared records.
+- Workaround: Not detected.
+
+**PostgreSQL package migration schema differs from runtime services:**
+- Symptoms: The package migration DDL omits runtime fields such as `password_version` and Google account fields, and transaction table shapes differ from the Alembic/core schema.
+- Files: `package/migrate_to_postgres.py`, `core/auth.py`, `routes/google_routes.py`, `migrations/versions/001_initial_schema.py`
+- Trigger: Initialize PostgreSQL through `package/migrate_to_postgres.py` and run authentication or Google account flows.
+- Workaround: Initialize through canonical Alembic migrations rather than the package migration script.
+
+## Security Considerations
+
+**Local ignored AI demo contains hardcoded credentials:**
+- Risk: `ai_agent_service/launch_demo.py` contains a hardcoded PostgreSQL connection URL and ngrok auth token. Values are intentionally omitted from this document.
+- Files: `ai_agent_service/launch_demo.py`, `.gitignore`
+- Current mitigation: `ai_agent_service/launch_demo.py` is ignored by `.gitignore`, so it is not tracked in the current repository index.
+- Recommendations: Rotate the exposed credentials, delete hardcoded secrets from the workspace, and load these values only from environment variables or a secret manager.
+
+**Secret-bearing files and archives exist in the workspace:**
+- Risk: Root environment and secret artifacts can be accidentally staged or copied into planning/output artifacts.
+- Files: `.env`, `secrets/`, `secrets.rar`, `.env.example`, `.gitignore`
+- Current mitigation: `.env`, `secrets/`, and `*.rar` are ignored by `.gitignore`.
+- Recommendations: Keep `.env.example` placeholder-only, add secret scanning to CI, and avoid reading or quoting secret files in tools and documentation.
+
+**Production hardening settings are disabled in the Flask app:**
+- Risk: Session cookies, HTTPS enforcement, HSTS, CSP, and rate limiting are configured in a permissive state.
+- Files: `app.py`
+- Current mitigation: `app.py` requires a non-default `SECRET_KEY` outside development.
+- Recommendations: Enable `SESSION_COOKIE_SECURE`, HTTPS enforcement, HSTS, rate limiting, and a stricter CSP for deployed environments. Keep permissive settings limited to local development config.
+
+**CSRF protection is bypassed on authenticated JSON mutation routes:**
+- Risk: Browser-authenticated users can be targeted by cross-site requests on routes exempted from CSRF.
+- Files: `routes/admin_subscription_routes.py`, `routes/main_routes.py`, `routes/wallet_routes.py`, `routes/workflow_routes.py`
+- Current mitigation: Routes still perform login/admin checks where decorators are present.
+- Recommendations: Require CSRF tokens for state-changing browser routes, or use a separate API auth mechanism that is not automatically attached by browsers.
+
+**AI agent service exposes unauthenticated endpoints with permissive CORS:**
+- Risk: The FastAPI service accepts chat, upload, and OCR requests without app-level authentication, while CORS allows all origins with credentials enabled.
+- Files: `ai_agent_service/src/server.py`
+- Current mitigation: Not detected.
+- Recommendations: Add authentication, constrain allowed origins, enforce upload size/type limits, and separate internal service access from public routes.
+
+**Workflow integrations can exfiltrate data through user-configured webhooks:**
+- Risk: Workflow steps can resolve prior-step data and send payloads to arbitrary URLs.
+- Files: `core/workflow_engine.py`, `core/make_integration.py`, `routes/workflow_routes.py`
+- Current mitigation: Workflow routes require login.
+- Recommendations: Validate destination domains, block private-network SSRF targets, redact payload logs, and record explicit user ownership for every integration target.
+
+**Exceptions and payload logs can expose sensitive data:**
+- Risk: API routes return `str(error)` to clients, and logs include payloads, OCR text, user messages, resolved workflow data, and external request URLs.
+- Files: `app.py`, `routes/dl_routes.py`, `routes/ai_routes.py`, `routes/workflow_routes.py`, `routes/admin_subscription_routes.py`, `routes/wallet_routes.py`, `routes/main_routes.py`, `core/make_integration.py`, `core/workflow_engine.py`, `dl_service/services/invoice_service.py`, `ai_agent_service/src/server.py`
+- Current mitigation: `core/logger.py` creates rotating log files.
+- Recommendations: Return stable error codes/messages to clients, log structured redacted context, and keep sensitive payloads out of persistent logs.
+
+**Calculator tool evaluates user-provided expressions:**
+- Risk: The AI agent calculator uses `eval()` on user-controlled expressions, with builtins removed but no expression parser.
+- Files: `ai_agent_service/src/core/tools.py`
+- Current mitigation: `__builtins__` is set to `None`.
+- Recommendations: Replace `eval()` with a small AST-based arithmetic parser or a safe expression library.
+
+## Performance Bottlenecks
+
+**AI chat route starts an unbounded background thread per request:**
+- Problem: Long-running AI calls are dispatched with raw `threading.Thread`, write job files to disk, and instantiate database/agent services inside each thread.
+- Files: `routes/ai_routes.py`, `jobs/`
+- Cause: There is no queue, worker pool, cancellation, concurrency limit, or cleanup policy.
+- Improvement path: Move background AI work to a bounded job queue with retry, timeout, cancellation, and retention controls.
+
+**Model services load heavy models at import or startup:**
+- Problem: FastAPI and DL services initialize model engines during module load/startup, including large language, vision, YOLO, and LSTM components.
+- Files: `ai_agent_service/src/server.py`, `ai_agent_service/src/core/config.py`, `ai_agent_service/src/core/engine.py`, `dl_service/model_app.py`, `dl_service/services/model_loader.py`
+- Cause: Global service instances and startup initialization eagerly load model weights.
+- Improvement path: Use lazy loading with health/readiness endpoints, warmup hooks, and per-model resource limits.
+
+**Forecasting reloads CSV data on request paths:**
+- Problem: Forecast service reads historical CSV files for forecast generation instead of caching parsed data or storing it in the application database.
+- Files: `dl_service/services/forecast_service.py`
+- Cause: `load_timescale_data()` reads local CSV files each time data is needed.
+- Improvement path: Cache immutable datasets, use database-backed time series, and invalidate cache explicitly when source data changes.
+
+**File upload routes read whole files into memory or accept broad uploads:**
+- Problem: Excel import preview, workflow upload, AI upload, and DL detection paths accept uploaded files without consistent size/type enforcement at the Flask proxy layer.
+- Files: `routes/main_routes.py`, `routes/workflow_routes.py`, `routes/ai_routes.py`, `routes/dl_routes.py`, `core/services/product_service.py`
+- Cause: The routes read request files directly and rely on downstream behavior or extension checks.
+- Improvement path: Enforce `MAX_CONTENT_LENGTH`, validate MIME/type and size at the route boundary, stream large files, and reject unsupported uploads before downstream processing.
+
+**Large static JavaScript increases parse and maintenance cost:**
+- Problem: The workspace builder is a multi-thousand-line static script loaded as a single behavioral unit.
+- Files: `static/js/workspace_builder.js`
+- Cause: UI state management, rendering, API integration, mock fallbacks, and workflow execution handling are bundled together.
+- Improvement path: Split modules, defer non-critical code, and add a build/test step for frontend behavior.
+
+## Fragile Areas
+
+**SQL placeholder conversion and implicit insert IDs:**
+- Files: `core/db/connection.py`
+- Why fragile: The PostgreSQL shim uses text rewriting for `?` placeholders and mutates insert SQL to add `RETURNING id`, then falls back on failure.
+- Safe modification: Add regression tests for every query shape before changing database code, and move service queries to explicit PostgreSQL-compatible SQL or a query builder.
+- Test coverage: Current tests cover selected services, but they do not exercise every SQLite/PostgreSQL query conversion path.
+
+**Authentication schema fallback masks missing migrations:**
+- Files: `core/auth.py`, `migrations/001_add_password_version.py`, `migrations/versions/001_initial_schema.py`
+- Why fragile: Login catches `OperationalError` around `password_version` and falls back to legacy verification, which can hide a missing migration in local testing.
+- Safe modification: Require migration status checks at startup and fail fast when auth schema fields are absent.
+- Test coverage: Existing auth tests cover integration paths, but reset/Google hash format mismatches are not covered.
+
+**Workflow execution returns logs and resolved data through API responses:**
+- Files: `core/workflow_engine.py`, `routes/workflow_routes.py`, `core/make_integration.py`
+- Why fragile: Workflow logs include resolved payloads and external call details, then route responses expose execution results to callers.
+- Safe modification: Redact logs before persistence/response and separate user-visible execution status from internal debug traces.
+- Test coverage: Workflow service tests cover CRUD/delegation patterns, but they do not validate log redaction or SSRF prevention.
+
+**DL client mutates import paths for local service fallback:**
+- Files: `core/services/dl_client.py`, `dl_service/services/invoice_service.py`, `dl_service/services/forecast_service.py`
+- Why fragile: Local processing appends `dl_service/` to `sys.path` and imports modules by generic `services.*` names, which can collide with other packages or import stale modules.
+- Safe modification: Package `dl_service` as an importable module and use fully qualified imports.
+- Test coverage: DL service code is omitted from coverage by `.coveragerc`.
+
+**Frontend mocks can obscure backend contract failures:**
+- Files: `static/js/admin_products.js`, `static/js/admin_subscriptions.js`, `static/js/workspace_builder.js`, `static/js/scenarios.js`
+- Why fragile: UI scripts render fallback/mock data after failed API calls, making broken backend contracts look like populated screens.
+- Safe modification: Confine mock behavior to explicit demo mode and show error states in normal runtime.
+- Test coverage: Static frontend files are omitted from coverage by `.coveragerc` and have no detected browser tests.
+
+## Scaling Limits
+
+**Small PostgreSQL pool with unbounded concurrent background work:**
+- Current capacity: PostgreSQL pool is configured with `maxconn=10`.
+- Limit: Raw AI background threads and web requests can exhaust database connections without queue backpressure.
+- Scaling path: Add a bounded worker queue, connection acquisition timeouts, and per-route concurrency limits.
+
+**Runtime artifacts accumulate on local disk:**
+- Current capacity: Jobs, uploads, and logs are stored under local directories.
+- Limit: `jobs/`, `uploads/`, and `logs/` can grow without retention limits and are unsuitable for horizontally scaled deployments.
+- Scaling path: Add retention cleanup, move user files to managed object storage, and store job metadata in a database-backed queue.
+
+**In-memory state is not process-safe:**
+- Current capacity: Import previews, invoice history, accuracy stats, model readiness, and loaded models are kept in module-level memory.
+- Limit: Multiple workers or restarts lose state and can disagree about readiness or pending import files.
+- Scaling path: Store pending import metadata, model status, and job state in a shared database/cache and make model instances worker-local with explicit readiness.
+
+**SQLite fallback limits multi-user production behavior:**
+- Current capacity: The app can initialize and run on a local SQLite database.
+- Limit: SQLite locking and local file storage do not scale with concurrent users, background jobs, or multi-process deployments.
+- Scaling path: Require PostgreSQL for deployed environments and reserve SQLite for isolated tests/development.
+
+## Dependencies at Risk
+
+**AI/DL dependency stack is operationally heavy and partially outside coverage:**
+- Risk: Model-serving code depends on large ML runtimes and local model artifacts while being excluded from coverage.
+- Impact: Dependency, GPU, and model-path changes can break startup or inference without CI detection.
+- Migration plan: Pin model/runtime versions, add smoke tests for model readiness, and isolate optional AI/DL services behind explicit health checks.
+
+**Ignored AI agent service is referenced as runtime infrastructure:**
+- Risk: `ai_agent_service/` is ignored by `.gitignore`, but route code and local scripts treat it as an application service.
+- Impact: Developers or deployment environments can miss service code, model adapters, or launch scripts that are required for AI functionality.
+- Migration plan: Either commit a sanitized service package with tests and docs, or mark it as an external service with a stable API contract and deployment instructions.
+
+**Remote-code model loading increases supply-chain risk:**
+- Risk: The AI engine enables remote model code execution for model loading.
+- Impact: Model source changes can execute code in the service process.
+- Migration plan: Pin trusted model revisions, avoid remote code when possible, and run model services in a restricted environment.
+
+**Google integration mock fallback weakens dependency failure visibility:**
+- Risk: Missing credentials or API failures can return mock data rather than a clear integration failure.
+- Impact: Google Sheets/Docs/Gmail issues can remain hidden until real business operations depend on them.
+- Migration plan: Make external API dependencies fail closed outside demo mode and add contract tests with mocked Google clients.
+
+## Missing Critical Features
+
+**Consistent tenant and ownership authorization:**
+- Problem: Products, customers, inventory reports, scheduled reports, automations, and selected delete operations are not consistently scoped by `current_user`.
+- Blocks: Safe multi-user operation where users should not read, modify, or delete each other's business data.
+
+**Production configuration profile:**
+- Problem: Security-sensitive Flask settings are hardcoded permissively in the app factory instead of derived from a production profile.
+- Blocks: Safe deployment without manually auditing every runtime setting.
+
+**Secret scanning and rotation workflow:**
+- Problem: The workspace contains ignored secret artifacts and a local file with hardcoded credentials.
+- Blocks: Confident commits, deployments, and onboarding without accidental secret exposure.
+
+**Central upload validation and retention policy:**
+- Problem: Upload validation is spread across routes and downstream services, and local upload/job files do not have a visible retention lifecycle.
+- Blocks: Safe handling of large, malicious, or stale user files.
+
+**Operational job queue for AI and automation:**
+- Problem: Long-running AI work and workflow automation run through request threads or raw background threads.
+- Blocks: Reliable retries, concurrency limits, cancellation, observability, and horizontal scaling.
+
+**Model readiness and training status contract:**
+- Problem: DL model loading can fall back to fresh/untrained models, and a training endpoint is marked unimplemented.
+- Blocks: Trustworthy forecasting/inference results and operator visibility into model quality.
+
+## Test Coverage Gaps
+
+**Authentication edge cases:**
+- What's not tested: Password reset hash compatibility, Google OAuth schema requirements, and Google-created account password compatibility.
+- Files: `core/auth.py`, `core/services/user_service.py`, `routes/google_routes.py`, `tests/`
+- Risk: Users can be locked out after reset or OAuth account creation.
+- Priority: High
+
+**Ownership and authorization boundaries:**
+- What's not tested: Cross-user product/customer access, sales deletion by non-owner, global dashboard/report visibility, and scheduled report/automation ownership.
+- Files: `core/services/product_service.py`, `core/services/customer_service.py`, `core/services/sales_service.py`, `core/services/operations_service.py`, `routes/main_routes.py`, `routes/sales_routes.py`, `tests/`
+- Risk: Authenticated users can access or mutate data outside their account boundary.
+- Priority: High
+
+**CSRF, rate limiting, and deployed security settings:**
+- What's not tested: CSRF enforcement and rate limiting behavior because test config disables both.
+- Files: `tests/conftest.py`, `app.py`, `routes/admin_subscription_routes.py`, `routes/main_routes.py`, `routes/wallet_routes.py`, `routes/workflow_routes.py`
+- Risk: Security regressions pass tests while browser-exposed mutation routes remain vulnerable.
+- Priority: High
+
+**Schema parity across initialization paths:**
+- What's not tested: Equivalence between SQLite schema creation, Alembic migrations, and package PostgreSQL migration scripts.
+- Files: `core/db/connection.py`, `migrations/versions/001_initial_schema.py`, `migrations/001_add_password_version.py`, `package/migrate_to_postgres.py`, `tests/`
+- Risk: New databases miss columns/tables used by runtime code.
+- Priority: High
+
+**AI, DL, frontend, and static UI surfaces are omitted from coverage:**
+- What's not tested: AI agent API, DL model services, static JavaScript workflows, and UI behavior.
+- Files: `.coveragerc`, `ai_agent_service/src/server.py`, `dl_service/`, `static/js/workspace_builder.js`, `static/js/admin_products.js`, `static/js/admin_subscriptions.js`
+- Risk: Large user-facing and model-facing surfaces can break without CI feedback.
+- Priority: Medium
+
+**Workflow integration security behavior:**
+- What's not tested: SSRF blocking, webhook destination validation, log redaction, upload validation, and workflow execution data exposure.
+- Files: `core/workflow_engine.py`, `core/make_integration.py`, `routes/workflow_routes.py`, `tests/services/test_workflow_service.py`
+- Risk: Workflow automation can leak sensitive data or call unsafe destinations unnoticed.
+- Priority: High
+
+**Upload size/type enforcement:**
+- What's not tested: Oversized, malformed, and unsupported uploads for Excel import, workflow uploads, AI uploads, and DL detection.
+- Files: `routes/main_routes.py`, `routes/workflow_routes.py`, `routes/ai_routes.py`, `routes/dl_routes.py`, `tests/services/test_product_import.py`
+- Risk: Memory pressure, disk growth, and unsupported file handling can fail in production request paths.
+- Priority: Medium
 
 ---
 
-## CRITICAL
-
-### Missing Module-Level Attributes Referenced by Routes
-
-- Issue: `routes/workflow_routes.py` calls `app_module.db`, `app_module.workflow_service`, and `app_module.current_user`. `routes/ai_routes.py` calls `app_module.ai_chat_service`. None of these attributes exist at module level in `app.py`.
-- Files: `routes/workflow_routes.py` (lines 27, 28, 44, 45, 60, 61, 76, 77, 95), `routes/ai_routes.py` (lines 159, 166, 171, 182, 196, 212), `routes/inventory_routes.py` (lines 49, 52, 124, 129, 131)
-- Impact: The GET `/api/workflows`, POST `/api/workflows`, DELETE `/api/workflows/<id>`, workflow execute, and all AI chat routes will raise `AttributeError` at runtime and return 500 errors. This breaks the primary demo features (workflow builder, AI chat).
-- Fix approach: Either export these names from `app.py` as module-level attributes (`db = db_manager`, `workflow_service = ...`, etc.) or refactor routes to use `current_app.extensions` (already used correctly in other blueprints).
-
----
-
-### Password Hashing Inconsistency (SHA-256 vs Werkzeug Bcrypt)
-
-- Issue: `core/auth.py` and `core/database.py` hash passwords with `hashlib.sha256()` (no salt). `core/services/user_service.py` uses `werkzeug.security.generate_password_hash` (bcrypt). `routes/google_routes.py` uses `werkzeug.security.generate_password_hash` for Google-created accounts. Users created via `AuthManager.register_user()` use SHA-256; the reset-password path uses bcrypt. These two hashing schemes are incompatible.
-- Files: `core/auth.py` (lines 11-12, 46), `core/database.py` (line 370), `core/services/user_service.py` (line 127), `routes/google_routes.py` (line 93)
-- Impact: Users whose passwords have been reset via the admin panel cannot log in because `verify_user()` checks SHA-256 but the stored hash is bcrypt. Demo accounts reset before the jury presentation will be locked out.
-- Fix approach: Standardize on `werkzeug.security.generate_password_hash` / `check_password_hash` everywhere. Migrate `verify_user` in `core/auth.py` to use `check_password_hash`. Run a one-time migration to rehash existing SHA-256 passwords.
-
----
-
-### `eval()` on Workflow Template Strings (Code Injection Risk)
-
-- Issue: `core/workflow_engine.py` uses Python's built-in `eval()` to resolve `{{nodeId.path}}` template expressions from workflow JSON data stored in the database and supplied by users.
-- Files: `core/workflow_engine.py` (lines 28, 64)
-- Impact: Any authenticated user can craft a workflow payload that executes arbitrary Python code on the server. Even a comment in the code notes this is "DANGEROUS in prod, okay for test PoC".
-- Fix approach: Replace `eval()` with a safe path-traversal implementation. Use `jmespath`, recursive dict/list access by key/index, or Jinja2 with a sandbox. The `{{node.key[0]}}` syntax can be resolved without `eval`.
-
----
-
-### Rate Limiting Permanently Disabled in Production Config
-
-- Issue: `app.py` line 74 sets `flask_app.config['RATELIMIT_ENABLED'] = False` unconditionally in `create_app()`. There is no environment variable or toggle to re-enable it in production.
-- Files: `app.py` (line 74)
-- Impact: Flask-Limiter decorators on `/auth/signin` and `/auth/signup` are silently ignored, leaving the auth endpoints open to brute-force and credential-stuffing attacks.
-- Fix approach: Change to `flask_app.config['RATELIMIT_ENABLED'] = os.environ.get('RATELIMIT_ENABLED', 'True').lower() == 'true'` so production can enable rate limiting without a code change.
-
----
-
-## HIGH
-
-### `google_email` Column Referenced But Not in `init_database()` Schema
-
-- Issue: `routes/google_routes.py` reads and writes a `google_email` column on the `users` table (lines 63, 76, 87, 98). This column is not present in the `CREATE TABLE users` statement in `core/database.py`. A separate `debug/fix_google_column.py` script must be run manually to add it.
-- Files: `routes/google_routes.py` (lines 63, 76, 87, 98), `core/database.py` (lines 106-133), `debug/fix_google_column.py`
-- Impact: Google OAuth login (create and link) will fail with a database error on any fresh database or after running `init_database()`. This affects demo setup on a new machine.
-- Fix approach: Add `google_email TEXT` to the `CREATE TABLE users` block in `core/database.py:init_database()`. Run the migration once for existing databases.
-
----
-
-### `verify_user()` in `core/database.py` Is a Stub
-
-- Issue: `core/database.py` line 387-389 defines `verify_user()` as: `def verify_user(self, email, password): # ... (Keep existing verify_user) ... pass`. It returns `None` for all calls. The real implementation lives in `core/auth.py:AuthManager.verify_user()`.
-- Files: `core/database.py` (lines 387-389)
-- Impact: Any code path that calls `db_manager.verify_user()` directly will always return `None`, silently failing authentication. Currently `auth_routes.py` correctly calls `auth_manager.verify_user()`, but the stub is a landmine for future developers.
-- Fix approach: Either remove the stub and add a docstring pointing to `AuthManager`, or implement it fully.
-
----
-
-### CSRF Exemptions on Sensitive Mutation Endpoints
-
-- Issue: Seven POST endpoints that mutate data are decorated with `@csrf.exempt`, including the AI chat endpoint, workflow execution, wallet operations, and admin subscription management.
-- Files: `routes/admin_subscription_routes.py` (lines 24, 42), `routes/admin_user_routes.py` (line 85), `routes/ai_routes.py` (lines 112, 155), `routes/wallet_routes.py` (line 103), `routes/workflow_routes.py` (line 90)
-- Impact: These endpoints are open to cross-site request forgery. An attacker who can get a logged-in user to visit a malicious page can trigger wallet transfers, subscription changes, and workflow execution.
-- Fix approach: Remove `@csrf.exempt` and include a CSRF token in the JavaScript fetch calls using the `csrf_token()` context processor already available in templates.
-
----
-
-### `OAUTHLIB_INSECURE_TRANSPORT = '1'` Set at Module Level in `app.py`
-
-- Issue: `app.py` line 23 unconditionally sets `os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'`, allowing OAuth over plain HTTP. This applies to all environments, including production.
-- Files: `app.py` (line 23)
-- Impact: OAuth tokens may be transmitted over unencrypted connections in production, exposing Google credentials to network interception.
-- Fix approach: Gate this with `if os.environ.get('FLASK_ENV') == 'development' or os.environ.get('OAUTHLIB_INSECURE_TRANSPORT') == '1':`. Remove the unconditional assignment.
-
----
-
-### `secrets/analytics_service_account.json` and `secrets/token adminmail.json` Require Manual Sharing
-
-- Issue: These two files cannot be committed to git (correctly gitignored via `secrets/`) but are required for Google Analytics and the welcome-email sender to function. There is no documented onboarding path beyond the note in `.env.example`.
-- Files: `secrets/analytics_service_account.json`, `secrets/token adminmail.json`, `core/services/analytics_service.py` (line 22), `core/google_integration.py` (line 31)
-- Impact: New team members running a fresh clone will see analytics silently fall back to mock data and welcome emails silently fail. The jury demo machine requires these files to be pre-placed manually.
-- Fix approach: Document the manual sharing step in `README.md` with exact file paths and who holds them. Consider storing the analytics service account JSON as a base64-encoded environment variable.
-
----
-
-### Hardcoded Fallback Secret Key in Production Code
-
-- Issue: Both `core/config.py` (line 12) and `app.py` (line 66) supply different hardcoded fallback values for `SECRET_KEY`: `"change_me_random_key"` and `"change_me_to_a_secure_random_value"` respectively. The two fallbacks are inconsistent with each other.
-- Files: `core/config.py` (line 12), `app.py` (line 66)
-- Impact: If `SECRET_KEY` is not set in the environment, sessions signed with the hardcoded value are universally forgeable. The inconsistency between the two hardcoded values means the Config class's `SECRET_KEY` and the Flask app's `SECRET_KEY` may differ.
-- Fix approach: Raise an exception at startup if `SECRET_KEY` is not set in production (check `FLASK_ENV != 'development'`). Remove the second fallback in `app.py` and use `cfg.SECRET_KEY` as the single source of truth.
-
----
-
-### Google OAuth Token Stored as Plaintext JSON in `users.google_token`
-
-- Issue: The full OAuth token payload (including `access_token`, `refresh_token`, and `client_secret`) is serialized and stored as a plaintext JSON string in the `users` table.
-- Files: `routes/google_routes.py` (lines 62, 81, 87), `core/models.py` (line 21)
-- Impact: A SQL injection attack or database dump exposes long-lived Google refresh tokens, allowing an attacker to impersonate users across all Google services the app has been granted access to (Drive, Gmail, Sheets, Analytics).
-- Fix approach: At minimum, encrypt the token blob using a key derived from `SECRET_KEY` before storing. Better: use a short-lived token cache and re-authenticate with the refresh token server-side.
-
----
-
-## MEDIUM
-
-### No Dependency Lock File
-
-- Issue: `package/requirements.txt` specifies dependencies with range constraints (`Flask>=3.0,<4.0`) but no lock file (`pip freeze` output, `poetry.lock`, or `uv.lock`) is committed. Several packages (`torch`, `tensorflow`, `transformers`, `Werkzeug`) have no version pin at all.
-- Files: `package/requirements.txt`
-- Impact: `pip install -r requirements.txt` on a new machine may resolve to different versions than the development environment. Heavy ML packages like `torch` and `tensorflow` have breaking API changes between minor versions.
-- Fix approach: Generate and commit a `requirements-lock.txt` via `pip freeze` after a successful installation on the reference machine.
-
----
-
-### `sqlite3` Imported Directly in Service Layer (Bypasses PGShim)
-
-- Issue: `core/services/product_service.py`, `core/services/customer_service.py`, and `core/services/wallet_service.py` import `sqlite3` directly and catch `sqlite3.IntegrityError`. These catches will silently fail to catch the PostgreSQL equivalent `psycopg2.errors.UniqueViolation` when `USE_POSTGRES=True`.
-- Files: `core/services/product_service.py` (line 2, 34), `core/services/customer_service.py` (line 2, 31), `core/services/wallet_service.py` (line 3)
-- Impact: Duplicate product/customer code creation errors are not surfaced to the user when running against PostgreSQL. The operation appears to succeed but no record is created.
-- Fix approach: Replace `except sqlite3.IntegrityError` with a generic `except Exception as e: if "UNIQUE" in str(e) or "duplicate key" in str(e):` pattern, or import and catch both exception types.
-
----
-
-### Hardcoded GA Property ID in `analytics_service.py`
-
-- Issue: `core/services/analytics_service.py` line 16 hardcodes `self.property_id = '470037320'` with a comment admitting it is approximate. `core/config.py` defines `GA_PROPERTY_ID = os.environ.get('GA_PROPERTY_ID', '517047582')` — a different value.
-- Files: `core/services/analytics_service.py` (line 16), `core/config.py` (line 54)
-- Impact: Analytics reports may silently query the wrong GA4 property, returning no data or data from a different account. The discrepancy between the two hardcoded IDs indicates the correct value is unclear.
-- Fix approach: Remove the hardcoded fallback in `AnalyticsService.__init__()` and always read from `Config.GA_PROPERTY_ID`.
-
----
-
-### Bare `except:` Clauses Throughout Core
-
-- Issue: 16 bare `except:` clauses exist across core modules, catching all exceptions including `SystemExit`, `KeyboardInterrupt`, and `GeneratorExit`.
-- Files: `core/agent_middleware.py` (lines 4, 29, 33, 45, 55), `core/database.py` (lines 39, 91, 93, 436), `core/make_integration.py` (line 23), `core/workflow_engine.py` (lines 75, 190), `dl_service/utils/ood_detection.py` (line 85)
-- Impact: Errors are silently swallowed, making debugging during the jury demo extremely difficult. A crash in a background thread may go unnoticed.
-- Fix approach: Replace `except:` with `except Exception:` at minimum. Log the exception with `traceback.format_exc()` before discarding it.
-
----
-
-### `print()` Used for All Logging in Production Code
-
-- Issue: Over 130 `print()` calls are scattered across `core/` (94) and `routes/` (38), including debug-tagged prints like `print(f'DEBUG: Generated Redirect URI: {redirect_uri}')` in `routes/google_routes.py` line 28.
-- Files: `routes/google_routes.py` (lines 28, 37), `routes/auth_routes.py` (line 54), `core/database.py`, `core/auth.py`, `core/google_integration.py`, `dl_service/models/lstm_model.py` (lines 199-215 labeled `[DEBUG]`)
-- Impact: Debug output leaks internal URLs, email addresses, and error details to stdout in production. Log aggregation tools cannot filter by level or context. The jury will see raw debug output in the terminal.
-- Fix approach: Replace `print()` with `logger = get_logger(__name__)` from `dl_service/utils/logger.py` (already used in `dl_service/`). The main `core/` and `routes/` modules do not yet import from a logger module.
-
----
-
-### `app.py` Runs `debug=True` in `__main__` Block
-
-- Issue: `app.py` line 226: `app.run(host='0.0.0.0', port=5000, debug=True, use_reloader=False)`. `run_dl_service.py` line 21 also runs `debug=True`.
-- Files: `app.py` (line 226), `run_dl_service.py` (line 21)
-- Impact: Flask debug mode enables the interactive debugger (Werkzeug PIN bypass) and auto-reloads, which is a significant security risk if this invocation is used for the demo. The Werkzeug debugger allows arbitrary code execution from the browser.
-- Fix approach: Set `debug=os.environ.get('FLASK_DEBUG', 'false').lower() == 'true'` and ensure `FLASK_DEBUG` is not set in the demo environment.
-
----
-
-### AI Chat Service Depends on External Ngrok/HF URL at Runtime
-
-- Issue: The entire AI chat backend (`routes/ai_routes.py` lines 57, 119) depends on `HF_BASE_URL` pointing to a running ngrok tunnel or HuggingFace Spaces endpoint. This is a third-party URL that can change between sessions.
-- Files: `routes/ai_routes.py` (lines 57-69, 119-126), `.env.example` (line 9: `HF_BASE_URL=https://your-ngrok-or-hf-url.ngrok-free.dev`)
-- Impact: If the ngrok session expires or the HF Space is sleeping, all AI chat requests fail silently with a connection error. This is a high-probability failure point during a live jury demo.
-- Fix approach: Add a `/api/ai/health` preflight check that the frontend calls before the demo. Document the startup sequence (start ngrok/HF Space first, then update `.env`, then start Flask).
-
----
-
-### No Upload Size Limit in Main Flask App
-
-- Issue: The main Flask app (`app.py`) does not set `MAX_CONTENT_LENGTH`. The `/api/dl/detect`, `/api/ai/upload`, and `/api/workflow/upload_file` endpoints accept files of unlimited size. Only `dl_service/` (separate process) has file validation via `validate_image_file`.
-- Files: `app.py`, `routes/dl_routes.py` (line 26), `routes/ai_routes.py` (line 117), `routes/workflow_routes.py` (line 108)
-- Impact: An authenticated user can upload arbitrarily large files, causing memory exhaustion on the server. No filename sanitization is applied in `routes/dl_routes.py` or `routes/ai_routes.py` (only `workflow_routes.py` uses `secure_filename`).
-- Fix approach: Add `flask_app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024` (16 MB) in `create_app()`. Apply `secure_filename()` in all file upload handlers.
-
----
-
-## LOW
-
-### `secrets/database.json` Still Referenced by Migration Script
-
-- Issue: `package/migrate_to_postgres.py` still reads connection credentials from `secrets/database.json` as a fallback, even though the project has migrated to `.env` + `python-dotenv`.
-- Files: `package/migrate_to_postgres.py` (lines 47-48, 483, 563)
-- Impact: A developer running the migration script without understanding the dual-config system may use stale credentials from the JSON file instead of the `.env` file.
-- Fix approach: Remove the `secrets/database.json` fallback from `migrate_to_postgres.py` and document that `POSTGRES_URL` must be in `.env`.
-
----
-
-### `db_manager` Instantiated at Import Time in `core/extensions.py`
-
-- Issue: `core/extensions.py` line 36 creates `db_manager = Database()`, which calls `init_database()` immediately on import (for SQLite). This means the database is initialized before `create_app()` runs and before any configuration can override `DATABASE_PATH`.
-- Files: `core/extensions.py` (line 36), `core/database.py` (lines 67-72)
-- Impact: Tests that need to override the database path cannot do so after import. A module-level side effect at import time is fragile and can cause issues with multiple Flask app instances (e.g., testing).
-- Fix approach: Use lazy initialization — defer `init_database()` to a `Database.init_app(app)` call inside `create_app()`, or move it inside a `with app.app_context():` block.
-
----
-
-### No Formal Database Migration System
-
-- Issue: Schema changes are applied via ad-hoc `debug/fix_google_column.py` scripts. Although `alembic` is listed in `package/requirements.txt`, there is no `alembic.ini` or `migrations/` directory in the repository.
-- Files: `debug/fix_google_column.py`, `debug/migrate_sales_invoice.py`, `package/requirements.txt` (line 92)
-- Impact: New team members must discover and run multiple `debug/` scripts manually to get a working database. Missing one causes silent runtime errors. The `google_email` column issue (HIGH concern above) is a direct consequence.
-- Fix approach: Initialize alembic (`alembic init migrations`) and convert existing fix scripts into proper migration versions. At minimum, consolidate all `ALTER TABLE` statements into a single `migrate.py` script with clear ordering.
-
----
-
-### Test Suite Excluded from `.gitignore`
-
-- Issue: `.gitignore` line 7 lists `tests/` as ignored. The test files exist in the working tree but `.gitignore` would exclude them from commits on a freshly cloned repository if ever respected.
-- Files: `.gitignore` (line 7)
-- Impact: The `tests/` directory is currently tracked (files exist and were committed prior to the ignore entry). The gitignore entry is confusing and inconsistent. New test files added may not be committed by team members unaware of this.
-- Fix approach: Remove `tests/` from `.gitignore` since the test suite is intentionally part of the codebase.
-
----
-
-### Jury Presentation Risks
-
-**High-probability failure points during live demo:**
-
-1. **AI chat will fail** if `HF_BASE_URL` ngrok session has expired between startup and demo time. No fallback or health indicator exists.
-2. **Workflow GET/POST/DELETE endpoints will all fail** with `AttributeError` due to the missing `app_module.db` and `app_module.workflow_service` attributes (CRITICAL concern above). This breaks the core workflow builder demo.
-3. **Google OAuth login may fail** if `google_email` column is missing from a freshly initialized database.
-4. **LSTM forecast will fail** if `dl_service/saved_models/` is empty — no `.h5` or `.pt` files were found in the repository. The model weights must be placed manually before demo.
-5. **Deep learning service startup is slow** — PyTorch, TensorFlow, PaddleOCR, and EasyOCR all load heavy models at startup. Allocate 2-5 minutes for the DL service to be ready before the demo.
-6. **Two separate processes required** — `app.py` (port 5000) and the DL service (port 5001) must both be running. There is no unified startup script.
-
----
-
-*Concerns audit: 2026-05-16*
+*Concerns audit: 2026-06-08*

@@ -17,6 +17,7 @@ from core.auth import AuthManager
 from core.config import Config
 from core.automation_engine import AutomationEngine
 from core.agent_middleware import AgentMiddleware
+from core.services import ai_chat_service, workflow_service
 
 sys.stdout.reconfigure(encoding='utf-8')
 
@@ -139,6 +140,8 @@ def create_app(config_object=None):
     flask_app.extensions['auth_manager'] = auth_manager
     flask_app.extensions['agent_middleware'] = agent_middleware
     flask_app.extensions['automation_engine'] = automation_engine
+    flask_app.extensions['ai_chat_service'] = ai_chat_service
+    flask_app.extensions['workflow_service'] = workflow_service
 
     # ── Flask-Login callbacks ─────────────────────────────────────────────
     @login_manager.unauthorized_handler
