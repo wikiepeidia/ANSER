@@ -355,6 +355,7 @@ Desktop.ini
 # Ignore stray terminal capture files
 _ul
 nul
+TODO.md
 # AI Model artifacts (for workflow recommendation)
 models/checkpoints/
 models/weights/
