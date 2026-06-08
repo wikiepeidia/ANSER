@@ -6,7 +6,7 @@ import threading
 import time
 
 import requests
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, current_app
 from flask_login import current_user, login_required
 
 from core.agent_middleware import AgentMiddleware
@@ -20,13 +20,6 @@ ai_bp = Blueprint("ai", __name__)
 
 JOBS_DIR = os.path.join(os.getcwd(), 'jobs')
 os.makedirs(JOBS_DIR, exist_ok=True)
-
-
-def _app_module():
-    """Lazy app module import to avoid circular imports at module load."""
-    import app as app_module
-
-    return app_module
 
 
 def save_job_file(job_id, data):
@@ -132,7 +125,7 @@ def ai_upload():
             resp_data = response.json()
             analysis = resp_data.get('vision_analysis', 'Uploaded File')
 
-            _app_module().db_manager.save_attachment(
+            current_app.extensions['database'].save_attachment(
                 current_user.id,
                 1,
                 file.filename,
@@ -153,19 +146,19 @@ def ai_upload():
 def ai_chat():
     data = request.get_json(silent=True) or {}
     try:
-        submitted = _app_module().ai_chat_service.submit_chat_message(current_user.id, data.get('message', ''))
+        submitted = current_app.extensions['ai_chat_service'].submit_chat_message(current_user.id, data.get('message', ''))
     except ServiceValidationError:
         return jsonify({'error': 'Empty message'}), 400
 
     msg = submitted['message']
-    _app_module().db_manager.add_ai_message(current_user.id, 'user', msg)
+    current_app.extensions['database'].add_ai_message(current_user.id, 'user', msg)
 
-    reply = _app_module().ai_chat_service.resolve_greeting_reply(msg)
+    reply = current_app.extensions['ai_chat_service'].resolve_greeting_reply(msg)
     if reply:
-        _app_module().db_manager.add_ai_message(current_user.id, 'assistant', reply)
+        current_app.extensions['database'].add_ai_message(current_user.id, 'assistant', reply)
         return jsonify({'status': 'completed', 'response': reply, 'action': None})
 
-    job_data = _app_module().ai_chat_service.create_chat_job(current_user.id, msg, save_job_file)
+    job_data = current_app.extensions['ai_chat_service'].create_chat_job(current_user.id, msg, save_job_file)
     threading.Thread(target=background_ai_task, args=(job_data['job_id'], current_user.id, msg)).start()
     return jsonify({'status': 'processing', 'job_id': job_data['job_id']})
 
@@ -175,8 +168,8 @@ def ai_chat():
 def get_chat_history():
     conn = None
     try:
-        conn = _app_module().db_manager.get_connection()
-        history = _app_module().ai_chat_service.fetch_chat_history(conn, current_user.id, limit=50)
+        conn = current_app.extensions['database'].get_connection()
+        history = current_app.extensions['ai_chat_service'].fetch_chat_history(conn, current_user.id, limit=50)
         return jsonify({'history': history})
     except Exception as e:
         logger.error("Error fetching chat history for user %s: %s", current_user.id, e, exc_info=True)
@@ -190,7 +183,7 @@ def get_chat_history():
 @login_required
 def ai_job_status(job_id):
     try:
-        _app_module().ai_chat_service.get_chat_job_status(job_id)
+        current_app.extensions['ai_chat_service'].get_chat_job_status(job_id)
     except ServiceValidationError:
         return jsonify({'status': 'failed', 'error': 'Job not found'}), 404
 
@@ -205,8 +198,8 @@ def ai_job_status(job_id):
 def clear_chat_history():
     conn = None
     try:
-        conn = _app_module().db_manager.get_connection()
-        _app_module().ai_chat_service.clear_chat_history_rows(conn, current_user.id)
+        conn = current_app.extensions['database'].get_connection()
+        current_app.extensions['ai_chat_service'].clear_chat_history_rows(conn, current_user.id)
         return jsonify({'status': 'success', 'message': 'Đã xóa lịch sử'})
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)}), 500

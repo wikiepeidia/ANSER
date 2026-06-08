@@ -4,18 +4,11 @@ import os
 from datetime import datetime
 
 from flask import Blueprint, current_app, jsonify, request
-from flask_login import login_required
+from flask_login import current_user, login_required
 
 from core.extensions import csrf
 
 workflow_bp = Blueprint("workflow", __name__)
-
-
-def _app_module():
-    """Lazy app module import to avoid circular imports at module load."""
-    import app as app_module
-
-    return app_module
 
 
 @workflow_bp.route('/api/workflows', methods=['GET'])
@@ -23,9 +16,8 @@ def _app_module():
 def get_user_workflows():
     conn = None
     try:
-        app_module = _app_module()
-        conn = app_module.db.get_connection()
-        workflows = app_module.workflow_service.list_workflows_for_user(conn, app_module.current_user.id)
+        conn = current_app.extensions['database'].get_connection()
+        workflows = current_app.extensions['workflow_service'].list_workflows_for_user(conn, current_user.id)
         return jsonify({'success': True, 'workflows': workflows})
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
@@ -39,10 +31,9 @@ def get_user_workflows():
 def save_workflow():
     conn = None
     try:
-        app_module = _app_module()
         payload = request.get_json(silent=True) or {}
-        conn = app_module.db.get_connection()
-        result = app_module.workflow_service.save_workflow_for_user(conn, app_module.current_user.id, payload)
+        conn = current_app.extensions['database'].get_connection()
+        result = current_app.extensions['workflow_service'].save_workflow_for_user(conn, current_user.id, payload)
         return jsonify({'success': True, 'id': result['id'], 'message': result['message']})
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
@@ -56,9 +47,8 @@ def save_workflow():
 def delete_workflow(workflow_id):
     conn = None
     try:
-        app_module = _app_module()
-        conn = app_module.db.get_connection()
-        result = app_module.workflow_service.delete_workflow_for_user(conn, app_module.current_user.id, workflow_id)
+        conn = current_app.extensions['database'].get_connection()
+        result = current_app.extensions['workflow_service'].delete_workflow_for_user(conn, current_user.id, workflow_id)
         return jsonify({'success': True, 'message': result['message']})
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
@@ -72,9 +62,8 @@ def delete_workflow(workflow_id):
 def get_single_workflow(workflow_id):
     conn = None
     try:
-        app_module = _app_module()
-        conn = app_module.db_manager.get_connection()
-        result = app_module.workflow_service.get_workflow_for_user(conn, app_module.current_user.id, workflow_id)
+        conn = current_app.extensions['database'].get_connection()
+        result = current_app.extensions['workflow_service'].get_workflow_for_user(conn, current_user.id, workflow_id)
         if result:
             return jsonify({'success': True, 'data': result['data'], 'name': result['name']})
         return jsonify({'success': False}), 404
@@ -90,9 +79,8 @@ def get_single_workflow(workflow_id):
 @csrf.exempt
 def run_workflow():
     try:
-        app_module = _app_module()
         workflow_data = request.get_json(silent=True) or {}
-        result = app_module.workflow_service.execute_user_workflow(workflow_data, app_module.current_user.google_token)
+        result = current_app.extensions['workflow_service'].execute_user_workflow(workflow_data, current_user.google_token)
         return jsonify(result)
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)}), 500
