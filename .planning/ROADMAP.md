@@ -1,51 +1,86 @@
-# Roadmap: ANSER — Collaborative Development
+# Roadmap: ANSER
 
-## Status Snapshot
+## Phases
 
-### Archived Historical Milestones
+- [x] **Phase 1-10: Feature Foundation (Archived)** - Core features implementation.
+- [x] **Phase 11-15: Backend Refactor (Archived)** - Transitioning to modular monolith.
+- [x] **Phase 16: Planning Context Refresh** - Align .planning docs with Engineering reality.
+- [ ] **Phase 18: Focused Regression Hardening** - Add/update targeted tests.
+- [ ] **Phase 20: AI Route Decoupling (BE-01)** - Resolve circular imports in AI routes.
+- [ ] **Phase 21: Auth & User Consolidation (BE-02)** - Centralize User/Auth logic.
+- [ ] **Phase 22: Dependency & Service Isolation (BE-04)** - Cleanup requirements and isolate dl_service.
+- [ ] **Phase 23: Optimization & Caching (BE-05)** - Optimize product catalog and workflow queue.
+- [ ] **Phase 24: Async Task Infrastructure (BE-07)** - Implement background queue for AI/OCR.
 
-- v1.0 Code Refactoring — early planning, later superseded.
-- v2.0 Academic Delivery — archived historical milestone.
-- v2.1 Smart Import Demo Fix — archived historical hotfix milestone.
+## Phase Details
 
-### Completed Engineering Baseline
+### Phase 18: Focused Regression Hardening
+**Goal**: Secure the refactored boundaries with automated tests.
+**Depends on**: Phase 16
+**Requirements**: NFR-STAB-03
+**Success Criteria**:
+  1. Pytest coverage increased for all touched service slices.
+  2. Route ownership notes updated in codebase/CONVENTIONS.md.
+**Plans**: TBD
 
-- v3.0 App.py and Backend Refactor — completed through Phases 11–15. Route extraction, service boundaries, coverage gate, and parity verification are the accepted engineering baseline.
+### Phase 20: AI Route Decoupling
+**Goal**: Resolve architectural bottlenecks and circular imports in the AI service layer.
+**Depends on**: Phase 16
+**Requirements**: FR-AI-05 (BE-01)
+**Success Criteria**:
+  1. `ai_routes.py` and associated services can be imported without circular dependency errors.
+  2. AI Chat interface remains fully functional with verified backend responses.
+**Plans**:
+- [ ] 20-01-PLAN.md — Circular Import Resolution
 
-### Current Milestone
+### Phase 21: Auth & User Consolidation
+**Goal**: Ensure a single, consistent source of truth for user data and authentication.
+**Depends on**: Phase 20
+**Requirements**: FR-AUTH-05 (BE-02)
+**Success Criteria**:
+  1. User repository logic is consolidated into a single service/module.
+  2. Authentication (Login/Register/OAuth) works consistently across all application routes.
+**Plans**: TBD
 
-- v3.1 Post-Refactor Stabilization and Collaborative Development — active.
+### Phase 22: Dependency & Service Isolation
+**Goal**: Streamline the project environment and prepare `dl_service` for independent scaling.
+**Depends on**: Phase 21
+**Requirements**: NFR-INF-01 (BE-04)
+**Success Criteria**:
+  1. `requirements.txt` is refactored, removing unused packages and separating dev dependencies.
+  2. `dl_service` can be started and run in an isolated environment with its own dependency subset.
+**Plans**: TBD
 
-## Current Milestone: v3.1 Post-Refactor Stabilization and Collaborative Development
+### Phase 23: Optimization & Caching
+**Goal**: Improve system performance for high-volume retail data and complex workflows.
+**Depends on**: Phase 22
+**Requirements**: NFR-PERF-04 (BE-05)
+**Success Criteria**:
+  1. Product catalog retrieval time is significantly reduced through effective caching.
+  2. Workflow engine queue supports concurrent execution without thread starvation or blocking.
+**Plans**: TBD
 
-Milestone goal:
-Keep the refactored backend stable, make incremental engineering improvements, and support normal team collaboration without reintroducing stale planning context or architecture drift.
+### Phase 24: Async Task Infrastructure
+**Goal**: Decouple long-running operations from the request-response cycle.
+**Depends on**: Phase 23
+**Requirements**: NFR-PERF-05 (BE-07)
+**Success Criteria**:
+  1. AI processing and OCR jobs are offloaded to a background task queue (e.g., Celery or internal thread pool).
+  2. Users receive immediate job IDs and can poll for status updates or receive notifications.
+**Plans**: TBD
 
-### Planned Phases
+## Progress Table
 
-- [x] **Phase 16: Planning Context Refresh** — align top-level `.planning` docs with current engineering reality and archive stale academic-delivery framing.
-- [ ] **Phase 17: Post-Refactor Stabilization** — investigate and fix reproduced bugs in refactored backend surfaces.
-- [ ] **Phase 18: Focused Regression Hardening** — add/update targeted tests and ownership docs around touched route/service slices.
-- [ ] **Phase 19: Normal Incremental Development** — resume small collaborative bug-fix and feature work on stable foundations.
+| Phase | Plans Complete | Status | Completed |
+|-------|----------------|--------|-----------|
+| 1-15  | N/A            | Archived | 2026-04-22 |
+| 16    | 1/1            | Complete | 2026-06-08 |
+| 18    | 0/1            | Not started | - |
+| 20    | 0/1            | In progress | - |
+| 21    | 0/1            | Not started | - |
+| 22    | 0/1            | Not started | - |
+| 23    | 0/1            | Not started | - |
+| 24    | 0/1            | Not started | - |
 
-## Working Rules for v3.1
-
-- Start from a concrete failing behavior, narrow maintenance task, or clear ownership/documentation gap.
-- Keep changes reviewable and branch-safe for teammates.
-- Preserve route contracts unless a coordinated change is intentional.
-- Prefer focused validation over broad unscoped refactors.
-
-## Progress
-
-| Phase | Milestone | Status | Notes |
-| --- | --- | --- | --- |
-| 16 | v3.1 | Complete | Top-level planning context refreshed and normalized. |
-| 17 | v3.1 | Not started | Next recommended work: stabilization on a concrete failing behavior. |
-| 18 | v3.1 | Not started | Add focused regression coverage and ownership-note refreshes around touched slices. |
-| 19 | v3.1 | Not started | Resume normal collaborative bug-fix and small feature work on stable foundations. |
-
-## Archive Note
-
-Historical detail for earlier milestones remains preserved in `.planning/phases/` and older repo documents for traceability, but those artifacts are not the current planning source of truth.
-
-Last updated: 2026-05-07 after roadmap normalization for v3.1 collaborative development.
+---
+*Last updated: 2026-06-08*

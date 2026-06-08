@@ -1,68 +1,66 @@
 ---
 gsd_state_version: 1.0
-milestone: v3.1
-milestone_name: Post-Refactor Stabilization and Collaborative Development
+milestone: Deadline Rush
+milestone_name: "Deadline Rush: Backend Cleanup"
 status: active
-stopped_at: Phase 16 planning context refresh normalized across live top-level docs; ready for Phase 17 stabilization work
-last_updated: "2026-05-07T14:01:03Z"
-last_activity: 2026-05-07 -- Normalized live .planning docs, removed stale roadmap carryover, and confirmed v3.1 as the active engineering milestone
+stopped_at: Transitioned to deadline rush milestone and initialized Phases 20-24.
+last_updated: "2026-06-08T20:10:00Z"
+last_activity: 2026-06-08 -- Updated planning artifacts for high-intensity backend cleanup; removed Landing Page scope.
 progress:
-    total_phases: 4
+    total_phases: 7
     completed_phases: 1
-    total_plans: 1
-    completed_plans: 1
-    percent: 25
+    total_plans: 0
+    completed_plans: 0
+    percent: 14.3
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-05-07)
+See: .planning/PROJECT.md (updated 2026-06-08)
 
-**Core value:** Keep the refactored codebase stable, understandable, and safe for collaborative development.
-**Current focus:** Use the v3.0 refactor as the baseline, fix concrete bugs, add focused coverage, and keep team-facing context current.
+**Core value:** Unified, intelligent retail automation through modular and extensible architecture.
+**Current focus:** Resolving technical debt and stabilizing the backend architecture by June 13.
 
 ## Current Position
 
-Milestone: v3.1 (Post-Refactor Stabilization and Collaborative Development)
-Phase: 16 complete
-Status: Active; ready for Phase 17 stabilization work and normal incremental engineering tasks
-Last activity: 2026-05-07 -- Live planning docs normalized, roadmap carryover removed, and current engineering baseline reconfirmed
+Milestone: Deadline Rush (Backend Cleanup)
+Phase: 16 complete (Planning Context Refresh)
+Status: Active; starting Phase 20 (AI Route Decoupling).
+Last activity: 2026-06-08 -- Roadmap updated to focus exclusively on high-priority backend tasks.
 
 ## Immediate Priorities
 
-- Investigate and fix reproduced bugs in auth, workflow, AI, Smart Import/Export, wallet, and DL flows.
-- Add or update focused regression tests for touched route and service slices.
-- Keep route ownership, onboarding, and planning notes current enough for teammates.
-- Preserve the v3.0 route/service split unless a new scoped milestone explicitly changes it.
+1. Fix circular imports in `ai_routes.py` (Phase 20).
+2. Consolidate user repository and auth logic (Phase 21).
+3. Refactor requirements and isolate `dl_service` (Phase 22).
+4. Optimize caching and workflow engine (Phase 23).
+5. Implement background task queue (Phase 24).
 
 ## Accumulated Context
 
 ### Decisions
-
-- v3.0 backend refactor is the accepted engineering baseline, not a live migration in progress.
-- Old academic-delivery context is archived historical material, not active planning input.
-- New work should start from a concrete failing behavior or a narrow documentation/ownership gap.
-- Route contracts should remain stable unless a coordinated team decision changes them.
+- Phase 17 (Stabilization) skipped/superseded by the Deadline Rush cleanup tasks.
+- Phase 25 (Landing Page) removed to focus purely on backend reliability.
+- Project structure follows modular monolith pattern established in v3.0.
+- All backend work must support the 5-day deadline (June 13, 2026).
 
 ### Pending Todos
-
-None recorded in STATE after the context refresh. Current work should be pulled from the active v3.1 requirements or from concrete failing behavior.
+- [ ] Fix circular imports in ai_routes.py (Phase 20)
+- [ ] Consolidate User repository/auth logic (Phase 21)
+- [ ] Refactor requirements.txt and isolate dl_service (Phase 22)
+- [ ] Optimize product catalog caching and workflow engine queue (Phase 23)
+- [ ] Implement background task queue for AI/OCR services (Phase 24)
 
 ### Quick Tasks Completed
-
 | Date | Quick task | Outcome |
-| --- | --- | --- |
-| 2026-05-07 | `250507-gsd-context-refresh` | Rewrote live top-level `.planning` docs for v3.1 collaborative development and normalized leftover stale roadmap content. |
-
-### Blockers/Concerns
-
-- Automated helper flows may reintroduce stale milestone wording; re-check top-level `.planning` docs after broad planning operations.
-- Some extracted route modules still copy globals from `app.py`, which remains a maintainability hotspot for future stabilization work.
+|------|------------|---------|
+| 2026-06-08 | Project Initialization | Initialized PROJECT, REQUIREMENTS, and ROADMAP. |
+| 2026-06-08 | Milestone Transition | Switched to "Deadline Rush" milestone. |
+| 2026-06-08 | Scope Refinement | Removed Landing Page and UI requirements to focus on Backend Cleanup. |
 
 ## Session Continuity
-
-- Last v3.0 close-out: 2026-04-22 -- parity verification complete and backend refactor milestone effectively closed.
-- Current session: 2026-05-07 -- live planning docs refreshed and normalized for post-refactor collaborative development.
-- Next recommended work: Phase 17 stabilization on a concrete failing behavior.
+- Previous state was post-refactor stabilization.
+- Current state is deadline-driven execution.
+- Next: `/gsd:plan-phase 20` to address circular imports.
