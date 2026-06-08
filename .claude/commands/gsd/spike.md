@@ -1,5 +1,5 @@
 ---
-name: gsd:spike
+name: gsd-spike
 description: Spike an idea through experiential exploration, or propose what to spike next (frontier mode)
 argument-hint: "[idea to validate] [--quick] [--text] [--wrap-up] or [frontier]"
 allowed-tools:
@@ -14,6 +14,7 @@ allowed-tools:
   - WebFetch
   - mcp__context7__resolve-library-id
   - mcp__context7__query-docs
+requires: []
 ---
 <objective>
 Spike an idea through experiential exploration — build focused experiments to feel the pieces
@@ -25,13 +26,13 @@ Two modes:
 - **Idea mode** (default) — describe an idea to spike
 - **Frontier mode** (no argument or "frontier") — analyzes existing spike landscape and proposes integration and frontier spikes
 
-Does not require `/gsd-new-project` — auto-creates `.planning/spikes/` if needed.
+Does not require prior new-project setup — auto-creates `.planning/spikes/` if needed.
 </objective>
 
 <execution_context>
-@C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.claude/get-shit-done/workflows/spike.md
-@C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.claude/get-shit-done/workflows/spike-wrap-up.md
-@C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.claude/get-shit-done/references/ui-brand.md
+@C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.claude/gsd-core/workflows/spike.md
+@C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.claude/gsd-core/workflows/spike-wrap-up.md
+@C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.claude/gsd-core/references/ui-brand.md
 </execution_context>
 
 <runtime_note>

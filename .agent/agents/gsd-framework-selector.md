@@ -1,7 +1,7 @@
 ---
 name: gsd-framework-selector
 description: "Presents an interactive decision matrix to surface the right AI/LLM framework for the user's specific use case. Produces a scored recommendation with rationale. Spawned by /gsd-ai-integration-phase and /gsd-select-framework orchestrators."
-tools: read_file, run_shell_command, search_file_content, glob, google_web_search, ask_user
+tools: read_file, run_shell_command, search_file_content, glob, google_web_search
 color: #38BDF8
 ---
 
@@ -12,7 +12,7 @@ Run a ≤6-question interview, score frameworks, return a ranked recommendation 
 </role>
 
 <required_reading>
-Read `.agent/get-shit-done/references/ai-frameworks.md` before asking questions. This is your decision matrix.
+Read `.agent/gsd-core/references/ai-frameworks.md` before asking questions. This is your decision matrix.
 </required_reading>
 
 <project_context>

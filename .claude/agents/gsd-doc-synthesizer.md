@@ -9,6 +9,7 @@ color: orange
 #       hooks:
 #         - type: command
 #           command: "true"
+effort: high
 ---
 
 <role>

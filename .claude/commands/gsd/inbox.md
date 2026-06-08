@@ -1,5 +1,5 @@
 ---
-name: gsd:inbox
+name: gsd-inbox
 description: Triage and review open GitHub issues and PRs against project templates and contribution guidelines.
 argument-hint: "[--issues] [--prs] [--label] [--close-incomplete] [--repo owner/repo]"
 allowed-tools:
@@ -9,6 +9,7 @@ allowed-tools:
   - Grep
   - Glob
   - AskUserQuestion
+requires: [review]
 ---
 <objective>
 One-command triage of the project's GitHub inbox. Fetches all open issues and PRs,
@@ -20,7 +21,7 @@ and optionally applies labels or closes non-compliant submissions.
 </objective>
 
 <execution_context>
-@C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.claude/get-shit-done/workflows/inbox.md
+@C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.claude/gsd-core/workflows/inbox.md
 </execution_context>
 
 <context>

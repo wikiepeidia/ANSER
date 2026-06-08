@@ -44,7 +44,7 @@ Issues without a severity classification are not valid output.
 </adversarial_stance>
 
 <required_reading>
-@.agent/get-shit-done/references/gates.md
+@.agent/gsd-core/references/gates.md
 </required_reading>
 
 This agent implements the **Revision Gate** pattern (bounded quality loop with escalation on cap exhaustion).
@@ -104,10 +104,10 @@ Same methodology (goal-backward), different timing, different subject matter.
 <verification_dimensions>
 
 At decision points during plan verification, apply structured reasoning:
-@.agent/get-shit-done/references/thinking-models-planning.md
+@.agent/gsd-core/references/thinking-models-planning.md
 
 For calibration on scoring and issue identification, reference these examples:
-@.agent/get-shit-done/references/few-shot-examples/plan-checker.md
+@.agent/gsd-core/references/few-shot-examples/plan-checker.md
 
 ## Dimension 1: Requirement Coverage
 
@@ -647,7 +647,7 @@ issue:
 
 Load phase operation context:
 ```bash
-INIT=$(gsd-sdk query init.phase-op "${PHASE_ARG}")
+INIT=$(gsd-tools query init.phase-op "${PHASE_ARG}")
 if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
 ```
 
@@ -656,23 +656,23 @@ Extract from init JSON: `phase_dir`, `phase_number`, `has_plans`, `plan_count`.
 Orchestrator provides CONTEXT.md content in the verification prompt. If provided, parse for locked decisions, discretion areas, deferred ideas.
 
 ```bash
-gsd-sdk query phase.list-plans "$phase_number"
+gsd-tools query phase.list-plans "$phase_number"
 # Research / brief artifacts (deterministic listing)
-gsd-sdk query phase.list-artifacts "$phase_number" --type research
-gsd-sdk query roadmap.get-phase "$phase_number"
-gsd-sdk query phase.list-artifacts "$phase_number" --type summary
+gsd-tools query phase.list-artifacts "$phase_number" --type research
+gsd-tools query roadmap.get-phase "$phase_number"
+gsd-tools query phase.list-artifacts "$phase_number" --type summary
 ```
 
 **Extract:** Phase goal, requirements (decompose goal), locked decisions, deferred ideas.
 
 ## Step 2: Load All Plans
 
-Use `gsd-sdk query` to validate plan structure:
+Use `gsd-tools query` to validate plan structure:
 
 ```bash
 for plan in "$PHASE_DIR"/*-PLAN.md; do
   echo "=== $plan ==="
-  PLAN_STRUCTURE=$(gsd-sdk query verify.plan-structure "$plan")
+  PLAN_STRUCTURE=$(gsd-tools query verify.plan-structure "$plan")
   echo "$PLAN_STRUCTURE"
 done
 ```
@@ -687,10 +687,10 @@ Map errors/warnings to verification dimensions:
 
 ## Step 3: Parse must_haves
 
-Extract must_haves from each plan using `gsd-sdk query`:
+Extract must_haves from each plan using `gsd-tools query`:
 
 ```bash
-MUST_HAVES=$(gsd-sdk query frontmatter.get "$PLAN_PATH" must_haves)
+MUST_HAVES=$(gsd-tools query frontmatter.get "$PLAN_PATH" must_haves)
 ```
 
 Returns JSON: `{ truths: [...], artifacts: [...], key_links: [...] }`
@@ -735,7 +735,7 @@ For each requirement: find covering task(s), verify action is specific, flag gap
 Use `verify.plan-structure` (already run in Step 2):
 
 ```bash
-PLAN_STRUCTURE=$(gsd-sdk query verify.plan-structure "$PLAN_PATH")
+PLAN_STRUCTURE=$(gsd-tools query verify.plan-structure "$PLAN_PATH")
 ```
 
 The `tasks` array in the result shows each task's completeness:
@@ -748,7 +748,7 @@ The `tasks` array in the result shows each task's completeness:
 
 **For manual validation of specificity** (`verify.plan-structure` checks structure, not content quality), use structured extraction instead of grepping raw XML:
 ```bash
-gsd-sdk query plan.task-structure "$PLAN_PATH"
+gsd-tools query plan.task-structure "$PLAN_PATH"
 ```
 Inspect `tasks` in the JSON; open the PLAN in the editor for prose-level review.
 
@@ -775,8 +775,8 @@ Missing: No mention of fetch/API call → Issue: Key link not planned
 ## Step 8: Assess Scope
 
 ```bash
-gsd-sdk query plan.task-structure "$PHASE_DIR/$PHASE-01-PLAN.md"
-gsd-sdk query frontmatter.get "$PHASE_DIR/$PHASE-01-PLAN.md" files_modified
+gsd-tools query plan.task-structure "$PHASE_DIR/$PHASE-01-PLAN.md"
+gsd-tools query frontmatter.get "$PHASE_DIR/$PHASE-01-PLAN.md" files_modified
 ```
 
 Thresholds: 2-3 tasks/plan good, 4 warning, 5+ blocker (split required).
