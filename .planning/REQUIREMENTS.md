@@ -75,4 +75,36 @@ This document tracks the functional and non-functional requirements for ANSER, d
 | NFR-PERF-05 (BE-07) | Phase 24 | Complete |
 
 ---
-*Last updated: 2026-06-08*
+
+## Milestone v1.1 Requirements — Tech Debt Completion
+
+### Circular Import & Module Decoupling
+
+- [ ] **CIRC-01**: Developer can import `app` without triggering server startup (`python -c "import app"` exits cleanly with no server spin-up)
+- [ ] **CIRC-02**: System can be served via gunicorn using a `wsgi.py` entry point (`wsgi.py` exists and exports `application`)
+- [ ] **CIRC-03**: `core/services/dl_client.py` uses HTTP by default (`use_local=False`); no `sys.path.insert` in `core/`; local mode imports lazily only when explicitly requested
+
+### Automation Engine Schema Fix
+
+- [ ] **AUTO-01**: `automation_engine.py` SQL references only columns/tables that exist in the actual schema (no `suppliers` table query, no `import_price` column access)
+- [ ] **AUTO-02**: Low-stock automation and scheduled import run end-to-end without exception on both SQLite and NeonDB
+
+### DL Service Logging & OCR Validation
+
+- [ ] **DL-01**: All `print()` calls in `core/services/dl_client.py` replaced with `get_logger()` from `core.logger`
+- [ ] **DL-02**: OCR end-to-end flow returns valid `invoice_data` JSON structure from `/api/model1/detect`
+- [ ] **DL-03**: `dl_service` starts independently via `python run_dl_service.py` without requiring the Flask main app
+
+### Code Hygiene
+
+- [ ] **HYG-01**: `core/services/analytics_service.py` uses `get_logger()`, removes duplicate `except` block, reads `GA_PROPERTY_ID` from `Config` instead of hardcoded value
+- [ ] **HYG-02**: `core/google_integration.py` `list_files` correctly escapes single quotes in Drive API queries
+- [ ] **HYG-03**: `core/utils.py` `format_workspace_tree` accesses row fields by name (not tuple index)
+
+### Non-Functional
+
+- [ ] **NFR-TD-01**: `grep sys.path core/` returns no results after Phase 25
+- [ ] **NFR-TD-02**: No new circular import errors introduced; existing routes remain functional
+
+---
+*Last updated: 2026-06-13 (v1.1 requirements added)*
