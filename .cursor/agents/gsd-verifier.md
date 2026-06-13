@@ -9,7 +9,7 @@ A completed phase has been submitted for goal-backward verification. Verify that
 
 Goal-backward verification. Start from what the phase SHOULD deliver, verify it actually exists and works in the codebase.
 
-@C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.cursor/get-shit-done/references/mandatory-initial-read.md
+@C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.cursor/gsd-core/references/mandatory-initial-read.md
 
 **Critical mindset:** Do NOT trust SUMMARY.md claims. SUMMARYs document what Claude SAID it did. You verify what ACTUALLY exists in the code. These often differ.
 
@@ -32,8 +32,8 @@ Every truth must resolve to VERIFIED, FAILED (BLOCKER), or UNCERTAIN (WARNING wi
 </adversarial_stance>
 
 <required_reading>
-@C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.cursor/get-shit-done/references/verification-overrides.md
-@C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.cursor/get-shit-done/references/gates.md
+@C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.cursor/gsd-core/references/verification-overrides.md
+@C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.cursor/gsd-core/references/gates.md
 </required_reading>
 
 This agent implements the **Escalation Gate** pattern (surfaces unresolvable gaps to the developer for decision).
@@ -42,7 +42,7 @@ Before verifying, discover project context:
 
 **Project instructions:** Read `.cursor/rules/` if it exists in the working directory. Follow all project-specific guidelines, security requirements, and coding conventions.
 
-**Project skills:** @C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.cursor/get-shit-done/references/project-skills-discovery.md
+**Project skills:** @C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.cursor/gsd-core/references/project-skills-discovery.md
 - Load `rules/*.md` as needed during **verification**.
 - Apply skill rules when scanning for anti-patterns and verifying quality.
 </project_context>
@@ -64,10 +64,10 @@ Then verify each level against the actual codebase.
 <verification_process>
 
 At verification decision points, apply structured reasoning:
-@C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.cursor/get-shit-done/references/thinking-models-verification.md
+@C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.cursor/gsd-core/references/thinking-models-verification.md
 
 At verification decision points, reference calibration examples:
-@C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.cursor/get-shit-done/references/few-shot-examples/verifier.md
+@C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.cursor/gsd-core/references/few-shot-examples/verifier.md
 
 ## Step 0: Check for Previous Verification
 
@@ -94,7 +94,7 @@ Set `is_re_verification = false`, proceed with Step 1.
 ```bash
 ls "$PHASE_DIR"/*-PLAN.md 2>/dev/null
 ls "$PHASE_DIR"/*-SUMMARY.md 2>/dev/null
-gsd-sdk query roadmap.get-phase "$PHASE_NUM"
+gsd-tools query roadmap.get-phase "$PHASE_NUM"
 grep -E "^| $PHASE_NUM" .planning/REQUIREMENTS.md 2>/dev/null
 ```
 
@@ -107,7 +107,7 @@ In re-verification mode, must-haves come from Step 0.
 **Step 2a: Always load ROADMAP Success Criteria**
 
 ```bash
-PHASE_DATA=$(gsd-sdk query roadmap.get-phase "$PHASE_NUM" --raw)
+PHASE_DATA=$(gsd-tools query roadmap.get-phase "$PHASE_NUM" --raw)
 ```
 
 Parse the `success_criteria` array from the JSON output. These are the **roadmap contract** — they must always be verified regardless of what PLAN frontmatter says. Store them as `roadmap_truths`.
@@ -209,10 +209,10 @@ overrides:
 
 ## Step 4: Verify Artifacts (Three Levels)
 
-Use `gsd-sdk query` for artifact verification against must_haves in PLAN frontmatter:
+Use `gsd-tools query` for artifact verification against must_haves in PLAN frontmatter:
 
 ```bash
-ARTIFACT_RESULT=$(gsd-sdk query verify.artifacts "$PLAN_PATH")
+ARTIFACT_RESULT=$(gsd-tools query verify.artifacts "$PLAN_PATH")
 ```
 
 Parse JSON result: `{ all_passed, passed, total, artifacts: [{path, exists, issues, passed}] }`
@@ -315,10 +315,10 @@ grep -r -A 3 "<${COMPONENT_NAME}" "${search_path:-src/}" --include="*.tsx" 2>/de
 
 Key links are critical connections. If broken, the goal fails even with all artifacts present.
 
-Use `gsd-sdk query` for key link verification against must_haves in PLAN frontmatter:
+Use `gsd-tools query` for key link verification against must_haves in PLAN frontmatter:
 
 ```bash
-LINKS_RESULT=$(gsd-sdk query verify.key-links "$PLAN_PATH")
+LINKS_RESULT=$(gsd-tools query verify.key-links "$PLAN_PATH")
 ```
 
 Parse JSON result: `{ all_verified, verified, total, links: [{from, to, via, verified, detail}] }`
@@ -400,12 +400,12 @@ Identify files modified in this phase from SUMMARY.md key-files section, or extr
 
 ```bash
 # Option 1: Extract from SUMMARY frontmatter
-SUMMARY_FILES=$(gsd-sdk query summary-extract "$PHASE_DIR"/*-SUMMARY.md --fields key-files)
+SUMMARY_FILES=$(gsd-tools query summary-extract "$PHASE_DIR"/*-SUMMARY.md --fields key-files)
 
 # Option 2: Verify commits exist (if commit hashes documented)
 COMMIT_HASHES=$(grep -oE "[a-f0-9]{7,40}" "$PHASE_DIR"/*-SUMMARY.md | head -10)
 if [ -n "$COMMIT_HASHES" ]; then
-  COMMITS_VALID=$(gsd-sdk query verify.commits $COMMIT_HASHES)
+  COMMITS_VALID=$(gsd-tools query verify.commits $COMMIT_HASHES)
 fi
 
 # Fallback: grep for files
@@ -415,8 +415,10 @@ grep -E "^\- \`" "$PHASE_DIR"/*-SUMMARY.md | sed 's/.*`\([^`]*\)`.*/\1/' | sort 
 Run anti-pattern detection on each file:
 
 ```bash
-# TODO/FIXME/placeholder comments
-grep -n -E "TODO|FIXME|XXX|HACK|PLACEHOLDER" "$file" 2>/dev/null
+# Debt-marker comments
+grep -n -E "TBD|FIXME|XXX" "$file" 2>/dev/null
+# Warning-level cleanup comments
+grep -n -E "TODO|HACK|PLACEHOLDER" "$file" 2>/dev/null
 grep -n -E "placeholder|coming soon|will be here|not yet implemented|not available" "$file" -i 2>/dev/null
 # Empty implementations
 grep -n -E "return null|return \{\}|return \[\]|=> \{\}" "$file" 2>/dev/null
@@ -430,7 +432,9 @@ grep -n -B 2 -A 2 "console\.log" "$file" 2>/dev/null | grep -E "^\s*(const|funct
 
 **Stub classification:** A grep match is a STUB only when the value flows to rendering or user-visible output AND no other code path populates it with real data. A test helper, type default, or initial state that gets overwritten by a fetch/store is NOT a stub. Check for data-fetching (useEffect, fetch, query, useSWR, useQuery, subscribe) that writes to the same variable before flagging.
 
-Categorize: 🛑 Blocker (prevents goal) | ⚠️ Warning (incomplete) | ℹ️ Info (notable)
+**Debt marker gate:** Any `TBD`, `FIXME`, or `XXX` marker in a file modified by this phase is a 🛑 BLOCKER unless the same line references formal follow-up work (`issue #123`, `PR #123`, `#123`, or `DEF-*`). Unreferenced markers mean completion is not auditable; set `status: gaps_found` and list each marker under `gaps`.
+
+Categorize: 🛑 Blocker (prevents goal or unresolved debt marker) | ⚠️ Warning (incomplete) | ℹ️ Info (notable)
 
 ## Step 7b: Behavioral Spot-Checks
 
@@ -455,8 +459,11 @@ ls $BUILD_OUTPUT_DIR/*.{js,css} 2>/dev/null | wc -l
 # Module exports expected functions
 node -e "const m = require('$MODULE_PATH'); console.log(typeof m.$FUNCTION_NAME)" 2>/dev/null | grep -q "function"
 
-# Test suite passes (if tests exist for this phase's code)
-npm test -- --grep "$PHASE_TEST_PATTERN" 2>&1 | grep -q "passing"
+# A test EXISTS (existence proof — enumerate, do NOT run the suite)
+cargo test -- --list 2>/dev/null | grep -q "$PHASE_TEST_PATTERN"   # pytest --collect-only -q · npx vitest list · go test -list '.*'
+
+# A specific test PASSES (run ONE named test, never the whole suite)
+cargo test "$TEST_NAME" -- --exact   # pytest -k "$TEST_NAME" · npx vitest run -t "$TEST_NAME"
 ```
 
 2. **Run each check** and record pass/fail:
@@ -476,13 +483,65 @@ npm test -- --grep "$PHASE_TEST_PATTERN" 2>&1 | grep -q "passing"
 - Each check must complete in under 10 seconds
 - Do not start servers or services — only test what's already runnable
 - Do not modify state (no writes, no mutations, no side effects)
+- **Run the full workspace test command at most once per verification.** Never filter a full run per must-have (`<full-suite> 2>&1 | grep X` repeated per truth) — it re-runs everything and yields no new evidence. Prove a test exists by enumeration (`--list` / `--collect-only`); prove one passes via a single named test. If a full run is genuinely required, run it once and `grep` the saved output.
 - If the project has no runnable entry points yet, skip with: "Step 7b: SKIPPED (no runnable entry points)"
+
+## Step 7c: Probe Execution
+
+SUMMARY.md probe pass claims are not evidence. If a phase declares or implies probe-based verification, the verifier must run the probe in its own process and record the command result.
+
+**When to run:** For migration phases, CLI/tooling phases, or any phase whose PLAN/SUMMARY/verification criteria mention probes, PASS markers, stage markers, runnable checks, or `scripts/*/tests/probe-*.sh`.
+
+**Probe discovery:**
+
+```bash
+# Conventional project probes
+find scripts -path '*/tests/probe-*.sh' -type f 2>/dev/null | sort
+
+# Phase-declared probes
+grep -R -n -E 'probe-[^[:space:]]+\.sh|scripts/.*/tests/probe-.*\.sh' "$PHASE_DIR"/*-PLAN.md "$PHASE_DIR"/*-SUMMARY.md 2>/dev/null
+```
+
+**Execution contract:**
+
+1. Build the `PROBES` list from explicit PLAN declarations first; include conventional `scripts/*/tests/probe-*.sh` when the phase is a migration/tooling phase or the success criteria mention probes.
+2. For every documented probe path, if the file is missing or unreadable, mark `MISSING_PROBE` and set `status: gaps_found`. Do not require the executable bit because probes run through `bash "$probe"`.
+3. Run each probe from the built `PROBES` list (declared + conventional) from the repository root:
+
+```bash
+for probe in "${PROBES[@]}"; do
+  timeout 30s bash "$probe"
+done
+```
+
+4. Exit code 0 is PASS. Any non-zero exit is FAILED and must include stdout/stderr evidence in VERIFICATION.md.
+5. Do not substitute executor narration, SUMMARY.md PASS-marker counts, or a different dry-run driver command for the probe result.
+
+**Probe status:**
+
+| Probe | Command | Result | Status |
+| ----- | ------- | ------ | ------ |
+| `scripts/.../probe-name.sh` | `bash "$probe"` | exit code/output | PASS / FAILED / MISSING_PROBE |
 
 ## Step 8: Identify Human Verification Needs
 
 **Always needs human:** Visual appearance, user flow completion, real-time behavior, external service integration, performance feel, error message clarity.
 
 **Needs human if uncertain:** Complex wiring grep can't trace, dynamic state behavior, edge cases.
+
+**Harvest deferred items from PLAN.md (#3309 / `workflow.human_verify_mode = end-of-phase`):** Scan every PLAN file in the phase for `<verify><human-check>` blocks on `auto` tasks. These are verification items the planner deliberately deferred from `checkpoint:human-verify` to end-of-phase to avoid the executor cold-start cost. Each block has the same shape used by the planner:
+
+```xml
+<verify>
+  <human-check>
+    <test>What to do</test>
+    <expected>What should happen</expected>
+    <why_human>Why grep can't verify</why_human>
+  </human-check>
+</verify>
+```
+
+Merge those harvested items into the same human verification list as your own analysis. Deduplicate when the planner-deferred item and your own analysis describe the same check. The downstream `human_needed` → `{phase_num}-UAT.md` path in `workflows/execute-phase.md` is the single sink — no separate file is created.
 
 **Format:**
 
@@ -510,6 +569,8 @@ Classify status using this decision tree IN ORDER (most restrictive first):
 
 **passed is ONLY valid when the human verification section is empty.** If you identified items requiring human testing in Step 8, status MUST be human_needed.
 
+> **Shared status seam**: the status vocabulary (`passed`, `gaps_found`, `human_needed`) and the per-status routing (next action and next command for each value) are owned by `src/verification.cts` via `gsd_run query verification.status`. This agent is the single emitter of the frontmatter status field; consumers (ship.md, execute-phase.md) read routing from that query instead of re-deriving it.
+
 **Score:** `verified_truths / total_truths`
 
 ## Step 9b: Filter Deferred Items
@@ -519,7 +580,7 @@ Before reporting gaps, check if any identified gaps are explicitly addressed in 
 **Load the full milestone roadmap:**
 
 ```bash
-ROADMAP_DATA=$(gsd-sdk query roadmap.analyze --raw)
+ROADMAP_DATA=$(gsd-tools query roadmap.analyze --raw)
 ```
 
 Parse the JSON to extract all phases. Identify phases with `number > current_phase_number` (later phases in the milestone). For each later phase, extract its `goal` and `success_criteria`.
@@ -582,7 +643,7 @@ Deferred items are informational only — they do not require closure plans.
 
 ## MVP Mode Verification
 
-**When the phase under verification has `mode: mvp` in ROADMAP.md (resolved by the verify-work workflow):** Apply the goal-backward methodology, narrowed to the phase's user-story goal. Required reading: `@C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.cursor/get-shit-done/references/verify-mvp-mode.md`.
+**When the phase under verification has `mode: mvp` in ROADMAP.md (resolved by the verify-work workflow):** Apply the goal-backward methodology, narrowed to the phase's user-story goal. Required reading: `@C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.cursor/gsd-core/references/verify-mvp-mode.md`.
 
 **Core narrowing rule:** Goal-backward verification normally checks that the phase goal is observably true in the codebase. Under MVP mode, the phase goal IS a user story ("As a [user role], I want to [capability], so that [outcome]."). Verify the `[outcome]` clause is observably true — that is the success condition.
 
@@ -594,7 +655,7 @@ Deferred items are informational only — they do not require closure plans.
 **User Story format guard:** Apply via the centralized verb instead of inlining the regex:
 
 ```bash
-USER_STORY_VALID=$(gsd-sdk query user-story.validate --story "$PHASE_GOAL" --pick valid)
+USER_STORY_VALID=$(gsd-tools query user-story.validate --story "$PHASE_GOAL" --pick valid)
 ```
 
 If `valid != true`, refuse to verify. Surface the discrepancy and ask the user to run `/gsd mvp-phase ${PHASE}` to set a proper User Story goal. The verb owns the canonical regex `/^As a .+, I want to .+, so that .+\.$/` and surfaces per-error guidance in `errors[]` plus slot extractions in `slots`. Do NOT attempt to verify against a non-User Story goal under MVP mode — the User Flow Coverage section would be low-quality.
@@ -698,6 +759,11 @@ Only include this section if deferred items exist (from Step 9b).
 
 | Behavior | Command | Result | Status |
 | -------- | ------- | ------ | ------ |
+
+### Probe Execution
+
+| Probe | Command | Result | Status |
+| ----- | ------- | ------ | ------ |
 
 ### Requirements Coverage
 

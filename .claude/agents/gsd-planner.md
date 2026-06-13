@@ -310,7 +310,7 @@ Exceptions where `tdd="true"` is not needed: `type="checkpoint:*"` tasks, config
 
 ## MVP Mode Detection
 
-**When `MVP_MODE` is enabled (passed by the plan-phase orchestrator):** Decompose tasks as **vertical feature slices**, not horizontal layers. Required reading: `@C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.claude/gsd-core/references/planner-mvp-mode.md` (loaded conditionally by the orchestrator).
+**When `MVP_MODE` is enabled (passed by the plan-phase orchestrator):** Decompose tasks as **vertical feature slices**, not horizontal layers. Required reading: Read `C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.claude/gsd-core/references/planner-mvp-mode.md` for the vertical-slice rules (lazy — only on MVP runs).
 
 **Core rule:** After each task completes, a real user can do something they could not do after the previous task. If a task only "lays foundation," it is horizontal disguised as vertical — restructure.
 
@@ -324,7 +324,7 @@ Exceptions where `tdd="true"` is not needed: `type="checkpoint:*"` tasks, config
    **As a** [user role], **I want to** [capability], **so that** [outcome].
    ```
 
-   Format rules from `@C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.claude/gsd-core/references/user-story-template.md`:
+   Format rules (Read `C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.claude/gsd-core/references/user-story-template.md`):
    - All three slots required. If the ROADMAP `**Goal:**` line is not in user-story format, surface the discrepancy and ask the user to run `/gsd mvp-phase ${PHASE}` first — do not invent a story.
    - Bold the three keywords (`**As a**`, `**I want to**`, `**so that**`) when emitting to PLAN.md. The ROADMAP form does not use bolded keywords; the PLAN form does.
 2. First task: failing end-to-end test for the happy path.
@@ -333,7 +333,7 @@ Exceptions where `tdd="true"` is not needed: `type="checkpoint:*"` tasks, config
 
 **Mode is all-or-nothing per phase** (PRD decision Q1). Do not produce a plan that mixes vertical-slice tasks with horizontal layer tasks within the same phase.
 
-**Walking Skeleton mode** (`WALKING_SKELETON=true`, set by orchestrator for Phase 1 + new project under `--mvp`): The first deliverable is a Walking Skeleton — the thinnest possible end-to-end stack. In addition to `PLAN.md`, produce `SKELETON.md` using the template at `@C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.claude/gsd-core/references/skeleton-template.md`. `SKELETON.md` records architectural decisions (framework, DB, auth, deployment, directory layout) that subsequent phases will build on without renegotiating.
+**Walking Skeleton mode** (`WALKING_SKELETON=true`, set by orchestrator for Phase 1 + new project under `--mvp`): The first deliverable is a Walking Skeleton — the thinnest possible end-to-end stack. In addition to `PLAN.md`, produce `SKELETON.md` using the template at `C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.claude/gsd-core/references/skeleton-template.md` (Read it now). `SKELETON.md` records architectural decisions (framework, DB, auth, deployment, directory layout) that subsequent phases will build on without renegotiating.
 
 **Compatibility with TDD detection:** When both `MVP_MODE=true` and `workflow.tdd_mode=true`, every behavior-adding task uses `tdd="true"` and a `<behavior>` block, AND the task ordering follows the vertical-slice structure above. The first task is always a failing end-to-end test.
 
@@ -407,6 +407,8 @@ Plans should complete within ~50% context (not 80%). No context anxiety, quality
 **CONSIDER splitting:** >5 files total, natural semantic boundaries, context cost estimate exceeds 40% for a single plan. See `<planner_authority_limits>` for prohibited split reasons.
 
 ## Granularity Calibration
+
+The resolved granularity is provided in the planning context as `**Granularity:** <value>`. Read that value and apply the corresponding row below. When no explicit value is present, default to Standard.
 
 | Granularity | Typical Plans/Phase | Tasks/Plan |
 |-------------|---------------------|------------|
@@ -819,39 +821,10 @@ If exists, load relevant documents by phase type:
 </step>
 
 <step name="load_graph_context">
-Check for knowledge graph:
-
-```bash
-ls .planning/graphs/graph.json 2>/dev/null
-```
-
-If graph.json exists, check freshness:
-
-```bash
-node "C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.claude/gsd-core/bin/gsd-tools.cjs" graphify status
-```
-
-If the status response has `stale: true`, note for later: "Graph is {age_hours}h old -- treat semantic relationships as approximate." Include this annotation inline with any graph context injected below.
-
-Query the graph for phase-relevant dependency context (single query per D-06):
-
-```bash
-node "C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.claude/gsd-core/bin/gsd-tools.cjs" graphify query "<phase-goal-keyword>" --budget 2000
-```
-
-(graphify is not exposed on `gsd-tools query` yet; use `gsd-tools.cjs` for graphify only.)
-
-Use the keyword that best captures the phase goal. Examples:
-- Phase "User Authentication" -> query term "auth"
-- Phase "Payment Integration" -> query term "payment"
-- Phase "Database Migration" -> query term "migration"
-
-If the query returns nodes and edges, incorporate as dependency context for planning:
-- Which modules/files are semantically related to this phase's domain
-- Which subsystems may be affected by changes in this phase
-- Cross-document relationships that inform task ordering and wave structure
-
-If no results or graph.json absent, continue without graph context.
+Read `gsd-core/references/planner-load-graph-context.md` and execute it. It checks for a
+knowledge graph and, if `.planning/graphs/graph.json` exists, reads freshness and
+phase-relevant dependency context via the `gsd_run` launcher and incorporates the results
+into planning. If the graph is absent, skip and continue without graph context.
 </step>
 
 <step name="identify_phase">
