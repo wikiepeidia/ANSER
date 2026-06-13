@@ -59,7 +59,7 @@ This document tracks the functional and non-functional requirements for ANSER, d
 ## Traceability
 
 | ID | Phase | Status |
-|----|-------|--------|
+| --- | --- | --- |
 | FR-AUTH-01-04 | 1-5 (Archived) | Complete |
 | FR-AI-01-04 | 6-10 (Archived) | Complete |
 | FR-DL-* | 6-10 (Archived) | Complete |
@@ -73,6 +73,19 @@ This document tracks the functional and non-functional requirements for ANSER, d
 | NFR-INF-01 (BE-04) | Phase 22 | Complete |
 | NFR-PERF-04 (BE-05) | Phase 23 | Complete |
 | NFR-PERF-05 (BE-07) | Phase 24 | Complete |
+| CIRC-01 | Phase 25 | Pending |
+| CIRC-02 | Phase 25 | Pending |
+| CIRC-03 | Phase 25 | Pending |
+| NFR-TD-01 | Phase 25 | Pending |
+| NFR-TD-02 | Phase 25 | Pending |
+| AUTO-01 | Phase 26 | Pending |
+| AUTO-02 | Phase 26 | Pending |
+| DL-01 | Phase 27 | Pending |
+| DL-02 | Phase 27 | Pending |
+| DL-03 | Phase 27 | Pending |
+| HYG-01 | Phase 28 | Pending |
+| HYG-02 | Phase 28 | Pending |
+| HYG-03 | Phase 28 | Pending |
 
 ---
 
@@ -107,4 +120,5 @@ This document tracks the functional and non-functional requirements for ANSER, d
 - [ ] **NFR-TD-02**: No new circular import errors introduced; existing routes remain functional
 
 ---
-*Last updated: 2026-06-13 (v1.1 requirements added)*
+
+Last updated: 2026-06-13 (v1.1 requirements added; traceability updated for Phases 25-28)
