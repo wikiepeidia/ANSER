@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Tech Debt Completion
 status: planning
-last_updated: "2026-06-13T14:42:40.477Z"
+last_updated: "2026-06-13T00:00:00.000Z"
 last_activity: 2026-06-13
 progress:
-  total_phases: 0
+  total_phases: 4
   completed_phases: 0
-  total_plans: 0
+  total_plans: 4
   completed_plans: 0
   percent: 0
 ---
@@ -17,47 +17,58 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-06-08)
+See: .planning/PROJECT.md (updated 2026-06-13)
 
 **Core value:** Unified, intelligent retail automation through modular and extensible architecture.
-**Current focus:** Post-deadline stabilization and future feature expansion.
+**Current focus:** v1.1 Tech Debt Completion — clearing circular imports, schema bugs, logging gaps, and code hygiene items.
 
 ## Current Position
 
-Phase: Not started (defining requirements)
-Plan: —
-Status: Defining requirements
-Last activity: 2026-06-13 — Milestone v1.1 started
+Phase: 25 — Circular Import & Module Decoupling
+Plan: TBD (not yet planned)
+Status: Planning — roadmap written, phase planning not started
+Last activity: 2026-06-13 — Roadmap for v1.1 (Phases 25-28) created
+
+Progress: [----------] 0% (0/4 phases complete)
 
 ## Immediate Priorities
 
-1. Finalize regression hardening (Phase 18) or proceed to next milestone.
-2. Review system stability after high-intensity refactor.
+1. Run `/gsd-plan-phase 25` to decompose Phase 25 into executable tasks.
+2. After Phase 25 completes, proceed to Phase 26 (Automation Engine Schema Fix).
+3. Phases 27 and 28 can begin after Phase 25 is done (both depend on Phase 25 only).
 
 ## Accumulated Context
 
 ### Decisions
 
 - Phase 17 (Stabilization) skipped/superseded by the Deadline Rush cleanup tasks.
-- Phase 25 (Landing Page) removed to focus purely on backend reliability.
+- Phase 25 (Landing Page, old numbering) removed to focus purely on backend reliability.
 - Async tasks implemented using Redis/RQ as per Phase 24.
 - Product catalog caching and workflow engine optimizations implemented (Phase 23).
+- v1.1 milestone started 2026-06-13; Phases 25-28 cover all remaining tech debt TODOs.
+- NFR-TD-01 and NFR-TD-02 assigned to Phase 25 as cross-cutting non-functional requirements.
+- Phases 26, 27, and 28 all depend on Phase 25 (module decoupling is a prerequisite for clean work in other files).
 
 ### Pending Todos
 
-- [ ] Finalize Phase 18: Focused Regression Hardening (if still required)
+- [ ] Finalize Phase 18: Focused Regression Hardening (still open, predates v1.1)
+- [ ] Plan and execute Phase 25: Circular Import & Module Decoupling
+- [ ] Plan and execute Phase 26: Automation Engine Schema Fix
+- [ ] Plan and execute Phase 27: DL Service Logging & OCR Validation
+- [ ] Plan and execute Phase 28: Code Hygiene
 
 ### Quick Tasks Completed
 
 | Date | Quick task | Outcome |
-|------|------------|---------|
+| --- | --- | --- |
 | 2026-06-08 | Project Initialization | Initialized PROJECT, REQUIREMENTS, and ROADMAP. |
 | 2026-06-08 | Milestone Transition | Switched to "Deadline Rush" milestone. |
 | 2026-06-08 | Scope Refinement | Removed Landing Page and UI requirements to focus on Backend Cleanup. |
 | 2026-06-08 | Backend Cleanup Completion | Completed Phases 20, 21, 22, 23, and 24. |
+| 2026-06-13 | v1.1 Milestone Start | Requirements gathered; Roadmap Phases 25-28 written and committed. |
 
 ## Session Continuity
 
-- Previous state was execution of deadline rush.
-- Current state is milestone completion.
-- Next: `/gsd:new-milestone` or address Phase 18.
+- Previous state: milestone completion of Deadline Rush (Phases 20-24 done).
+- Current state: v1.1 Tech Debt Completion roadmap finalized; no phases executed yet.
+- Next: `/gsd-plan-phase 25` to begin Phase 25 planning.
