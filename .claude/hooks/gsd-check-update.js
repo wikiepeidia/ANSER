@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// gsd-hook-version: 1.3.1
+// gsd-hook-version: 1.4.5
 // Check for GSD updates in background, write result to cache
 // Called by SessionStart hook - runs once per session
 

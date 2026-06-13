@@ -1,6 +1,6 @@
 ---
 name: gsd-research-synthesizer
-description: Synthesizes research outputs from parallel researcher agents into SUMMARY.md. Spawned by /gsd-new-project after 4 researcher agents complete.
+description: Synthesizes research outputs from parallel researcher agents into SUMMARY.md. Spawned by /gsd:new-project after 4 researcher agents complete.
 # hooks:
 #   PostToolUse:
 #     - matcher: "Write|Edit"
@@ -60,7 +60,7 @@ cat .planning/research/FEATURES.md
 cat .planning/research/ARCHITECTURE.md
 cat .planning/research/PITFALLS.md
 
-# Planning config loaded via gsd-sdk query (or gsd-tools.cjs) in commit step
+# Planning config loaded via gsd-tools query (or gsd-tools.cjs) in commit step
 ```
 
 Parse each file to extract:
@@ -114,7 +114,7 @@ This is the most important section. Based on combined research:
 - Which pitfalls it must avoid
 
 **Add research flags:**
-- Which phases likely need `/gsd-research-phase` during planning?
+- Which phases likely need `/gsd:plan-phase --research-phase <N>` during planning?
 - Which phases have well-documented patterns (skip research)?
 
 ## Step 5: Assess Confidence
@@ -130,18 +130,30 @@ Identify gaps that couldn't be resolved and need attention during planning.
 
 ## Step 6: Write SUMMARY.md
 
-**ALWAYS use the Write tool to create files** — never use `Bash(cat << 'EOF')` or heredoc commands for file creation.
+**This is the canonical output of this agent. The orchestrator depends on `.planning/research/SUMMARY.md` existing on disk after you return; it does NOT read your return message for content.**
 
-Use template: C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.gemini/get-shit-done/templates/research-project/SUMMARY.md
+**Hard rules (must follow):**
 
-Write to `.planning/research/SUMMARY.md`
+1. **Use the `Write` tool** to write the file. The `Write` tool is in your `tools:` allowlist; there are no restrictions on it. Do not assume restrictions that the frontmatter does not impose.
+2. **Do NOT return the SUMMARY.md content in your response.** Your return message is a brief confirmation (see `<structured_returns>` below); the content lives on disk.
+3. **Do NOT ask permission to write.** Writing `.planning/research/SUMMARY.md` is the explicit purpose of this agent. Asking the orchestrator to do it instead is a failure mode that can cause downstream `SUMMARY.md not found` failures.
+4. **Do NOT use `Bash(cat << 'EOF')` or heredoc** for file creation. Use the `Write` tool. In short: **never use `Bash(cat << 'EOF')` or heredoc**.
+5. **If the Write tool errors,** surface the actual error in your return message. Do not silently fall back to returning content; that hides the failure from the orchestrator.
+6. **Large-file / truncation fallback.** Default: write the whole file in a single `Write` call — that is correct and reliable on most runtimes. But some runtimes (e.g. OpenCode) cap tool-call output, and a single oversized `Write` is truncated mid-payload — surfacing a tool error such as `JSON Parse error: Expected '}'`. If a `Write` fails with a truncation / invalid-tool error, **do NOT retry the same oversized call** (that loops forever). Instead build the file incrementally so no single tool call carries the whole payload:
+   - `Write` the file with only the first section, ending with the sentinel line `<!-- gsd:write-continue -->`.
+   - `Read` the file, then `Edit` it, replacing `<!-- gsd:write-continue -->` with the next section followed by the sentinel again. Repeat, one section per `Edit`.
+   - On the final section, replace the sentinel with the closing content and no trailing sentinel.
+
+Use template: C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.gemini/gsd-core/templates/research-project/SUMMARY.md
+
+Write to `.planning/research/SUMMARY.md`.
 
 ## Step 7: Commit All Research
 
 The 4 parallel researcher agents write files but do NOT commit. You commit everything together.
 
 ```bash
-gsd-sdk query commit "docs: complete project research" --files .planning/research/
+gsd-tools query commit "docs: complete project research" --files .planning/research/
 ```
 
 ## Step 8: Return Summary
@@ -152,7 +164,7 @@ Return brief confirmation with key points for the orchestrator.
 
 <output_format>
 
-Use template: C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.gemini/get-shit-done/templates/research-project/SUMMARY.md
+Use template: C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.gemini/gsd-core/templates/research-project/SUMMARY.md
 
 Key sections:
 - Executive Summary (2-3 paragraphs)

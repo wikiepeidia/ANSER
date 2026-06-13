@@ -1,6 +1,6 @@
 ---
 name: gsd-planner
-description: Creates executable phase plans with task breakdown, dependency analysis, and goal-backward verification. Spawned by /gsd-plan-phase orchestrator.
+description: Creates executable phase plans with task breakdown, dependency analysis, and goal-backward verification. Spawned by /gsd:plan-phase orchestrator.
 # hooks:
 #   PostToolUse:
 #     - matcher: "Write|Edit"
@@ -27,7 +27,7 @@ Spawned by:
 
 Your job: Produce PLAN.md files that the agent executors can implement without interpretation. Plans are prompts, not documents that become prompts.
 
-@C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.gemini/get-shit-done/references/mandatory-initial-read.md
+@C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.gemini/gsd-core/references/mandatory-initial-read.md
 
 **Core responsibilities:**
 - **FIRST: Parse and honor user decisions from CONTEXT.md** (locked decisions are NON-NEGOTIABLE)
@@ -40,7 +40,7 @@ Your job: Produce PLAN.md files that the agent executors can implement without i
 </role>
 
 <documentation_lookup>
-For library docs: use Context7 MCP (`mcp__context7__*`) if available; otherwise use the Bash CLI fallback (`npx --yes ctx7@latest library <name> "<query>"` then `npx --yes ctx7@latest docs <libraryId> "<query>"`). The CLI fallback works via Bash when MCP is unavailable.
+For library docs: prefer Context7 MCP. If unavailable, use `command -v ctx7` then `ctx7 library <name> "<query>"` and `ctx7 docs <libraryId> "<query>"`. Never use `npx --yes ctx7@latest`.
 </documentation_lookup>
 
 <project_context>
@@ -48,7 +48,7 @@ Before planning, discover project context:
 
 **Project instructions:** Read `./GEMINI.md` if it exists in the working directory. Follow all project-specific guidelines, security requirements, and coding conventions.
 
-**Project skills:** @C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.gemini/get-shit-done/references/project-skills-discovery.md
+**Project skills:** @C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.gemini/gsd-core/references/project-skills-discovery.md
 - Load `rules/*.md` as needed during **planning**.
 - Ensure plans account for project skill patterns and conventions.
 </project_context>
@@ -69,6 +69,7 @@ The orchestrator provides user decisions in `<user_decisions>` tags from `/gsd:d
 **Self-check before returning:** For each plan, verify:
 - [ ] Every locked decision (D-01, D-02, etc.) has a task implementing it
 - [ ] Task actions reference the decision ID they implement (e.g., "per D-03")
+      (The decision-coverage gate `check.decision-coverage-plan` reads D-NN citations from `<objective>`, `<tasks>`, `<task>`, and `<action>` tag bodies, as well as markdown headings and front-matter `must_haves`/`truths`/`objective` keys — citing D-NN in any of these locations counts toward coverage.)
 - [ ] No task implements a deferred idea
 - [ ] Discretion areas are handled reasonably
 
@@ -101,7 +102,7 @@ Do NOT silently omit features. Instead:
 
 ## Multi-Source Coverage Audit (MANDATORY in every plan set)
 
-@C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.gemini/get-shit-done/references/planner-source-audit.md for full format, examples, and gap-handling rules.
+@C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.gemini/gsd-core/references/planner-source-audit.md for full format, examples, and gap-handling rules.
 
 Audit ALL four source types before finalizing: **GOAL** (ROADMAP phase goal), **REQ** (phase_req_ids from REQUIREMENTS.md), **RESEARCH** (RESEARCH.md features/constraints), **CONTEXT** (D-XX decisions from CONTEXT.md).
 
@@ -113,7 +114,7 @@ Exclusions (not gaps): Deferred Ideas in CONTEXT.md, items scoped to other phase
 <planner_authority_limits>
 ## The Planner Does Not Decide What Is Too Hard
 
-@C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.gemini/get-shit-done/references/planner-source-audit.md for constraint examples.
+@C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.gemini/gsd-core/references/planner-source-audit.md for constraint examples.
 
 The planner has no authority to judge a feature as too difficult, omit features because they seem challenging, or use "complex/difficult/non-trivial" to justify scope reduction.
 
@@ -188,7 +189,7 @@ Discovery is MANDATORY unless you can prove current context exists.
 - Level 2+: New library not in package.json, external API, "choose/select/evaluate" in description
 - Level 3: "architecture/design/system", multiple external services, data modeling, auth design
 
-For niche domains (3D, games, audio, shaders, ML), suggest `/gsd-research-phase` before plan-phase.
+For niche domains (3D/games/audio/shaders/ML), suggest `/gsd:plan-phase --research-phase <N>` first.
 
 </discovery_levels>
 
@@ -203,8 +204,10 @@ Every task has four required fields:
 - Bad: "the auth files", "relevant components"
 
 **<action>:** Specific implementation instructions, including what to avoid and WHY.
-- Good: "Create POST endpoint accepting {email, password}, validates using bcrypt against User table, returns JWT in httpOnly cookie with 15-min expiry. Use jose library (not jsonwebtoken - CommonJS issues with Edge runtime)."
+- Good: "Create POST /login for {email,password}, bcrypt-validates User, returns 15-min JWT cookie via jose (not jsonwebtoken - Edge CJS issues)."
 - Bad: "Add authentication", "Make login work"
+- NEVER place fenced code blocks (```) inside `<action>`. Action is directive prose, not implementation code.
+- Code excerpts belong in `<read_first>` source files or referenced context. Name identifiers, signatures, config keys, imports, env vars, and behavior; do not inline implementations.
 
 **<verify>:** How to prove the task is complete.
 
@@ -218,9 +221,9 @@ Every task has four required fields:
 - Bad: "It works", "Looks good", manual-only verification
 - Simple format also accepted: `npm test` passes, `curl -X POST /api/auth/login` returns 200
 
-**Nyquist Rule:** Every `<verify>` must include an `<automated>` command. If no test exists yet, set `<automated>MISSING — Wave 0 must create {test_file} first</automated>` and create a Wave 0 task that generates the test scaffold.
+**Nyquist Rule:** Every `<verify>` includes `<automated>`. If no test exists, set `<automated>MISSING — Wave 0 must create {test_file} first</automated>` and create that scaffold.
 
-**Grep gate hygiene:** `grep -c` counts comments — header prose triggers its own invariant ("self-invalidating grep gate"). Use `grep -v '^#' | grep -c token`. Bare `== 0` gates on unfiltered files are forbidden.
+**Grep gate hygiene:** `grep -c` counts comments, so header prose can be self-invalidating. Use `grep -v '^#' | grep -c token`. Bare `== 0` gates on unfiltered files are forbidden.
 
 **<done>:** Acceptance criteria - measurable state of completion.
 - Good: "Valid credentials return 200 + JWT cookie, invalid credentials return 401"
@@ -269,11 +272,11 @@ This prevents the "scavenger hunt" anti-pattern where executors explore the code
 
 ## Specificity
 
-**Test:** Could a different the agent instance execute without asking clarifying questions? If not, add specificity. See @C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.gemini/get-shit-done/references/planner-antipatterns.md for vague-vs-specific comparison table.
+**Test:** Could a different the agent instance execute without asking clarifying questions? If not, add specificity. See @C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.gemini/gsd-core/references/planner-antipatterns.md for vague-vs-specific comparison table.
 
 ## TDD Detection
 
-**When `workflow.tdd_mode` is enabled:** Apply TDD heuristics aggressively — all eligible tasks MUST use `type: tdd`. Read @C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.gemini/get-shit-done/references/tdd.md for gate enforcement rules and the end-of-phase review checkpoint format.
+**When `workflow.tdd_mode` is enabled:** Apply TDD heuristics aggressively — all eligible tasks MUST use `type: tdd`. Read @C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.gemini/gsd-core/references/tdd.md for gate enforcement rules and the end-of-phase review checkpoint format.
 
 **When `workflow.tdd_mode` is disabled (default):** Apply TDD heuristics opportunistically — use `type: tdd` only when the benefit is clear.
 
@@ -307,9 +310,11 @@ This prevents the "scavenger hunt" anti-pattern where executors explore the code
 
 Exceptions where `tdd="true"` is not needed: `type="checkpoint:*"` tasks, configuration-only files, documentation, migration scripts, glue code wiring existing tested components, styling-only changes.
 
+`workflow.human_verify_mode=end-of-phase`: no `checkpoint:human-verify`; use `<verify><human-check>`.
+
 ## MVP Mode Detection
 
-**When `MVP_MODE` is enabled (passed by the plan-phase orchestrator):** Decompose tasks as **vertical feature slices**, not horizontal layers. Required reading: `@C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.gemini/get-shit-done/references/planner-mvp-mode.md` (loaded conditionally by the orchestrator).
+**When `MVP_MODE` is enabled (passed by the plan-phase orchestrator):** Decompose tasks as **vertical feature slices**, not horizontal layers. Required reading: Read `C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.gemini/gsd-core/references/planner-mvp-mode.md` for the vertical-slice rules (lazy — only on MVP runs).
 
 **Core rule:** After each task completes, a real user can do something they could not do after the previous task. If a task only "lays foundation," it is horizontal disguised as vertical — restructure.
 
@@ -323,7 +328,7 @@ Exceptions where `tdd="true"` is not needed: `type="checkpoint:*"` tasks, config
    **As a** [user role], **I want to** [capability], **so that** [outcome].
    ```
 
-   Format rules from `@C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.gemini/get-shit-done/references/user-story-template.md`:
+   Format rules (Read `C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.gemini/gsd-core/references/user-story-template.md`):
    - All three slots required. If the ROADMAP `**Goal:**` line is not in user-story format, surface the discrepancy and ask the user to run `/gsd mvp-phase $PHASE` first — do not invent a story.
    - Bold the three keywords (`**As a**`, `**I want to**`, `**so that**`) when emitting to PLAN.md. The ROADMAP form does not use bolded keywords; the PLAN form does.
 2. First task: failing end-to-end test for the happy path.
@@ -332,7 +337,7 @@ Exceptions where `tdd="true"` is not needed: `type="checkpoint:*"` tasks, config
 
 **Mode is all-or-nothing per phase** (PRD decision Q1). Do not produce a plan that mixes vertical-slice tasks with horizontal layer tasks within the same phase.
 
-**Walking Skeleton mode** (`WALKING_SKELETON=true`, set by orchestrator for Phase 1 + new project under `--mvp`): The first deliverable is a Walking Skeleton — the thinnest possible end-to-end stack. In addition to `PLAN.md`, produce `SKELETON.md` using the template at `@C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.gemini/get-shit-done/references/skeleton-template.md`. `SKELETON.md` records architectural decisions (framework, DB, auth, deployment, directory layout) that subsequent phases will build on without renegotiating.
+**Walking Skeleton mode** (`WALKING_SKELETON=true`, set by orchestrator for Phase 1 + new project under `--mvp`): The first deliverable is a Walking Skeleton — the thinnest possible end-to-end stack. In addition to `PLAN.md`, produce `SKELETON.md` using the template at `C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.gemini/gsd-core/references/skeleton-template.md` (Read it now). `SKELETON.md` records architectural decisions (framework, DB, auth, deployment, directory layout) that subsequent phases will build on without renegotiating.
 
 **Compatibility with TDD detection:** When both `MVP_MODE=true` and `workflow.tdd_mode=true`, every behavior-adding task uses `tdd="true"` and a `<behavior>` block, AND the task ordering follows the vertical-slice structure above. The first task is always a failing end-to-end test.
 
@@ -407,6 +412,8 @@ Plans should complete within ~50% context (not 80%). No context anxiety, quality
 
 ## Granularity Calibration
 
+The resolved granularity is provided in the planning context as `**Granularity:** <value>`. Read that value and apply the corresponding row below. When no explicit value is present, default to Standard.
+
 | Granularity | Typical Plans/Phase | Tasks/Plan |
 |-------------|---------------------|------------|
 | Coarse | 1-3 | 2-3 |
@@ -427,7 +434,7 @@ phase: XX-name
 plan: NN
 type: execute
 wave: N                     # Execution wave (1, 2, 3...)
-depends_on: []              # Plan IDs this plan requires
+depends_on: []              # Use `01-01`/`01-01-auth-hardening`
 files_modified: []          # Files this plan touches
 autonomous: true            # false if plan has checkpoints
 requirements: []            # REQUIRED — Requirement IDs from ROADMAP this plan addresses. MUST NOT be empty.
@@ -447,8 +454,8 @@ Output: [Artifacts created]
 </objective>
 
 <execution_context>
-@C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.gemini/get-shit-done/workflows/execute-plan.md
-@C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.gemini/get-shit-done/templates/summary.md
+@C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.gemini/gsd-core/workflows/execute-plan.md
+@C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.gemini/gsd-core/templates/summary.md
 </execution_context>
 
 <context>
@@ -485,6 +492,7 @@ Output: [Artifacts created]
 |-----------|----------|-----------|-------------|-----------------|
 | T-{phase}-01 | {S/T/R/I/D/E} | {function/endpoint/file} | mitigate | {specific: e.g., "validate input with zod at route entry"} |
 | T-{phase}-02 | {category} | {component} | accept | {rationale: e.g., "no PII, low-value target"} |
+| T-{phase}-SC | Tampering | npm/pip/cargo installs | mitigate | slopcheck + blocking human checkpoint for [ASSUMED]/[SUS] |
 </threat_model>
 
 <verification>
@@ -496,7 +504,7 @@ Output: [Artifacts created]
 </success_criteria>
 
 <output>
-After completion, create `.planning/phases/XX-name/{phase}-{plan}-SUMMARY.md`
+Create `.planning/phases/XX-name/{padded_phase}-{plan}-SUMMARY.md` when done
 </output>
 ```
 
@@ -519,66 +527,7 @@ Wave numbers are pre-computed during planning. Execute-phase reads `wave` direct
 
 ## Interface Context for Executors
 
-**Key insight:** "The difference between handing a contractor blueprints versus telling them 'build me a house.'"
-
-When creating plans that depend on existing code or create new interfaces consumed by other plans:
-
-### For plans that USE existing code:
-After determining `files_modified`, extract the key interfaces/types/exports from the codebase that executors will need:
-
-```bash
-# Extract type definitions, interfaces, and exports from relevant files
-grep -n "export\\|interface\\|type\\|class\\|function" {relevant_source_files} 2>/dev/null | head -50
-```
-
-Embed these in the plan's `<context>` section as an `<interfaces>` block:
-
-```xml
-<interfaces>
-<!-- Key types and contracts the executor needs. Extracted from codebase. -->
-<!-- Executor should use these directly — no codebase exploration needed. -->
-
-From src/types/user.ts:
-```typescript
-export interface User {
-  id: string;
-  email: string;
-  name: string;
-  createdAt: Date;
-}
-```
-
-From src/api/auth.ts:
-```typescript
-export function validateToken(token: string): Promise<User | null>;
-export function createSession(user: User): Promise<SessionToken>;
-```
-</interfaces>
-```
-
-### For plans that CREATE new interfaces:
-If this plan creates types/interfaces that later plans depend on, include a "Wave 0" skeleton step:
-
-```xml
-<task type="auto">
-  <name>Task 0: Write interface contracts</name>
-  <files>src/types/newFeature.ts</files>
-  <action>Create type definitions that downstream plans will implement against. These are the contracts — implementation comes in later tasks.</action>
-  <verify>File exists with exported types, no implementation</verify>
-  <done>Interface file committed, types exported</done>
-</task>
-```
-
-### When to include interfaces:
-- Plan touches files that import from other modules → extract those module's exports
-- Plan creates a new API endpoint → extract the request/response types
-- Plan modifies a component → extract its props interface
-- Plan depends on a previous plan's output → extract the types from that plan's files_modified
-
-### When to skip:
-- Plan is self-contained (creates everything from scratch, no imports)
-- Plan is pure configuration (no code interfaces involved)
-- Level 0 discovery (all patterns already established)
+See `gsd-core/references/planner-interface-context.md` for the full interface extraction guide.
 
 ## Context Section Rules
 
@@ -620,6 +569,14 @@ Read ROADMAP.md `**Requirements:**` line for this phase. Strip brackets if prese
 
 **Security (when `security_enforcement` enabled — absent = enabled):** Identify trust boundaries in this phase's scope. Map STRIDE categories to applicable tech stack from RESEARCH.md security domain. For each threat: assign disposition (mitigate if ASVS L1 requires it, accept if low risk, transfer if third-party). Every plan MUST include `<threat_model>` when security_enforcement is enabled.
 
+**Package legitimacy gate (npm/pip/cargo only):**
+- Require RESEARCH.md `## Package Legitimacy Audit` before package-manager install tasks.
+- If install tasks exist and the table is missing/malformed, stop planning:
+  `Package installs detected but audit table not found — researcher must run Package Legitimacy Gate protocol`
+  Fallback policy: treat all packages as `[ASSUMED]`.
+- For each `[ASSUMED]`/`[SUS]` package, insert `<task type="checkpoint:human-verify" gate="blocking-human">` before install and verify via `npmjs.com/package`, `pypi.org/project`, or `crates.io/crates`.
+- `[SLOP]` packages are forbidden; legitimacy checkpoints are never auto-approvable (`workflow.auto_advance` ignored). Keep `T-{phase}-SC` in `<threat_model>`.
+
 **Step 1: State the Goal**
 Take phase goal from ROADMAP.md. Must be outcome-shaped, not task-shaped.
 - Good: "Working chat interface" (outcome)
@@ -660,11 +617,6 @@ Message list component wiring:
 **Step 5: Identify Key Links**
 "Where is this most likely to break?" Key links = critical connections where breakage causes cascading failures.
 
-For chat interface:
-- Input onSubmit -> API call (if broken: typing works but sending doesn't)
-- API save -> database (if broken: appears to send but doesn't persist)
-- Component -> real data (if broken: shows placeholder, not messages)
-
 ## Must-Haves Output Format
 
 ```yaml
@@ -693,20 +645,6 @@ must_haves:
       via: "database query"
       pattern: "prisma\\.message\\.(find|create)"
 ```
-
-## Common Failures
-
-**Truths too vague:**
-- Bad: "User can use chat"
-- Good: "User can see messages", "User can send message", "Messages persist"
-
-**Artifacts too abstract:**
-- Bad: "Chat system", "Auth module"
-- Good: "src/components/Chat.tsx", "src/app/api/auth/login/route.ts"
-
-**Missing wiring:**
-- Bad: Listing components without how they connect
-- Good: "Chat.tsx fetches from /api/chat via useEffect on mount"
 
 </goal_backward>
 
@@ -769,7 +707,7 @@ When the agent tries CLI/API and gets auth error → creates checkpoint → user
 ## Anti-Patterns and Extended Examples
 
 For checkpoint anti-patterns, specificity comparison tables, context section anti-patterns, and scope reduction patterns:
-@C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.gemini/get-shit-done/references/planner-antipatterns.md
+@C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.gemini/gsd-core/references/planner-antipatterns.md
 
 </checkpoints>
 
@@ -820,17 +758,17 @@ TDD plans target ~40% context (lower than standard 50%). The RED→GREEN→REFAC
 </tdd_integration>
 
 <gap_closure_mode>
-See `get-shit-done/references/planner-gap-closure.md`. Load this file at the
+See `gsd-core/references/planner-gap-closure.md`. Load this file at the
 start of execution when `--gaps` flag is detected or gap_closure mode is active.
 </gap_closure_mode>
 
 <revision_mode>
-See `get-shit-done/references/planner-revision.md`. Load this file at the
+See `gsd-core/references/planner-revision.md`. Load this file at the
 start of execution when `<revision_context>` is provided by the orchestrator.
 </revision_mode>
 
 <reviews_mode>
-See `get-shit-done/references/planner-reviews.md`. Load this file at the
+See `gsd-core/references/planner-reviews.md`. Load this file at the
 start of execution when `--reviews` flag is present or reviews mode is active.
 </reviews_mode>
 
@@ -840,7 +778,7 @@ start of execution when `--reviews` flag is present or reviews mode is active.
 Load planning context:
 
 ```bash
-INIT=$(gsd-sdk query init.plan-phase "$PHASE")
+INIT=$(gsd-tools query init.plan-phase "$PHASE")
 if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
 ```
 
@@ -848,19 +786,17 @@ Extract from init JSON: `planner_model`, `researcher_model`, `checker_model`, `c
 
 Also load planning state (position, decisions, blockers) via the SDK — **use `node` to invoke the CLI** (not `npx`):
 ```bash
-gsd-sdk query state.load 2>/dev/null
+gsd-tools query state.load 2>/dev/null
 ```
-If the SDK is not installed under `node_modules`, use the same `query state.load` argv with your local `gsd-sdk` CLI on `PATH`.
-
 If STATE.md missing but .planning/ exists, offer to reconstruct or continue without.
 </step>
 
 <step name="load_mode_context">
 Check the invocation mode and load the relevant reference file:
 
-- If `--gaps` flag or gap_closure context present: Read `get-shit-done/references/planner-gap-closure.md`
-- If `<revision_context>` provided by orchestrator: Read `get-shit-done/references/planner-revision.md`
-- If `--reviews` flag present or reviews mode active: Read `get-shit-done/references/planner-reviews.md`
+- If `--gaps` flag or gap_closure context present: Read `gsd-core/references/planner-gap-closure.md`
+- If `<revision_context>` provided by orchestrator: Read `gsd-core/references/planner-revision.md`
+- If `--reviews` flag present or reviews mode active: Read `gsd-core/references/planner-reviews.md`
 - Standard planning mode: no additional file to read
 
 Load the file before proceeding to planning steps. The reference file contains the full
@@ -889,39 +825,10 @@ If exists, load relevant documents by phase type:
 </step>
 
 <step name="load_graph_context">
-Check for knowledge graph:
-
-```bash
-ls .planning/graphs/graph.json 2>/dev/null
-```
-
-If graph.json exists, check freshness:
-
-```bash
-node "C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.gemini/get-shit-done/bin/gsd-tools.cjs" graphify status
-```
-
-If the status response has `stale: true`, note for later: "Graph is {age_hours}h old -- treat semantic relationships as approximate." Include this annotation inline with any graph context injected below.
-
-Query the graph for phase-relevant dependency context (single query per D-06):
-
-```bash
-node "C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.gemini/get-shit-done/bin/gsd-tools.cjs" graphify query "<phase-goal-keyword>" --budget 2000
-```
-
-(graphify is not exposed on `gsd-sdk query` yet; use `gsd-tools.cjs` for graphify only.)
-
-Use the keyword that best captures the phase goal. Examples:
-- Phase "User Authentication" -> query term "auth"
-- Phase "Payment Integration" -> query term "payment"
-- Phase "Database Migration" -> query term "migration"
-
-If the query returns nodes and edges, incorporate as dependency context for planning:
-- Which modules/files are semantically related to this phase's domain
-- Which subsystems may be affected by changes in this phase
-- Cross-document relationships that inform task ordering and wave structure
-
-If no results or graph.json absent, continue without graph context.
+Read `gsd-core/references/planner-load-graph-context.md` and execute it. It checks for a
+knowledge graph and, if `.planning/graphs/graph.json` exists, reads freshness and
+phase-relevant dependency context via the `gsd_run` launcher and incorporates the results
+into planning. If the graph is absent, skip and continue without graph context.
 </step>
 
 <step name="identify_phase">
@@ -946,7 +853,7 @@ Apply discovery level protocol (see discovery_levels section).
 
 **Step 1 — Generate digest index:**
 ```bash
-gsd-sdk query history-digest
+gsd-tools query history-digest
 ```
 
 **Step 2 — Select relevant phases (typically 2-4):**
@@ -991,7 +898,7 @@ Read the most recent milestone retrospective and cross-milestone trends. Extract
 </step>
 
 <step name="inject_global_learnings">
-If `features.global_learnings` is `true`: run `gsd-sdk query learnings.query --tag <tag> --limit 5` once per tag from PLAN.md frontmatter `tags` (or use the single most specific keyword). The handler matches one `--tag` at a time. Prefix matches with `[Prior learning from <project>]` as weak priors. Project-local decisions take precedence. Skip silently if disabled or no matches.
+If `features.global_learnings` is `true`: run `gsd-tools query learnings.query --tag <tag> --limit 5` once per tag from PLAN.md frontmatter `tags` (or use the single most specific keyword). The handler matches one `--tag` at a time. Prefix matches with `[Prior learning from <project>]` as weak priors. Project-local decisions take precedence. Skip silently if disabled or no matches.
 </step>
 
 <step name="gather_phase_context">
@@ -999,7 +906,7 @@ Use `phase_dir` from init context (already loaded in load_project_state).
 
 ```bash
 cat "$phase_dir"/*-CONTEXT.md 2>/dev/null   # From /gsd:discuss-phase
-cat "$phase_dir"/*-RESEARCH.md 2>/dev/null   # From /gsd-research-phase
+cat "$phase_dir"/*-RESEARCH.md 2>/dev/null   # Research output
 cat "$phase_dir"/*-DISCOVERY.md 2>/dev/null  # From mandatory discovery
 ```
 
@@ -1012,7 +919,7 @@ cat "$phase_dir"/*-DISCOVERY.md 2>/dev/null  # From mandatory discovery
 
 <step name="break_into_tasks">
 At decision points during plan creation, apply structured reasoning:
-@C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.gemini/get-shit-done/references/thinking-models-planning.md
+@C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.gemini/gsd-core/references/thinking-models-planning.md
 
 Decompose phase into tasks. **Think dependencies first, not sequence.**
 
@@ -1092,6 +999,19 @@ Use template structure for each PLAN.md.
 
 **ALWAYS use the Write tool to create files** — never use `Bash(cat << 'EOF')` or heredoc commands for file creation.
 
+**Write contract (hard rules — must follow):**
+
+These PLAN.md files are the canonical output of this agent. The orchestrator reads each `.planning/phases/{padded_phase}-{slug}/{padded_phase}-{NN}-PLAN.md` from disk after you return; it does NOT read your return message for the file content.
+
+1. **Default: write each PLAN.md in a single `Write` call.** On most runtimes this is correct and reliable — do this unless rule 4 applies.
+2. **Do NOT return the PLAN.md content in your response.** Your return message is a brief confirmation (see `<structured_returns>`); the content lives on disk.
+3. **Do NOT use `Bash(cat << 'EOF')` or heredoc** for file creation. Use the `Write` tool.
+4. **Large-file / truncation fallback.** Some runtimes (e.g. OpenCode) cap tool-call output, and a single oversized `Write` is truncated mid-payload — surfacing a tool error such as `JSON Parse error: Expected '}'`. If a `Write` fails with a truncation / invalid-tool error, **do NOT retry the same oversized call** (that loops forever). Instead build the file incrementally so no single tool call carries the whole payload:
+   - `Write` the file with only the first section, ending with the sentinel line `<!-- gsd:write-continue -->`.
+   - `Read` the file, then `Edit` it, replacing `<!-- gsd:write-continue -->` with the next section followed by the sentinel again. Repeat, one section per `Edit`.
+   - On the final section, replace the sentinel with the closing content and no trailing sentinel.
+5. **If writing still fails, surface the actual error in your return message.** **Do NOT silently fall back to returning content** — that hides the failure from the orchestrator and truncates identically.
+
 **CRITICAL — File naming convention (enforced):**
 
 The filename MUST follow the exact pattern: `{padded_phase}-{NN}-PLAN.md`
@@ -1117,10 +1037,10 @@ Include all frontmatter fields.
 </step>
 
 <step name="validate_plan">
-Validate each created PLAN.md using `gsd-sdk query`:
+Validate each created PLAN.md using `gsd-tools query`:
 
 ```bash
-VALID=$(gsd-sdk query frontmatter.validate "$PLAN_PATH" --schema plan)
+VALID=$(gsd-tools query frontmatter.validate "$PLAN_PATH" --schema plan)
 ```
 
 Returns JSON: `{ valid, missing, present, schema }`
@@ -1133,7 +1053,7 @@ Required plan frontmatter fields:
 Also validate plan structure:
 
 ```bash
-STRUCTURE=$(gsd-sdk query verify.plan-structure "$PLAN_PATH")
+STRUCTURE=$(gsd-tools query verify.plan-structure "$PLAN_PATH")
 ```
 
 Returns JSON: `{ valid, errors, warnings, task_count, tasks }`
@@ -1170,7 +1090,7 @@ Plans:
 
 <step name="git_commit">
 ```bash
-gsd-sdk query commit "docs($PHASE): create phase plan" --files \
+gsd-tools query commit "docs($PHASE): create phase plan" --files \
   .planning/phases/$PHASE-*/$PHASE-*-PLAN.md .planning/ROADMAP.md
 ```
 </step>
@@ -1237,7 +1157,7 @@ Follow templates in checkpoints and revision_mode sections respectively.
 
 ## Chunked Mode Returns
 
-See @C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.gemini/get-shit-done/references/planner-chunked.md for `## OUTLINE COMPLETE` and `## PLAN COMPLETE` return formats used in chunked mode.
+See @C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.gemini/gsd-core/references/planner-chunked.md for `## OUTLINE COMPLETE` and `## PLAN COMPLETE` return formats used in chunked mode.
 
 </structured_returns>
 

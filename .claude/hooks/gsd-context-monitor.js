@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// gsd-hook-version: 1.3.1
+// gsd-hook-version: 1.4.5
 // Context Monitor - PostToolUse/AfterTool hook (Gemini uses AfterTool)
 // Reads context metrics from the statusline bridge file and injects
 // warnings when context usage is high. This makes the AGENT aware of
@@ -150,7 +150,7 @@ process.stdin.on('end', () => {
         spawn(
           process.execPath,
           [gsdTools, 'state', 'record-session', '--stopped-at', stoppedAt],
-          { cwd, detached: true, stdio: 'ignore' }
+          { cwd, detached: true, stdio: 'ignore', windowsHide: true }
         ).unref();
         warnData.criticalRecorded = true;
         // Persist the sentinel so subsequent debounce cycles don't re-fire
@@ -182,7 +182,8 @@ process.stdin.on('end', () => {
 
     const output = {
       hookSpecificOutput: {
-        hookEventName: process.env.GEMINI_API_KEY ? "AfterTool" : "PostToolUse",
+        hookEventName: (data.hook_event_name && data.hook_event_name.trim())
+          || (process.env.GEMINI_API_KEY ? "AfterTool" : "PostToolUse"),
         additionalContext: message
       }
     };
