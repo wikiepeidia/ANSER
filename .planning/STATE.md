@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Tech Debt Completion
 status: complete
-last_updated: "2026-06-14T11:00:00Z"
+last_updated: "2026-06-14T21:00:00Z"
 last_activity: 2026-06-14
 progress:
-  total_phases: 4
-  completed_phases: 4
-  total_plans: 4
-  completed_plans: 4
+  total_phases: 5
+  completed_phases: 5
+  total_plans: 5
+  completed_plans: 5
   percent: 100
 ---
 
@@ -20,21 +20,21 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-13)
 
 **Core value:** Unified, intelligent retail automation through modular and extensible architecture.
-**Current focus:** v1.1 Tech Debt Completion — DONE. All four phases (25-28) complete.
+**Current focus:** v1.1 Tech Debt Completion — DONE. All five phases (18, 25-28) complete.
 
 ## Current Position
 
-Phase: 28 — Code Hygiene
-Plan: 28-01-PLAN.md
-Status: Complete — All v1.1 phases done
-Last activity: 2026-06-14 — Phase 28 executed and verified (commit 6192146)
+Phase: 18 — Focused Regression Hardening
+Plan: 18-01-PLAN.md
+Status: Complete — Phase 18 done; v1.1 + all pre-milestone phases complete
+Last activity: 2026-06-14 — Phase 18 executed: 33 failing tests fixed, 171/171 passing
 
 Progress: [##########] 100% (4/4 phases complete)
 
 ## Immediate Priorities
 
-1. Reconcile TODO.md after v1.1 completion.
-2. Decide next milestone — candidates: Phase 18 (Regression Hardening), new v1.2 features, or jury prep.
+1. Reconcile TODO.md after v1.1 + Phase 18 completion.
+2. Decide next milestone — candidates: new v1.2 features or jury prep.
 
 ## Accumulated Context
 
@@ -54,7 +54,7 @@ Progress: [##########] 100% (4/4 phases complete)
 
 ### Pending Todos
 
-- [ ] Finalize Phase 18: Focused Regression Hardening (still open, predates v1.1)
+- [x] Finalize Phase 18: Focused Regression Hardening (complete 2026-06-14 — 171/171 tests)
 - [x] Plan and execute Phase 25: Circular Import & Module Decoupling
 - [x] Plan and execute Phase 26: Automation Engine Schema Fix
 - [x] Plan and execute Phase 27: DL Service Logging & OCR Validation
@@ -74,10 +74,10 @@ Progress: [##########] 100% (4/4 phases complete)
 | 2026-06-14 | Phase 27 Execution | Completed Plan 27-01: DL runtime logging and OCR/forecast contract tests. |
 | 2026-06-14 | Phase 28 Execution | Completed Plan 28-01: analytics Config/logger, Drive query escaping, workspace named-field access. |
 | 2026-06-14 | v1.1 Milestone Complete | All 4 phases (25-28) done; all HYG/DL/AUTO/CIRC requirements satisfied. |
+| 2026-06-14 | Phase 18 Execution | Fixed 33 failing tests: sqlite3.Row bug, stale app factory refs, PGShim arg, async job migration. 171/171 passing. NFR-STAB-03 satisfied. |
 
 ## Session Continuity
 
-- Previous state: Phase 27 Plan 01 was executed and GSD artifacts created.
-- Interim: Phase 28 code committed (6192146) before GSD artifacts were written.
-- Current state: Phase 28 verified and all GSD artifacts created. v1.1 milestone complete.
-- Next: Choose next milestone or tackle Phase 18 regression hardening.
+- Previous state: v1.1 milestone (Phases 25-28) complete.
+- Current state: Phase 18 regression hardening complete. All phases done. 171/171 tests passing.
+- Next: Choose next milestone (v1.2 features or jury prep).

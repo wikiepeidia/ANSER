@@ -75,7 +75,7 @@ This document tracks the functional and non-functional requirements for ANSER, d
 | FR-OPS-* | 1-10 (Archived) | Complete |
 | NFR-STAB-01 | Phase 11-15 | Complete |
 | NFR-STAB-02 | Phase 17 (Skipped) | Cancelled |
-| NFR-STAB-03 | Phase 18 | Pending |
+| NFR-STAB-03 | Phase 18 | Complete |
 | FR-AI-05 (BE-01) | Phase 20 | Complete |
 | FR-AUTH-05 (BE-02) | Phase 21 | Complete |
 | NFR-INF-01 (BE-04) | Phase 22 | Complete |

@@ -29,7 +29,7 @@ class UserRepo:
             logger.debug("get_user_by_id fallback triggered: %s", e)
             try:
                 c.execute(
-                    'SELECT id, email, name, avatar, role FROM users WHERE id = ?',
+                    'SELECT id, email, name, role FROM users WHERE id = ?',
                     (user_id,),
                 )
                 user = c.fetchone()
@@ -54,7 +54,7 @@ class UserRepo:
             logger.debug("get_user_by_email fallback triggered: %s", e)
             try:
                 c.execute(
-                    'SELECT id, email, name, avatar, role, password FROM users WHERE email = ?',
+                    'SELECT id, email, name, role, password FROM users WHERE email = ?',
                     (email,),
                 )
                 user = c.fetchone()
@@ -209,6 +209,8 @@ class UserRepo:
 
     def _standardize_user(self, row, include_password=False, include_created_at=False):
         """Standardize user dictionary schema."""
+        if not isinstance(row, dict):
+            row = {k: row[k] for k in row.keys()}
         # Handle cases where name might be full name or just first name
         name = row.get('name', '')
         first_name = row.get('first_name')

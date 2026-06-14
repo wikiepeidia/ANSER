@@ -141,6 +141,27 @@ class _DBMock:
     def log_activity(self, *args, **kwargs):
         return True
 
+    # ── UserRepo delegation ───────────────────────────────────────────────────
+
+    def _repo(self):
+        from core.db.user_repo import UserRepo
+        return UserRepo(self._conn)
+
+    def get_all_users(self, role_filter=None):
+        return self._repo().get_all_users(role_filter)
+
+    def get_user_by_id(self, user_id):
+        return self._repo().get_user_by_id(user_id)
+
+    def delete_user(self, user_id):
+        return self._repo().delete_user(user_id)
+
+    def set_user_role(self, user_id, new_role):
+        return self._repo().set_user_role(user_id, new_role)
+
+    def update_password(self, user_id, hashed_password, version=1):
+        return self._repo().update_password(user_id, hashed_password, version)
+
 
 # ── user_service ──────────────────────────────────────────────────────────────
 
