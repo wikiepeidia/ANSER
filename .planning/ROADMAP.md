@@ -19,7 +19,7 @@
 - [x] **Phase 25: Circular Import & Module Decoupling** - Remove module-level app instantiation, create wsgi.py, eliminate sys.path hacks. (completed 2026-06-14)
 - [x] **Phase 26: Automation Engine Schema Fix** - Fix schema mismatches in automation_engine.py; add smoke test. (completed 2026-06-14)
 - [x] **Phase 27: DL Service Logging & OCR Validation** - Replace print() with logger in dl_client; validate OCR end-to-end flow. (completed 2026-06-14)
-- [ ] **Phase 28: Code Hygiene** - Fix analytics_service, google_integration, and utils.py outstanding bugs.
+- [x] **Phase 28: Code Hygiene** - Fix analytics_service, google_integration, and utils.py outstanding bugs. (completed 2026-06-14)
 
 ## Phase Details
 
@@ -147,7 +147,11 @@ Plans:
 2. An OCR upload to `/api/model1/detect` returns a valid `invoice_data` JSON structure with recognized fields.
 3. `python run_dl_service.py` starts the DL service without importing the Flask main app.
 
-**Plans**: TBD
+**Plans**: 1 plan
+
+Plans:
+
+- [x] 27-01-PLAN.md — Replace DL runtime prints with logging and validate OCR/forecast contracts
 
 ### Phase 28: Code Hygiene
 
@@ -160,7 +164,11 @@ Plans:
 2. `google_integration.py` `list_files` correctly escapes single quotes in Drive API query strings.
 3. `utils.py` `format_workspace_tree` accesses row fields by name, not by tuple index.
 
-**Plans**: TBD
+**Plans**: 1 plan
+
+Plans:
+
+- [x] 28-01-PLAN.md — Fix analytics Config/logger, Drive query escaping, workspace named-field access
 
 ## Progress Table
 
@@ -177,8 +185,8 @@ Plans:
 | 25    | 1/1            | Complete    | 2026-06-14 |
 | 26    | 1/1            | Complete    | 2026-06-14 |
 | 27    | 1/1            | Complete    | 2026-06-14 |
-| 28    | 0/1            | Not started | -          |
+| 28    | 1/1            | Complete    | 2026-06-14 |
 
 ---
 
-Last updated: 2026-06-14 (v1.1 Phase 27 complete)
+Last updated: 2026-06-14 (v1.1 milestone complete — all Phases 25-28 done)

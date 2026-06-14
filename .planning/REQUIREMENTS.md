@@ -91,9 +91,9 @@ This document tracks the functional and non-functional requirements for ANSER, d
 | DL-01 | Phase 27 | Complete |
 | DL-02 | Phase 27 | Complete |
 | DL-03 | Phase 27 | Complete |
-| HYG-01 | Phase 28 | Pending |
-| HYG-02 | Phase 28 | Pending |
-| HYG-03 | Phase 28 | Pending |
+| HYG-01 | Phase 28 | Complete |
+| HYG-02 | Phase 28 | Complete |
+| HYG-03 | Phase 28 | Complete |
 
 ---
 
@@ -118,9 +118,9 @@ This document tracks the functional and non-functional requirements for ANSER, d
 
 ### Code Hygiene
 
-- [ ] **HYG-01**: `core/services/analytics_service.py` uses `get_logger()`, removes duplicate `except` block, reads `GA_PROPERTY_ID` from `Config` instead of hardcoded value
-- [ ] **HYG-02**: `core/google_integration.py` `list_files` correctly escapes single quotes in Drive API queries
-- [ ] **HYG-03**: `core/utils.py` `format_workspace_tree` accesses row fields by name (not tuple index)
+- [x] **HYG-01**: `core/services/analytics_service.py` uses `get_logger()`, removes duplicate `except` block, reads `GA_PROPERTY_ID` from `Config` instead of hardcoded value
+- [x] **HYG-02**: `core/google_integration.py` `list_files` correctly escapes single quotes in Drive API queries
+- [x] **HYG-03**: `core/utils.py` `format_workspace_tree` accesses row fields by name (not tuple index)
 
 ### Non-Functional
 
@@ -129,4 +129,4 @@ This document tracks the functional and non-functional requirements for ANSER, d
 
 ---
 
-Last updated: 2026-06-14 (Phase 27 complete)
+Last updated: 2026-06-14 (Phase 28 complete — v1.1 milestone done)
