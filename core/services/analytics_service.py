@@ -10,15 +10,13 @@ from google.analytics.data_v1beta.types import (
 )
 from google.oauth2 import service_account
 from ..config import Config
+from ..logger import get_logger
+
+logger = get_logger(__name__)
 
 class AnalyticsService:
     def __init__(self):
-        self.property_id = '470037320'  # Extracted from GTAG ID G-LDYH3WL3TN (approximate, usually needs explicit Property ID)
-        # Note: G-LDYH3WL3TN is a Measurement ID. The Property ID is a number (e.g. 123456789).
-        # Since I don't have the Property ID, I will use a placeholder or try to find it.
-        # For now, I'll assume the user needs to configure this.
-        # However, to make the code "work" (not crash), I'll use a dummy or try to read from config.
-        
+        self.property_id = Config.GA_PROPERTY_ID
         self.credentials_path = os.path.join(os.getcwd(), 'secrets', 'analytics_service_account.json')
         self.client = None
         
@@ -27,21 +25,15 @@ class AnalyticsService:
                 credentials = service_account.Credentials.from_service_account_file(self.credentials_path)
                 self.client = BetaAnalyticsDataClient(credentials=credentials)
             except Exception as e:
-                print(f"Failed to init Analytics Client: {e}")
+                logger.warning("Failed to init Analytics Client: %s", e)
 
     def get_report(self, property_id=None):
         """Return a structured analytics report with caching and mock fallback."""
-        # Use Config if available
-        try:
-            from ..config import Config
-        except Exception:
-            Config = None
-
-        pid = property_id or getattr(Config, 'GA_PROPERTY_ID', self.property_id)
+        pid = property_id or Config.GA_PROPERTY_ID
 
         # Cache file next to service account file
         cache_file = os.path.join(os.path.dirname(self.credentials_path), 'ga_cache.json')
-        cache_ttl = getattr(Config, 'GA_CACHE_LIFETIME_SECONDS', 3600) if Config else 3600
+        cache_ttl = getattr(Config, 'GA_CACHE_LIFETIME_SECONDS', 3600)
 
         def _mock_data():
             return {
@@ -71,20 +63,19 @@ class AnalyticsService:
                         cache_valid = False
 
                     if cache_valid and age < cache_ttl:
-                        print(f"Using cached analytics (age={age:.1f}s)")
+                        logger.info("Using cached analytics (age=%.1fs)", age)
                         return {'success': True, 'data': cached_data, 'source': 'cache'}
                     else:
-                        print(f"Cache ignored (valid={cache_valid}, age={age:.1f}s)")
+                        logger.info("Analytics cache ignored (valid=%s, age=%.1fs)", cache_valid, age)
                         # Remove invalid/empty cache so we don't repeatedly serve empty data
                         try:
                             if os.path.exists(cache_file):
                                 os.remove(cache_file)
-                                print('Removed invalid analytics cache')
+                                logger.info("Removed invalid analytics cache")
                         except Exception:
                             pass
         except Exception as e:
-            print('Error reading analytics cache:', e)
-            pass
+            logger.warning("Error reading analytics cache: %s", e)
 
         # If client not initialized, return mock data
         if not self.client:
@@ -154,7 +145,7 @@ class AnalyticsService:
             )
 
             if is_empty:
-                print('Live GA returned no data for property', pid)
+                logger.info("Live GA returned no data for property %s", pid)
                 # Do not cache empty datasets; return empty-live so frontend can show a clear message
                 return {'success': True, 'data': data, 'source': 'live', 'empty': True}
 
@@ -170,8 +161,5 @@ class AnalyticsService:
         except Exception as e:
             # On failure, return mock data to avoid breaking UI
             return {'success': True, 'data': _mock_data(), 'error': str(e), 'source': 'mock'}
-        except Exception as e:
-            # On failure, return mock data to avoid breaking UI
-            return {'success': True, 'data': _mock_data(), 'error': str(e)}
 
 analytics_service = AnalyticsService()
