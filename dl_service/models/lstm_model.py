@@ -12,6 +12,9 @@ from tensorflow.keras import layers, models
 from tensorflow.keras.callbacks import EarlyStopping, ReduceLROnPlateau
 from sklearn.preprocessing import MinMaxScaler
 import pickle
+from utils.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 class ImportForecastLSTM:
@@ -196,9 +199,9 @@ class ImportForecastLSTM:
             
             # DEBUG: Log raw prediction
             if import_qty > 10 or sale_qty > 10:  # Only for active products
-                print(f"[DEBUG] Product with import={import_qty}, sales={sale_qty}")
-                print(f"[DEBUG]   Normalized features: {normalized_features[0]}")
-                print(f"[DEBUG]   Raw prediction (normalized): {prediction_normalized}")
+                logger.debug("Product with import=%s, sales=%s", import_qty, sale_qty)
+                logger.debug("Normalized features: %s", normalized_features[0])
+                logger.debug("Raw prediction (normalized): %s", prediction_normalized)
             
             # Denormalize (inverse transform for first feature - sale_qty/import prediction)
             # Use target_scaler if available, otherwise fall back to feature scaler column 0
@@ -211,8 +214,8 @@ class ImportForecastLSTM:
                 prediction_denormalized = self.scaler.inverse_transform(temp)[0, 0]
             
             if import_qty > 10 or sale_qty > 10:
-                print(f"[DEBUG]   Denormalized prediction: {prediction_denormalized}")
-                print(f"[DEBUG]   Rounded prediction: {max(0, int(round(prediction_denormalized)))}")
+                logger.debug("Denormalized prediction: %s", prediction_denormalized)
+                logger.debug("Rounded prediction: %s", max(0, int(round(prediction_denormalized))))
             
             # Round to nearest integer (can't import fractional products)
             predicted_qty = max(0, int(round(prediction_denormalized)))
@@ -405,8 +408,8 @@ class ImportForecastLSTM:
         with open(scaler_path, 'wb') as f:
             pickle.dump(self.scaler, f)
         
-        print(f"Model weights saved to {path}")
-        print(f"Scaler saved to {scaler_path}")
+        logger.info("Model weights saved to %s", path)
+        logger.info("Scaler saved to %s", scaler_path)
     
     def load_model(self, path):
         """Load pre-trained model weights and scaler"""
@@ -433,10 +436,10 @@ class ImportForecastLSTM:
                         self.lookback = loaded['sequence_length']
                 else:
                     self.scaler = loaded
-                print(f"Scaler loaded from {scaler_path}")
+                logger.info("Scaler loaded from %s", scaler_path)
                 break
         
-        print(f"Model weights loaded from {path}")
+        logger.info("Model weights loaded from %s", path)
 
 
 def generate_invoice_based_data(invoice_json_path='data/invoices/train.json'):
@@ -444,16 +447,16 @@ def generate_invoice_based_data(invoice_json_path='data/invoices/train.json'):
     import json
     from datetime import datetime
     
-    print(f"[*] Loading invoice data from: {invoice_json_path}")
+    logger.info("Loading invoice data from %s", invoice_json_path)
     
     try:
         with open(invoice_json_path, 'r', encoding='utf-8') as f:
             invoices = json.load(f)
     except FileNotFoundError:
-        print(f"[X] Invoice file not found: {invoice_json_path}")
+        logger.error("Invoice file not found: %s", invoice_json_path)
         raise FileNotFoundError(f"Required invoice file not found: {invoice_json_path}")
     
-    print(f"   Loaded {len(invoices)} invoices")
+    logger.info("Loaded %d invoices", len(invoices))
     
     # Extract features from each invoice
     records = []
@@ -501,17 +504,17 @@ def generate_invoice_based_data(invoice_json_path='data/invoices/train.json'):
     df_daily['is_weekend'] = (df_daily['day_of_week'] >= 5).astype(int)
     df_daily['month'] = df_daily['date'].dt.month
     
-    print(f"[OK] Generated {len(df_daily)} daily records")
-    print(f"   Date range: {df_daily['date'].min()} to {df_daily['date'].max()}")
-    print(f"   Avg daily quantity: {df_daily['quantity'].mean():.1f}")
-    print(f"   Features: {list(df_daily.columns)}")
+    logger.info("Generated %d daily records", len(df_daily))
+    logger.info("Date range: %s to %s", df_daily['date'].min(), df_daily['date'].max())
+    logger.info("Avg daily quantity: %.1f", df_daily['quantity'].mean())
+    logger.info("Features: %s", list(df_daily.columns))
     
     return df_daily
 
 
 if __name__ == "__main__":
     # Example usage
-    print("LSTM Import Forecast Model initialized")
+    logger.info("LSTM Import Forecast Model initialized")
     model = ImportForecastLSTM(lookback=7, features=7)  # Matches training script
-    print(f"Model summary:")
+    logger.info("Model summary:")
     model.model.summary()

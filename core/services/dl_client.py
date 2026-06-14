@@ -1,6 +1,8 @@
 import requests
-import json
 import os
+from core.logger import get_logger
+
+logger = get_logger(__name__)
 
 class DLClient:
     """
@@ -42,9 +44,7 @@ class DLClient:
                 result = process_invoice_image(image)
                 return result
             except Exception as e:
-                print(f"Local DL Error (Detect): {e}")
-                import traceback
-                traceback.print_exc()
+                logger.exception("Local DL error during invoice detection")
                 return {"error": str(e), "status": "failed"}
         
         url = f"{self.base_url}/api/model1/detect"
@@ -62,11 +62,38 @@ class DLClient:
             response.raise_for_status()
             return response.json()
         except requests.exceptions.RequestException as e:
-            print(f"DL Service Error (Detect): {e}")
+            logger.error("DL service error during invoice detection: %s", e)
             return {"error": str(e), "status": "failed"}
         finally:
             if file_path and 'file' in files:
                 files['file'].close()
+
+    def _forecast_payload(self, data):
+        if not isinstance(data, dict):
+            return data
+
+        products = data.get('products')
+        if not products and isinstance(data.get('items'), list):
+            products = data['items']
+
+        invoice_data = data.get('invoice_data')
+        if not products and isinstance(invoice_data, dict):
+            products = invoice_data.get('products') or invoice_data.get('items')
+        elif not products and isinstance(invoice_data, list):
+            products = invoice_data
+
+        inner_data = data.get('data')
+        if not products and isinstance(inner_data, dict):
+            products = inner_data.get('products') or inner_data.get('items')
+        elif not products and isinstance(inner_data, list):
+            products = inner_data
+
+        if products:
+            payload = dict(data)
+            payload['products'] = products
+            return payload
+
+        return data
 
     def forecast_quantity(self, data):
         """
@@ -84,6 +111,8 @@ class DLClient:
                 return {"error": f"Invalid data format: expected JSON object, got string: '{data[:100]}'", "status": "failed"}
         if not isinstance(data, dict):
             return {"error": f"Invalid data format: expected dict, got {type(data).__name__}", "status": "failed"}
+
+        data = self._forecast_payload(data)
 
         if self.use_local:
             try:
@@ -119,9 +148,7 @@ class DLClient:
                 result = forecast_quantity(lstm_model, products)
                 return format_forecast_response(result)
             except Exception as e:
-                print(f"Local DL Error (Forecast): {e}")
-                import traceback
-                traceback.print_exc()
+                logger.exception("Local DL error during forecast")
                 return {"error": str(e), "status": "failed"}
 
         url = f"{self.base_url}/api/model2/forecast"
@@ -130,7 +157,7 @@ class DLClient:
             response.raise_for_status()
             return response.json()
         except requests.exceptions.RequestException as e:
-            print(f"DL Service Error (Forecast): {e}")
+            logger.error("DL service error during forecast: %s", e)
             return {"error": str(e), "status": "failed"}
 
     def run_ocr(self, file_path=None, file_bytes=None, filename=None):
@@ -152,7 +179,7 @@ class DLClient:
                 text = extract_text(image_bytes)
                 return {"text": text, "status": "success"}
             except Exception as e:
-                print(f"Local DL Error (OCR): {e}")
+                logger.exception("Local DL error during OCR")
                 return {"error": str(e), "status": "failed"}
 
         url = f"{self.base_url}/api/ocr/"
@@ -167,7 +194,7 @@ class DLClient:
             response.raise_for_status()
             return response.json()
         except requests.exceptions.RequestException as e:
-            print(f"DL Service Error (OCR): {e}")
+            logger.error("DL service error during OCR: %s", e)
             return {"error": str(e), "status": "failed"}
         finally:
             if file_path and 'image' in files:

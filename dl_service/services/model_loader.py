@@ -1,4 +1,5 @@
 import os
+from utils.logger import get_logger
 
 # Suppress TensorFlow warnings
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
@@ -8,6 +9,8 @@ from models.lstm_model import ImportForecastLSTM
 from config import LSTM_MODEL_PATH, LSTM_SEQUENCE_LENGTH, LSTM_NUM_FEATURES, LAYOUT_WEIGHTS_PATH
 from services.layout_service import initialize_layout_detector
 
+logger = get_logger(__name__)
+
 # Global model instances
 lstm_model = None
 layout_ready = False
@@ -15,48 +18,44 @@ layout_ready = False
 
 def initialize_models():
     
-    print("\n" + "="*60)
-    print("INITIALIZING DEEP LEARNING MODELS")
-    print("="*60)
+    logger.info("Initializing deep learning models")
     
-    print("Loading Layout Detector (YOLO)...")
+    logger.info("Loading Layout Detector (YOLO)")
     global layout_ready
     try:
         initialize_layout_detector()
         layout_ready = True
-        print(f"   [OK] Layout weights loaded from {LAYOUT_WEIGHTS_PATH}")
+        logger.info("Layout weights loaded from %s", LAYOUT_WEIGHTS_PATH)
     except Exception as exc:
         error_msg = str(exc).encode('ascii', 'ignore').decode('ascii')
         layout_ready = False
-        print(f"   [WARNING] Unable to initialize layout detector: {error_msg}")
+        logger.warning("Unable to initialize layout detector: %s", error_msg)
     
     # Model 2: LSTM
-    print("Loading Model 2: LSTM Forecasting...")
+    logger.info("Loading Model 2: LSTM Forecasting")
     global lstm_model
     try:
         lstm_model = ImportForecastLSTM(lookback=LSTM_SEQUENCE_LENGTH, features=LSTM_NUM_FEATURES)
         if LSTM_MODEL_PATH.exists():
             lstm_model.load_model(str(LSTM_MODEL_PATH))
-            print(f"   [OK] Loaded LSTM weights from {LSTM_MODEL_PATH.name}")
+            logger.info("Loaded LSTM weights from %s", LSTM_MODEL_PATH.name)
         else:
             lstm_model.build_model()
-            print("   [WARNING] Pre-trained LSTM weights not found; using freshly initialized model")
+            logger.warning("Pre-trained LSTM weights not found; using freshly initialized model")
     except Exception as exc:
         error_msg = str(exc).encode('ascii', 'ignore').decode('ascii')
-        print(f"   [WARNING] Unable to load ImportForecastLSTM: {error_msg}")
+        logger.warning("Unable to load ImportForecastLSTM: %s", error_msg)
         lstm_model = ImportForecastLSTM(lookback=LSTM_SEQUENCE_LENGTH, features=LSTM_NUM_FEATURES)
         lstm_model.build_model()
     
-    print("="*60)
-    print("MODELS INITIALIZED - READY TO BUILD ON DEMAND")
-    print("="*60 + "\n")
+    logger.info("Models initialized - ready to build on demand")
 
 
 def get_lstm_model():
     """Lazy load LSTM model"""
     global lstm_model
     if lstm_model is None:
-        print("Loading ImportForecastLSTM on demand...")
+        logger.info("Loading ImportForecastLSTM on demand")
         try:
             lstm_model = ImportForecastLSTM(lookback=LSTM_SEQUENCE_LENGTH, features=LSTM_NUM_FEATURES)
             if LSTM_MODEL_PATH.exists():
@@ -64,7 +63,7 @@ def get_lstm_model():
             else:
                 lstm_model.build_model()
         except Exception as exc:
-            print(f"   [WARNING] Fallback to fresh ImportForecastLSTM due to: {exc}")
+            logger.warning("Fallback to fresh ImportForecastLSTM due to: %s", exc)
             lstm_model = ImportForecastLSTM(lookback=LSTM_SEQUENCE_LENGTH, features=LSTM_NUM_FEATURES)
             lstm_model.build_model()
     return lstm_model

@@ -29,12 +29,12 @@ def _vietocr_ocr(image: Image.Image) -> Optional[dict]:
     if engine is None:
         return None
     try:
-        print("[OCR] VietOCR: attempting with CV Layout (Paddle/CTPN)...", flush=True)
+        logger.info("[OCR] VietOCR: attempting with CV Layout (Paddle/CTPN)")
         res = run_vietocr_with_paddle_layout(image, engine)
         if res and res.get('text'):
              return res
     except Exception as exc:
-        print(f"[OCR] VietOCR: ERROR ({exc}) — falling back", flush=True)
+        logger.info("[OCR] VietOCR error (%s); falling back", exc)
     return None
 
 
@@ -63,9 +63,9 @@ def _brain_vlm_ocr(image: Image.Image) -> Optional[dict]:
     global _brain_disabled
     url = _get_brain_url()
     if not url:
-        print("[OCR] Brain VLM: SKIPPED (no config / previously disabled)", flush=True)
+        logger.info("[OCR] Brain VLM skipped (no config / previously disabled)")
         return None
-    print(f"[OCR] Brain VLM: attempting Qwen2-VL OCR via {url}/ocr ...", flush=True)
+    logger.info("[OCR] Brain VLM attempting Qwen2-VL OCR via %s/ocr", url)
     try:
         buf = BytesIO()
         image.save(buf, format='PNG')
@@ -78,42 +78,41 @@ def _brain_vlm_ocr(image: Image.Image) -> Optional[dict]:
             timeout=30,
         )
         if resp.status_code != 200:
-            print(f"[OCR] Brain VLM: server returned HTTP {resp.status_code}, falling back", flush=True)
             logger.info("Brain OCR returned status %d, falling back", resp.status_code)
             return None
 
         data = resp.json()
         if not data.get('success'):
-            print(f"[OCR] Brain VLM: unsuccessful — {data.get('error')}", flush=True)
             logger.info("Brain OCR unsuccessful: %s", data.get('error'))
             return None
 
         text = (data.get('text') or '').strip()
         if not text:
-            print("[OCR] Brain VLM: returned empty text, falling back", flush=True)
+            logger.info("Brain OCR returned empty text, falling back")
             return None
         # Guard against vision error strings leaking through as "text"
         if text.startswith('Error analyzing') or text.startswith('Vision module'):
-            print(f"[OCR] Brain VLM: vision error in response — {text[:80]}", flush=True)
+            logger.info("Brain OCR vision error in response: %s", text[:80])
             return None
 
-        print(f"[OCR] Brain VLM: SUCCESS — extracted {len(text)} chars (backend={data.get('backend','qwen2-vl')})", flush=True)
+        logger.info(
+            "[OCR] Brain VLM success: extracted %d chars (backend=%s)",
+            len(text),
+            data.get('backend', 'qwen2-vl'),
+        )
         return {
             'text': text,
             'backend': data.get('backend', 'qwen2-vl'),
             'confidence': float(data.get('confidence', 0.89)),
         }
     except requests.exceptions.ConnectionError:
-        print("[OCR] Brain VLM: OFFLINE (ConnectionError) — falling back to PaddleOCR", flush=True)
         logger.info("Brain unreachable (offline); falling back to PaddleOCR")
         _brain_disabled = True  # Don't retry for the rest of this process
         return None
     except requests.exceptions.Timeout:
-        print("[OCR] Brain VLM: TIMEOUT (30s) — falling back to PaddleOCR", flush=True)
         logger.info("Brain OCR timed out; falling back to PaddleOCR")
         return None
     except Exception as exc:
-        print(f"[OCR] Brain VLM: ERROR ({exc}) — falling back", flush=True)
         logger.info("Brain OCR error: %s; falling back", exc)
         return None
 
@@ -316,13 +315,13 @@ def extract_text_from_image_bytes(image_bytes):
         ('Brain VLM (Qwen2-VL)',                _brain_vlm_ocr),
         ('Tesseract',                           _pytesseract_ocr),
     ]
-    print(f"[OCR] Fallback chain: {' → '.join(n for n, _ in backends)}", flush=True)
+    logger.info("[OCR] Fallback chain: %s", " -> ".join(n for n, _ in backends))
     for name, runner in backends:
         result = runner(image)
         if result and result.get('text'):
-            print(f"[OCR] ✓ Text extracted by: {name} (backend={result.get('backend')}, len={len(result['text'])}, conf={result.get('confidence',0):.3f})", flush=True)
             logger.info(
-                "OCR success via %s (len=%d, confidence=%.3f)",
+                "OCR success via %s/%s (len=%d, confidence=%.3f)",
+                name,
                 result.get('backend'),
                 len(result.get('text', '')),
                 float(result.get('confidence', 0.0))
