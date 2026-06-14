@@ -1,5 +1,5 @@
 ---
-status: testing
+status: complete
 phase: 18-focused-regression-hardening
 source: [18-01-SUMMARY.md]
 started: 2026-06-14T21:30:00Z
