@@ -237,12 +237,6 @@ def create_app(config_object=None):
     return flask_app
 
 
-# ---------------------------------------------------------------------------
-# Module-level app instance
-# ---------------------------------------------------------------------------
-app = create_app()
-
-
 def run_dl_service():
     current_dir = os.getcwd()
     dl_service_path = os.path.join(current_dir, 'dl_service')
@@ -258,6 +252,7 @@ def run_dl_service():
 
 
 if __name__ == '__main__':
+    app = create_app()
     if not db_manager.use_postgres:
         db_manager.init_database()
     app.run(host='127.0.0.1', port=5000, debug=True, use_reloader=False, load_dotenv=False)
