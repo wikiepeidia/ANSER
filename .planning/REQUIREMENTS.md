@@ -73,13 +73,13 @@ This document tracks the functional and non-functional requirements for ANSER, d
 | NFR-INF-01 (BE-04) | Phase 22 | Complete |
 | NFR-PERF-04 (BE-05) | Phase 23 | Complete |
 | NFR-PERF-05 (BE-07) | Phase 24 | Complete |
-| CIRC-01 | Phase 25 | Pending |
-| CIRC-02 | Phase 25 | Pending |
-| CIRC-03 | Phase 25 | Pending |
-| NFR-TD-01 | Phase 25 | Pending |
-| NFR-TD-02 | Phase 25 | Pending |
-| AUTO-01 | Phase 26 | Pending |
-| AUTO-02 | Phase 26 | Pending |
+| CIRC-01 | Phase 25 | Complete |
+| CIRC-02 | Phase 25 | Complete |
+| CIRC-03 | Phase 25 | Complete |
+| NFR-TD-01 | Phase 25 | Complete |
+| NFR-TD-02 | Phase 25 | Complete |
+| AUTO-01 | Phase 26 | Complete |
+| AUTO-02 | Phase 26 | Complete |
 | DL-01 | Phase 27 | Pending |
 | DL-02 | Phase 27 | Pending |
 | DL-03 | Phase 27 | Pending |
@@ -93,14 +93,14 @@ This document tracks the functional and non-functional requirements for ANSER, d
 
 ### Circular Import & Module Decoupling
 
-- [ ] **CIRC-01**: Developer can import `app` without triggering server startup (`python -c "import app"` exits cleanly with no server spin-up)
-- [ ] **CIRC-02**: System can be served via gunicorn using a `wsgi.py` entry point (`wsgi.py` exists and exports `application`)
-- [ ] **CIRC-03**: `core/services/dl_client.py` uses HTTP by default (`use_local=False`); no `sys.path.insert` in `core/`; local mode imports lazily only when explicitly requested
+- [x] **CIRC-01**: Developer can import `app` without triggering server startup (`python -c "import app"` exits cleanly with no server spin-up)
+- [x] **CIRC-02**: System can be served via gunicorn using a `wsgi.py` entry point (`wsgi.py` exists and exports `application`)
+- [x] **CIRC-03**: `core/services/dl_client.py` uses HTTP by default (`use_local=False`); no `sys.path.insert` in `core/`; local mode imports lazily only when explicitly requested
 
 ### Automation Engine Schema Fix
 
-- [ ] **AUTO-01**: `automation_engine.py` SQL references only columns/tables that exist in the actual schema (no `suppliers` table query, no `import_price` column access)
-- [ ] **AUTO-02**: Low-stock automation and scheduled import run end-to-end without exception on both SQLite and NeonDB
+- [x] **AUTO-01**: `automation_engine.py` SQL references only columns/tables that exist in the actual schema (no `suppliers` table query, no `import_price` column access)
+- [x] **AUTO-02**: Low-stock automation and scheduled import run end-to-end without exception on both SQLite and NeonDB
 
 ### DL Service Logging & OCR Validation
 
@@ -116,9 +116,9 @@ This document tracks the functional and non-functional requirements for ANSER, d
 
 ### Non-Functional
 
-- [ ] **NFR-TD-01**: `grep sys.path core/` returns no results after Phase 25
-- [ ] **NFR-TD-02**: No new circular import errors introduced; existing routes remain functional
+- [x] **NFR-TD-01**: `grep sys.path core/` returns no results after Phase 25
+- [x] **NFR-TD-02**: No new circular import errors introduced; existing routes remain functional
 
 ---
 
-Last updated: 2026-06-13 (v1.1 requirements added; traceability updated for Phases 25-28)
+Last updated: 2026-06-14 (Phase 26 complete; Phase 25 stale TODO statuses reconciled)
