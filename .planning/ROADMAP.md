@@ -18,7 +18,7 @@
 
 - [x] **Phase 25: Circular Import & Module Decoupling** - Remove module-level app instantiation, create wsgi.py, eliminate sys.path hacks. (completed 2026-06-14)
 - [x] **Phase 26: Automation Engine Schema Fix** - Fix schema mismatches in automation_engine.py; add smoke test. (completed 2026-06-14)
-- [ ] **Phase 27: DL Service Logging & OCR Validation** - Replace print() with logger in dl_client; validate OCR end-to-end flow.
+- [x] **Phase 27: DL Service Logging & OCR Validation** - Replace print() with logger in dl_client; validate OCR end-to-end flow. (completed 2026-06-14)
 - [ ] **Phase 28: Code Hygiene** - Fix analytics_service, google_integration, and utils.py outstanding bugs.
 
 ## Phase Details
@@ -33,7 +33,11 @@
 1. Pytest coverage increased for all touched service slices.
 2. Route ownership notes updated in codebase/CONVENTIONS.md.
 
-**Plans**: TBD
+**Plans**: 1 plan
+
+Plans:
+
+- [x] 27-01-PLAN.md — Replace DL runtime prints with logging and validate OCR/forecast contracts
 
 ### Phase 20: AI Route Decoupling
 
@@ -172,9 +176,9 @@ Plans:
 | 24    | 1/1            | Complete    | 2026-06-08 |
 | 25    | 1/1            | Complete    | 2026-06-14 |
 | 26    | 1/1            | Complete    | 2026-06-14 |
-| 27    | 0/1            | Not started | -          |
+| 27    | 1/1            | Complete    | 2026-06-14 |
 | 28    | 0/1            | Not started | -          |
 
 ---
 
-Last updated: 2026-06-14 (v1.1 Phase 26 complete)
+Last updated: 2026-06-14 (v1.1 Phase 27 complete)
