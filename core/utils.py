@@ -1,6 +1,16 @@
 import json
 from datetime import datetime
 
+_WORKSPACE_COLUMNS = ('id', 'user_id', 'name', 'type', 'description')
+
+
+def _workspace_mapping(workspace):
+    if isinstance(workspace, dict):
+        return workspace
+    if hasattr(workspace, 'keys'):
+        return workspace
+    return dict(zip(_WORKSPACE_COLUMNS, workspace))
+
 class Utils:
     @staticmethod
     def serialize_datetime(obj):
@@ -26,12 +36,13 @@ class Utils:
         }
         
         for workspace in workspaces:
-            workspace_type = workspace[3]  # type column
+            row = _workspace_mapping(workspace)
+            workspace_type = row['type']
             if workspace_type in tree:
                 tree[workspace_type].append({
-                    'id': workspace[0],
-                    'name': workspace[2],
-                    'description': workspace[4],
+                    'id': row['id'],
+                    'name': row['name'],
+                    'description': row['description'],
                     'type': workspace_type
                 })
         
