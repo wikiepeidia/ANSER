@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Tech Debt Completion
-status: planning
-last_updated: "2026-06-13T00:00:00.000Z"
-last_activity: 2026-06-13
+status: in-progress
+last_updated: "2026-06-14T10:06:20Z"
+last_activity: 2026-06-14
 progress:
   total_phases: 4
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 4
-  completed_plans: 0
-  percent: 0
+  completed_plans: 1
+  percent: 25
 ---
 
 # Project State
@@ -24,18 +24,17 @@ See: .planning/PROJECT.md (updated 2026-06-13)
 
 ## Current Position
 
-Phase: 25 — Circular Import & Module Decoupling
-Plan: TBD (not yet planned)
-Status: Planning — roadmap written, phase planning not started
-Last activity: 2026-06-13 — Roadmap for v1.1 (Phases 25-28) created
+Phase: 26 — Automation Engine Schema Fix
+Plan: TBD
+Status: In Progress — Phase 25 complete, Phase 26 next
+Last activity: 2026-06-14 — Phase 25 Plan 01 executed and verified
 
-Progress: [----------] 0% (0/4 phases complete)
+Progress: [##--------] 25% (1/4 phases complete)
 
 ## Immediate Priorities
 
-1. Run `/gsd-plan-phase 25` to decompose Phase 25 into executable tasks.
-2. After Phase 25 completes, proceed to Phase 26 (Automation Engine Schema Fix).
-3. Phases 27 and 28 can begin after Phase 25 is done (both depend on Phase 25 only).
+1. Proceed to Phase 26 (Automation Engine Schema Fix) — Phase 25 complete.
+2. Phases 27 and 28 can proceed after Phase 26 is done.
 
 ## Accumulated Context
 
@@ -48,11 +47,12 @@ Progress: [----------] 0% (0/4 phases complete)
 - v1.1 milestone started 2026-06-13; Phases 25-28 cover all remaining tech debt TODOs.
 - NFR-TD-01 and NFR-TD-02 assigned to Phase 25 as cross-cutting non-functional requirements.
 - Phases 26, 27, and 28 all depend on Phase 25 (module decoupling is a prerequisite for clean work in other files).
+- Phase 25 Plan 01: Module-level app = create_app() removed from app.py; wsgi.py created for gunicorn; DLClient defaults to HTTP mode (use_local=False); sys.path mutation eliminated from core/.
 
 ### Pending Todos
 
 - [ ] Finalize Phase 18: Focused Regression Hardening (still open, predates v1.1)
-- [ ] Plan and execute Phase 25: Circular Import & Module Decoupling
+- [x] Plan and execute Phase 25: Circular Import & Module Decoupling
 - [ ] Plan and execute Phase 26: Automation Engine Schema Fix
 - [ ] Plan and execute Phase 27: DL Service Logging & OCR Validation
 - [ ] Plan and execute Phase 28: Code Hygiene
@@ -66,9 +66,10 @@ Progress: [----------] 0% (0/4 phases complete)
 | 2026-06-08 | Scope Refinement | Removed Landing Page and UI requirements to focus on Backend Cleanup. |
 | 2026-06-08 | Backend Cleanup Completion | Completed Phases 20, 21, 22, 23, and 24. |
 | 2026-06-13 | v1.1 Milestone Start | Requirements gathered; Roadmap Phases 25-28 written and committed. |
+| 2026-06-14 | Phase 25 Execution | Completed Plan 25-01: circular import decoupling, wsgi.py, HTTP-first DLClient. |
 
 ## Session Continuity
 
-- Previous state: milestone completion of Deadline Rush (Phases 20-24 done).
-- Current state: v1.1 Tech Debt Completion roadmap finalized; no phases executed yet.
-- Next: `/gsd-plan-phase 25` to begin Phase 25 planning.
+- Previous state: v1.1 Tech Debt Completion roadmap finalized; no phases executed yet.
+- Current state: Phase 25 complete (commits 934baff, c6c999c). All four success criteria verified.
+- Next: Plan and execute Phase 26 (Automation Engine Schema Fix).
