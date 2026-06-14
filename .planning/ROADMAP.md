@@ -16,8 +16,8 @@
 
 ### Milestone v1.1: Tech Debt Completion
 
-- [ ] **Phase 25: Circular Import & Module Decoupling** - Remove module-level app instantiation, create wsgi.py, eliminate sys.path hacks.
-- [ ] **Phase 26: Automation Engine Schema Fix** - Fix schema mismatches in automation_engine.py; add smoke test.
+- [x] **Phase 25: Circular Import & Module Decoupling** - Remove module-level app instantiation, create wsgi.py, eliminate sys.path hacks. (completed 2026-06-14)
+- [x] **Phase 26: Automation Engine Schema Fix** - Fix schema mismatches in automation_engine.py; add smoke test. (completed 2026-06-14)
 - [ ] **Phase 27: DL Service Logging & OCR Validation** - Replace print() with logger in dl_client; validate OCR end-to-end flow.
 - [ ] **Phase 28: Code Hygiene** - Fix analytics_service, google_integration, and utils.py outstanding bugs.
 
@@ -112,7 +112,8 @@
 **Plans**: 1 plan
 
 Plans:
-- [ ] 25-01-PLAN.md — Remove module-level app instantiation, create wsgi.py, eliminate sys.path hacks
+
+- [x] 25-01-PLAN.md — Remove module-level app instantiation, create wsgi.py, eliminate sys.path hacks
 
 ### Phase 26: Automation Engine Schema Fix
 
@@ -125,7 +126,11 @@ Plans:
 2. `check_low_stock` runs end-to-end against a test database without raising an exception.
 3. `execute_scheduled_import` runs end-to-end against a test database without raising an exception.
 
-**Plans**: TBD
+**Plans**: 1 plan
+
+Plans:
+
+- [x] 26-01-PLAN.md — Fix schema mismatches and add automation smoke test
 
 ### Phase 27: DL Service Logging & OCR Validation
 
@@ -165,11 +170,11 @@ Plans:
 | 22    | 1/1            | Complete    | 2026-06-08 |
 | 23    | 1/1            | Complete    | 2026-06-08 |
 | 24    | 1/1            | Complete    | 2026-06-08 |
-| 25    | 0/1            | Not started | -          |
-| 26    | 0/1            | Not started | -          |
+| 25    | 1/1            | Complete    | 2026-06-14 |
+| 26    | 1/1            | Complete    | 2026-06-14 |
 | 27    | 0/1            | Not started | -          |
 | 28    | 0/1            | Not started | -          |
 
 ---
 
-Last updated: 2026-06-13 (v1.1 Tech Debt Completion — Phases 25-28 added)
+Last updated: 2026-06-14 (v1.1 Phase 26 complete)
