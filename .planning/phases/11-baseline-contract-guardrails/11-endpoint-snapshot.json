@@ -1,0 +1,698 @@
+{
+  "snapshot": {
+    "entries": [
+      {
+        "path": "/",
+        "actual_methods": [
+          "GET"
+        ]
+      },
+      {
+        "path": "/admin",
+        "actual_methods": [
+          "GET"
+        ]
+      },
+      {
+        "path": "/admin/analytics",
+        "actual_methods": [
+          "GET"
+        ]
+      },
+      {
+        "path": "/admin/managers",
+        "actual_methods": [
+          "GET"
+        ]
+      },
+      {
+        "path": "/admin/roles",
+        "actual_methods": [
+          "GET"
+        ]
+      },
+      {
+        "path": "/admin/subscriptions",
+        "actual_methods": [
+          "GET"
+        ]
+      },
+      {
+        "path": "/admin/workspace",
+        "actual_methods": [
+          "GET"
+        ]
+      },
+      {
+        "path": "/api/admin/activity",
+        "actual_methods": [
+          "GET"
+        ]
+      },
+      {
+        "path": "/api/admin/analytics/clear_cache",
+        "actual_methods": [
+          "POST"
+        ]
+      },
+      {
+        "path": "/api/admin/analytics/data",
+        "actual_methods": [
+          "GET"
+        ]
+      },
+      {
+        "path": "/api/admin/check-expired-subscriptions",
+        "actual_methods": [
+          "POST"
+        ]
+      },
+      {
+        "path": "/api/admin/create-manager",
+        "actual_methods": [
+          "POST"
+        ]
+      },
+      {
+        "path": "/api/admin/extend-subscription",
+        "actual_methods": [
+          "POST"
+        ]
+      },
+      {
+        "path": "/api/admin/stats",
+        "actual_methods": [
+          "GET"
+        ]
+      },
+      {
+        "path": "/api/admin/subscription-history",
+        "actual_methods": [
+          "GET"
+        ]
+      },
+      {
+        "path": "/api/admin/subscription/auto-renew",
+        "actual_methods": [
+          "POST"
+        ]
+      },
+      {
+        "path": "/api/admin/subscription/extend",
+        "actual_methods": [
+          "POST"
+        ]
+      },
+      {
+        "path": "/api/admin/subscriptions",
+        "actual_methods": [
+          "GET"
+        ]
+      },
+      {
+        "path": "/api/admin/users",
+        "actual_methods": [
+          "GET"
+        ]
+      },
+      {
+        "path": "/api/admin/users/<int:user_id>",
+        "actual_methods": [
+          "DELETE"
+        ]
+      },
+      {
+        "path": "/api/admin/users/demote",
+        "actual_methods": [
+          "POST"
+        ]
+      },
+      {
+        "path": "/api/admin/users/promote",
+        "actual_methods": [
+          "POST"
+        ]
+      },
+      {
+        "path": "/api/admin/wallet/pending",
+        "actual_methods": [
+          "GET"
+        ]
+      },
+      {
+        "path": "/api/admin/wallet/pending/<int:transaction_id>",
+        "actual_methods": [
+          "POST"
+        ]
+      },
+      {
+        "path": "/api/admin/wallet/withdraw",
+        "actual_methods": [
+          "POST"
+        ]
+      },
+      {
+        "path": "/api/ai/chat",
+        "actual_methods": [
+          "POST"
+        ]
+      },
+      {
+        "path": "/api/ai/history",
+        "actual_methods": [
+          "GET"
+        ]
+      },
+      {
+        "path": "/api/ai/history",
+        "actual_methods": [
+          "DELETE"
+        ]
+      },
+      {
+        "path": "/api/ai/status/<job_id>",
+        "actual_methods": [
+          "GET"
+        ]
+      },
+      {
+        "path": "/api/ai/upload",
+        "actual_methods": [
+          "POST"
+        ]
+      },
+      {
+        "path": "/api/automations",
+        "actual_methods": [
+          "GET"
+        ]
+      },
+      {
+        "path": "/api/automations",
+        "actual_methods": [
+          "POST"
+        ]
+      },
+      {
+        "path": "/api/automations/<int:automation_id>",
+        "actual_methods": [
+          "PUT"
+        ]
+      },
+      {
+        "path": "/api/automations/<int:automation_id>",
+        "actual_methods": [
+          "DELETE"
+        ]
+      },
+      {
+        "path": "/api/create-user",
+        "actual_methods": [
+          "POST"
+        ]
+      },
+      {
+        "path": "/api/customers",
+        "actual_methods": [
+          "GET"
+        ]
+      },
+      {
+        "path": "/api/customers",
+        "actual_methods": [
+          "POST"
+        ]
+      },
+      {
+        "path": "/api/customers/<int:customer_id>",
+        "actual_methods": [
+          "PUT"
+        ]
+      },
+      {
+        "path": "/api/customers/<int:customer_id>",
+        "actual_methods": [
+          "DELETE"
+        ]
+      },
+      {
+        "path": "/api/dashboard/stats",
+        "actual_methods": [
+          "GET"
+        ]
+      },
+      {
+        "path": "/api/dl/detect",
+        "actual_methods": [
+          "POST"
+        ]
+      },
+      {
+        "path": "/api/dl/forecast",
+        "actual_methods": [
+          "POST"
+        ]
+      },
+      {
+        "path": "/api/exports",
+        "actual_methods": [
+          "GET"
+        ]
+      },
+      {
+        "path": "/api/exports",
+        "actual_methods": [
+          "POST"
+        ]
+      },
+      {
+        "path": "/api/exports/<int:export_id>",
+        "actual_methods": [
+          "GET"
+        ]
+      },
+      {
+        "path": "/api/google/files",
+        "actual_methods": [
+          "GET"
+        ]
+      },
+      {
+        "path": "/api/imports",
+        "actual_methods": [
+          "GET"
+        ]
+      },
+      {
+        "path": "/api/imports",
+        "actual_methods": [
+          "POST"
+        ]
+      },
+      {
+        "path": "/api/imports/<int:import_id>",
+        "actual_methods": [
+          "GET"
+        ]
+      },
+      {
+        "path": "/api/imports/download/template",
+        "actual_methods": [
+          "GET"
+        ]
+      },
+      {
+        "path": "/api/imports/upload/excel",
+        "actual_methods": [
+          "POST"
+        ]
+      },
+      {
+        "path": "/api/items/<int:item_id>",
+        "actual_methods": [
+          "PUT"
+        ]
+      },
+      {
+        "path": "/api/items/<int:item_id>",
+        "actual_methods": [
+          "DELETE"
+        ]
+      },
+      {
+        "path": "/api/manager/users-permissions",
+        "actual_methods": [
+          "GET"
+        ]
+      },
+      {
+        "path": "/api/products",
+        "actual_methods": [
+          "GET"
+        ]
+      },
+      {
+        "path": "/api/products",
+        "actual_methods": [
+          "POST"
+        ]
+      },
+      {
+        "path": "/api/products/<int:product_id>",
+        "actual_methods": [
+          "PUT"
+        ]
+      },
+      {
+        "path": "/api/products/<int:product_id>",
+        "actual_methods": [
+          "DELETE"
+        ]
+      },
+      {
+        "path": "/api/products/<int:product_id>/sales_history",
+        "actual_methods": [
+          "GET"
+        ]
+      },
+      {
+        "path": "/api/products/import-excel",
+        "actual_methods": [
+          "POST"
+        ]
+      },
+      {
+        "path": "/api/products/import-excel/preview",
+        "actual_methods": [
+          "POST"
+        ]
+      },
+      {
+        "path": "/api/products/search",
+        "actual_methods": [
+          "GET"
+        ]
+      },
+      {
+        "path": "/api/reports/scheduled",
+        "actual_methods": [
+          "GET"
+        ]
+      },
+      {
+        "path": "/api/reports/scheduled",
+        "actual_methods": [
+          "POST"
+        ]
+      },
+      {
+        "path": "/api/reports/scheduled/<int:report_id>",
+        "actual_methods": [
+          "DELETE"
+        ]
+      },
+      {
+        "path": "/api/reports/stats",
+        "actual_methods": [
+          "GET"
+        ]
+      },
+      {
+        "path": "/api/sales/create",
+        "actual_methods": [
+          "POST"
+        ]
+      },
+      {
+        "path": "/api/sales/history",
+        "actual_methods": [
+          "GET"
+        ]
+      },
+      {
+        "path": "/api/sales/history/<int:sale_id>",
+        "actual_methods": [
+          "DELETE"
+        ]
+      },
+      {
+        "path": "/api/scenarios",
+        "actual_methods": [
+          "GET"
+        ]
+      },
+      {
+        "path": "/api/scenarios",
+        "actual_methods": [
+          "POST"
+        ]
+      },
+      {
+        "path": "/api/scenarios/<int:scenario_id>",
+        "actual_methods": [
+          "GET"
+        ]
+      },
+      {
+        "path": "/api/scenarios/<int:scenario_id>",
+        "actual_methods": [
+          "PUT"
+        ]
+      },
+      {
+        "path": "/api/scenarios/<int:scenario_id>",
+        "actual_methods": [
+          "DELETE"
+        ]
+      },
+      {
+        "path": "/api/session",
+        "actual_methods": [
+          "GET"
+        ]
+      },
+      {
+        "path": "/api/settings/update",
+        "actual_methods": [
+          "POST"
+        ]
+      },
+      {
+        "path": "/api/user/profile",
+        "actual_methods": [
+          "POST"
+        ]
+      },
+      {
+        "path": "/api/user/subscription/auto-renew",
+        "actual_methods": [
+          "POST"
+        ]
+      },
+      {
+        "path": "/api/user/subscription/upgrade",
+        "actual_methods": [
+          "POST"
+        ]
+      },
+      {
+        "path": "/api/user/wallet",
+        "actual_methods": [
+          "GET"
+        ]
+      },
+      {
+        "path": "/api/user/wallet/topup",
+        "actual_methods": [
+          "POST"
+        ]
+      },
+      {
+        "path": "/api/users",
+        "actual_methods": [
+          "GET"
+        ]
+      },
+      {
+        "path": "/api/users/<int:user_id>",
+        "actual_methods": [
+          "DELETE"
+        ]
+      },
+      {
+        "path": "/api/users/<int:user_id>/reset-password",
+        "actual_methods": [
+          "POST"
+        ]
+      },
+      {
+        "path": "/api/workflow/execute",
+        "actual_methods": [
+          "POST"
+        ]
+      },
+      {
+        "path": "/api/workflow/upload_file",
+        "actual_methods": [
+          "POST"
+        ]
+      },
+      {
+        "path": "/api/workflows",
+        "actual_methods": [
+          "GET"
+        ]
+      },
+      {
+        "path": "/api/workflows",
+        "actual_methods": [
+          "POST"
+        ]
+      },
+      {
+        "path": "/api/workflows/<int:workflow_id>",
+        "actual_methods": [
+          "DELETE"
+        ]
+      },
+      {
+        "path": "/api/workflows/<int:workflow_id>",
+        "actual_methods": [
+          "GET"
+        ]
+      },
+      {
+        "path": "/api/workspace",
+        "actual_methods": [
+          "POST"
+        ]
+      },
+      {
+        "path": "/api/workspace/<int:workspace_id>/items",
+        "actual_methods": [
+          "GET"
+        ]
+      },
+      {
+        "path": "/api/workspace/<int:workspace_id>/items",
+        "actual_methods": [
+          "POST"
+        ]
+      },
+      {
+        "path": "/api/workspaces",
+        "actual_methods": [
+          "GET"
+        ]
+      },
+      {
+        "path": "/auth/connect/google",
+        "actual_methods": [
+          "GET"
+        ]
+      },
+      {
+        "path": "/auth/google/callback",
+        "actual_methods": [
+          "GET"
+        ]
+      },
+      {
+        "path": "/auth/login/google",
+        "actual_methods": [
+          "GET"
+        ]
+      },
+      {
+        "path": "/auth/signin",
+        "actual_methods": [
+          "GET",
+          "POST"
+        ]
+      },
+      {
+        "path": "/auth/signup",
+        "actual_methods": [
+          "GET",
+          "POST"
+        ]
+      },
+      {
+        "path": "/customers",
+        "actual_methods": [
+          "GET"
+        ]
+      },
+      {
+        "path": "/dashboard",
+        "actual_methods": [
+          "GET"
+        ]
+      },
+      {
+        "path": "/exports",
+        "actual_methods": [
+          "GET"
+        ]
+      },
+      {
+        "path": "/imports",
+        "actual_methods": [
+          "GET"
+        ]
+      },
+      {
+        "path": "/logout",
+        "actual_methods": [
+          "GET"
+        ]
+      },
+      {
+        "path": "/manager/create-user",
+        "actual_methods": [
+          "GET"
+        ]
+      },
+      {
+        "path": "/products",
+        "actual_methods": [
+          "GET"
+        ]
+      },
+      {
+        "path": "/sale",
+        "actual_methods": [
+          "GET"
+        ]
+      },
+      {
+        "path": "/scenarios",
+        "actual_methods": [
+          "GET"
+        ]
+      },
+      {
+        "path": "/se/auto-import",
+        "actual_methods": [
+          "GET"
+        ]
+      },
+      {
+        "path": "/se/reports",
+        "actual_methods": [
+          "GET"
+        ]
+      },
+      {
+        "path": "/settings",
+        "actual_methods": [
+          "GET"
+        ]
+      },
+      {
+        "path": "/static/<path:filename>",
+        "actual_methods": [
+          "GET"
+        ]
+      },
+      {
+        "path": "/wallet",
+        "actual_methods": [
+          "GET"
+        ]
+      },
+      {
+        "path": "/workspace",
+        "actual_methods": [
+          "GET"
+        ]
+      },
+      {
+        "path": "/workspace/builder",
+        "actual_methods": [
+          "GET"
+        ]
+      }
+    ]
+  }
+}

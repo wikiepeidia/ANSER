@@ -5,7 +5,7 @@
 - [x] **Phase 1-10: Feature Foundation (Archived)** - Core features implementation.
 - [x] **Phase 11-15: Backend Refactor (Archived)** - Transitioning to modular monolith.
 - [x] **Phase 16: Planning Context Refresh** - Align .planning docs with Engineering reality.
-- [ ] **Phase 18: Focused Regression Hardening** - Add/update targeted tests.
+- [x] **Phase 18: Focused Regression Hardening** - Add/update targeted tests. (completed 2026-06-14)
 - [x] **Phase 20: AI Route Decoupling (BE-01)** - Resolve circular imports in AI routes.
 - [x] **Phase 21: Auth & User Consolidation (BE-02)** - Centralize User/Auth logic.
 - [x] **Phase 22: Dependency & Service Isolation (BE-04)** - Cleanup requirements and isolate dl_service.
@@ -37,7 +37,7 @@
 
 Plans:
 
-- [x] 27-01-PLAN.md — Replace DL runtime prints with logging and validate OCR/forecast contracts
+- [x] 18-01-PLAN.md — Repair regression test suite (33→0 failures) and add route ownership notes
 
 ### Phase 20: AI Route Decoupling
 
@@ -176,7 +176,7 @@ Plans:
 |-------|----------------|-------------|------------|
 | 1-15  | N/A            | Archived    | 2026-04-22 |
 | 16    | 1/1            | Complete    | 2026-06-08 |
-| 18    | 0/1            | Not started | -          |
+| 18    | 1/1            | Complete    | 2026-06-14 |
 | 20    | 1/1            | Complete    | 2026-06-08 |
 | 21    | 1/1            | Complete    | 2026-06-08 |
 | 22    | 1/1            | Complete    | 2026-06-08 |

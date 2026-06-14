@@ -181,6 +181,24 @@ async function loadProducts() {
 - Use page-local browser globals and `DOMContentLoaded` initializers in `static/js/*.js`, as in `static/js/admin_products.js`, `static/js/admin_dashboard.js`, and `static/js/wallet.js`.
 - Keep API field names in JavaScript payloads aligned with backend snake_case fields, as in `static/js/admin_imports.js`, `static/js/admin_exports.js`, and `static/js/admin_products.js`.
 
+## Route Ownership
+
+Each Flask Blueprint owns a named resource area. New routes must be added to the owning Blueprint, not to `app.py`.
+
+| Blueprint | Module | Owns |
+|-----------|--------|------|
+| `inventory_bp` | `routes/inventory_routes.py` | `/api/imports`, `/api/exports`, `/api/products`, `/api/customers` |
+| `workflow_bp` | `routes/workflow_routes.py` | `/api/workflows`, `/api/scenarios`, `/api/workflow/execute` |
+| `ai_bp` | `routes/ai_routes.py` | `/api/ai/*`, `/api/jobs/*` |
+| `admin_user_bp` | `routes/admin_user_routes.py` | `/api/admin/users`, `/api/create-user`, `/api/users` |
+| `admin_subscription_bp` | `routes/admin_subscription_routes.py` | `/api/admin/subscription*`, `/api/admin/subscriptions` |
+| `pages_bp` | `routes/page_routes.py` (or `app.py`) | `/`, `/dashboard`, `/imports`, `/exports`, `/sale` |
+| `workspace_bp` | `routes/workspace_routes.py` | `/api/workspaces`, `/api/workspace/*`, `/api/items/*` |
+
+**Registration:** All blueprints are registered in `create_app()` in `app.py`. Never register a Blueprint inside its own module.
+
+**Dependencies:** Use `current_app.extensions['database']` to access `db_manager` in route handlers; do not import from `app` directly (avoids circular imports).
+
 ## Planning Artifact Conventions
 
 - Codebase map documents live under `.planning/codebase/` per `.codex/skills/gsd-map-codebase/SKILL.md`.

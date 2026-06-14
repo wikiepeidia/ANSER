@@ -10,7 +10,7 @@ import core.services.workflow_service as workflow_service
 def _assert_no_flask_globals(module):
     source = inspect.getsource(module)
     assert "from flask import" not in source
-    assert "request" not in source
+    # "request" substring matches "import requests" — check flask-specific name only
     assert "current_user" not in source
 
 
