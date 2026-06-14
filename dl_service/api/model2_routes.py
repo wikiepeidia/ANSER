@@ -18,6 +18,30 @@ model2_bp = Blueprint('model2', __name__, url_prefix='/api/model2')
 logger = get_logger(__name__)
 
 
+def _products_from_payload(data):
+    products = data.get('products', [])
+    if products:
+        return products
+
+    items = data.get('items', [])
+    if items:
+        return items
+
+    invoice_data = data.get('invoice_data')
+    if isinstance(invoice_data, dict):
+        return invoice_data.get('products', []) or invoice_data.get('items', [])
+    if isinstance(invoice_data, list):
+        return invoice_data
+
+    inner = data.get('data')
+    if isinstance(inner, dict):
+        return inner.get('products', []) or inner.get('items', [])
+    if isinstance(inner, list):
+        return inner
+
+    return []
+
+
 @model2_bp.route('/forecast', methods=['POST'])
 def forecast():
     """Forecast product quantities"""
@@ -28,13 +52,14 @@ def forecast():
         data = request.get_json() or {}
 
         # NEW: Support direct products array
-        products = data.get('products', [])
+        products = _products_from_payload(data)
         if products:
             logger.info(f"Using {len(products)} products from request")
             invoice_items = products
         else:
             # OLD: Manual invoice data text
-            manual_invoice = data.get('invoice_data', '').strip()
+            raw_invoice = data.get('invoice_data', '')
+            manual_invoice = raw_invoice.strip() if isinstance(raw_invoice, str) else ''
 
             if manual_invoice:
                 validate_invoice_data(manual_invoice)

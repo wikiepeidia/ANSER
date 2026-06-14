@@ -4,6 +4,9 @@ import sys
 import numpy as np
 import cv2
 from PIL import Image
+from utils.logger import get_logger
+
+logger = get_logger(__name__)
 
 sys.path.append(os.path.join(os.getcwd(), 'dl_service/models/vietocr'))
 try:
@@ -15,7 +18,7 @@ try:
     _vietocr_predictor = Predictor(_vietocr_config)
 except Exception as e:
     _vietocr_predictor = None
-    print(f"Warning: VietOCR not loaded - {e}")
+    logger.warning("VietOCR not loaded: %s", e)
 
 from services.layout_service import get_text_lines
 
