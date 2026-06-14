@@ -105,9 +105,11 @@
     };
 
     const timeAgo = (dateString) => {
+        if (!dateString) return 'some time ago';
         const date = new Date(dateString);
+        if (isNaN(date.getTime())) return 'some time ago';
         const seconds = Math.floor((new Date() - date) / 1000);
-        
+        if (seconds < 0) return 'just now';
         let interval = seconds / 31536000;
         if (interval > 1) return Math.floor(interval) + " years ago";
         interval = seconds / 2592000;
