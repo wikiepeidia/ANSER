@@ -1,20 +1,13 @@
 import requests
 import json
 import os
-import sys
-
-# Add dl_service to sys.path to allow imports
-current_dir = os.getcwd()
-dl_service_path = os.path.join(current_dir, 'dl_service')
-if dl_service_path not in sys.path:
-    sys.path.insert(0, dl_service_path)
 
 class DLClient:
     """
     Client for the Deep Learning Microservice.
     Supports both local execution (direct integration) and remote HTTP calls.
     """
-    def __init__(self, use_local=True, base_url=None):
+    def __init__(self, use_local=False, base_url=None):
         self.use_local = use_local
         self.base_url = base_url or os.environ.get('DL_SERVICE_URL', 'http://localhost:5001')
         self.timeout = int(os.environ.get('DL_SERVICE_TIMEOUT', 30))
