@@ -109,7 +109,10 @@
 3. `wsgi.py` exists at the project root and exports an `application` object compatible with gunicorn.
 4. `core/services/dl_client.py` defaults to `use_local=False`; local-mode imports occur only when explicitly requested.
 
-**Plans**: TBD
+**Plans**: 1 plan
+
+Plans:
+- [ ] 25-01-PLAN.md — Remove module-level app instantiation, create wsgi.py, eliminate sys.path hacks
 
 ### Phase 26: Automation Engine Schema Fix
 
