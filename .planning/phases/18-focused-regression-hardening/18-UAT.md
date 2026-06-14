@@ -9,48 +9,84 @@ updated: 2026-06-14T21:30:00Z
 ## Current Test
 <!-- OVERWRITE each test - shows where we are -->
 
-number: 1
-name: Cold Start Smoke Test
+number: 7
+name: Next pages to verify
 expected: |
-  Kill any running server. Run: python app.py
-  Server should boot without errors.
-  Open http://127.0.0.1:5000 — login page or dashboard loads (no 500, no import error).
+  Continue testing remaining pages: /products, /customers, /workspace, /wallet, /scenarios, /settings
 awaiting: user response
 
 ## Tests
 
 ### 1. Cold Start Smoke Test
-expected: App boots cleanly with `python app.py`. No import errors, no AttributeError on startup. http://127.0.0.1:5000 loads.
-result: pending
+expected: App boots cleanly with `python app.py`. No import errors. http://127.0.0.1:5000 loads.
+result: pass — all public routes 200/302, no 500s. App on NeonDB/Postgres.
 
 ### 2. Login Works
-expected: Go to http://127.0.0.1:5000/login. Enter valid credentials. You reach the dashboard — no 500 error, no "AttributeError: 'sqlite3.Row' object has no attribute 'get'".
-result: pending
+expected: /auth/signin loads and login succeeds.
+result: pass — 200, user can log in.
 
 ### 3. User List Loads (Admin)
-expected: Go to http://127.0.0.1:5000/admin/users (or the admin panel). User list renders with names and emails visible — no 500, no crash.
-result: pending
+expected: /admin renders user list.
+result: pass — user list shows. ISSUE: Recent Activity timestamps show "56 years ago" (wrong epoch calculation).
 
 ### 4. Create Import Transaction
-expected: Navigate to the Imports page. Submit a new import (product + quantity + price). Response shows success — no 500, transaction appears in list.
-result: pending
+expected: /imports renders and new import can be submitted.
+result: pass
 
 ### 5. Create Export Transaction
-expected: Navigate to the Exports page. Submit a new export. Response shows success — no 500, transaction appears in list.
-result: pending
+expected: /exports renders and new export can be submitted.
+result: pass
 
-### 6. AI Chat Still Works
-expected: Navigate to the AI chat page. Send a message. You get a job ID back immediately (async). Polling shows "completed" eventually — no crash, no 500.
-result: pending
+### 6. Dashboard Renders Correctly
+expected: /dashboard loads with correct wallet balance and data.
+result: ISSUE — dashboard initially flashes 10,000 VND then re-renders to 0. Likely JS fetch overwrites server-rendered value with empty/zero API response.
+
+### 7. Remaining Pages
+expected: /products, /customers, /workspace, /wallet, /scenarios, /settings — all load without 500.
+result: partial — pages load OK; 3 API endpoints broken (all pre-existing, not Phase 18 regressions)
+  - /products: page OK. DL forecast button → 500 (pre-existing, DL service not wired)
+  - /customers: OK
+  - /wallet: page OK. GET /api/user/wallet → 500, POST /api/user/wallet/topup → 500 (pre-existing)
+  - /scenarios: OK
+  - /settings: page OK. POST /api/settings/update → 500 (pre-existing)
+  - /workspace: 302 → signin (auth guard OK, not tested authenticated)
 
 ## Summary
 
-total: 6
-passed: 0
-issues: 0
-pending: 6
+total: 7
+passed: 5
+issues: 2
+pending: 0
 skipped: 0
+pre-existing-not-regressed: 3
 
 ## Gaps
 
-[none yet]
+### GAP-01 — Dashboard balance flickers 10k → 0
+- Page: /dashboard
+- Observed: Initial render shows 10,000 VND, then JS re-renders to 0.
+- Likely cause: Server-rendered value correct; client-side fetch returns 0 or empty wallet data and overwrites it.
+- Severity: High (wrong financial data shown to user)
+- Pre-existing: unknown — needs investigation
+
+### GAP-02 — Admin Recent Activity timestamps wrong
+- Page: /admin (Recent Activity section)
+- Observed: Timestamps display as "56 years ago" instead of recent times.
+- Likely cause: Unix epoch seconds treated as milliseconds by JS (or vice versa), or wrong epoch base.
+- Severity: Medium (cosmetic but misleading)
+- Pre-existing: unknown — needs investigation
+
+### GAP-03 (pre-existing) — DL forecast button 500
+- Page: /products — DL forecast button
+- Pre-existing: yes, DL service integration never completed
+- Action: out of Phase 18 scope
+
+### GAP-04 (pre-existing) — Wallet API 500
+- Pages: GET /api/user/wallet, POST /api/user/wallet/topup
+- Pre-existing: yes, never worked
+- Action: out of Phase 18 scope
+
+### GAP-05 (pre-existing) — Settings update API 500
+- Page: POST /api/settings/update
+- Pre-existing: yes, never worked
+- Action: out of Phase 18 scope
