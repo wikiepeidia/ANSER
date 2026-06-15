@@ -44,6 +44,11 @@ def index():
     return render_template('signin.html')
 
 
+@page_bp.route('/landing')
+def landing():
+    return render_template('landing.html')
+
+
 @page_bp.route('/admin')
 @login_required
 def admin_dashboard():
