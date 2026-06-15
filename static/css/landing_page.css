@@ -12,16 +12,16 @@
 }
 
 html[data-theme='dark'] {
-    --body-bg: #0f0f0f;
-    --text-primary: #ffffff;
-    --text-secondary: #a0a0a0;
-    --hero-bg: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
-    --nav-bg: rgba(15, 15, 15, 0.9);
-    --nav-border: rgba(15, 15, 15, 0.5);
-    --card-bg: #252526;
-    --card-border: #404040;
-    --card-muted: #333333;
-    --card-shadow: 0 25px 60px rgba(0, 0, 0, 0.45);
+    --body-bg: #020617;
+    --text-primary: #f8fafc;
+    --text-secondary: rgba(148, 163, 184, 0.9);
+    --hero-bg: linear-gradient(135deg, #020617 0%, #111c32 100%);
+    --nav-bg: rgba(2, 6, 23, 0.92);
+    --nav-border: rgba(148, 163, 184, 0.18);
+    --card-bg: #0f172a;
+    --card-border: rgba(148, 163, 184, 0.15);
+    --card-muted: #111c32;
+    --card-shadow: 0 25px 60px rgba(0, 0, 0, 0.5);
 }
 
 .landing-page {
@@ -129,8 +129,8 @@ html[data-theme='dark'] {
 }
 
 html[data-theme='dark'] .landing-page .btn-secondary {
-    color: #cccccc;
-    border-color: #404040;
+    color: rgba(148, 163, 184, 0.9);
+    border-color: rgba(148, 163, 184, 0.2);
 }
 
 html[data-theme='dark'] .landing-page .btn-secondary:hover {
@@ -188,7 +188,7 @@ html[data-theme='dark'] .landing-page .btn-secondary:hover {
     gap: 0.5rem;
     margin-bottom: 1rem;
     padding-bottom: 1rem;
-    border-bottom: 1px solid #404040;
+    border-bottom: 1px solid var(--card-border);
 }
 
 .landing-page .visual-dots {
@@ -288,7 +288,7 @@ html[data-theme='dark'] .landing-page .btn-secondary:hover {
 }
 
 .visual-subtitle {
-    color: #cccccc;
+    color: var(--text-secondary);
     font-size: 0.9rem;
 }
 
