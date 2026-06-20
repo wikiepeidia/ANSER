@@ -541,32 +541,43 @@ window.addEventListener('offline', function() {
  * Persists collapsed state in localStorage.
  */
 document.addEventListener('DOMContentLoaded', function () {
-    const collapseBtn = document.getElementById('sidebar-collapse-toggle');
     const sidebar = document.getElementById('main-sidebar');
+    const collapseBtn = document.getElementById('sidebar-collapse-toggle');
 
-    if (collapseBtn && sidebar) {
-        // Restore saved state
-        const savedCollapsed = localStorage.getItem('sidebar-collapsed') === 'true';
-        if (savedCollapsed) {
-            sidebar.classList.add('collapsed');
-            applyContentOffset(true);
-        }
+    if (!sidebar) return;
 
-        collapseBtn.addEventListener('click', function () {
-            const isCollapsed = sidebar.classList.toggle('collapsed');
-            localStorage.setItem('sidebar-collapsed', isCollapsed);
-            applyContentOffset(isCollapsed);
+    // Restore saved state
+    const savedCollapsed = localStorage.getItem('sidebar-collapsed') === 'true';
+    if (savedCollapsed) {
+        sidebar.classList.add('collapsed');
+        applyContentOffset(true);
+    }
+    syncCollapseIcon(savedCollapsed);
+
+    function toggleSidebar() {
+        const isCollapsed = sidebar.classList.toggle('collapsed');
+        localStorage.setItem('sidebar-collapsed', isCollapsed);
+        applyContentOffset(isCollapsed);
+        syncCollapseIcon(isCollapsed);
+    }
+
+    if (collapseBtn) collapseBtn.addEventListener('click', toggleSidebar);
+
+    function applyContentOffset(collapsed) {
+        document.querySelectorAll('.app-content, .main-content, .scenario-main, .permissions-main').forEach(function (el) {
+            if (collapsed) {
+                el.classList.add('sidebar-collapsed');
+            } else {
+                el.classList.remove('sidebar-collapsed');
+            }
         });
+    }
 
-        function applyContentOffset(collapsed) {
-            document.querySelectorAll('.app-content, .main-content, .scenario-main, .permissions-main').forEach(function (el) {
-                if (collapsed) {
-                    el.classList.add('sidebar-collapsed');
-                } else {
-                    el.classList.remove('sidebar-collapsed');
-                }
-            });
-        }
+    function syncCollapseIcon(collapsed) {
+        const icon = document.getElementById('sidebar-collapse-icon');
+        if (!icon) return;
+        icon.classList.remove('fa-chevron-left', 'fa-chevron-right');
+        icon.classList.add(collapsed ? 'fa-chevron-right' : 'fa-chevron-left');
     }
 });
 

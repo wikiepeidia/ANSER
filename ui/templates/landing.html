@@ -679,7 +679,7 @@
             <button class="theme-toggle-btn" id="landing-theme-toggle" aria-label="Toggle theme">
                 <i class="fas fa-moon" id="theme-icon"></i>
             </button>
-            <a href="{{ url_for('pages.index') }}" class="btn btn-secondary">Sign In</a>
+            <a href="{{ url_for('auth.signin') }}" class="btn btn-secondary">Sign In</a>
             <a href="{{ url_for('auth.signup') }}" class="btn btn-primary">
                 <i class="fas fa-rocket"></i> Get Started
             </a>
@@ -859,7 +859,7 @@
             <a href="{{ url_for('auth.signup') }}" class="btn btn-primary">
                 <i class="fas fa-user-plus"></i> Create Account
             </a>
-            <a href="{{ url_for('pages.index') }}" class="btn btn-secondary">
+            <a href="{{ url_for('auth.signin') }}" class="btn btn-secondary">
                 <i class="fas fa-sign-in-alt"></i> Sign In
             </a>
         </div>
