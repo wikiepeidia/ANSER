@@ -28,58 +28,90 @@
     flex-shrink: 0;
     gap: 12px;
 }
-.n8n-topbar-left {
-    display: flex; align-items: center; gap: 10px;
-}
-.n8n-topbar-right {
-    display: flex; align-items: center; gap: 8px;
-}
+.n8n-topbar-left { display: flex; align-items: center; gap: 10px; }
+.n8n-topbar-right { display: flex; align-items: center; gap: 8px; }
 .n8n-badge {
     display: inline-flex; align-items: center; gap: 6px;
-    padding: 4px 12px;
-    border-radius: 20px;
-    background: rgba(255,107,53,.1);
-    color: #FF6B35;
+    padding: 4px 12px; border-radius: 20px;
+    background: rgba(255,107,53,.1); color: #FF6B35;
     font-size: .8rem; font-weight: 600;
 }
 .n8n-badge-dot {
     width: 7px; height: 7px; border-radius: 50%;
-    background: #4CAF50;
-    animation: pulse-dot 2s infinite;
+    background: #4CAF50; animation: pulse-dot 2s infinite;
 }
-@keyframes pulse-dot {
-    0%,100% { opacity:1; } 50% { opacity:.3; }
-}
-.n8n-iframe-wrap {
-    flex: 1;
-    position: relative;
+@keyframes pulse-dot { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+/* ── Templates Panel ── */
+.tpl-panel {
+    flex-shrink: 0;
+    background: var(--card-bg, #fff);
+    border-bottom: 1px solid var(--border-color, #eee);
     overflow: hidden;
+    transition: max-height .3s ease;
+    max-height: 0;
 }
-#n8nFrame {
-    position: absolute;
-    inset: 0;
-    width: 100%; height: 100%;
-    border: none;
-    background: #fff;
+.tpl-panel.open { max-height: 200px; }
+.tpl-panel:not(.open) { border-bottom: none; }
+.tpl-grid {
+    display: flex; gap: 12px;
+    padding: 12px 20px 14px;
+    overflow-x: auto;
 }
+.tpl-card {
+    flex: 0 0 220px;
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 14px;
+    border-radius: 10px;
+    border: 1px solid var(--border-color, #eee);
+    background: var(--bg-secondary, #fafafa);
+    cursor: pointer;
+    transition: all .15s;
+    position: relative;
+}
+.tpl-card:hover { border-color: #FF6B35; box-shadow: 0 2px 12px rgba(255,107,53,.12); transform: translateY(-1px); }
+.tpl-card.deploying { opacity: .6; pointer-events: none; }
+.tpl-card.deployed { border-color: #4CAF50; }
+.tpl-icon {
+    width: 38px; height: 38px; border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: .95rem; flex-shrink: 0;
+}
+.tpl-info { overflow: hidden; }
+.tpl-name { font-size: .82rem; font-weight: 600; color: var(--text-primary, #333); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tpl-desc { font-size: .72rem; color: #999; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tpl-nodes { font-size: .65rem; color: #bbb; margin-top: 2px; }
+.tpl-check {
+    position: absolute; top: 6px; right: 8px;
+    color: #4CAF50; font-size: .7rem; display: none;
+}
+.tpl-card.deployed .tpl-check { display: block; }
+
+/* ── Toast ── */
+.tpl-toast {
+    position: fixed; bottom: 24px; right: 24px;
+    padding: 12px 20px; border-radius: 10px;
+    color: #fff; font-size: .85rem; font-weight: 500;
+    box-shadow: 0 4px 20px rgba(0,0,0,.2);
+    z-index: 9999; opacity: 0; transform: translateY(10px);
+    transition: all .3s;
+}
+.tpl-toast.show { opacity: 1; transform: translateY(0); }
+.tpl-toast.ok { background: #4CAF50; }
+.tpl-toast.err { background: #F44336; }
+
+/* ── Iframe ── */
+.n8n-iframe-wrap { flex: 1; position: relative; overflow: hidden; }
+#n8nFrame { position: absolute; inset: 0; width: 100%; height: 100%; border: none; background: #fff; }
 .n8n-loading-overlay {
-    position: absolute;
-    inset: 0;
+    position: absolute; inset: 0;
     display: flex; flex-direction: column;
     align-items: center; justify-content: center;
     background: var(--bg-primary, #f5f5f5);
-    gap: 16px;
-    transition: opacity .3s;
-    z-index: 10;
+    gap: 16px; transition: opacity .3s; z-index: 10;
 }
 .n8n-loading-overlay.hidden { opacity: 0; pointer-events: none; }
-.n8n-spinner {
-    width: 40px; height: 40px;
-    border: 3px solid rgba(255,107,53,.2);
-    border-top-color: #FF6B35;
-    border-radius: 50%;
-    animation: spin .8s linear infinite;
-}
+.n8n-spinner { width: 40px; height: 40px; border: 3px solid rgba(255,107,53,.2); border-top-color: #FF6B35; border-radius: 50%; animation: spin .8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .n8n-loading-text { color: #888; font-size: .9rem; }
 </style>
@@ -90,7 +122,7 @@
     {% include 'components/sidebar.html' %}
 
     <div class="n8n-main">
-        <!-- Top bar -->
+        <!-- Top bar (always visible) -->
         <div class="n8n-topbar">
             <div class="n8n-topbar-left">
                 <p style="margin:0; font-size:.75rem; color:#aaa; font-weight:500;">Workspace &rsaquo;</p>
@@ -101,6 +133,9 @@
                 </span>
             </div>
             <div class="n8n-topbar-right">
+                <button class="btn btn-sm btn-outline-primary rounded-pill" style="font-size:.8rem;" onclick="toggleTemplates()">
+                    <i class="fas fa-magic me-1"></i><span id="tplToggleLabel">Templates</span>
+                </button>
                 <a href="/n8n/workflows" target="_blank"
                    class="btn btn-sm btn-outline-secondary rounded-pill"
                    style="font-size:.8rem;">
@@ -111,6 +146,13 @@
                         style="font-size:.8rem;" title="Reload">
                     <i class="fas fa-sync-alt"></i>
                 </button>
+            </div>
+        </div>
+
+        <!-- Templates panel (collapsible, toggle button is in topbar) -->
+        <div class="tpl-panel" id="tplPanel">
+            <div class="tpl-grid" id="tplGrid">
+                <div style="color:#aaa; font-size:.85rem; padding: 12px;">Đang tải templates...</div>
             </div>
         </div>
 
@@ -130,4 +172,91 @@
         </div>
     </div>
 </div>
+
+<div class="tpl-toast" id="tplToast"></div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+(function() {
+    const grid  = document.getElementById('tplGrid');
+    const toast = document.getElementById('tplToast');
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+
+    function showToast(msg, ok) {
+        toast.textContent = msg;
+        toast.className = 'tpl-toast ' + (ok ? 'ok' : 'err') + ' show';
+        setTimeout(() => toast.classList.remove('show'), 3000);
+    }
+
+    function toggleTemplates() {
+        const panel = document.getElementById('tplPanel');
+        const label = document.getElementById('tplToggleLabel');
+        panel.classList.toggle('open');
+        label.textContent = panel.classList.contains('open') ? 'Ẩn Templates' : 'Templates';
+    }
+    window.toggleTemplates = toggleTemplates;
+
+    async function loadTemplates() {
+        try {
+            const res  = await fetch('/api/n8n-templates');
+            const data = await res.json();
+            if (!data.success || !data.templates.length) {
+                grid.innerHTML = '<div style="color:#aaa;font-size:.85rem;padding:12px;">Không tìm thấy template</div>';
+                return;
+            }
+            grid.innerHTML = data.templates.map(t => `
+                <div class="tpl-card" data-slug="${t.slug}" onclick="deployTemplate(this, '${t.slug}')">
+                    <div class="tpl-icon" style="background:${t.color};">
+                        <i class="fas ${t.icon}"></i>
+                    </div>
+                    <div class="tpl-info">
+                        <div class="tpl-name">${t.label}</div>
+                        <div class="tpl-desc">${t.desc}</div>
+                        <div class="tpl-nodes">${t.node_count} nodes</div>
+                    </div>
+                    <div class="tpl-check"><i class="fas fa-check-circle"></i> Imported</div>
+                </div>
+            `).join('');
+        } catch (e) {
+            grid.innerHTML = '<div style="color:#F44336;font-size:.85rem;padding:12px;">Lỗi tải templates</div>';
+        }
+    }
+
+    window.deployTemplate = async function(card, slug) {
+        if (card.classList.contains('deploying') || card.classList.contains('deployed')) return;
+        card.classList.add('deploying');
+
+        try {
+            const res = await fetch('/api/n8n-templates/deploy', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+                body: JSON.stringify({ slug })
+            });
+            const data = await res.json();
+            card.classList.remove('deploying');
+
+            if (data.success) {
+                card.classList.add('deployed');
+                if (data.existing) {
+                    showToast('Workflow đã có trong n8n', true);
+                } else {
+                    showToast('Import thành công! Reload n8n...', true);
+                    setTimeout(() => {
+                        document.getElementById('n8nFrame').src = document.getElementById('n8nFrame').src;
+                    }, 800);
+                }
+            } else {
+                showToast('Lỗi: ' + (data.error || 'Unknown'), false);
+            }
+        } catch (e) {
+            card.classList.remove('deploying');
+            showToast('Không kết nối được n8n', false);
+        }
+    };
+
+    loadTemplates();
+})();
+</script>
 {% endblock %}

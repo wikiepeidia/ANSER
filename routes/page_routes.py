@@ -40,7 +40,7 @@ def _settings_config():
 @page_bp.route('/')
 def index():
     if current_user.is_authenticated:
-        return redirect(url_for('pages.dashboard'))
+        return redirect(url_for('pages.workspace'))
     return render_template('landing.html')
 
 

@@ -3,6 +3,9 @@ import sys
 import threading
 from datetime import timedelta
 
+from dotenv import load_dotenv
+load_dotenv()
+
 from flask import Flask, jsonify, redirect, request, flash, url_for
 from werkzeug.middleware.proxy_fix import ProxyFix
 from flask_wtf.csrf import CSRFError, generate_csrf
@@ -83,6 +86,21 @@ def create_app(config_object=None):
 
     # ── OAuth ──────────────────────────────────────────────────────────────
     _configure_oauth(flask_app)
+
+    # ── n8n iframe: strip frame-deny for proxy routes ──────────────────
+    # Registered BEFORE Talisman → runs AFTER it (Flask reverses order),
+    # so we can remove the X-Frame-Options header Talisman just added.
+    @flask_app.after_request
+    def allow_n8n_iframe(response):
+        if request.path.startswith('/n8n'):
+            response.headers.pop('X-Frame-Options', None)
+            csp = response.headers.get('Content-Security-Policy', '')
+            if 'frame-ancestors' in csp:
+                parts = [p.strip() for p in csp.split(';')
+                         if 'frame-ancestors' not in p]
+                response.headers['Content-Security-Policy'] = (
+                    '; '.join(parts) if parts else '')
+        return response
 
     # ── Talisman ───────────────────────────────────────────────────────────
     Talisman(
@@ -235,6 +253,7 @@ def create_app(config_object=None):
     flask_app.register_blueprint(ai_bp)
     flask_app.register_blueprint(dl_bp)
     flask_app.register_blueprint(n8n_proxy_bp)
+    csrf.exempt(n8n_proxy_bp)    # n8n SPA JS makes API calls without Flask CSRF tokens
 
     return flask_app
 

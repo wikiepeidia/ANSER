@@ -20,7 +20,16 @@
       "Write(.planning/*)",
       "Read(STATE.md)",
       "Write(STATE.md)",
-      "PowerShell(if \\(Test-Path \"d:\\\\ANSER\\\\ANSER_Merged\\\\.venv-ml\"\\) { \"EXISTS\"; \\(Get-ChildItem \"d:\\\\ANSER\\\\ANSER_Merged\\\\.venv-ml\"\\).Name } else { \"NOT FOUND\" })"
+      "PowerShell(if \\(Test-Path \"d:\\\\ANSER\\\\ANSER_Merged\\\\.venv-ml\"\\) { \"EXISTS\"; \\(Get-ChildItem \"d:\\\\ANSER\\\\ANSER_Merged\\\\.venv-ml\"\\).Name } else { \"NOT FOUND\" })",
+      "Bash(git rm *)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "PowerShell(python -c \"from app import app; print\\('app.py OK'\\)\")",
+      "PowerShell(python -c \"import app; print\\(hasattr\\(app, 'app'\\), hasattr\\(app, 'create_app'\\)\\)\")",
+      "PowerShell($env:VIRTUAL_ENV)",
+      "PowerShell(deactivate 2>$null)",
+      "PowerShell(Remove-Item -Recurse -Force \"d:\\\\ANSER\\\\ANSER_Merged\\\\.venv-ml\" -Confirm:$false)",
+      "Bash(git rebase *)"
     ],
     "deny": [
       "Read(.env)",

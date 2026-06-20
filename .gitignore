@@ -372,3 +372,6 @@ fun_work_hub.db
 group_project_ai_ml.db
 # Claude Code local task scratch
 .tasks/
+
+# n8n proxy auto-generated credentials
+.n8n_creds.json
