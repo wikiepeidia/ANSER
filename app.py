@@ -218,6 +218,7 @@ def create_app(config_object=None):
     from routes.inventory_routes import inventory_bp
     from routes.workflow_routes import workflow_bp
     from routes.dl_routes import dl_bp
+    from routes.n8n_proxy import n8n_proxy_bp
 
     flask_app.register_blueprint(auth_bp,         url_prefix='/auth')
     flask_app.register_blueprint(page_bp)
@@ -233,6 +234,7 @@ def create_app(config_object=None):
     flask_app.register_blueprint(workflow_bp)
     flask_app.register_blueprint(ai_bp)
     flask_app.register_blueprint(dl_bp)
+    flask_app.register_blueprint(n8n_proxy_bp)
 
     return flask_app
 
@@ -251,8 +253,23 @@ def run_dl_service():
         print(f'[DL Thread] Error starting DL Service: {e}', flush=True)
 
 
+def run_n8n():
+    """Check n8n reachability. n8n is expected to run externally (Docker or local)."""
+    import socket
+    import time
+    for _ in range(10):
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as _s:
+            if _s.connect_ex(('localhost', 5678)) == 0:
+                print('[n8n] Detected on port 5678.', flush=True)
+                return
+        time.sleep(2)
+    print('[n8n] Warning: n8n not reachable on port 5678. '
+          'Start Docker container: docker start anser-n8n', flush=True)
+
+
 if __name__ == '__main__':
     app = create_app()
     if not db_manager.use_postgres:
         db_manager.init_database()
+    threading.Thread(target=run_n8n, daemon=True).start()
     app.run(host='127.0.0.1', port=5000, debug=True, use_reloader=False, load_dotenv=False)

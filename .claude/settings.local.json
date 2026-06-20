@@ -19,7 +19,8 @@
       "Read(.planning/*)",
       "Write(.planning/*)",
       "Read(STATE.md)",
-      "Write(STATE.md)"
+      "Write(STATE.md)",
+      "PowerShell(if \\(Test-Path \"d:\\\\ANSER\\\\ANSER_Merged\\\\.venv-ml\"\\) { \"EXISTS\"; \\(Get-ChildItem \"d:\\\\ANSER\\\\ANSER_Merged\\\\.venv-ml\"\\).Name } else { \"NOT FOUND\" })"
     ],
     "deny": [
       "Read(.env)",
