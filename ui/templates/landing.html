@@ -97,64 +97,6 @@
     [data-delay="6"] { transition-delay: 0.6s; }
 
     /* ════════════════════════════════════════
-       NAV
-    ════════════════════════════════════════ */
-    .nav {
-        animation: navSlideDown 0.6s ease both;
-    }
-
-    .nav-logo {
-        position: relative;
-        transition: transform 0.3s ease;
-    }
-    .nav-logo:hover { transform: scale(1.05); }
-    .nav-logo i {
-        transition: transform 0.5s ease, color 0.3s ease;
-    }
-    .nav-logo:hover i {
-        transform: rotate(20deg);
-        color: #00d4aa;
-    }
-
-    .landing-page .nav-links a {
-        position: relative;
-    }
-    .landing-page .nav-links a::after {
-        content: '';
-        position: absolute;
-        bottom: -2px;
-        left: 0;
-        width: 0;
-        height: 2px;
-        background: #00d4aa;
-        transition: width 0.3s ease;
-        border-radius: 2px;
-    }
-    .landing-page .nav-links a:hover::after { width: 100%; }
-
-    /* Theme Toggle */
-    .theme-toggle-btn {
-        background: transparent;
-        border: 1px solid var(--nav-border);
-        border-radius: 8px;
-        width: 36px;
-        height: 36px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        color: var(--text-secondary);
-        font-size: 0.9rem;
-        transition: all 0.25s ease;
-    }
-    .theme-toggle-btn:hover {
-        border-color: #00d4aa;
-        color: #00d4aa;
-        transform: rotate(20deg) scale(1.1);
-        background: rgba(0, 212, 170, 0.08);
-    }
-
-    /* ════════════════════════════════════════
        HERO ENTRANCE
     ════════════════════════════════════════ */
     .hero-content {
@@ -341,37 +283,36 @@
     }
 
     /* ════════════════════════════════════════
-       FEATURES SECTION
+       FEATURES SECTION (BEM)
     ════════════════════════════════════════ */
-    .features-section {
+    .features {
         padding: 5rem 0;
         background: var(--body-bg);
     }
 
-    /* Light mode: brighter section bg + vivid cards */
-    html[data-theme='light'] .features-section {
+    html[data-theme='light'] .features {
         background: linear-gradient(180deg, #f0f4ff 0%, #ffffff 100%);
     }
 
-    html[data-theme='light'] .feature-card {
+    html[data-theme='light'] .features__card {
         background: #ffffff;
         border-color: #e2e8f0;
         box-shadow: 0 2px 12px rgba(99, 102, 241, 0.07);
     }
 
-    html[data-theme='light'] .feature-card:hover {
+    html[data-theme='light'] .features__card:hover {
         box-shadow: 0 20px 50px rgba(99, 102, 241, 0.15);
         border-color: rgba(0, 212, 170, 0.5);
     }
 
-    /* Tinted card bg per icon color in light mode */
-    html[data-theme='light'] .feature-card:has(.icon-teal)   { background: linear-gradient(160deg, #f0fdfb 0%, #ffffff 60%); }
-    html[data-theme='light'] .feature-card:has(.icon-blue)   { background: linear-gradient(160deg, #eff6ff 0%, #ffffff 60%); }
-    html[data-theme='light'] .feature-card:has(.icon-purple) { background: linear-gradient(160deg, #f5f3ff 0%, #ffffff 60%); }
-    html[data-theme='light'] .feature-card:has(.icon-orange) { background: linear-gradient(160deg, #fffbeb 0%, #ffffff 60%); }
+    html[data-theme='light'] .features__card:has(.icon-teal)   { background: linear-gradient(160deg, #f0fdfb 0%, #ffffff 60%); }
+    html[data-theme='light'] .features__card:has(.icon-blue)   { background: linear-gradient(160deg, #eff6ff 0%, #ffffff 60%); }
+    html[data-theme='light'] .features__card:has(.icon-purple) { background: linear-gradient(160deg, #f5f3ff 0%, #ffffff 60%); }
+    html[data-theme='light'] .features__card:has(.icon-orange) { background: linear-gradient(160deg, #fffbeb 0%, #ffffff 60%); }
 
-    html[data-theme='light'] .feature-card h3 { color: #0f172a; }
-    html[data-theme='light'] .feature-card:hover h3 { color: #00a688; }
+    html[data-theme='light'] .features__card h3 { color: #0f172a; }
+    html[data-theme='light'] .features__card:hover h3 { color: var(--primary); }
+
     .section-header {
         text-align: center;
         margin-bottom: 3rem;
@@ -380,7 +321,7 @@
         display: inline-block;
         padding: 0.35rem 1rem;
         background: rgba(0, 212, 170, 0.12);
-        color: #00d4aa;
+        color: var(--primary-light);
         border: 1px solid rgba(0, 212, 170, 0.3);
         border-radius: 999px;
         font-size: 0.8rem;
@@ -409,28 +350,28 @@
         max-width: 50ch;
         margin: 0 auto;
     }
-    .features-grid {
+
+    .features__grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-        gap: 1.5rem;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 24px;
         max-width: 1200px;
         margin: 0 auto;
         padding: 0 2rem;
     }
 
-    /* Feature card */
-    .feature-card {
+    .features__card {
         background: var(--card-bg);
         border: 1px solid var(--card-border);
-        border-radius: 16px;
-        padding: 2rem 1.75rem;
+        border-radius: 12px;
+        padding: 24px;
         transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
         position: relative;
         overflow: hidden;
         cursor: default;
     }
-    /* Shimmer sweep on hover */
-    .feature-card::after {
+
+    .features__card::after {
         content: '';
         position: absolute;
         top: 0; left: -100%; right: -100%; bottom: 0;
@@ -440,30 +381,30 @@
         transition: opacity 0.3s ease;
         pointer-events: none;
     }
-    .feature-card:hover::after {
+    .features__card:hover::after {
         opacity: 1;
         animation: shimmer 1.2s linear infinite;
     }
-    /* Top accent bar */
-    .feature-card::before {
+
+    .features__card::before {
         content: '';
         position: absolute;
         top: 0; left: 0; right: 0;
         height: 3px;
-        background: var(--fc-accent, linear-gradient(90deg, #00d4aa, #007acc));
+        background: var(--fc-accent, linear-gradient(90deg, var(--primary-light), var(--primary)));
         transform: scaleX(0);
         transform-origin: left;
         transition: transform 0.4s ease;
     }
-    .feature-card:hover::before { transform: scaleX(1); }
-    .feature-card:hover {
-        transform: translateY(-8px) scale(1.01);
+    .features__card:hover::before { transform: scaleX(1); }
+
+    .features__card:hover {
+        transform: translateY(-4px);
         box-shadow: 0 20px 50px rgba(0, 212, 170, 0.15);
         border-color: rgba(0, 212, 170, 0.4);
     }
 
-    /* Icon */
-    .feature-card .card-icon {
+    .features__icon {
         width: 52px;
         height: 52px;
         border-radius: 12px;
@@ -475,29 +416,133 @@
         margin-bottom: 1.25rem;
         transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease;
     }
-    .feature-card:hover .card-icon {
+    .features__card:hover .features__icon {
         transform: scale(1.2) rotate(-10deg);
         box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
     }
 
-    .icon-teal   { background: linear-gradient(135deg, #00d4aa, #00a688); --fc-accent: linear-gradient(90deg,#00d4aa,#00a688); }
-    .icon-blue   { background: linear-gradient(135deg, #3b82f6, #2563eb); --fc-accent: linear-gradient(90deg,#3b82f6,#2563eb); }
-    .icon-purple { background: linear-gradient(135deg, #8b5cf6, #6d28d9); --fc-accent: linear-gradient(90deg,#8b5cf6,#6d28d9); }
-    .icon-orange { background: linear-gradient(135deg, #f59e0b, #d97706); --fc-accent: linear-gradient(90deg,#f59e0b,#d97706); }
+    .icon-teal   { background: linear-gradient(135deg, var(--primary-light), var(--primary)); --fc-accent: linear-gradient(90deg, var(--primary-light), var(--primary)); }
+    .icon-blue   { background: linear-gradient(135deg, var(--accent-blue), var(--accent-blue-dark)); --fc-accent: linear-gradient(90deg, var(--accent-blue), var(--accent-blue-dark)); }
+    .icon-purple { background: linear-gradient(135deg, var(--accent-purple), var(--accent-purple-dark)); --fc-accent: linear-gradient(90deg, var(--accent-purple), var(--accent-purple-dark)); }
+    .icon-orange { background: linear-gradient(135deg, var(--accent-orange), var(--accent-orange-dark)); --fc-accent: linear-gradient(90deg, var(--accent-orange), var(--accent-orange-dark)); }
 
-    .feature-card h3 {
+    .features__card h3 {
         font-size: 1.1rem;
         font-weight: 700;
         color: var(--text-primary);
         margin-bottom: 0.6rem;
         transition: color 0.3s ease;
     }
-    .feature-card:hover h3 { color: #00d4aa; }
-    .feature-card p {
+    .features__card:hover h3 { color: var(--primary-light); }
+    .features__card p {
         color: var(--text-secondary);
         font-size: 0.92rem;
         line-height: 1.6;
         margin: 0;
+    }
+
+    /* ════════════════════════════════════════
+       ABOUT SECTION (BEM)
+    ════════════════════════════════════════ */
+    .about {
+        padding: 5rem 0;
+        background: var(--card-muted);
+    }
+    html[data-theme='dark'] .about { background: #0a1628; }
+    html[data-theme='light'] .about { background: linear-gradient(180deg, #ffffff 0%, #f0f4ff 100%); }
+
+    .about__container {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 3rem;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 2rem;
+        align-items: center;
+    }
+
+    .about__visual {
+        aspect-ratio: 4 / 3;
+        border-radius: 16px;
+        background: linear-gradient(135deg, var(--primary-light), var(--primary), var(--accent-blue));
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 20px 60px rgba(0, 166, 136, 0.2);
+        transition: transform 0.4s ease, box-shadow 0.4s ease;
+    }
+    .about__visual:hover {
+        transform: translateY(-6px);
+        box-shadow: 0 30px 80px rgba(0, 166, 136, 0.3);
+    }
+    .about__visual::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="dots" width="20" height="20" patternUnits="userSpaceOnUse"><circle cx="10" cy="10" r="1.5" fill="%23ffffff" opacity="0.2"/></pattern></defs><rect width="100" height="100" fill="url(%23dots)"/></svg>') repeat;
+    }
+    .about__visual-label {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        color: #ffffff;
+        text-align: center;
+    }
+    .about__visual-label i {
+        font-size: 3.5rem;
+        margin-bottom: 1rem;
+        opacity: 0.9;
+    }
+    .about__visual-label span {
+        font-size: 1.1rem;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        opacity: 0.8;
+    }
+
+    .about__content h2 {
+        font-size: clamp(1.75rem, 3vw, 2.5rem);
+        font-weight: 800;
+        color: var(--text-primary);
+        margin-bottom: 1rem;
+    }
+    .about__text {
+        color: var(--text-secondary);
+        font-size: 1.05rem;
+        line-height: 1.75;
+        margin-bottom: 1.5rem;
+    }
+    .about__values {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+    .about__value {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        color: var(--text-secondary);
+        font-size: 0.95rem;
+        padding: 0.6rem 0.75rem;
+        border-radius: 8px;
+        transition: background 0.25s ease, transform 0.25s ease;
+    }
+    .about__value:hover {
+        background: rgba(0, 212, 170, 0.06);
+        transform: translateX(6px);
+    }
+    .about__value i {
+        color: var(--primary-light);
+        font-size: 1rem;
+        width: 20px;
+        text-align: center;
+        flex-shrink: 0;
     }
 
     /* ════════════════════════════════════════
@@ -623,30 +668,15 @@
     .cta-box p { color: var(--text-secondary); margin-bottom: 2rem; }
 
     /* ════════════════════════════════════════
-       FOOTER
-    ════════════════════════════════════════ */
-    .landing-footer {
-        transition: all 0.3s ease;
-    }
-    .landing-footer .social-links a {
-        transition: transform 0.3s ease, color 0.3s ease;
-    }
-    .landing-footer .social-links a:hover {
-        transform: translateY(-3px);
-        color: #00d4aa;
-    }
-    .landing-footer .social-links i {
-        transition: transform 0.4s ease;
-    }
-    .landing-footer .social-links a:hover i {
-        transform: rotate(360deg) scale(1.15);
-    }
-
-    /* ════════════════════════════════════════
        RESPONSIVE
     ════════════════════════════════════════ */
+    @media (max-width: 1024px) {
+        .features__grid { grid-template-columns: repeat(2, 1fr); }
+        .about__container { grid-template-columns: 1fr; gap: 2rem; }
+    }
     @media (max-width: 768px) {
         .stats-grid { grid-template-columns: repeat(2, 1fr); }
+        .features__grid { grid-template-columns: 1fr; }
         .steps-grid { grid-template-columns: 1fr 1fr; }
         .cta-box { padding: 2.5rem 1.5rem; }
         .hero-orb-1, .hero-orb-2 { display: none; }
@@ -661,31 +691,23 @@
 
 {% block content %}
 
-<!-- ══════════════ NAV ══════════════ -->
-<nav class="nav">
-    <div class="nav-container">
-        <div class="nav-left">
-            <a href="{{ url_for('pages.landing') }}" class="nav-logo">
-                <i class="fas fa-brain"></i>
-                <span>ANSER</span>
-            </a>
-            <ul class="nav-links">
-                <li><a href="#features">Features</a></li>
-                <li><a href="#how-it-works">How It Works</a></li>
-                <li><a href="#contact" id="contact-link">Contact</a></li>
+<!-- ══════════════ HEADER ══════════════ -->
+<header class="header">
+    <div class="header__container">
+        <a href="{{ url_for('pages.landing') }}" class="header__logo">
+            <i class="fas fa-brain"></i>
+            <span>ANSER</span>
+        </a>
+        <nav class="header__nav">
+            <ul class="header__nav-list">
+                <li class="header__nav-item"><a href="{{ url_for('pages.landing') }}" class="header__nav-link">Trang chủ</a></li>
+                <li class="header__nav-item"><a href="#features" class="header__nav-link">Tính năng</a></li>
+                <li class="header__nav-item"><a href="#about" class="header__nav-link">Về chúng tôi</a></li>
+                <li class="header__nav-item"><a href="#contact" class="header__nav-link" id="contact-link">Liên hệ</a></li>
             </ul>
-        </div>
-        <div class="nav-actions">
-            <button class="theme-toggle-btn" id="landing-theme-toggle" aria-label="Toggle theme">
-                <i class="fas fa-moon" id="theme-icon"></i>
-            </button>
-            <a href="{{ url_for('auth.signin') }}" class="btn btn-secondary">Sign In</a>
-            <a href="{{ url_for('auth.signup') }}" class="btn btn-primary">
-                <i class="fas fa-rocket"></i> Get Started
-            </a>
-        </div>
+        </nav>
     </div>
-</nav>
+</header>
 
 <!-- ══════════════ HERO ══════════════ -->
 <section class="hero">
@@ -774,47 +796,96 @@
             <div class="stat-label">Live Analytics</div>
         </div>
         <div class="stat-item" data-reveal data-delay="4">
-            <div class="stat-number">USTH</div>
-            <div class="stat-label">GEN14 Project</div>
+            <div class="stat-number">HT</div>
+            <div class="stat-label">Group</div>
         </div>
     </div>
 </section>
 
 <!-- ══════════════ FEATURES ══════════════ -->
-<section class="features-section" id="features">
+<section class="features" id="features">
     <div class="section-header" data-reveal>
-        <div class="section-badge">Features</div>
-        <h2>Everything you need</h2>
-        <p>Integrate AI/ML into your daily retail workflow with ease</p>
+        <div class="section-badge">Tính năng</div>
+        <h2>Mọi thứ bạn cần</h2>
+        <p>Tích hợp AI/ML vào quy trình bán lẻ hàng ngày một cách dễ dàng</p>
     </div>
-    <div class="features-grid">
-        <div class="feature-card" data-reveal data-delay="1">
-            <div class="card-icon icon-teal">
+    <div class="features__grid">
+        <div class="features__card" data-reveal data-delay="1">
+            <div class="features__icon icon-teal">
+                <i class="fas fa-warehouse"></i>
+            </div>
+            <h3>Quản lý kho</h3>
+            <p>Theo dõi tồn kho, nhập/xuất hàng và cảnh báo hết hàng tự động theo thời gian thực.</p>
+        </div>
+        <div class="features__card" data-reveal data-delay="2">
+            <div class="features__icon icon-blue">
+                <i class="fas fa-cash-register"></i>
+            </div>
+            <h3>POS bán hàng</h3>
+            <p>Giao diện bán hàng nhanh chóng, hỗ trợ quét barcode và tính tiền tự động.</p>
+        </div>
+        <div class="features__card" data-reveal data-delay="3">
+            <div class="features__icon icon-purple">
                 <i class="fas fa-file-invoice-dollar"></i>
             </div>
-            <h3>OCR Invoice Scanner</h3>
-            <p>Automatically recognize and extract invoice data using a specialized OCR model. Save 90% of manual data entry time.</p>
+            <h3>AI đọc hóa đơn OCR</h3>
+            <p>Tự động nhận dạng và trích xuất dữ liệu hóa đơn bằng mô hình OCR chuyên biệt, tiết kiệm 90% thời gian nhập liệu.</p>
         </div>
-        <div class="feature-card" data-reveal data-delay="2">
-            <div class="card-icon icon-blue">
-                <i class="fas fa-chart-line"></i>
-            </div>
-            <h3>LSTM Forecasting</h3>
-            <p>Analyze time-series data and forecast revenue with LSTM neural networks. Make data-driven business decisions with confidence.</p>
-        </div>
-        <div class="feature-card" data-reveal data-delay="3">
-            <div class="card-icon icon-purple">
+        <div class="features__card" data-reveal data-delay="4">
+            <div class="features__icon icon-orange">
                 <i class="fas fa-robot"></i>
             </div>
-            <h3>AI Agent</h3>
-            <p>Automate task orchestration, answer queries, and integrate with Make.com webhooks to streamline your entire workflow.</p>
+            <h3>Tự động hóa quy trình</h3>
+            <p>Kết nối Make.com webhook để tự động hóa tác vụ lặp lại, giảm thao tác thủ công.</p>
         </div>
-        <div class="feature-card" data-reveal data-delay="4">
-            <div class="card-icon icon-orange">
-                <i class="fas fa-boxes-stacked"></i>
+        <div class="features__card" data-reveal data-delay="5">
+            <div class="features__icon icon-teal">
+                <i class="fas fa-chart-bar"></i>
             </div>
-            <h3>Retail Management</h3>
-            <p>Track products, manage imports and exports, handle customers, and analyze revenue — all on one unified platform.</p>
+            <h3>Báo cáo thông minh</h3>
+            <p>Phân tích dữ liệu và dự báo doanh thu với mạng LSTM, hỗ trợ ra quyết định kinh doanh.</p>
+        </div>
+        <div class="features__card" data-reveal data-delay="6">
+            <div class="features__icon icon-blue">
+                <i class="fab fa-google"></i>
+            </div>
+            <h3>Tích hợp Google</h3>
+            <p>Đồng bộ Google Sheets, Drive và Calendar để quản lý dữ liệu liền mạch.</p>
+        </div>
+    </div>
+</section>
+
+<!-- ══════════════ ABOUT US ══════════════ -->
+<section class="about" id="about">
+    <div class="about__container">
+        <div class="about__visual" data-reveal="left">
+            <div class="about__visual-label">
+                <i class="fas fa-brain"></i>
+                <span>ANSER Platform</span>
+            </div>
+        </div>
+        <div class="about__content" data-reveal="right">
+            <h2>Về ANSER</h2>
+            <p class="about__text">
+                ANSER là nền tảng quản lý bán lẻ thông minh được phát triển bởi nhóm thành viên HTGroup
+                Chúng tôi ứng dụng AI/ML để tự động hóa quy trình kinh doanh — từ nhận dạng hóa đơn OCR
+                đến dự báo doanh thu bằng LSTM. Sứ mệnh của ANSER là giúp doanh nghiệp vừa và nhỏ
+                tiếp cận công nghệ AI một cách đơn giản và hiệu quả nhất.
+            </p>
+            <ul class="about__values">
+                <li class="about__value">
+                    <i class="fas fa-lightbulb"></i>
+                    <span><strong>Đổi mới sáng tạo</strong> — Ứng dụng AI/ML tiên tiến vào giải pháp thực tế</span>
+                </li>
+                <li class="about__value">
+                    <i class="fas fa-bolt"></i>
+                    <span><strong>Đơn giản & Hiệu quả</strong> — Giao diện thân thiện, quy trình tối ưu</span>
+                </li>
+                <li class="about__value">
+                    <i class="fas fa-users"></i>
+                    <span><strong>Hợp tác & Phát triển</strong> — Xây dựng cùng cộng đồng USTH</span>
+                </li>
+            </ul>
         </div>
     </div>
 </section>
@@ -900,17 +971,31 @@
 </div>
 
 <!-- ══════════════ FOOTER ══════════════ -->
-<footer class="landing-footer">
-    <div class="footer-container">
-        <div class="footer-content">
-            <p class="copyright">
-                &copy; 2025 <a href="{{ url_for('pages.landing') }}">ANSER</a> &middot; USTH GEN14 Group Project
-            </p>
-            <div class="social-links">
-                <a href="https://github.com" target="_blank" rel="noopener">
-                    <i class="fab fa-github"></i> GitHub
+<footer class="footer">
+    <div class="footer__container">
+        <div class="footer__columns">
+            <div class="footer__column">
+                <a href="{{ url_for('pages.landing') }}" class="footer__logo">
+                    <i class="fas fa-brain"></i> ANSER
                 </a>
+                <p class="footer__description">Nền tảng AI/ML hỗ trợ quản lý bán lẻ thông minh cho doanh nghiệp Việt Nam.</p>
             </div>
+            <div class="footer__column">
+                <h4 class="footer__heading">Liên kết nhanh</h4>
+                <ul class="footer__links">
+                    <li><a href="#features" class="footer__link">Tính năng</a></li>
+                    <li><a href="#about" class="footer__link">Về chúng tôi</a></li>
+                    <li><a href="#contact" class="footer__link">Liên hệ</a></li>
+                </ul>
+            </div>
+            <div class="footer__column">
+                <h4 class="footer__heading">Liên hệ</h4>
+                <p class="footer__contact"><i class="fas fa-envelope"></i> HTG@gmail.com</p>
+                <p class="footer__contact"><i class="fas fa-map-marker-alt"></i> HTGroup, 22 Lương Khánh Thiện, Hà Nội</p>
+            </div>
+        </div>
+        <div class="footer__bottom">
+            <p class="footer__copyright">&copy; 2026 ANSER &middot; HTGroup</p>
         </div>
     </div>
 </footer>
@@ -924,19 +1009,21 @@
     const toggleBtn = document.getElementById('landing-theme-toggle');
     const themeIcon = document.getElementById('theme-icon');
 
-    function syncIcon() {
-        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-        themeIcon.className = isDark ? 'fas fa-sun' : 'fas fa-moon';
-    }
+    if (toggleBtn && themeIcon) {
+        function syncIcon() {
+            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+            themeIcon.className = isDark ? 'fas fa-sun' : 'fas fa-moon';
+        }
 
-    toggleBtn.addEventListener('click', function () {
-        const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-        document.documentElement.setAttribute('data-theme', next);
-        localStorage.setItem('theme-preference', next);
+        toggleBtn.addEventListener('click', function () {
+            const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', next);
+            localStorage.setItem('theme-preference', next);
+            syncIcon();
+        });
+
         syncIcon();
-    });
-
-    syncIcon();
+    }
 
     /* ── Contact modal ── */
     const modal = document.getElementById('contact-modal');
@@ -994,13 +1081,15 @@
         });
     });
 
-    /* ── Nav shadow on scroll ── */
-    const nav = document.querySelector('.landing-page .nav');
-    window.addEventListener('scroll', function () {
-        nav.style.boxShadow = window.scrollY > 20
-            ? '0 4px 24px rgba(0,0,0,0.12)'
-            : '0 12px 30px rgba(15,23,42,0.08)';
-    }, { passive: true });
+    /* ── Header shadow on scroll ── */
+    const headerEl = document.querySelector('.header');
+    if (headerEl) {
+        window.addEventListener('scroll', function () {
+            headerEl.style.boxShadow = window.scrollY > 20
+                ? '0 4px 24px rgba(0,0,0,0.12)'
+                : '0 12px 30px rgba(15,23,42,0.08)';
+        }, { passive: true });
+    }
 })();
 </script>
 {% endblock %}
