@@ -33,8 +33,8 @@ def signin():
                 db_manager.log_activity(user.id, 'Login', f'User {user.email} logged in', request.remote_addr)
                 flash('Đăng nhập thành công!', 'success')
                 if user.role == 'admin':
-                    return redirect(url_for('pages.admin_workspace'))
-                return redirect(url_for('pages.workspace'))
+                    return redirect(url_for('pages.admin_dashboard'))
+                return redirect(url_for('pages.dashboard'))
             flash('Email hoặc mật khẩu không đúng!', 'error')
         except Exception as e:
             logger.error("Login error: %s", e, exc_info=True)

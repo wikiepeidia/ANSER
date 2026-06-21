@@ -3,6 +3,9 @@ import sys
 import threading
 from datetime import timedelta
 
+from dotenv import load_dotenv
+load_dotenv()
+
 from flask import Flask, jsonify, redirect, request, flash, url_for
 from werkzeug.middleware.proxy_fix import ProxyFix
 from flask_wtf.csrf import CSRFError, generate_csrf
@@ -83,6 +86,19 @@ def create_app(config_object=None):
 
     # ── OAuth ──────────────────────────────────────────────────────────────
     _configure_oauth(flask_app)
+
+    # ── n8n iframe: strip X-Frame-Options for proxy routes ──────────────
+    @flask_app.after_request
+    def allow_n8n_iframe(response):
+        if request.path.startswith('/n8n'):
+            response.headers.pop('X-Frame-Options', None)
+            csp = response.headers.get('Content-Security-Policy', '')
+            if 'frame-ancestors' in csp:
+                parts = [p.strip() for p in csp.split(';')
+                         if 'frame-ancestors' not in p]
+                response.headers['Content-Security-Policy'] = (
+                    '; '.join(parts) if parts else '')
+        return response
 
     # ── Talisman ───────────────────────────────────────────────────────────
     Talisman(
@@ -203,6 +219,7 @@ def create_app(config_object=None):
             return jsonify({'success': False, 'message': str(error)}), 500
         raise error
 
+
     # ── Blueprint registration ─────────────────────────────────────────────
     from routes.auth_routes import auth_bp
     from routes.main_routes import main_bp
@@ -218,6 +235,7 @@ def create_app(config_object=None):
     from routes.inventory_routes import inventory_bp
     from routes.workflow_routes import workflow_bp
     from routes.dl_routes import dl_bp
+    from routes.n8n_api import n8n_api_bp
 
     flask_app.register_blueprint(auth_bp,         url_prefix='/auth')
     flask_app.register_blueprint(page_bp)
@@ -233,6 +251,13 @@ def create_app(config_object=None):
     flask_app.register_blueprint(workflow_bp)
     flask_app.register_blueprint(ai_bp)
     flask_app.register_blueprint(dl_bp)
+    flask_app.register_blueprint(n8n_api_bp)
+    csrf.exempt(n8n_api_bp)
+
+    from routes.n8n_proxy import n8n_proxy_bp, init_websocket
+    flask_app.register_blueprint(n8n_proxy_bp)
+    csrf.exempt(n8n_proxy_bp)
+    init_websocket(flask_app)
 
     return flask_app
 
@@ -251,9 +276,25 @@ def run_dl_service():
         print(f'[DL Thread] Error starting DL Service: {e}', flush=True)
 
 
+def run_n8n():
+    """Check n8n reachability. n8n is expected to run externally (Docker or local)."""
+    import socket
+    import time
+    for _ in range(10):
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as _s:
+            if _s.connect_ex(('localhost', 5678)) == 0:
+                print('[n8n] Detected on port 5678.', flush=True)
+                return
+        time.sleep(2)
+    print('[n8n] Warning: n8n not reachable on port 5678. '
+          'Start Docker container: docker start anser-n8n', flush=True)
+
+
 if __name__ == '__main__':
     app = create_app()
     if not db_manager.use_postgres:
         db_manager.init_database()
+    threading.Thread(target=run_n8n, daemon=True).start()
     port = int(os.environ.get('PORT', 5000))
-    app.run(host='127.0.0.1', port=port, debug=True, use_reloader=False, load_dotenv=False)
+    app.run(host='127.0.0.1', port=port, debug=False, use_reloader=False,
+            load_dotenv=False, threaded=True)

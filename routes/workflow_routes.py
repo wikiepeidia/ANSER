@@ -3,9 +3,12 @@
 import os
 from datetime import datetime
 
+import psycopg2
+import psycopg2.extras
 from flask import Blueprint, current_app, jsonify, request
 from flask_login import current_user, login_required
 
+from core.config import Config
 from core.extensions import csrf
 
 workflow_bp = Blueprint("workflow", __name__)
@@ -118,5 +121,79 @@ def api_workflow_upload_file():
                 'message': 'Tải file lên thành công',
             }
         )
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+def _get_iot_conn():
+    url = Config.POSTGRES_URL
+    if not url:
+        raise RuntimeError("POSTGRES_URL not configured")
+    return psycopg2.connect(url, cursor_factory=psycopg2.extras.RealDictCursor)
+
+
+@workflow_bp.route('/api/iot-events', methods=['GET'])
+@login_required
+def iot_events_list():
+    """Return recent IoT events with optional filters."""
+    device_id  = request.args.get('device_id', '').strip()
+    event_type = request.args.get('event_type', '').strip()
+    limit      = min(int(request.args.get('limit', 50)), 200)
+    offset     = int(request.args.get('offset', 0))
+    try:
+        conn = _get_iot_conn()
+        cur  = conn.cursor()
+        where, params = [], []
+        if device_id:
+            where.append("device_id = %s"); params.append(device_id)
+        if event_type:
+            where.append("event_type = %s"); params.append(event_type)
+        w = ("WHERE " + " AND ".join(where)) if where else ""
+        params_count = list(params)
+        params += [limit, offset]
+        cur.execute(f"SELECT id, device_id, event_type, payload, created_at FROM iot_events {w} ORDER BY id DESC LIMIT %s OFFSET %s", params)
+        rows = [dict(r) for r in cur.fetchall()]
+        for r in rows:
+            r['created_at'] = r['created_at'].isoformat() if r['created_at'] else None
+        cur.execute(f"SELECT COUNT(*) as total FROM iot_events {w}", params_count)
+        total = cur.fetchone()['total']
+        conn.close()
+        return jsonify({'success': True, 'events': rows, 'total': total})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@workflow_bp.route('/api/iot-events/stats', methods=['GET'])
+@login_required
+def iot_events_stats():
+    """Return aggregated stats: total, revenue, by-device, by-type, today."""
+    try:
+        conn = _get_iot_conn()
+        cur  = conn.cursor()
+        cur.execute("""
+            SELECT
+                COUNT(*) as total_events,
+                COUNT(DISTINCT device_id) as device_count,
+                COALESCE(SUM((payload->>'amount')::numeric), 0) as total_revenue,
+                COUNT(*) FILTER (WHERE created_at::date = CURRENT_DATE) as today_events
+            FROM iot_events
+        """)
+        summary = dict(cur.fetchone())
+        summary['total_revenue'] = float(summary['total_revenue'])
+
+        cur.execute("""
+            SELECT device_id, COUNT(*) as count,
+                   COALESCE(SUM((payload->>'amount')::numeric), 0) as revenue
+            FROM iot_events GROUP BY device_id ORDER BY count DESC LIMIT 10
+        """)
+        by_device = [dict(r) for r in cur.fetchall()]
+        for r in by_device:
+            r['revenue'] = float(r['revenue'])
+
+        cur.execute("SELECT event_type, COUNT(*) as count FROM iot_events GROUP BY event_type ORDER BY count DESC")
+        by_type = [dict(r) for r in cur.fetchall()]
+
+        conn.close()
+        return jsonify({'success': True, 'summary': summary, 'by_device': by_device, 'by_type': by_type})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500

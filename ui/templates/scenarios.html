@@ -1,238 +1,96 @@
 {% extends "base.html" %}
 
-{% block title %}Automation Scenarios - Workflow Automation for Retail{% endblock %}
-
+{% block title %}Automation Workflows{% endblock %}
 {% block body_class %}scenarios-page{% endblock %}
 
 {% block styles %}
 {{ super() }}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/scenarios.css') }}">
+<link rel="stylesheet" href="/static/css/scenarios.css">
+<link rel="stylesheet" href="/static/css/scenarios_n8n.css">
 {% endblock %}
 
 {% block content %}
 <div class="scenario-container">
-    <!-- Sidebar -->
-    <div class="sidebar">
-        <div class="sidebar-header">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <a href="{{ url_for('pages.dashboard') }}" class="text-decoration-none text-reset">
-                    <i class="fas fa-arrow-left me-2"></i> Back
-                </a>
-                <div class="user-menu">
-                    {% set avatar_source = (user.first_name or user.last_name or user.email or 'U') %}
-                    <div class="user-avatar">{{ avatar_source[:1]|upper }}</div>
-                </div>
-            </div>
-            <div class="mb-3">
-                <div class="fw-bold">{{ user.name }}</div>
-                <div class="small opacity-75 text-truncate">{{ user.email }}</div>
-            </div>
+    {% include 'components/sidebar.html' %}
 
-            <div class="sidebar-title">Search</div>
-            <div class="search-box mt-2">
-                <input type="text" class="search-input" placeholder="Search scenarios..." data-scenarios-search>
-                <i class="fas fa-search search-icon"></i>
-            </div>
-        </div>
-
-        <div class="folders-section">
-            <div class="folder-header">
-                <span>FOLDERS</span>
-                <button class="add-folder-btn" onclick="createFolder()">
-                    <i class="fas fa-plus"></i>
-                </button>
-            </div>
-
-            <div class="folder-item active" data-folder-item="all" onclick="selectFolder('all')">
-                <div class="folder-icon">
-                    <i class="fas fa-folder" style="color: #667eea;"></i>
-                </div>
-                <div class="folder-info">
-                    <div class="folder-name">All scenarios</div>
-                    <div class="folder-count" data-folder-count="all">0 scenarios</div>
-                </div>
-            </div>
-
-            <div class="folder-item" data-folder-item="uncategorized" onclick="selectFolder('uncategorized')">
-                <div class="folder-icon">
-                    <i class="fas fa-folder-open" style="color: #6c757d;"></i>
-                </div>
-                <div class="folder-info">
-                    <div class="folder-name">Uncategorized</div>
-                    <div class="folder-count" data-folder-count="uncategorized">0 scenarios</div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Main Content -->
     <div class="main-content">
-        <div class="content-header">
-            <div>
+        <div class="content-header" style="flex-wrap:wrap;">
+            <div style="flex:1; min-width:200px;">
                 <div class="nav-breadcrumb">
                     <a href="/workspace" class="nav-link">Workspace</a>
-                    <span class="nav-separator">></span>
-                    <span>Scenarios</span>
+                    <span>&rsaquo;</span>
+                    <span>Automation</span>
                 </div>
-                <h1 class="content-title">All scenarios</h1>
-                <div class="content-tabs">
-                    <div class="tab active" data-tab="all">
-                        ALL
-                        <span class="tab-badge" data-tab-count="all">0</span>
-                    </div>
+                <h1 class="content-title" style="margin-bottom:8px;">Automation Workflows</h1>
+                <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+                    <span class="sc-status" id="n8nStatus">
+                        <span class="sc-status-dot"></span>
+                        <span id="n8nStatusText">Đang kết nối...</span>
+                    </span>
+                    <button class="btn-secondary" onclick="toggleTemplates()" style="padding:6px 14px; font-size:.82rem;">
+                        <i class="fas fa-magic"></i> Templates
+                    </button>
+                    <button class="btn-secondary" onclick="openEditor('', 'n8n Editor')" style="padding:6px 14px; font-size:.82rem;">
+                        <i class="fas fa-project-diagram"></i> n8n Editor
+                    </button>
+                    <button class="create-btn" onclick="refreshAll()" style="padding:6px 14px; font-size:.82rem;">
+                        <i class="fas fa-sync-alt"></i> Refresh
+                    </button>
                 </div>
             </div>
-            <button class="create-btn" onclick="createScenario()">
-                <i class="fas fa-plus"></i>
-                Create scenario
-            </button>
         </div>
 
-        <div class="content-area">
-            <!-- Empty State -->
-            <div class="empty-state" data-scenarios-empty>
-                <div class="empty-icon">
-                    <i class="fas fa-check-circle"></i>
-                </div>
-                <h2 class="empty-title">Create your first Scenario</h2>
-                <p class="empty-description">
-                    In order for Make to automate your tasks for you, you have to create a scenario.
-                    Open the builder to create your first scenario or browse our templates for inspiration and easy
-                    start.
-                </p>
-                <div class="empty-actions">
-                    <button class="create-btn" onclick="openBuilder()">
-                        Open Scenario Builder
-                    </button>
-                    <button class="btn-secondary" onclick="browseTemplates()">
-                        Browse Templates
-                    </button>
-                </div>
+        <!-- Templates panel -->
+        <div id="tplPanel" style="padding:20px 32px; background:var(--scenario-panel); border-bottom:1px solid var(--scenario-border); overflow:hidden;">
+            <div style="font-size:.78rem; font-weight:600; color:#999; text-transform:uppercase; letter-spacing:.04em; margin-bottom:12px;">
+                Workflow Templates — click để deploy vào n8n
             </div>
+            <div class="sc-tpl-grid" id="tplGrid" style="overflow-x:auto; scrollbar-width:thin; -webkit-overflow-scrolling:touch; padding-bottom:8px;">
+                <div style="color:#aaa; font-size:.85rem;">Đang tải...</div>
+            </div>
+        </div>
 
-            <!-- Scenarios Grid (will be populated dynamically) -->
-            <div class="scenarios-grid" id="scenariosGrid" data-scenarios-grid hidden>
-                <!-- Scenario cards will be inserted here -->
+        <!-- Workflows -->
+        <div class="content-area">
+            <div id="wfLoading" class="sc-loading">
+                <i class="fas fa-spinner fa-spin"></i> Đang tải workflows...
             </div>
+            <div id="wfEmpty" class="empty-state" style="display:none;">
+                <div class="empty-icon"><i class="fas fa-project-diagram"></i></div>
+                <h3 class="empty-title">Chưa có workflow nào</h3>
+                <p class="empty-description">Deploy template có sẵn hoặc tạo workflow mới trong n8n Editor.</p>
+                <div class="empty-actions">
+                    <button class="create-btn" onclick="toggleTemplates()">
+                        <i class="fas fa-magic"></i> Xem Templates
+                    </button>
+                    <a href="http://localhost:5678" target="_blank" class="btn-secondary">
+                        <i class="fas fa-plus"></i> Tạo trong n8n
+                    </a>
+                </div>
+            </div>
+            <div id="wfGrid" class="scenarios-grid" style="display:none;"></div>
         </div>
     </div>
 </div>
+
+<!-- n8n Editor Panel (iframe overlay) -->
+<div id="editorPanel" style="display:none; position:fixed; inset:0; z-index:9000; background:rgba(0,0,0,.5);">
+    <div style="position:absolute; inset:12px; background:var(--scenario-panel,#fff); border-radius:16px; overflow:hidden; display:flex; flex-direction:column; box-shadow:0 20px 60px rgba(0,0,0,.3);">
+        <div style="display:flex; align-items:center; justify-content:space-between; padding:12px 20px; border-bottom:1px solid var(--scenario-border,#eee); flex-shrink:0;">
+            <div style="display:flex; align-items:center; gap:10px;">
+                <span style="font-weight:700; font-size:.95rem;" id="editorTitle">n8n Editor</span>
+                <span style="font-size:.72rem; background:rgba(255,107,53,.1); color:#FF6B35; padding:2px 10px; border-radius:12px;">ANSER Automation</span>
+            </div>
+            <button onclick="closeEditor()" style="border:none; background:none; font-size:1.3rem; cursor:pointer; color:var(--scenario-muted,#888); padding:4px 8px;">&times;</button>
+        </div>
+        <iframe id="editorFrame" style="flex:1; border:none; width:100%; height:100%;"></iframe>
+    </div>
+</div>
+
+<div class="sc-toast" id="scToast"></div>
 {% endblock %}
 
 {% block scripts %}
 {{ super() }}
-<script src="{{ url_for('static', filename='js/scenarios.js') }}" defer></script>
+<script src="/static/js/scenarios_n8n.js"></script>
 {% endblock %}
-
-<!-- Create/Edit Scenario Modal -->
-<div class="modal fade" id="scenarioModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header border-0 pb-0">
-                <h5 class="modal-title fw-bold" id="scenarioModalLabel">Create New Scenario</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <form id="scenarioForm">
-                    <input type="hidden" id="scenarioId">
-                    <div class="mb-3">
-                        <label for="scenarioName" class="form-label">Scenario Name</label>
-                        <input type="text" class="form-control" id="scenarioName" required
-                            placeholder="e.g., Email Automation">
-                    </div>
-                    <div class="mb-3">
-                        <label for="scenarioDescription" class="form-label">Description</label>
-                        <textarea class="form-control" id="scenarioDescription" rows="3"
-                            placeholder="Describe what this scenario does..."></textarea>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer border-0 pt-0">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" onclick="saveScenario()">Save Scenario</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Tutorial Modal -->
-<div class="modal fade" id="tutorialModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header border-0 pb-0">
-                <h5 class="modal-title fw-bold">Welcome to Workflow Automation!</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body pt-2">
-                <p class="text-muted mb-4">It looks like you're new here. Would you like a quick tour on how to set up
-                    your first automation?</p>
-
-                <div class="row g-3">
-                    <div class="col-md-6">
-                        <div class="card h-100 border-0 bg-light tutorial-card">
-                            <div class="card-body text-center p-4">
-                                <div class="mb-3 text-primary">
-                                    <i class="fab fa-slack fa-3x"></i>
-                                </div>
-                                <h5>Slack Integration</h5>
-                                <p class="small text-muted">Learn how to create a webhook to send notifications to Slack
-                                    channels.</p>
-                                <a href="https://api.slack.com/messaging/webhooks" target="_blank"
-                                    class="btn btn-outline-primary btn-sm stretched-link">View Guide</a>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="card h-100 border-0 bg-light tutorial-card">
-                            <div class="card-body text-center p-4">
-                                <div class="mb-3 text-danger">
-                                    <i class="fab fa-google fa-3x"></i>
-                                </div>
-                                <h5>Gmail Automation</h5>
-                                <p class="small text-muted">Set up triggers for new emails and automate responses.</p>
-                                <a href="https://developers.google.com/gmail/api/guides" target="_blank"
-                                    class="btn btn-outline-danger btn-sm stretched-link">View Guide</a>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="card h-100 border-0 bg-light tutorial-card">
-                            <div class="card-body text-center p-4">
-                                <div class="mb-3 text-success">
-                                    <i class="fas fa-file-excel fa-3x"></i>
-                                </div>
-                                <h5>Excel/Sheets Sync</h5>
-                                <p class="small text-muted">Automatically sync data between your database and
-                                    spreadsheets.</p>
-                                <a href="#" class="btn btn-outline-success btn-sm stretched-link">View Guide</a>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="card h-100 border-0 bg-light tutorial-card">
-                            <div class="card-body text-center p-4">
-                                <div class="mb-3 text-info">
-                                    <i class="fas fa-project-diagram fa-3x"></i>
-                                </div>
-                                <h5>Building Workflows</h5>
-                                <p class="small text-muted">Master the drag-and-drop builder to create complex logic.
-                                </p>
-                                <a href="#" class="btn btn-outline-info btn-sm stretched-link">Start Tutorial</a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer border-0 pt-0">
-                <div class="form-check me-auto">
-                    <input class="form-check-input" type="checkbox" id="dontShowAgain">
-                    <label class="form-check-label text-muted small" for="dontShowAgain">
-                        Don't show this automatically again
-                    </label>
-                </div>
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Maybe Later</button>
-                <button type="button" class="btn btn-primary" onclick="startInteractiveTutorial()">Start Tour</button>
-            </div>
-        </div>
-    </div>
-</div>

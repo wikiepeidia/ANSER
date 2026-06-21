@@ -14,6 +14,33 @@ logger = get_logger(__name__)
 inventory_bp = Blueprint("inventory", __name__)
 
 
+def _notify_n8n_order(order_type, data, user_email):
+    """Fire-and-forget: notify n8n when import/export is created."""
+    import os
+    import threading
+    import requests
+
+    discord_url = os.environ.get('DISCORD_WEBHOOK_URL', '')
+    if not discord_url:
+        return
+
+    def _send():
+        try:
+            payload = {
+                'type': order_type,
+                'items': data.get('items', []),
+                'notes': data.get('notes', ''),
+                'user': user_email,
+                'discord_url': discord_url,
+            }
+            requests.post('http://localhost:5678/webhook/new-order',
+                          json=payload, timeout=10)
+        except Exception:
+            pass
+
+    threading.Thread(target=_send, daemon=True).start()
+
+
 @inventory_bp.route('/api/imports', methods=['GET'])
 @login_required
 def api_get_imports():
@@ -50,6 +77,7 @@ def api_create_import():
 
     try:
         result = inventory_tx_service.create_import_transaction(conn, current_user.id, data)
+        _notify_n8n_order('import', data, current_user.email)
         return jsonify({
             'success': True,
             'message': result['message'],
@@ -195,6 +223,7 @@ def api_create_export():
             data,
             current_app.extensions['automation_engine'],
         )
+        _notify_n8n_order('export', data, current_user.email)
         return jsonify({'success': True, 'message': result['message'], 'id': result['id']})
     except ServiceValidationError as e:
         return jsonify({'success': False, 'message': str(e)}), 400

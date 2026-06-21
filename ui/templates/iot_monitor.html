@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+
+{% block title %}IoT Monitor — POS Events{% endblock %}
+{% block body_class %}iot-monitor-page{% endblock %}
+
+{% block styles %}
+{{ super() }}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/workspace_scenario.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/iot_monitor.css') }}">
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script src="{{ url_for('static', filename='js/iot_monitor.js') }}"></script>
+{% endblock %}
+
+{% block content %}
+<div class="scenario-wrapper">
+    {% include 'components/sidebar.html' %}
+
+    <main class="scenario-main">
+        <div class="workspace-launchpad">
+            <div>
+                <p class="launch-eyebrow">Workspace &rsaquo; IoT Monitor</p>
+                <h2><i class="fas fa-cash-register me-2" style="color:#FF6B35;"></i>POS Events</h2>
+            </div>
+            <div class="launch-cta">
+                <button id="refreshBtn" class="btn btn-outline-secondary rounded-pill me-2">
+                    <i class="fas fa-sync-alt me-1"></i>Refresh
+                </button>
+                <a href="{{ url_for('pages.workspace_builder') }}" class="btn btn-primary rounded-pill">
+                    <i class="fas fa-project-diagram me-2"></i>Open Builder
+                </a>
+            </div>
+        </div>
+
+        <!-- Stats Row -->
+        <div class="iot-stats-grid" id="statsGrid">
+            <div class="iot-stat-card">
+                <div class="iot-stat-icon" style="background:linear-gradient(135deg,#FF6B35,#FF9800);">
+                    <i class="fas fa-bolt"></i>
+                </div>
+                <div class="iot-stat-body">
+                    <div class="iot-stat-label">Tổng sự kiện</div>
+                    <div class="iot-stat-value" id="statTotal">—</div>
+                </div>
+            </div>
+            <div class="iot-stat-card">
+                <div class="iot-stat-icon" style="background:linear-gradient(135deg,#4CAF50,#81C784);">
+                    <i class="fas fa-coins"></i>
+                </div>
+                <div class="iot-stat-body">
+                    <div class="iot-stat-label">Tổng doanh thu</div>
+                    <div class="iot-stat-value" id="statRevenue">—</div>
+                </div>
+            </div>
+            <div class="iot-stat-card">
+                <div class="iot-stat-icon" style="background:linear-gradient(135deg,#2196F3,#64B5F6);">
+                    <i class="fas fa-tablet-alt"></i>
+                </div>
+                <div class="iot-stat-body">
+                    <div class="iot-stat-label">Thiết bị đang hoạt động</div>
+                    <div class="iot-stat-value" id="statDevices">—</div>
+                </div>
+            </div>
+            <div class="iot-stat-card">
+                <div class="iot-stat-icon" style="background:linear-gradient(135deg,#9C27B0,#CE93D8);">
+                    <i class="fas fa-calendar-day"></i>
+                </div>
+                <div class="iot-stat-body">
+                    <div class="iot-stat-label">Sự kiện hôm nay</div>
+                    <div class="iot-stat-value" id="statToday">—</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="iot-filter-bar">
+            <div class="iot-filter-group">
+                <label>Device</label>
+                <select id="filterDevice" class="iot-select">
+                    <option value="">Tất cả thiết bị</option>
+                </select>
+            </div>
+            <div class="iot-filter-group">
+                <label>Event Type</label>
+                <select id="filterEventType" class="iot-select">
+                    <option value="">Tất cả loại</option>
+                    <option value="sale_completed">sale_completed</option>
+                    <option value="payment_received">payment_received</option>
+                    <option value="cash_low">cash_low</option>
+                    <option value="invoice">invoice</option>
+                </select>
+            </div>
+            <div class="iot-filter-group">
+                <label>Số bản ghi</label>
+                <select id="filterLimit" class="iot-select">
+                    <option value="20">20</option>
+                    <option value="50" selected>50</option>
+                    <option value="100">100</option>
+                </select>
+            </div>
+            <button id="applyFilter" class="btn btn-primary btn-sm">
+                <i class="fas fa-filter me-1"></i>Lọc
+            </button>
+            <span class="iot-live-badge" id="liveBadge">
+                <span class="iot-live-dot"></span>Live
+            </span>
+        </div>
+
+        <!-- Events Table -->
+        <div class="iot-table-wrap">
+            <div id="loadingRow" class="iot-loading">
+                <i class="fas fa-spinner fa-spin me-2"></i>Đang tải dữ liệu...
+            </div>
+            <table class="iot-table" id="eventsTable" style="display:none;">
+                <thead>
+                    <tr>
+                        <th>#ID</th>
+                        <th>Thiết bị</th>
+                        <th>Loại sự kiện</th>
+                        <th>Số tiền</th>
+                        <th>Payload</th>
+                        <th>Thời gian</th>
+                    </tr>
+                </thead>
+                <tbody id="eventsBody"></tbody>
+            </table>
+            <div id="emptyRow" class="iot-empty" style="display:none;">
+                <i class="fas fa-inbox fa-2x mb-2"></i><br>Chưa có sự kiện nào
+            </div>
+        </div>
+
+        <div class="iot-pagination" id="pagination"></div>
+    </main>
+</div>
+{% endblock %}

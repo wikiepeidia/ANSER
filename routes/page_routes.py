@@ -41,7 +41,12 @@ def _settings_config():
 def index():
     if current_user.is_authenticated:
         return redirect(url_for('pages.workspace'))
-    return render_template('signin.html')
+    return render_template('landing.html')
+
+
+@page_bp.route('/landing')
+def landing():
+    return render_template('landing.html')
 
 
 @page_bp.route('/admin')
@@ -181,4 +186,10 @@ def scenarios():
 @page_bp.route('/workspace/builder')
 @login_required
 def workspace_builder():
-    return render_template('workspace_builder.html', user=current_user)
+    return redirect(url_for('pages.scenarios'))
+
+
+@page_bp.route('/iot-monitor')
+@login_required
+def iot_monitor():
+    return render_template('iot_monitor.html', user=current_user)

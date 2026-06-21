@@ -1,0 +1,86 @@
+{
+  "name": "Notify Discord — Gửi thông báo",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "notify-discord",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "id": "nd-webhook",
+      "name": "Nhận yêu cầu",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "url": "http://host.docker.internal:5000/api/n8n/internal/iot-events",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            { "name": "limit", "value": "3" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "nd-fetch",
+      "name": "Lấy data từ NeonDB",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\nconst webhookBody = $('Nhận yêu cầu').first().json.body || {};\nconst discordUrl = webhookBody.discord_url || '';\nconst events = input.events || [];\n\nlet description = '';\nif (events.length === 0) {\n  description = 'Không có sự kiện nào.';\n} else {\n  description = events.map(e => {\n    const amount = e.payload?.amount ? new Intl.NumberFormat('vi-VN').format(e.payload.amount) + ' ₫' : '';\n    return `🔹 **${e.device_id}** — ${e.event_type} ${amount}\\n   _${e.created_at}_`;\n  }).join('\\n\\n');\n}\n\nconst embed = {\n  title: '📊 ANSER — Báo cáo IoT Events',\n  description: description,\n  color: 0xFF6B35,\n  footer: { text: 'ANSER Automation • n8n' },\n  timestamp: new Date().toISOString(),\n  fields: [\n    { name: 'Tổng sự kiện', value: String(input.total || 0), inline: true },\n    { name: 'Hiển thị', value: String(events.length), inline: true }\n  ]\n};\n\nreturn [{ json: { discordUrl, embed, eventCount: events.length } }];"
+      },
+      "id": "nd-format",
+      "name": "Tạo Discord Embed",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.discordUrl }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ embeds: [$json.embed] }) }}",
+        "options": {}
+      },
+      "id": "nd-discord",
+      "name": "Gửi Discord",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{ json: { success: true, message: 'Đã gửi thông báo Discord!', events_sent: $('Tạo Discord Embed').first().json.eventCount } }];"
+      },
+      "id": "nd-response",
+      "name": "Trả kết quả",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1120, 300]
+    }
+  ],
+  "connections": {
+    "Nhận yêu cầu": {
+      "main": [[{ "node": "Lấy data từ NeonDB", "type": "main", "index": 0 }]]
+    },
+    "Lấy data từ NeonDB": {
+      "main": [[{ "node": "Tạo Discord Embed", "type": "main", "index": 0 }]]
+    },
+    "Tạo Discord Embed": {
+      "main": [[{ "node": "Gửi Discord", "type": "main", "index": 0 }]]
+    },
+    "Gửi Discord": {
+      "main": [[{ "node": "Trả kết quả", "type": "main", "index": 0 }]]
+    }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" }
+}
