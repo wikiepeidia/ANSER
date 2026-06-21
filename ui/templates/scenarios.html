@@ -1,262 +1,96 @@
 {% extends "base.html" %}
 
-{% block title %}Automation Workflows — n8n{% endblock %}
-{% block body_class %}n8n-embed-page{% endblock %}
+{% block title %}Automation Workflows{% endblock %}
+{% block body_class %}scenarios-page{% endblock %}
 
 {% block styles %}
 {{ super() }}
-<style>
-.n8n-layout {
-    display: flex;
-    height: 100vh;
-    overflow: hidden;
-}
-.n8n-main {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-}
-.n8n-topbar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 20px;
-    height: 52px;
-    background: var(--card-bg, #fff);
-    border-bottom: 1px solid var(--border-color, #eee);
-    flex-shrink: 0;
-    gap: 12px;
-}
-.n8n-topbar-left { display: flex; align-items: center; gap: 10px; }
-.n8n-topbar-right { display: flex; align-items: center; gap: 8px; }
-.n8n-badge {
-    display: inline-flex; align-items: center; gap: 6px;
-    padding: 4px 12px; border-radius: 20px;
-    background: rgba(255,107,53,.1); color: #FF6B35;
-    font-size: .8rem; font-weight: 600;
-}
-.n8n-badge-dot {
-    width: 7px; height: 7px; border-radius: 50%;
-    background: #4CAF50; animation: pulse-dot 2s infinite;
-}
-@keyframes pulse-dot { 0%,100%{opacity:1} 50%{opacity:.3} }
-
-/* ── Templates Panel ── */
-.tpl-panel {
-    flex-shrink: 0;
-    background: var(--card-bg, #fff);
-    border-bottom: 1px solid var(--border-color, #eee);
-    overflow: hidden;
-    transition: max-height .3s ease;
-    max-height: 0;
-}
-.tpl-panel.open { max-height: 200px; }
-.tpl-panel:not(.open) { border-bottom: none; }
-.tpl-grid {
-    display: flex; gap: 12px;
-    padding: 12px 20px 14px;
-    overflow-x: auto;
-}
-.tpl-card {
-    flex: 0 0 220px;
-    display: flex; align-items: center; gap: 12px;
-    padding: 12px 14px;
-    border-radius: 10px;
-    border: 1px solid var(--border-color, #eee);
-    background: var(--bg-secondary, #fafafa);
-    cursor: pointer;
-    transition: all .15s;
-    position: relative;
-}
-.tpl-card:hover { border-color: #FF6B35; box-shadow: 0 2px 12px rgba(255,107,53,.12); transform: translateY(-1px); }
-.tpl-card.deploying { opacity: .6; pointer-events: none; }
-.tpl-card.deployed { border-color: #4CAF50; }
-.tpl-icon {
-    width: 38px; height: 38px; border-radius: 9px;
-    display: flex; align-items: center; justify-content: center;
-    color: #fff; font-size: .95rem; flex-shrink: 0;
-}
-.tpl-info { overflow: hidden; }
-.tpl-name { font-size: .82rem; font-weight: 600; color: var(--text-primary, #333); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.tpl-desc { font-size: .72rem; color: #999; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.tpl-nodes { font-size: .65rem; color: #bbb; margin-top: 2px; }
-.tpl-check {
-    position: absolute; top: 6px; right: 8px;
-    color: #4CAF50; font-size: .7rem; display: none;
-}
-.tpl-card.deployed .tpl-check { display: block; }
-
-/* ── Toast ── */
-.tpl-toast {
-    position: fixed; bottom: 24px; right: 24px;
-    padding: 12px 20px; border-radius: 10px;
-    color: #fff; font-size: .85rem; font-weight: 500;
-    box-shadow: 0 4px 20px rgba(0,0,0,.2);
-    z-index: 9999; opacity: 0; transform: translateY(10px);
-    transition: all .3s;
-}
-.tpl-toast.show { opacity: 1; transform: translateY(0); }
-.tpl-toast.ok { background: #4CAF50; }
-.tpl-toast.err { background: #F44336; }
-
-/* ── Iframe ── */
-.n8n-iframe-wrap { flex: 1; position: relative; overflow: hidden; }
-#n8nFrame { position: absolute; inset: 0; width: 100%; height: 100%; border: none; background: #fff; }
-.n8n-loading-overlay {
-    position: absolute; inset: 0;
-    display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
-    background: var(--bg-primary, #f5f5f5);
-    gap: 16px; transition: opacity .3s; z-index: 10;
-}
-.n8n-loading-overlay.hidden { opacity: 0; pointer-events: none; }
-.n8n-spinner { width: 40px; height: 40px; border: 3px solid rgba(255,107,53,.2); border-top-color: #FF6B35; border-radius: 50%; animation: spin .8s linear infinite; }
-@keyframes spin { to { transform: rotate(360deg); } }
-.n8n-loading-text { color: #888; font-size: .9rem; }
-</style>
+<link rel="stylesheet" href="/static/css/scenarios.css">
+<link rel="stylesheet" href="/static/css/scenarios_n8n.css">
 {% endblock %}
 
 {% block content %}
-<div class="n8n-layout">
+<div class="scenario-container">
     {% include 'components/sidebar.html' %}
 
-    <div class="n8n-main">
-        <!-- Top bar (always visible) -->
-        <div class="n8n-topbar">
-            <div class="n8n-topbar-left">
-                <p style="margin:0; font-size:.75rem; color:#aaa; font-weight:500;">Workspace &rsaquo;</p>
-                <h2 style="margin:0; font-size:1rem; font-weight:700;">Automation Workflows</h2>
-                <span class="n8n-badge">
-                    <span class="n8n-badge-dot"></span>
-                    n8n · via ANSER proxy
-                </span>
-            </div>
-            <div class="n8n-topbar-right">
-                <button class="btn btn-sm btn-outline-primary rounded-pill" style="font-size:.8rem;" onclick="toggleTemplates()">
-                    <i class="fas fa-magic me-1"></i><span id="tplToggleLabel">Templates</span>
-                </button>
-                <a href="/n8n/workflows" target="_blank"
-                   class="btn btn-sm btn-outline-secondary rounded-pill"
-                   style="font-size:.8rem;">
-                    <i class="fas fa-external-link-alt me-1"></i>Mở tab mới
-                </a>
-                <button onclick="document.getElementById('n8nFrame').src = document.getElementById('n8nFrame').src"
-                        class="btn btn-sm btn-outline-secondary rounded-pill"
-                        style="font-size:.8rem;" title="Reload">
-                    <i class="fas fa-sync-alt"></i>
-                </button>
-            </div>
-        </div>
-
-        <!-- Templates panel (collapsible, toggle button is in topbar) -->
-        <div class="tpl-panel" id="tplPanel">
-            <div class="tpl-grid" id="tplGrid">
-                <div style="color:#aaa; font-size:.85rem; padding: 12px;">Đang tải templates...</div>
+    <div class="main-content">
+        <div class="content-header" style="flex-wrap:wrap;">
+            <div style="flex:1; min-width:200px;">
+                <div class="nav-breadcrumb">
+                    <a href="/workspace" class="nav-link">Workspace</a>
+                    <span>&rsaquo;</span>
+                    <span>Automation</span>
+                </div>
+                <h1 class="content-title" style="margin-bottom:8px;">Automation Workflows</h1>
+                <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+                    <span class="sc-status" id="n8nStatus">
+                        <span class="sc-status-dot"></span>
+                        <span id="n8nStatusText">Đang kết nối...</span>
+                    </span>
+                    <button class="btn-secondary" onclick="toggleTemplates()" style="padding:6px 14px; font-size:.82rem;">
+                        <i class="fas fa-magic"></i> Templates
+                    </button>
+                    <button class="btn-secondary" onclick="openEditor('', 'n8n Editor')" style="padding:6px 14px; font-size:.82rem;">
+                        <i class="fas fa-project-diagram"></i> n8n Editor
+                    </button>
+                    <button class="create-btn" onclick="refreshAll()" style="padding:6px 14px; font-size:.82rem;">
+                        <i class="fas fa-sync-alt"></i> Refresh
+                    </button>
+                </div>
             </div>
         </div>
 
-        <!-- iframe + loading overlay -->
-        <div class="n8n-iframe-wrap">
-            <div class="n8n-loading-overlay" id="loadingOverlay">
-                <div class="n8n-spinner"></div>
-                <div class="n8n-loading-text">Đang tải n8n…</div>
+        <!-- Templates panel -->
+        <div id="tplPanel" style="padding:20px 32px; background:var(--scenario-panel); border-bottom:1px solid var(--scenario-border); overflow:hidden;">
+            <div style="font-size:.78rem; font-weight:600; color:#999; text-transform:uppercase; letter-spacing:.04em; margin-bottom:12px;">
+                Workflow Templates — click để deploy vào n8n
             </div>
-            <iframe
-                id="n8nFrame"
-                src="/n8n/workflows"
-                title="n8n Workflow Automation"
-                allow="clipboard-read; clipboard-write"
-                onload="document.getElementById('loadingOverlay').classList.add('hidden')">
-            </iframe>
+            <div class="sc-tpl-grid" id="tplGrid" style="overflow-x:auto; scrollbar-width:thin; -webkit-overflow-scrolling:touch; padding-bottom:8px;">
+                <div style="color:#aaa; font-size:.85rem;">Đang tải...</div>
+            </div>
+        </div>
+
+        <!-- Workflows -->
+        <div class="content-area">
+            <div id="wfLoading" class="sc-loading">
+                <i class="fas fa-spinner fa-spin"></i> Đang tải workflows...
+            </div>
+            <div id="wfEmpty" class="empty-state" style="display:none;">
+                <div class="empty-icon"><i class="fas fa-project-diagram"></i></div>
+                <h3 class="empty-title">Chưa có workflow nào</h3>
+                <p class="empty-description">Deploy template có sẵn hoặc tạo workflow mới trong n8n Editor.</p>
+                <div class="empty-actions">
+                    <button class="create-btn" onclick="toggleTemplates()">
+                        <i class="fas fa-magic"></i> Xem Templates
+                    </button>
+                    <a href="http://localhost:5678" target="_blank" class="btn-secondary">
+                        <i class="fas fa-plus"></i> Tạo trong n8n
+                    </a>
+                </div>
+            </div>
+            <div id="wfGrid" class="scenarios-grid" style="display:none;"></div>
         </div>
     </div>
 </div>
 
-<div class="tpl-toast" id="tplToast"></div>
+<!-- n8n Editor Panel (iframe overlay) -->
+<div id="editorPanel" style="display:none; position:fixed; inset:0; z-index:9000; background:rgba(0,0,0,.5);">
+    <div style="position:absolute; inset:12px; background:var(--scenario-panel,#fff); border-radius:16px; overflow:hidden; display:flex; flex-direction:column; box-shadow:0 20px 60px rgba(0,0,0,.3);">
+        <div style="display:flex; align-items:center; justify-content:space-between; padding:12px 20px; border-bottom:1px solid var(--scenario-border,#eee); flex-shrink:0;">
+            <div style="display:flex; align-items:center; gap:10px;">
+                <span style="font-weight:700; font-size:.95rem;" id="editorTitle">n8n Editor</span>
+                <span style="font-size:.72rem; background:rgba(255,107,53,.1); color:#FF6B35; padding:2px 10px; border-radius:12px;">ANSER Automation</span>
+            </div>
+            <button onclick="closeEditor()" style="border:none; background:none; font-size:1.3rem; cursor:pointer; color:var(--scenario-muted,#888); padding:4px 8px;">&times;</button>
+        </div>
+        <iframe id="editorFrame" style="flex:1; border:none; width:100%; height:100%;"></iframe>
+    </div>
+</div>
+
+<div class="sc-toast" id="scToast"></div>
 {% endblock %}
 
 {% block scripts %}
 {{ super() }}
-<script>
-(function() {
-    const grid  = document.getElementById('tplGrid');
-    const toast = document.getElementById('tplToast');
-    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
-
-    function showToast(msg, ok) {
-        toast.textContent = msg;
-        toast.className = 'tpl-toast ' + (ok ? 'ok' : 'err') + ' show';
-        setTimeout(() => toast.classList.remove('show'), 3000);
-    }
-
-    function toggleTemplates() {
-        const panel = document.getElementById('tplPanel');
-        const label = document.getElementById('tplToggleLabel');
-        panel.classList.toggle('open');
-        label.textContent = panel.classList.contains('open') ? 'Ẩn Templates' : 'Templates';
-    }
-    window.toggleTemplates = toggleTemplates;
-
-    async function loadTemplates() {
-        try {
-            const res  = await fetch('/api/n8n-templates');
-            const data = await res.json();
-            if (!data.success || !data.templates.length) {
-                grid.innerHTML = '<div style="color:#aaa;font-size:.85rem;padding:12px;">Không tìm thấy template</div>';
-                return;
-            }
-            grid.innerHTML = data.templates.map(t => `
-                <div class="tpl-card" data-slug="${t.slug}" onclick="deployTemplate(this, '${t.slug}')">
-                    <div class="tpl-icon" style="background:${t.color};">
-                        <i class="fas ${t.icon}"></i>
-                    </div>
-                    <div class="tpl-info">
-                        <div class="tpl-name">${t.label}</div>
-                        <div class="tpl-desc">${t.desc}</div>
-                        <div class="tpl-nodes">${t.node_count} nodes</div>
-                    </div>
-                    <div class="tpl-check"><i class="fas fa-check-circle"></i> Imported</div>
-                </div>
-            `).join('');
-        } catch (e) {
-            grid.innerHTML = '<div style="color:#F44336;font-size:.85rem;padding:12px;">Lỗi tải templates</div>';
-        }
-    }
-
-    window.deployTemplate = async function(card, slug) {
-        if (card.classList.contains('deploying') || card.classList.contains('deployed')) return;
-        card.classList.add('deploying');
-
-        try {
-            const res = await fetch('/api/n8n-templates/deploy', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
-                body: JSON.stringify({ slug })
-            });
-            const data = await res.json();
-            card.classList.remove('deploying');
-
-            if (data.success) {
-                card.classList.add('deployed');
-                if (data.existing) {
-                    showToast('Workflow đã có trong n8n', true);
-                } else {
-                    showToast('Import thành công! Reload n8n...', true);
-                    setTimeout(() => {
-                        document.getElementById('n8nFrame').src = document.getElementById('n8nFrame').src;
-                    }, 800);
-                }
-            } else {
-                showToast('Lỗi: ' + (data.error || 'Unknown'), false);
-            }
-        } catch (e) {
-            card.classList.remove('deploying');
-            showToast('Không kết nối được n8n', false);
-        }
-    };
-
-    loadTemplates();
-})();
-</script>
+<script src="/static/js/scenarios_n8n.js"></script>
 {% endblock %}

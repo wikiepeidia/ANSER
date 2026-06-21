@@ -87,9 +87,7 @@ def create_app(config_object=None):
     # ── OAuth ──────────────────────────────────────────────────────────────
     _configure_oauth(flask_app)
 
-    # ── n8n iframe: strip frame-deny for proxy routes ──────────────────
-    # Registered BEFORE Talisman → runs AFTER it (Flask reverses order),
-    # so we can remove the X-Frame-Options header Talisman just added.
+    # ── n8n iframe: strip X-Frame-Options for proxy routes ──────────────
     @flask_app.after_request
     def allow_n8n_iframe(response):
         if request.path.startswith('/n8n'):
@@ -221,6 +219,7 @@ def create_app(config_object=None):
             return jsonify({'success': False, 'message': str(error)}), 500
         raise error
 
+
     # ── Blueprint registration ─────────────────────────────────────────────
     from routes.auth_routes import auth_bp
     from routes.main_routes import main_bp
@@ -236,7 +235,7 @@ def create_app(config_object=None):
     from routes.inventory_routes import inventory_bp
     from routes.workflow_routes import workflow_bp
     from routes.dl_routes import dl_bp
-    from routes.n8n_proxy import n8n_proxy_bp
+    from routes.n8n_api import n8n_api_bp
 
     flask_app.register_blueprint(auth_bp,         url_prefix='/auth')
     flask_app.register_blueprint(page_bp)
@@ -252,8 +251,13 @@ def create_app(config_object=None):
     flask_app.register_blueprint(workflow_bp)
     flask_app.register_blueprint(ai_bp)
     flask_app.register_blueprint(dl_bp)
+    flask_app.register_blueprint(n8n_api_bp)
+    csrf.exempt(n8n_api_bp)
+
+    from routes.n8n_proxy import n8n_proxy_bp, init_websocket
     flask_app.register_blueprint(n8n_proxy_bp)
-    csrf.exempt(n8n_proxy_bp)    # n8n SPA JS makes API calls without Flask CSRF tokens
+    csrf.exempt(n8n_proxy_bp)
+    init_websocket(flask_app)
 
     return flask_app
 
@@ -291,4 +295,5 @@ if __name__ == '__main__':
     if not db_manager.use_postgres:
         db_manager.init_database()
     threading.Thread(target=run_n8n, daemon=True).start()
-    app.run(host='127.0.0.1', port=5000, debug=True, use_reloader=False, load_dotenv=False)
+    app.run(host='127.0.0.1', port=5000, debug=False, use_reloader=False,
+            load_dotenv=False, threaded=True)
