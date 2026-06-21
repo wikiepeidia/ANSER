@@ -1,0 +1,124 @@
+/* ── ANSER branding override for embedded n8n editor ── */
+
+/* Hide n8n sidebar */
+.el-menu--vertical,
+nav.sidebar,
+[class*="sidebar"],
+.n8n-menu,
+#side-menu,
+.el-aside {
+    display: none !important;
+}
+
+/* Hide n8n top header bar */
+.banner-stack,
+[class*="bannerStack"],
+[class*="BannerStack"] {
+    display: none !important;
+}
+
+/* Hide "Lost connection" and other toast notifications */
+.el-notification,
+[class*="notification"],
+.el-message,
+[role="alert"] {
+    display: none !important;
+}
+
+/* Hide n8n logo */
+[class*="logoContainer"],
+[class*="MainSidebarHeader"],
+.n8n-logo {
+    display: none !important;
+}
+
+/* Expand main content to full width (no sidebar gap) */
+main,
+[class*="content"],
+.el-main,
+[id="app"] > div > div:last-child {
+    margin-left: 0 !important;
+    padding-left: 0 !important;
+}
+
+/* ANSER color scheme — primary orange */
+:root {
+    --color-primary: #FF6B35 !important;
+    --color-primary-shade-1: #e55a28 !important;
+    --color-primary-tint-1: #ff8a5c !important;
+    --color-primary-tint-2: #fff0ea !important;
+    --color-primary-tint-3: #fff8f5 !important;
+    --prim-color-primary: #FF6B35 !important;
+    --prim-color-primary-shade-1: #e55a28 !important;
+
+    --color-success: #4CAF50 !important;
+    --color-danger: #F44336 !important;
+    --color-warning: #FF9800 !important;
+
+    --color-foreground-base: #1a1a2e !important;
+    --color-background-base: #ffffff !important;
+}
+
+/* Execute button — ANSER orange */
+button[class*="execute"],
+[class*="RunWorkflowButton"] button,
+[class*="executeButton"] {
+    background-color: #FF6B35 !important;
+    border-color: #FF6B35 !important;
+}
+button[class*="execute"]:hover,
+[class*="RunWorkflowButton"] button:hover {
+    background-color: #e55a28 !important;
+}
+
+/* Active workflow toggle — ANSER style */
+[class*="activator"] .el-switch.is-checked .el-switch__core {
+    background-color: #FF6B35 !important;
+    border-color: #FF6B35 !important;
+}
+
+/* Node creator panel accent */
+[class*="nodeCreator"] [class*="active"],
+[class*="categoryItem"][class*="active"] {
+    color: #FF6B35 !important;
+}
+
+/* Links and accents */
+a[class*="primary"],
+[class*="clickable"][class*="primary"] {
+    color: #FF6B35 !important;
+}
+
+/* Tab active state */
+[class*="tabBar"] [class*="activeTab"],
+.el-tabs__item.is-active {
+    color: #FF6B35 !important;
+    border-color: #FF6B35 !important;
+}
+
+/* Hide "Upgrade" / enterprise upsell */
+[class*="upgrade"],
+[class*="Upgrade"],
+[class*="planName"],
+[class*="cloud"] {
+    display: none !important;
+}
+
+/* Hide Ask AI / Copilot button */
+[class*="askAi"],
+[class*="AskAi"],
+[class*="copilot"] {
+    display: none !important;
+}
+
+/* Hide n8n branding text in header */
+[class*="MainSidebarHeader"] span,
+[class*="logoContainer"] span {
+    font-size: 0 !important;
+}
+
+/* Hide "Star" github button */
+[class*="github"],
+a[href*="github.com/n8n"] {
+    display: none !important;
+}

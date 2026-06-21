@@ -5,6 +5,7 @@
       "parameters": {
         "httpMethod": "POST",
         "path": "echo",
+        "responseMode": "lastNode",
         "options": {}
       },
       "id": "sample-webhook-001",
