@@ -1,104 +1,14 @@
 {% extends 'base.html' %}
 
-{% block title %}ANSER — AI/ML Platform for Smart Retail Management{% endblock %}
+{% block title %}ANSER — Nền tảng AI/ML quản lý bán lẻ thông minh{% endblock %}
 
 {% block styles %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/landing_page.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/animations.css') }}">
 <style>
     body { overflow-x: hidden; }
 
-    /* ════════════════════════════════════════
-       KEYFRAME ANIMATIONS
-    ════════════════════════════════════════ */
-    @keyframes fadeInUp {
-        from { opacity: 0; transform: translateY(32px); }
-        to   { opacity: 1; transform: translateY(0); }
-    }
-    @keyframes fadeInLeft {
-        from { opacity: 0; transform: translateX(-32px); }
-        to   { opacity: 1; transform: translateX(0); }
-    }
-    @keyframes fadeInRight {
-        from { opacity: 0; transform: translateX(32px); }
-        to   { opacity: 1; transform: translateX(0); }
-    }
-    @keyframes float {
-        0%, 100% { transform: translateY(0px); }
-        50%       { transform: translateY(-14px); }
-    }
-    @keyframes gradientShift {
-        0%   { background-position: 0% 50%; }
-        50%  { background-position: 100% 50%; }
-        100% { background-position: 0% 50%; }
-    }
-    @keyframes pulseRing {
-        0%   { box-shadow: 0 0 0 0 rgba(0, 212, 170, 0.4); }
-        70%  { box-shadow: 0 0 0 12px rgba(0, 212, 170, 0); }
-        100% { box-shadow: 0 0 0 0 rgba(0, 212, 170, 0); }
-    }
-    @keyframes barGrow {
-        from { transform: scaleX(0); }
-        to   { transform: scaleX(1); }
-    }
-    @keyframes spinOnce {
-        from { transform: rotate(0deg); }
-        to   { transform: rotate(360deg); }
-    }
-    @keyframes shimmer {
-        0%   { background-position: -200% center; }
-        100% { background-position: 200% center; }
-    }
-    @keyframes blink {
-        0%, 100% { opacity: 1; }
-        50%       { opacity: 0; }
-    }
-    @keyframes navSlideDown {
-        from { opacity: 0; transform: translateY(-16px); }
-        to   { opacity: 1; transform: translateY(0); }
-    }
-    @keyframes statsCountBounce {
-        0%   { transform: scale(1); }
-        50%  { transform: scale(1.12); }
-        100% { transform: scale(1); }
-    }
-    @keyframes orb1 {
-        0%, 100% { transform: translate(0, 0) scale(1); }
-        33%       { transform: translate(30px, -20px) scale(1.05); }
-        66%       { transform: translate(-20px, 15px) scale(0.95); }
-    }
-    @keyframes orb2 {
-        0%, 100% { transform: translate(0, 0) scale(1); }
-        33%       { transform: translate(-25px, 20px) scale(0.95); }
-        66%       { transform: translate(20px, -15px) scale(1.05); }
-    }
-
-    /* ════════════════════════════════════════
-       SCROLL-REVEAL BASE
-    ════════════════════════════════════════ */
-    [data-reveal] {
-        opacity: 0;
-        transform: translateY(28px);
-        transition: opacity 0.6s ease, transform 0.6s ease;
-    }
-    [data-reveal].revealed {
-        opacity: 1;
-        transform: translateY(0);
-    }
-    [data-reveal="left"]  { transform: translateX(-28px); }
-    [data-reveal="right"] { transform: translateX(28px); }
-    [data-reveal="left"].revealed,
-    [data-reveal="right"].revealed { transform: translateX(0); }
-
-    [data-delay="1"] { transition-delay: 0.1s; }
-    [data-delay="2"] { transition-delay: 0.2s; }
-    [data-delay="3"] { transition-delay: 0.3s; }
-    [data-delay="4"] { transition-delay: 0.4s; }
-    [data-delay="5"] { transition-delay: 0.5s; }
-    [data-delay="6"] { transition-delay: 0.6s; }
-
-    /* ════════════════════════════════════════
-       HERO ENTRANCE
-    ════════════════════════════════════════ */
+    /* ── HERO ENTRANCE ── */
     .hero-content {
         animation: fadeInLeft 0.8s ease 0.2s both;
     }
@@ -106,7 +16,6 @@
         animation: fadeInRight 0.8s ease 0.4s both;
     }
 
-    /* Animated gradient title */
     .landing-page .hero-content h1 {
         background: linear-gradient(270deg, #00d4aa, #007acc, #6366f1, #00d4aa);
         background-size: 300% 300%;
@@ -116,7 +25,6 @@
         animation: gradientShift 5s ease infinite;
     }
 
-    /* Blinking cursor after title */
     .hero-cursor {
         display: inline-block;
         width: 3px;
@@ -128,7 +36,7 @@
         border-radius: 2px;
     }
 
-    /* Hero feature items hover */
+    /* ── Hero feature items ── */
     .landing-page .feature-item {
         cursor: default;
         transition: transform 0.25s ease;
@@ -147,7 +55,7 @@
         box-shadow: 0 4px 12px rgba(0, 212, 170, 0.35);
     }
 
-    /* Floating visual */
+    /* ── Floating visual ── */
     .landing-page .visual-container {
         animation: float 4s ease-in-out infinite;
     }
@@ -156,7 +64,6 @@
         box-shadow: 0 32px 80px rgba(0, 212, 170, 0.2);
     }
 
-    /* Animated bars in mockup */
     .visual-bar {
         transform-origin: left;
         animation: barGrow 0.8s ease both;
@@ -170,13 +77,12 @@
     .visual-bar:nth-child(7) { animation-delay: 1.2s; }
     .visual-bar:nth-child(8) { animation-delay: 1.3s; }
 
-    /* Brain icon pulse */
     .visual-logo i {
         display: inline-block;
         animation: float 3s ease-in-out infinite;
     }
 
-    /* Hero background orbs */
+    /* ── Hero background orbs ── */
     .hero-orb {
         position: absolute;
         border-radius: 50%;
@@ -201,15 +107,12 @@
         animation: orb2 12s ease-in-out infinite;
     }
 
-    /* ════════════════════════════════════════
-       BUTTONS
-    ════════════════════════════════════════ */
+    /* ── BUTTONS ── */
     .landing-page .btn {
         position: relative;
         overflow: hidden;
         transition: all 0.3s ease !important;
     }
-    /* Ripple */
     .landing-page .btn .ripple {
         position: absolute;
         border-radius: 50%;
@@ -217,9 +120,6 @@
         transform: scale(0);
         animation: rippleExpand 0.55s linear;
         pointer-events: none;
-    }
-    @keyframes rippleExpand {
-        to { transform: scale(4); opacity: 0; }
     }
     .landing-page .btn-primary:hover {
         transform: translateY(-3px);
@@ -231,9 +131,7 @@
         box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
     }
 
-    /* ════════════════════════════════════════
-       STATS SECTION
-    ════════════════════════════════════════ */
+    /* ── STATS SECTION ── */
     .stats-section {
         padding: 3.5rem 0;
         background: linear-gradient(135deg, #00d4aa 0%, #007acc 100%);
@@ -257,12 +155,8 @@
         text-align: center;
         position: relative;
     }
-    .stat-item {
-        transition: transform 0.3s ease;
-    }
-    .stat-item:hover {
-        transform: translateY(-6px);
-    }
+    .stat-item { transition: transform 0.3s ease; }
+    .stat-item:hover { transform: translateY(-6px); }
     .stat-item .stat-number {
         font-size: 2.5rem;
         font-weight: 800;
@@ -271,9 +165,7 @@
         margin-bottom: 0.35rem;
         transition: transform 0.3s ease;
     }
-    .stat-item:hover .stat-number {
-        animation: statsCountBounce 0.4s ease;
-    }
+    .stat-item:hover .stat-number { animation: statsCountBounce 0.4s ease; }
     .stat-item .stat-label {
         font-size: 0.88rem;
         font-weight: 500;
@@ -282,41 +174,19 @@
         letter-spacing: 0.05em;
     }
 
-    /* ════════════════════════════════════════
-       FEATURES SECTION (BEM)
-    ════════════════════════════════════════ */
-    .features {
-        padding: 5rem 0;
-        background: var(--body-bg);
-    }
-
-    html[data-theme='light'] .features {
-        background: linear-gradient(180deg, #f0f4ff 0%, #ffffff 100%);
-    }
-
-    html[data-theme='light'] .features__card {
-        background: #ffffff;
-        border-color: #e2e8f0;
-        box-shadow: 0 2px 12px rgba(99, 102, 241, 0.07);
-    }
-
-    html[data-theme='light'] .features__card:hover {
-        box-shadow: 0 20px 50px rgba(99, 102, 241, 0.15);
-        border-color: rgba(0, 212, 170, 0.5);
-    }
-
+    /* ── FEATURES SECTION ── */
+    .features { padding: 5rem 0; background: var(--body-bg); }
+    html[data-theme='light'] .features { background: linear-gradient(180deg, #f0f4ff 0%, #ffffff 100%); }
+    html[data-theme='light'] .features__card { background: #ffffff; border-color: #e2e8f0; box-shadow: 0 2px 12px rgba(99, 102, 241, 0.07); }
+    html[data-theme='light'] .features__card:hover { box-shadow: 0 20px 50px rgba(99, 102, 241, 0.15); border-color: rgba(0, 212, 170, 0.5); }
     html[data-theme='light'] .features__card:has(.icon-teal)   { background: linear-gradient(160deg, #f0fdfb 0%, #ffffff 60%); }
     html[data-theme='light'] .features__card:has(.icon-blue)   { background: linear-gradient(160deg, #eff6ff 0%, #ffffff 60%); }
     html[data-theme='light'] .features__card:has(.icon-purple) { background: linear-gradient(160deg, #f5f3ff 0%, #ffffff 60%); }
     html[data-theme='light'] .features__card:has(.icon-orange) { background: linear-gradient(160deg, #fffbeb 0%, #ffffff 60%); }
-
     html[data-theme='light'] .features__card h3 { color: #0f172a; }
     html[data-theme='light'] .features__card:hover h3 { color: var(--primary); }
 
-    .section-header {
-        text-align: center;
-        margin-bottom: 3rem;
-    }
+    .section-header { text-align: center; margin-bottom: 3rem; }
     .section-badge {
         display: inline-block;
         padding: 0.35rem 1rem;
@@ -331,35 +201,13 @@
         margin-bottom: 1rem;
         transition: all 0.3s ease;
     }
-    .section-badge:hover {
-        background: rgba(0, 212, 170, 0.22);
-        transform: scale(1.05);
-    }
-    .section-header h2 {
-        font-size: clamp(1.75rem, 3vw, 2.5rem);
-        font-weight: 800;
-        color: var(--text-primary);
-        margin-bottom: 0.75rem;
-    }
-
+    .section-badge:hover { background: rgba(0, 212, 170, 0.22); transform: scale(1.05); }
+    .section-header h2 { font-size: clamp(1.75rem, 3vw, 2.5rem); font-weight: 800; color: var(--text-primary); margin-bottom: 0.75rem; }
     html[data-theme='light'] .section-header h2 { color: #0f172a; }
     html[data-theme='light'] .section-header p  { color: #475569; }
-    .section-header p {
-        color: var(--text-secondary);
-        font-size: 1.05rem;
-        max-width: 50ch;
-        margin: 0 auto;
-    }
+    .section-header p { color: var(--text-secondary); font-size: 1.05rem; max-width: 50ch; margin: 0 auto; }
 
-    .features__grid {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 24px;
-        max-width: 1200px;
-        margin: 0 auto;
-        padding: 0 2rem;
-    }
-
+    .features__grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; max-width: 1200px; margin: 0 auto; padding: 0 2rem; }
     .features__card {
         background: var(--card-bg);
         border: 1px solid var(--card-border);
@@ -370,7 +218,6 @@
         overflow: hidden;
         cursor: default;
     }
-
     .features__card::after {
         content: '';
         position: absolute;
@@ -381,11 +228,7 @@
         transition: opacity 0.3s ease;
         pointer-events: none;
     }
-    .features__card:hover::after {
-        opacity: 1;
-        animation: shimmer 1.2s linear infinite;
-    }
-
+    .features__card:hover::after { opacity: 1; animation: shimmer 1.2s linear infinite; }
     .features__card::before {
         content: '';
         position: absolute;
@@ -397,279 +240,114 @@
         transition: transform 0.4s ease;
     }
     .features__card:hover::before { transform: scaleX(1); }
-
-    .features__card:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 20px 50px rgba(0, 212, 170, 0.15);
-        border-color: rgba(0, 212, 170, 0.4);
-    }
-
+    .features__card:hover { transform: translateY(-4px); box-shadow: 0 20px 50px rgba(0, 212, 170, 0.15); border-color: rgba(0, 212, 170, 0.4); }
     .features__icon {
-        width: 52px;
-        height: 52px;
-        border-radius: 12px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.4rem;
-        color: #ffffff;
-        margin-bottom: 1.25rem;
+        width: 52px; height: 52px; border-radius: 12px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.4rem; color: #ffffff; margin-bottom: 1.25rem;
         transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease;
     }
-    .features__card:hover .features__icon {
-        transform: scale(1.2) rotate(-10deg);
-        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
-    }
-
+    .features__card:hover .features__icon { transform: scale(1.2) rotate(-10deg); box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2); }
     .icon-teal   { background: linear-gradient(135deg, var(--primary-light), var(--primary)); --fc-accent: linear-gradient(90deg, var(--primary-light), var(--primary)); }
     .icon-blue   { background: linear-gradient(135deg, var(--accent-blue), var(--accent-blue-dark)); --fc-accent: linear-gradient(90deg, var(--accent-blue), var(--accent-blue-dark)); }
     .icon-purple { background: linear-gradient(135deg, var(--accent-purple), var(--accent-purple-dark)); --fc-accent: linear-gradient(90deg, var(--accent-purple), var(--accent-purple-dark)); }
     .icon-orange { background: linear-gradient(135deg, var(--accent-orange), var(--accent-orange-dark)); --fc-accent: linear-gradient(90deg, var(--accent-orange), var(--accent-orange-dark)); }
-
-    .features__card h3 {
-        font-size: 1.1rem;
-        font-weight: 700;
-        color: var(--text-primary);
-        margin-bottom: 0.6rem;
-        transition: color 0.3s ease;
-    }
+    .features__card h3 { font-size: 1.1rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.6rem; transition: color 0.3s ease; }
     .features__card:hover h3 { color: var(--primary-light); }
-    .features__card p {
-        color: var(--text-secondary);
-        font-size: 0.92rem;
-        line-height: 1.6;
-        margin: 0;
-    }
+    .features__card p { color: var(--text-secondary); font-size: 0.92rem; line-height: 1.6; margin: 0; }
 
-    /* ════════════════════════════════════════
-       ABOUT SECTION (BEM)
-    ════════════════════════════════════════ */
-    .about {
-        padding: 5rem 0;
-        background: var(--card-muted);
-    }
+    /* ── ABOUT SECTION ── */
+    .about { padding: 5rem 0; background: var(--card-muted); }
     html[data-theme='dark'] .about { background: #0a1628; }
     html[data-theme='light'] .about { background: linear-gradient(180deg, #ffffff 0%, #f0f4ff 100%); }
-
-    .about__container {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 3rem;
-        max-width: 1200px;
-        margin: 0 auto;
-        padding: 0 2rem;
-        align-items: center;
-    }
-
+    .about__container { display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; max-width: 1200px; margin: 0 auto; padding: 0 2rem; align-items: center; }
     .about__visual {
-        aspect-ratio: 4 / 3;
-        border-radius: 16px;
+        aspect-ratio: 4 / 3; border-radius: 16px;
         background: linear-gradient(135deg, var(--primary-light), var(--primary), var(--accent-blue));
-        position: relative;
-        overflow: hidden;
+        position: relative; overflow: hidden;
         box-shadow: 0 20px 60px rgba(0, 166, 136, 0.2);
         transition: transform 0.4s ease, box-shadow 0.4s ease;
     }
-    .about__visual:hover {
-        transform: translateY(-6px);
-        box-shadow: 0 30px 80px rgba(0, 166, 136, 0.3);
-    }
+    .about__visual:hover { transform: translateY(-6px); box-shadow: 0 30px 80px rgba(0, 166, 136, 0.3); }
     .about__visual::before {
-        content: '';
-        position: absolute;
-        inset: 0;
+        content: ''; position: absolute; inset: 0;
         background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="dots" width="20" height="20" patternUnits="userSpaceOnUse"><circle cx="10" cy="10" r="1.5" fill="%23ffffff" opacity="0.2"/></pattern></defs><rect width="100" height="100" fill="url(%23dots)"/></svg>') repeat;
     }
-    .about__visual-label {
-        position: absolute;
-        inset: 0;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        color: #ffffff;
-        text-align: center;
-    }
-    .about__visual-label i {
-        font-size: 3.5rem;
-        margin-bottom: 1rem;
-        opacity: 0.9;
-    }
-    .about__visual-label span {
-        font-size: 1.1rem;
-        font-weight: 600;
-        letter-spacing: 0.05em;
-        text-transform: uppercase;
-        opacity: 0.8;
-    }
+    .about__visual-label { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #ffffff; text-align: center; }
+    .about__visual-label i { font-size: 3.5rem; margin-bottom: 1rem; opacity: 0.9; }
+    .about__visual-label span { font-size: 1.1rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; opacity: 0.8; }
+    .about__content h2 { font-size: clamp(1.75rem, 3vw, 2.5rem); font-weight: 800; color: var(--text-primary); margin-bottom: 1rem; }
+    .about__text { color: var(--text-secondary); font-size: 1.05rem; line-height: 1.75; margin-bottom: 1.5rem; }
+    .about__values { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.75rem; }
+    .about__value { display: flex; align-items: center; gap: 0.75rem; color: var(--text-secondary); font-size: 0.95rem; padding: 0.6rem 0.75rem; border-radius: 8px; transition: background 0.25s ease, transform 0.25s ease; }
+    .about__value:hover { background: rgba(0, 212, 170, 0.06); transform: translateX(6px); }
+    .about__value i { color: var(--primary-light); font-size: 1rem; width: 20px; text-align: center; flex-shrink: 0; }
 
-    .about__content h2 {
-        font-size: clamp(1.75rem, 3vw, 2.5rem);
-        font-weight: 800;
-        color: var(--text-primary);
-        margin-bottom: 1rem;
-    }
-    .about__text {
-        color: var(--text-secondary);
-        font-size: 1.05rem;
-        line-height: 1.75;
-        margin-bottom: 1.5rem;
-    }
-    .about__values {
-        list-style: none;
-        padding: 0;
-        margin: 0;
-        display: flex;
-        flex-direction: column;
-        gap: 0.75rem;
-    }
-    .about__value {
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-        color: var(--text-secondary);
-        font-size: 0.95rem;
-        padding: 0.6rem 0.75rem;
-        border-radius: 8px;
-        transition: background 0.25s ease, transform 0.25s ease;
-    }
-    .about__value:hover {
-        background: rgba(0, 212, 170, 0.06);
-        transform: translateX(6px);
-    }
-    .about__value i {
-        color: var(--primary-light);
-        font-size: 1rem;
-        width: 20px;
-        text-align: center;
-        flex-shrink: 0;
-    }
-
-    /* ════════════════════════════════════════
-       HOW IT WORKS
-    ════════════════════════════════════════ */
+    /* ── HOW IT WORKS ── */
     .how-section {
-        padding: 5rem 0;
+        padding: 5rem 2rem;
         background: var(--card-muted);
     }
     html[data-theme='dark'] .how-section { background: #0a1628; }
-
-    .steps-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-        gap: 2rem;
-        max-width: 1000px;
+    html[data-theme='light'] .how-section {
+        background: transparent;
+        padding: 5rem 2rem;
+    }
+    html[data-theme='light'] .how-section .how-section__inner {
+        max-width: 1100px;
         margin: 0 auto;
-        padding: 0 2rem;
-        position: relative;
+        background: linear-gradient(160deg, #f0fdfb 0%, #e8f4f8 40%, #eff6ff 100%);
+        border-radius: 24px;
+        padding: 3.5rem 2rem;
     }
-
-    /* Connector line between steps */
-    .steps-grid::before {
-        content: '';
-        position: absolute;
-        top: 24px;
-        left: calc(10% + 24px);
-        right: calc(10% + 24px);
-        height: 2px;
-        background: linear-gradient(90deg, #00d4aa, #007acc);
-        opacity: 0.25;
-        pointer-events: none;
-    }
-    @media (max-width: 768px) { .steps-grid::before { display: none; } }
-
-    .step-item {
-        text-align: center;
-        position: relative;
-        padding: 1.5rem 1rem;
-        border-radius: 16px;
-        transition: all 0.3s ease;
-    }
-    .step-item:hover {
-        background: var(--card-bg);
-        box-shadow: 0 12px 30px rgba(0, 212, 170, 0.1);
-        transform: translateY(-6px);
-    }
+    .steps-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 2rem; max-width: 1100px; margin: 0 auto; padding: 0 2rem; position: relative; }
+    .step-item { text-align: center; position: relative; z-index: 1; padding: 1.5rem 1.25rem; border-radius: 16px; transition: all 0.3s ease; display: flex; flex-direction: column; align-items: center; }
+    .step-item:hover { background: var(--card-bg); box-shadow: 0 12px 30px rgba(0, 212, 170, 0.1); transform: translateY(-6px); }
     .step-number {
-        width: 48px;
-        height: 48px;
+        width: 56px;
+        height: 56px;
         border-radius: 50%;
         background: linear-gradient(135deg, #00d4aa, #007acc);
         color: #ffffff;
-        font-size: 1.1rem;
-        font-weight: 700;
+        font-size: 1.25rem;
+        font-weight: 800;
         display: flex;
         align-items: center;
         justify-content: center;
-        margin: 0 auto 1rem;
-        transition: all 0.35s ease;
+        margin: 0 auto 1.25rem;
+        transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        box-shadow: 0 6px 20px rgba(0, 212, 170, 0.35);
+        border: 3px solid rgba(255, 255, 255, 0.2);
     }
     .step-item:hover .step-number {
-        animation: pulseRing 0.9s ease;
         transform: scale(1.15);
+        box-shadow: 0 8px 28px rgba(0, 212, 170, 0.5);
+        border-color: rgba(255, 255, 255, 0.4);
+        animation: pulseRing 0.9s ease;
     }
-    .step-item h4 {
-        font-size: 1rem;
-        font-weight: 700;
-        color: var(--text-primary);
-        margin-bottom: 0.5rem;
-        transition: color 0.3s ease;
-    }
+    .step-item h4 { font-size: 1rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem; white-space: nowrap; transition: color 0.3s ease; }
     .step-item:hover h4 { color: #00d4aa; }
-    .step-item p {
-        color: var(--text-secondary);
-        font-size: 0.9rem;
-        line-height: 1.5;
-        margin: 0;
-    }
+    .step-item p { color: var(--text-secondary); font-size: 0.9rem; line-height: 1.5; margin: 0; }
 
-    /* ════════════════════════════════════════
-       CTA SECTION
-    ════════════════════════════════════════ */
-    .cta-section {
-        padding: 5rem 2rem;
-        text-align: center;
-        background: var(--body-bg);
-    }
+    /* ── CTA SECTION ── */
+    .cta-section { padding: 5rem 2rem; text-align: center; background: var(--body-bg); }
     .cta-box {
-        max-width: 620px;
-        margin: 0 auto;
-        background: var(--card-bg);
-        border: 1px solid var(--card-border);
-        border-radius: 24px;
-        padding: 3.5rem 2rem;
-        box-shadow: var(--card-shadow);
-        transition: all 0.4s ease;
-        position: relative;
-        overflow: hidden;
+        max-width: 620px; margin: 0 auto; background: var(--card-bg);
+        border: 1px solid var(--card-border); border-radius: 24px;
+        padding: 3.5rem 2rem; box-shadow: var(--card-shadow);
+        transition: all 0.4s ease; position: relative; overflow: hidden;
     }
-    /* Glow border on hover */
     .cta-box::before {
-        content: '';
-        position: absolute;
-        inset: -2px;
-        border-radius: 26px;
+        content: ''; position: absolute; inset: -2px; border-radius: 26px;
         background: linear-gradient(135deg, #00d4aa, #007acc, #6366f1);
-        z-index: -1;
-        opacity: 0;
-        transition: opacity 0.4s ease;
+        z-index: -1; opacity: 0; transition: opacity 0.4s ease;
     }
     .cta-box:hover::before { opacity: 1; }
-    .cta-box:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 30px 70px rgba(0, 212, 170, 0.2);
-    }
-    .cta-box h2 {
-        font-size: clamp(1.5rem, 2.5vw, 2rem);
-        font-weight: 800;
-        color: var(--text-primary);
-        margin-bottom: 0.75rem;
-    }
+    .cta-box:hover { transform: translateY(-4px); box-shadow: 0 30px 70px rgba(0, 212, 170, 0.2); }
+    .cta-box h2 { font-size: clamp(1.5rem, 2.5vw, 2rem); font-weight: 800; color: var(--text-primary); margin-bottom: 0.75rem; }
     .cta-box p { color: var(--text-secondary); margin-bottom: 2rem; }
 
-    /* ════════════════════════════════════════
-       RESPONSIVE
-    ════════════════════════════════════════ */
+    /* ── RESPONSIVE ── */
     @media (max-width: 1024px) {
         .features__grid { grid-template-columns: repeat(2, 1fr); }
         .about__container { grid-template-columns: 1fr; gap: 2rem; }
@@ -715,32 +393,32 @@
     <div class="hero-orb hero-orb-2"></div>
     <div class="hero-container">
         <div class="hero-content">
-            <h1>AI/ML Platform for Smart Retail Management<span class="hero-cursor"></span></h1>
-            <p>Automate invoice processing with OCR, forecast revenue with LSTM, and orchestrate tasks via AI Agent — all in one unified system.</p>
+            <h1>Hệ Thống Quản Lý Doanh Nghiệp<span class="hero-cursor"></span></h1>
+            <p>Tự động hóa hóa đơn bằng OCR, dự báo doanh thu với LSTM và điều phối công việc qua AI Agent — tất cả trong một nền tảng.</p>
             <div class="hero-actions">
                 <a href="{{ url_for('auth.signup') }}" class="btn btn-primary">
-                    <i class="fas fa-rocket"></i> Start for Free
+                    <i class="fas fa-rocket"></i> Dùng thử miễn phí
                 </a>
                 <a href="#features" class="btn btn-secondary">
-                    <i class="fas fa-play-circle"></i> See Features
+                    <i class="fas fa-play-circle"></i> Xem demo
                 </a>
             </div>
             <div class="hero-features">
                 <div class="feature-item">
                     <div class="feature-icon"><i class="fas fa-file-invoice"></i></div>
-                    <span>Automated OCR Invoices</span>
+                    <span>Tự động đọc hóa đơn OCR</span>
                 </div>
                 <div class="feature-item">
                     <div class="feature-icon"><i class="fas fa-chart-line"></i></div>
-                    <span>LSTM Forecasting</span>
+                    <span>Dự báo doanh thu LSTM</span>
                 </div>
                 <div class="feature-item">
                     <div class="feature-icon"><i class="fas fa-robot"></i></div>
-                    <span>Smart AI Agent</span>
+                    <span>AI Agent thông minh</span>
                 </div>
                 <div class="feature-item">
                     <div class="feature-icon"><i class="fas fa-store"></i></div>
-                    <span>Retail Management</span>
+                    <span>Quản lý bán lẻ</span>
                 </div>
             </div>
         </div>
@@ -753,7 +431,7 @@
                         <div class="visual-dot dot-yellow"></div>
                         <div class="visual-dot dot-green"></div>
                     </div>
-                    <span class="visual-title">ANSER Dashboard</span>
+                    <span class="visual-title">Bảng điều khiển ANSER</span>
                 </div>
                 <div class="visual-content">
                     <div class="visual-sidebar">
@@ -785,15 +463,15 @@
     <div class="stats-grid">
         <div class="stat-item" data-reveal data-delay="1">
             <div class="stat-number" data-count="3" data-suffix="+">3+</div>
-            <div class="stat-label">AI Models</div>
+            <div class="stat-label">Mô hình AI</div>
         </div>
         <div class="stat-item" data-reveal data-delay="2">
             <div class="stat-number" data-count="99" data-suffix="%">99%</div>
-            <div class="stat-label">OCR Accuracy</div>
+            <div class="stat-label">Độ chính xác OCR</div>
         </div>
         <div class="stat-item" data-reveal data-delay="3">
-            <div class="stat-number">Real-time</div>
-            <div class="stat-label">Live Analytics</div>
+            <div class="stat-number">24/7</div>
+            <div class="stat-label">Phân tích trực tiếp</div>
         </div>
         <div class="stat-item" data-reveal data-delay="4">
             <div class="stat-number">HT</div>
@@ -829,7 +507,7 @@
                 <i class="fas fa-file-invoice-dollar"></i>
             </div>
             <h3>AI đọc hóa đơn OCR</h3>
-            <p>Tự động nhận dạng và trích xuất dữ liệu hóa đơn bằng mô hình OCR chuyên biệt, tiết kiệm 90% thời gian nhập liệu.</p>
+            <p>Nhận dạng và trích xuất dữ liệu hóa đơn tự động bằng OCR, tiết kiệm 90% thời gian nhập liệu.</p>
         </div>
         <div class="features__card" data-reveal data-delay="4">
             <div class="features__icon icon-orange">
@@ -843,7 +521,7 @@
                 <i class="fas fa-chart-bar"></i>
             </div>
             <h3>Báo cáo thông minh</h3>
-            <p>Phân tích dữ liệu và dự báo doanh thu với mạng LSTM, hỗ trợ ra quyết định kinh doanh.</p>
+            <p>Dự báo doanh thu bằng LSTM, hỗ trợ ra quyết định kinh doanh chính xác.</p>
         </div>
         <div class="features__card" data-reveal data-delay="6">
             <div class="features__icon icon-blue">
@@ -867,10 +545,7 @@
         <div class="about__content" data-reveal="right">
             <h2>Về ANSER</h2>
             <p class="about__text">
-                ANSER là nền tảng quản lý bán lẻ thông minh được phát triển bởi nhóm thành viên HTGroup
-                Chúng tôi ứng dụng AI/ML để tự động hóa quy trình kinh doanh — từ nhận dạng hóa đơn OCR
-                đến dự báo doanh thu bằng LSTM. Sứ mệnh của ANSER là giúp doanh nghiệp vừa và nhỏ
-                tiếp cận công nghệ AI một cách đơn giản và hiệu quả nhất.
+                ANSER là nền tảng quản lý bán lẻ thông minh do nhóm HTGroup phát triển. Chúng tôi ứng dụng AI/ML để tự động hóa quy trình kinh doanh — từ nhận dạng hóa đơn OCR đến dự báo doanh thu bằng LSTM. Sứ mệnh của ANSER là giúp doanh nghiệp vừa và nhỏ tiếp cận công nghệ AI đơn giản và hiệu quả nhất.
             </p>
             <ul class="about__values">
                 <li class="about__value">
@@ -883,7 +558,7 @@
                 </li>
                 <li class="about__value">
                     <i class="fas fa-users"></i>
-                    <span><strong>Hợp tác & Phát triển</strong> — Xây dựng cùng cộng đồng USTH</span>
+                    <span><strong>Hợp tác & Phát triển</strong> — Xây dựng cùng cộng đồng vững mạnh</span>
                 </li>
             </ul>
         </div>
@@ -892,31 +567,33 @@
 
 <!-- ══════════════ HOW IT WORKS ══════════════ -->
 <section class="how-section" id="how-it-works">
-    <div class="section-header" data-reveal>
-        <div class="section-badge">Workflow</div>
-        <h2>How It Works</h2>
-        <p>From raw data to business insights in just a few steps</p>
-    </div>
-    <div class="steps-grid">
-        <div class="step-item" data-reveal data-delay="1">
-            <div class="step-number">1</div>
-            <h4>Upload Invoices</h4>
-            <p>Upload invoice images or connect your existing data sources</p>
+    <div class="how-section__inner">
+        <div class="section-header" data-reveal>
+            <div class="section-badge">Quy trình</div>
+            <h2>Cách hoạt động</h2>
+            <p>Từ dữ liệu thô đến phân tích kinh doanh chỉ trong vài bước</p>
         </div>
-        <div class="step-item" data-reveal data-delay="2">
-            <div class="step-number">2</div>
-            <h4>AI Processes Automatically</h4>
-            <p>OCR and AI Agent extract, clean, and normalize your data</p>
-        </div>
-        <div class="step-item" data-reveal data-delay="3">
-            <div class="step-number">3</div>
-            <h4>Analyze & Forecast</h4>
-            <p>LSTM model identifies trends and predicts future revenue</p>
-        </div>
-        <div class="step-item" data-reveal data-delay="4">
-            <div class="step-number">4</div>
-            <h4>Make Decisions</h4>
-            <p>A visual dashboard empowers you to act on real data</p>
+        <div class="steps-grid">
+            <div class="step-item" data-reveal data-delay="1">
+                <div class="step-number">1</div>
+                <h4>Tải hóa đơn lên</h4>
+                <p>Tải ảnh hóa đơn hoặc kết nối nguồn dữ liệu có sẵn</p>
+            </div>
+            <div class="step-item" data-reveal data-delay="2">
+                <div class="step-number">2</div>
+                <h4>AI xử lý tự động</h4>
+                <p>OCR và AI Agent trích xuất, làm sạch, chuẩn hóa dữ liệu</p>
+            </div>
+            <div class="step-item" data-reveal data-delay="3">
+                <div class="step-number">3</div>
+                <h4>Phân tích & Dự báo</h4>
+                <p>LSTM nhận diện xu hướng, dự báo doanh thu tương lai</p>
+            </div>
+            <div class="step-item" data-reveal data-delay="4">
+                <div class="step-number">4</div>
+                <h4>Ra quyết định</h4>
+                <p>Dashboard trực quan giúp bạn hành động từ dữ liệu thực</p>
+            </div>
         </div>
     </div>
 </section>
@@ -924,14 +601,14 @@
 <!-- ══════════════ CTA ══════════════ -->
 <section class="cta-section">
     <div class="cta-box" data-reveal>
-        <h2>Ready to get started?</h2>
-        <p>Join the USTH GEN14 team and explore the power of AI/ML in retail management.</p>
+        <h2>Sẵn sàng bắt đầu?</h2>
+        <p>Trải nghiệm sức mạnh AI/ML trong quản lý bán lẻ cùng ANSER ngay hôm nay.</p>
         <div style="display:flex; gap:0.75rem; justify-content:center; flex-wrap:wrap;">
             <a href="{{ url_for('auth.signup') }}" class="btn btn-primary">
-                <i class="fas fa-user-plus"></i> Create Account
+                <i class="fas fa-user-plus"></i> Tạo tài khoản
             </a>
             <a href="{{ url_for('auth.signin') }}" class="btn btn-secondary">
-                <i class="fas fa-sign-in-alt"></i> Sign In
+                <i class="fas fa-sign-in-alt"></i> Đăng nhập
             </a>
         </div>
     </div>
@@ -941,26 +618,26 @@
 <div class="modal-overlay" id="contact-modal">
     <div class="modal-container">
         <div class="modal-header">
-            <h3><i class="fas fa-users"></i> Development Team</h3>
-            <button class="modal-close" id="modal-close-btn" aria-label="Close">&times;</button>
+            <h3><i class="fas fa-users"></i> Đội ngũ phát triển</h3>
+            <button class="modal-close" id="modal-close-btn" aria-label="Đóng">&times;</button>
         </div>
         <div class="modal-body">
             <p style="color:var(--text-secondary); margin-bottom:1.5rem;">
-                ANSER Project — USTH GEN14 · Report bugs or suggest features via GitHub Issues.
+                Dự án ANSER — USTH GEN14 · Báo lỗi hoặc đề xuất tính năng qua GitHub Issues.
             </p>
             <div class="table-responsive">
                 <table class="contact-table">
                     <thead>
                         <tr>
-                            <th>Name</th>
-                            <th>Role</th>
+                            <th>Tên</th>
+                            <th>Vai trò</th>
                             <th>GitHub</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr>
                             <td>namdzzgg</td>
-                            <td>Lead Developer</td>
+                            <td>Trưởng nhóm phát triển</td>
                             <td><a href="#" target="_blank" rel="noopener">@namdzzgg</a></td>
                         </tr>
                     </tbody>
@@ -1003,93 +680,6 @@
 {% endblock %}
 
 {% block scripts %}
-<script>
-(function () {
-    /* ── Theme toggle ── */
-    const toggleBtn = document.getElementById('landing-theme-toggle');
-    const themeIcon = document.getElementById('theme-icon');
-
-    if (toggleBtn && themeIcon) {
-        function syncIcon() {
-            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-            themeIcon.className = isDark ? 'fas fa-sun' : 'fas fa-moon';
-        }
-
-        toggleBtn.addEventListener('click', function () {
-            const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-            document.documentElement.setAttribute('data-theme', next);
-            localStorage.setItem('theme-preference', next);
-            syncIcon();
-        });
-
-        syncIcon();
-    }
-
-    /* ── Contact modal ── */
-    const modal = document.getElementById('contact-modal');
-    document.getElementById('contact-link').addEventListener('click', function (e) {
-        e.preventDefault();
-        modal.classList.add('active');
-    });
-    document.getElementById('modal-close-btn').addEventListener('click', function () {
-        modal.classList.remove('active');
-    });
-    modal.addEventListener('click', function (e) {
-        if (e.target === modal) modal.classList.remove('active');
-    });
-    document.addEventListener('keydown', function (e) {
-        if (e.key === 'Escape') modal.classList.remove('active');
-    });
-
-    /* ── Scroll reveal ── */
-    const revealObserver = new IntersectionObserver(function (entries) {
-        entries.forEach(function (entry) {
-            if (entry.isIntersecting) {
-                entry.target.classList.add('revealed');
-                revealObserver.unobserve(entry.target);
-            }
-        });
-    }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
-
-    document.querySelectorAll('[data-reveal]').forEach(function (el) {
-        revealObserver.observe(el);
-    });
-
-    /* ── Button ripple ── */
-    document.querySelectorAll('.landing-page .btn').forEach(function (btn) {
-        btn.addEventListener('click', function (e) {
-            const r = document.createElement('span');
-            r.className = 'ripple';
-            const rect = btn.getBoundingClientRect();
-            const size = Math.max(rect.width, rect.height);
-            r.style.cssText = 'width:' + size + 'px;height:' + size + 'px;'
-                + 'left:' + (e.clientX - rect.left - size / 2) + 'px;'
-                + 'top:' + (e.clientY - rect.top - size / 2) + 'px;';
-            btn.appendChild(r);
-            r.addEventListener('animationend', function () { r.remove(); });
-        });
-    });
-
-    /* ── Smooth scroll for anchor links ── */
-    document.querySelectorAll('a[href^="#"]').forEach(function (a) {
-        a.addEventListener('click', function (e) {
-            const target = document.querySelector(a.getAttribute('href'));
-            if (target) {
-                e.preventDefault();
-                target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }
-        });
-    });
-
-    /* ── Header shadow on scroll ── */
-    const headerEl = document.querySelector('.header');
-    if (headerEl) {
-        window.addEventListener('scroll', function () {
-            headerEl.style.boxShadow = window.scrollY > 20
-                ? '0 4px 24px rgba(0,0,0,0.12)'
-                : '0 12px 30px rgba(15,23,42,0.08)';
-        }, { passive: true });
-    }
-})();
-</script>
+<script src="{{ url_for('static', filename='js/reveal.js') }}"></script>
+<script src="{{ url_for('static', filename='js/landing.js') }}"></script>
 {% endblock %}

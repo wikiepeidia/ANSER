@@ -404,8 +404,19 @@ html[data-theme='dark'] .landing-page .btn-secondary:hover {
     color: var(--primary-light);
 }
 
-.header__nav-link:hover::after {
+.header__nav-link:hover::after,
+.header__nav-link.active::after {
     width: 100%;
+}
+
+.header__nav-link.active {
+    color: var(--primary-light);
+}
+
+/* Navbar đổi nền khi cuộn qua Hero */
+.header.scrolled {
+    background: var(--nav-bg);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.12);
 }
 
 @media (max-width: 768px) {
