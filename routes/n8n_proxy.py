@@ -44,7 +44,9 @@ def _proxy(upstream_path):
     if request.query_string:
         url += '?' + request.query_string.decode('utf-8', errors='replace')
 
-    headers = {}
+    _FWD = {'content-type', 'accept', 'origin', 'referer', 'x-requested-with',
+            'browser-id', 'push-ref'}
+    headers = {k: v for k, v in request.headers if k.lower() in _FWD}
     if token:
         headers['Cookie'] = f'n8n-auth={token}'
 
@@ -134,50 +136,58 @@ def proxy_assets(path):
 def ws_proxy(ws):
     """Proxy WebSocket: browser <-> ANSER <-> n8n Docker."""
     import websocket as ws_client
+    import traceback
 
-    print('[WS] WebSocket proxy connected!', flush=True)
+    print('[WS] === WebSocket proxy started ===', flush=True)
 
-    token = _get_token()
-    qs = request.query_string.decode('utf-8', errors='replace')
-    url = f'ws://localhost:5678/rest/push?{qs}'
-
-    cookie = f'n8n-auth={token}' if token else ''
     try:
+        token = _get_token()
+        print(f'[WS] Token: {"OK" if token else "NONE"}', flush=True)
+
+        try:
+            qs = request.query_string.decode('utf-8', errors='replace')
+        except Exception:
+            qs = ''
+        url = f'ws://localhost:5678/rest/push?{qs}'
+        print(f'[WS] Connecting to {url}', flush=True)
+
+        cookie = f'n8n-auth={token}' if token else ''
         n8n = ws_client.create_connection(url, cookie=cookie, timeout=10)
-        print('[WS] Connected to n8n push', flush=True)
+        print('[WS] Connected to n8n!', flush=True)
     except Exception as e:
-        print(f'[WS] Failed to connect to n8n: {e}', flush=True)
+        print(f'[WS] Setup FAILED: {e}', flush=True)
+        traceback.print_exc()
         return
 
     closed = threading.Event()
 
     def downstream():
-        """n8n -> browser"""
         try:
             while not closed.is_set():
                 msg = n8n.recv()
                 if msg:
                     ws.send(msg)
-        except Exception:
-            pass
+        except Exception as e:
+            print(f'[WS] downstream ended: {e}', flush=True)
         finally:
             closed.set()
 
     t = threading.Thread(target=downstream, daemon=True)
     t.start()
 
-    # browser -> n8n
     try:
         while not closed.is_set():
-            msg = ws.receive(timeout=60)
+            msg = ws.receive(timeout=120)
             if msg is None:
+                print('[WS] browser disconnected', flush=True)
                 break
             n8n.send(msg)
-    except Exception:
-        pass
+    except Exception as e:
+        print(f'[WS] upstream ended: {e}', flush=True)
     finally:
         closed.set()
         try:
             n8n.close()
         except Exception:
             pass
+        print('[WS] === WebSocket proxy closed ===', flush=True)

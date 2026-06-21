@@ -281,4 +281,58 @@
     } else {
         document.addEventListener('DOMContentLoaded', startObserver);
     }
+
+    // ── Auto-send test data when n8n starts listening for webhook ──
+    const _origFetch = window.fetch;
+    window.fetch = function(url, opts) {
+        const result = _origFetch.apply(this, arguments);
+
+        // Detect Execute workflow request
+        if (opts && opts.method === 'POST' && typeof url === 'string' &&
+            url.includes('/rest/workflows/') && url.includes('/run')) {
+
+            // Extract workflow ID
+            const match = url.match(/workflows\/([^/]+)\/run/);
+            if (match) {
+                const wfId = match[1];
+                console.log('[ANSER] Execute detected for', wfId);
+
+                // After 2s, send test data to webhook-test
+                setTimeout(async () => {
+                    try {
+                        const r = await _origFetch(window.BASE_PATH + 'rest/workflows/' + wfId);
+                        const wf = await r.json();
+                        const nodes = (wf.data || wf).nodes || [];
+                        let webhookPath = '';
+                        for (const n of nodes) {
+                            if (n.type && n.type.toLowerCase().includes('webhook')) {
+                                webhookPath = (n.parameters || {}).path || '';
+                                break;
+                            }
+                        }
+                        if (!webhookPath) {
+                            console.log('[ANSER] No webhook path found');
+                            return;
+                        }
+                        console.log('[ANSER] Sending test data to', webhookPath);
+                        await _origFetch('/n8n/webhook-test/' + webhookPath, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                device_id: 'ANSER-TEST',
+                                event_type: 'test_from_editor',
+                                amount: 100000,
+                                source: 'ANSER Editor',
+                                test: true,
+                            }),
+                        });
+                        console.log('[ANSER] Test data sent!');
+                    } catch (e) {
+                        console.log('[ANSER] Auto-send failed:', e);
+                    }
+                }, 2500);
+            }
+        }
+        return result;
+    };
 })();
