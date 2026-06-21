@@ -1,0 +1,55 @@
+{
+  "name": "Query NeonDB — Xem dữ liệu",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "query-db",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "id": "qdb-webhook",
+      "name": "Nhận yêu cầu",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "url": "http://host.docker.internal:5000/api/n8n/internal/iot-events",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            { "name": "limit", "value": "={{ $json.body?.limit || 5 }}" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "qdb-fetch",
+      "name": "Lấy IoT Events từ NeonDB",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const response = $input.first().json;\nconst events = response.events || [];\nconst total = response.total || 0;\n\nreturn [{\n  json: {\n    success: true,\n    source: 'NeonDB via ANSER API',\n    total_events: total,\n    showing: events.length,\n    events: events.map(e => ({\n      id: e.id,\n      device: e.device_id,\n      type: e.event_type,\n      amount: e.payload?.amount || null,\n      time: e.created_at\n    })),\n    timestamp: new Date().toISOString()\n  }\n}];"
+      },
+      "id": "qdb-format",
+      "name": "Format kết quả",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [680, 300]
+    }
+  ],
+  "connections": {
+    "Nhận yêu cầu": {
+      "main": [[{ "node": "Lấy IoT Events từ NeonDB", "type": "main", "index": 0 }]]
+    },
+    "Lấy IoT Events từ NeonDB": {
+      "main": [[{ "node": "Format kết quả", "type": "main", "index": 0 }]]
+    }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" }
+}

@@ -463,6 +463,67 @@ def execute_workflow(workflow_data, token_info=None):
                     result = client.forecast_quantity(resolved_data)
                     log(f"[Forecast] Result: {str(result)[:300]}")
                 
+            elif node_type == 'iot_db_insert':
+                import psycopg2 as _pg
+                import json as _json
+                from core.config import Config as _Cfg
+                db_url = _Cfg.POSTGRES_URL
+                if not db_url:
+                    result = {"error": "POSTGRES_URL not configured", "status": "failed"}
+                else:
+                    device_id  = str(resolve_template(config.get('device_id', ''), context) or '')
+                    event_type = str(resolve_template(config.get('event_type', ''), context) or '')
+                    payload_raw = resolve_template(config.get('payload', '{}'), context)
+                    if isinstance(payload_raw, str):
+                        try:
+                            payload_obj = _json.loads(payload_raw) if payload_raw.strip() else {}
+                        except Exception:
+                            payload_obj = {}
+                    else:
+                        payload_obj = payload_raw if isinstance(payload_raw, dict) else {}
+                    if not device_id or not event_type:
+                        result = {"error": "device_id and event_type are required", "status": "failed"}
+                    else:
+                        _conn = _pg.connect(db_url)
+                        _cur  = _conn.cursor()
+                        _cur.execute(
+                            "INSERT INTO iot_events (device_id, event_type, payload) VALUES (%s, %s, %s) RETURNING id, created_at",
+                            (device_id, event_type, _json.dumps(payload_obj))
+                        )
+                        _row = _cur.fetchone()
+                        _conn.commit()
+                        _conn.close()
+                        result = {"id": _row[0], "device_id": device_id, "event_type": event_type, "created_at": str(_row[1]), "status": "inserted"}
+                        log(f"[IoT Insert] Inserted event id={_row[0]} device={device_id} type={event_type}")
+
+            elif node_type == 'iot_db_query':
+                import psycopg2 as _pg
+                from core.config import Config as _Cfg
+                db_url = _Cfg.POSTGRES_URL
+                if not db_url:
+                    result = {"error": "POSTGRES_URL not configured", "status": "failed"}
+                else:
+                    limit = int(config.get('limit', 10))
+                    device_filter = str(config.get('device_id', '')).strip()
+                    event_filter  = str(config.get('event_type', '')).strip()
+                    where_parts, params = [], []
+                    if device_filter:
+                        where_parts.append("device_id = %s")
+                        params.append(device_filter)
+                    if event_filter:
+                        where_parts.append("event_type = %s")
+                        params.append(event_filter)
+                    where_sql = ("WHERE " + " AND ".join(where_parts)) if where_parts else ""
+                    params.append(limit)
+                    _conn = _pg.connect(db_url)
+                    _cur  = _conn.cursor()
+                    _cur.execute(f"SELECT id, device_id, event_type, payload, created_at FROM iot_events {where_sql} ORDER BY id DESC LIMIT %s", params)
+                    _rows = _cur.fetchall()
+                    _conn.close()
+                    events = [{"id": r[0], "device_id": r[1], "event_type": r[2], "payload": r[3], "created_at": str(r[4])} for r in _rows]
+                    result = {"events": events, "count": len(events)}
+                    log(f"[IoT Query] Returned {len(events)} events")
+
             else:
                 result = {"status": "skipped", "reason": "Unknown node type"}
             

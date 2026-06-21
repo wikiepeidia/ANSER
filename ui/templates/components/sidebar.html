@@ -4,17 +4,16 @@
 <div id="sidebar-overlay" class="sidebar-overlay"></div>
 
 <nav class="modern-sidebar" id="main-sidebar">
-    <button id="sidebar-collapse-toggle" class="sidebar-collapse-btn" aria-label="Collapse sidebar">
-        <i class="fas fa-chevron-left" id="sidebar-collapse-icon"></i>
-    </button>
     <div class="sidebar-brand">
         <div class="brand-icon">
             <i class="fas fa-rocket"></i>
         </div>
         <div class="brand-text">
-            <h3>{{ project_name }}</h3>
-            <p>Smart Management</p>
+            <h3>ANSER</h3>
         </div>
+        <button id="sidebar-collapse-toggle" class="sidebar-collapse-btn" aria-label="Toggle sidebar">
+            <i class="fas fa-chevron-left" id="sidebar-collapse-icon"></i>
+        </button>
     </div>
 
     <div class="user-profile-card">
@@ -125,10 +124,16 @@
                 <div class="menu-label">Workspace Hub</div>
                 <div class="menu-arrow"><i class="fas fa-chevron-right"></i></div>
             </a>
-            <a class="menu-item" href="{{ url_for('pages.scenarios') }}" data-tooltip="Automation Scenarios">
-                <div class="menu-icon" style="background: linear-gradient(135deg, #89f7fe 0%, #66a6ff 100%);"><i
+            <a class="menu-item" href="{{ url_for('pages.scenarios') }}" data-tooltip="n8n Workflows">
+                <div class="menu-icon" style="background: linear-gradient(135deg, #FF6B35 0%, #f093fb 100%);"><i
                         class="fas fa-project-diagram"></i></div>
-                <div class="menu-label">Automation Scenarios</div>
+                <div class="menu-label">n8n Workflows</div>
+                <div class="menu-arrow"><i class="fas fa-chevron-right"></i></div>
+            </a>
+            <a class="menu-item" href="{{ url_for('pages.iot_monitor') }}" data-tooltip="IoT Monitor">
+                <div class="menu-icon" style="background: linear-gradient(135deg, #FF6B35 0%, #FF9800 100%);"><i
+                        class="fas fa-cash-register"></i></div>
+                <div class="menu-label">IoT Monitor</div>
                 <div class="menu-arrow"><i class="fas fa-chevron-right"></i></div>
             </a>
             <a class="menu-item" href="{{ url_for('pages.settings') }}" data-tooltip="Settings">
