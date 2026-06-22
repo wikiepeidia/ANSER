@@ -1,295 +1,1992 @@
 {
-  "phase": "11",
-  "name": "baseline-contract-guardrails",
-  "version": "1.0",
-  "description": "Curated source-of-truth endpoint manifest for Phase 11 contract guardrails.",
   "endpoints": [
     {
-      "id": "auth-session",
-      "group": "auth",
-      "path": "/api/session",
-      "methods": [
-        "GET"
-      ],
-      "response_keys_any": [
-        "success",
-        "message"
-      ],
-      "smoke": {
-        "method": "GET",
-        "sample_path": "/api/session",
-        "expected_status": [
-          200,
-          401
-        ]
-      }
-    },
-    {
-      "id": "auth-google-connect",
-      "group": "auth",
-      "path": "/auth/connect/google",
-      "methods": [
-        "GET"
-      ]
-    },
-    {
-      "id": "auth-google-login",
-      "group": "auth",
-      "path": "/auth/login/google",
-      "methods": [
-        "GET"
-      ]
-    },
-    {
-      "id": "auth-google-callback",
-      "group": "auth",
-      "path": "/auth/google/callback",
-      "methods": [
-        "GET"
-      ]
-    },
-    {
-      "id": "workflow-list-create",
-      "group": "workflow",
-      "path": "/api/workflows",
-      "methods": [
-        "GET",
-        "POST"
-      ],
-      "smoke": {
-        "method": "OPTIONS",
-        "sample_path": "/api/workflows",
-        "expected_status": [
-          200,
-          204
-        ]
-      }
-    },
-    {
-      "id": "workflow-detail",
-      "group": "workflow",
-      "path": "/api/workflows/<int:workflow_id>",
-      "methods": [
-        "GET",
-        "DELETE"
-      ],
-      "smoke": {
-        "method": "OPTIONS",
-        "sample_path": "/api/workflows/1",
-        "expected_status": [
-          200,
-          204
-        ]
-      }
-    },
-    {
-      "id": "workflow-execute",
-      "group": "workflow",
-      "path": "/api/workflow/execute",
-      "methods": [
-        "POST"
-      ],
-      "smoke": {
-        "method": "OPTIONS",
-        "sample_path": "/api/workflow/execute",
-        "expected_status": [
-          200,
-          204
-        ]
-      }
-    },
-    {
-      "id": "ai-chat",
-      "group": "ai",
-      "path": "/api/ai/chat",
-      "methods": [
-        "POST"
-      ],
-      "smoke": {
-        "method": "OPTIONS",
-        "sample_path": "/api/ai/chat",
-        "expected_status": [
-          200,
-          204
-        ]
-      }
-    },
-    {
-      "id": "ai-status",
-      "group": "ai",
-      "path": "/api/ai/status/<job_id>",
-      "methods": [
-        "GET"
-      ],
-      "smoke": {
-        "method": "OPTIONS",
-        "sample_path": "/api/ai/status/test-job",
-        "expected_status": [
-          200,
-          204
-        ]
-      }
-    },
-    {
-      "id": "ai-history",
-      "group": "ai",
-      "path": "/api/ai/history",
-      "methods": [
-        "GET",
-        "DELETE"
-      ],
-      "smoke": {
-        "method": "OPTIONS",
-        "sample_path": "/api/ai/history",
-        "expected_status": [
-          200,
-          204
-        ]
-      }
-    },
-    {
-      "id": "ai-upload",
-      "group": "ai",
-      "path": "/api/ai/upload",
-      "methods": [
-        "POST"
-      ],
-      "smoke": {
-        "method": "OPTIONS",
-        "sample_path": "/api/ai/upload",
-        "expected_status": [
-          200,
-          204
-        ]
-      }
-    },
-    {
-      "id": "imports-list-create",
-      "group": "import_export",
-      "path": "/api/imports",
-      "methods": [
-        "GET",
-        "POST"
-      ],
-      "smoke": {
-        "method": "OPTIONS",
-        "sample_path": "/api/imports",
-        "expected_status": [
-          200,
-          204
-        ]
-      }
-    },
-    {
-      "id": "imports-detail",
-      "group": "import_export",
-      "path": "/api/imports/<int:import_id>",
-      "methods": [
-        "GET"
-      ],
-      "smoke": {
-        "method": "OPTIONS",
-        "sample_path": "/api/imports/1",
-        "expected_status": [
-          200,
-          204
-        ]
-      }
-    },
-    {
-      "id": "exports-list-create",
-      "group": "import_export",
-      "path": "/api/exports",
-      "methods": [
-        "GET",
-        "POST"
-      ],
-      "smoke": {
-        "method": "OPTIONS",
-        "sample_path": "/api/exports",
-        "expected_status": [
-          200,
-          204
-        ]
-      }
-    },
-    {
-      "id": "exports-detail",
-      "group": "import_export",
-      "path": "/api/exports/<int:export_id>",
-      "methods": [
-        "GET"
-      ],
-      "smoke": {
-        "method": "OPTIONS",
-        "sample_path": "/api/exports/1",
-        "expected_status": [
-          200,
-          204
-        ]
-      }
-    },
-    {
       "id": "page-home",
-      "group": "pages",
       "path": "/",
       "methods": [
         "GET"
       ],
+      "group": "other",
       "smoke": {
         "method": "GET",
         "sample_path": "/",
         "expected_status": [
           200,
-          302
+          204,
+          302,
+          401,
+          403,
+          404
+        ]
+      }
+    },
+    {
+      "id": "admin-get",
+      "path": "/admin",
+      "methods": [
+        "GET"
+      ],
+      "group": "other",
+      "smoke": {
+        "method": "GET",
+        "sample_path": "/admin",
+        "expected_status": [
+          200,
+          204,
+          302,
+          401,
+          403,
+          404
+        ]
+      }
+    },
+    {
+      "id": "admin-analytics-get",
+      "path": "/admin/analytics",
+      "methods": [
+        "GET"
+      ],
+      "group": "other",
+      "smoke": {
+        "method": "GET",
+        "sample_path": "/admin/analytics",
+        "expected_status": [
+          200,
+          204,
+          302,
+          401,
+          403,
+          404
+        ]
+      }
+    },
+    {
+      "id": "admin-managers-get",
+      "path": "/admin/managers",
+      "methods": [
+        "GET"
+      ],
+      "group": "other",
+      "smoke": {
+        "method": "GET",
+        "sample_path": "/admin/managers",
+        "expected_status": [
+          200,
+          204,
+          302,
+          401,
+          403,
+          404
+        ]
+      }
+    },
+    {
+      "id": "admin-roles-get",
+      "path": "/admin/roles",
+      "methods": [
+        "GET"
+      ],
+      "group": "other",
+      "smoke": {
+        "method": "GET",
+        "sample_path": "/admin/roles",
+        "expected_status": [
+          200,
+          204,
+          302,
+          401,
+          403,
+          404
+        ]
+      }
+    },
+    {
+      "id": "admin-subscriptions-get",
+      "path": "/admin/subscriptions",
+      "methods": [
+        "GET"
+      ],
+      "group": "other",
+      "smoke": {
+        "method": "GET",
+        "sample_path": "/admin/subscriptions",
+        "expected_status": [
+          200,
+          204,
+          302,
+          401,
+          403,
+          404
+        ]
+      }
+    },
+    {
+      "id": "admin-workspace-get",
+      "path": "/admin/workspace",
+      "methods": [
+        "GET"
+      ],
+      "group": "other",
+      "smoke": {
+        "method": "GET",
+        "sample_path": "/admin/workspace",
+        "expected_status": [
+          200,
+          204,
+          302,
+          401,
+          403,
+          404
+        ]
+      }
+    },
+    {
+      "id": "api-admin-activity-get",
+      "path": "/api/admin/activity",
+      "methods": [
+        "GET"
+      ],
+      "group": "other",
+      "smoke": {
+        "method": "GET",
+        "sample_path": "/api/admin/activity",
+        "expected_status": [
+          200,
+          204,
+          302,
+          401,
+          403,
+          404
+        ]
+      }
+    },
+    {
+      "id": "api-admin-analytics-clear_cache-post",
+      "path": "/api/admin/analytics/clear_cache",
+      "methods": [
+        "POST"
+      ],
+      "group": "other",
+      "smoke": {
+        "method": "POST",
+        "sample_path": "/api/admin/analytics/clear_cache",
+        "expected_status": [
+          200,
+          204,
+          302,
+          401,
+          403,
+          404
+        ]
+      }
+    },
+    {
+      "id": "api-admin-analytics-data-get",
+      "path": "/api/admin/analytics/data",
+      "methods": [
+        "GET"
+      ],
+      "group": "other",
+      "smoke": {
+        "method": "GET",
+        "sample_path": "/api/admin/analytics/data",
+        "expected_status": [
+          200,
+          204,
+          302,
+          401,
+          403,
+          404
+        ]
+      }
+    },
+    {
+      "id": "api-admin-check-expired-subscriptions-post",
+      "path": "/api/admin/check-expired-subscriptions",
+      "methods": [
+        "POST"
+      ],
+      "group": "other",
+      "smoke": {
+        "method": "POST",
+        "sample_path": "/api/admin/check-expired-subscriptions",
+        "expected_status": [
+          200,
+          204,
+          302,
+          401,
+          403,
+          404
+        ]
+      }
+    },
+    {
+      "id": "api-admin-create-manager-post",
+      "path": "/api/admin/create-manager",
+      "methods": [
+        "POST"
+      ],
+      "group": "other",
+      "smoke": {
+        "method": "POST",
+        "sample_path": "/api/admin/create-manager",
+        "expected_status": [
+          200,
+          204,
+          302,
+          401,
+          403,
+          404
+        ]
+      }
+    },
+    {
+      "id": "api-admin-extend-subscription-post",
+      "path": "/api/admin/extend-subscription",
+      "methods": [
+        "POST"
+      ],
+      "group": "other",
+      "smoke": {
+        "method": "POST",
+        "sample_path": "/api/admin/extend-subscription",
+        "expected_status": [
+          200,
+          204,
+          302,
+          401,
+          403,
+          404
+        ]
+      }
+    },
+    {
+      "id": "api-admin-stats-get",
+      "path": "/api/admin/stats",
+      "methods": [
+        "GET"
+      ],
+      "group": "other",
+      "smoke": {
+        "method": "GET",
+        "sample_path": "/api/admin/stats",
+        "expected_status": [
+          200,
+          204,
+          302,
+          401,
+          403,
+          404
+        ]
+      }
+    },
+    {
+      "id": "api-admin-subscription-history-get",
+      "path": "/api/admin/subscription-history",
+      "methods": [
+        "GET"
+      ],
+      "group": "other",
+      "smoke": {
+        "method": "GET",
+        "sample_path": "/api/admin/subscription-history",
+        "expected_status": [
+          200,
+          204,
+          302,
+          401,
+          403,
+          404
+        ]
+      }
+    },
+    {
+      "id": "api-admin-subscription-auto-renew-post",
+      "path": "/api/admin/subscription/auto-renew",
+      "methods": [
+        "POST"
+      ],
+      "group": "other",
+      "smoke": {
+        "method": "POST",
+        "sample_path": "/api/admin/subscription/auto-renew",
+        "expected_status": [
+          200,
+          204,
+          302,
+          401,
+          403,
+          404
+        ]
+      }
+    },
+    {
+      "id": "api-admin-subscription-extend-post",
+      "path": "/api/admin/subscription/extend",
+      "methods": [
+        "POST"
+      ],
+      "group": "other",
+      "smoke": {
+        "method": "POST",
+        "sample_path": "/api/admin/subscription/extend",
+        "expected_status": [
+          200,
+          204,
+          302,
+          401,
+          403,
+          404
+        ]
+      }
+    },
+    {
+      "id": "api-admin-subscriptions-get",
+      "path": "/api/admin/subscriptions",
+      "methods": [
+        "GET"
+      ],
+      "group": "other",
+      "smoke": {
+        "method": "GET",
+        "sample_path": "/api/admin/subscriptions",
+        "expected_status": [
+          200,
+          204,
+          302,
+          401,
+          403,
+          404
+        ]
+      }
+    },
+    {
+      "id": "api-admin-users-get",
+      "path": "/api/admin/users",
+      "methods": [
+        "GET"
+      ],
+      "group": "other",
+      "smoke": {
+        "method": "GET",
+        "sample_path": "/api/admin/users",
+        "expected_status": [
+          200,
+          204,
+          302,
+          401,
+          403,
+          404
+        ]
+      }
+    },
+    {
+      "id": "api-admin-users-user_id-delete",
+      "path": "/api/admin/users/<int:user_id>",
+      "methods": [
+        "DELETE"
+      ],
+      "group": "other"
+    },
+    {
+      "id": "api-admin-users-demote-post",
+      "path": "/api/admin/users/demote",
+      "methods": [
+        "POST"
+      ],
+      "group": "other",
+      "smoke": {
+        "method": "POST",
+        "sample_path": "/api/admin/users/demote",
+        "expected_status": [
+          200,
+          204,
+          302,
+          401,
+          403,
+          404
+        ]
+      }
+    },
+    {
+      "id": "api-admin-users-promote-post",
+      "path": "/api/admin/users/promote",
+      "methods": [
+        "POST"
+      ],
+      "group": "other",
+      "smoke": {
+        "method": "POST",
+        "sample_path": "/api/admin/users/promote",
+        "expected_status": [
+          200,
+          204,
+          302,
+          401,
+          403,
+          404
+        ]
+      }
+    },
+    {
+      "id": "api-admin-wallet-pending-get",
+      "path": "/api/admin/wallet/pending",
+      "methods": [
+        "GET"
+      ],
+      "group": "other",
+      "smoke": {
+        "method": "GET",
+        "sample_path": "/api/admin/wallet/pending",
+        "expected_status": [
+          200,
+          204,
+          302,
+          401,
+          403,
+          404
+        ]
+      }
+    },
+    {
+      "id": "api-admin-wallet-pending-transaction_id-post",
+      "path": "/api/admin/wallet/pending/<int:transaction_id>",
+      "methods": [
+        "POST"
+      ],
+      "group": "other"
+    },
+    {
+      "id": "api-admin-wallet-withdraw-post",
+      "path": "/api/admin/wallet/withdraw",
+      "methods": [
+        "POST"
+      ],
+      "group": "other",
+      "smoke": {
+        "method": "POST",
+        "sample_path": "/api/admin/wallet/withdraw",
+        "expected_status": [
+          200,
+          204,
+          302,
+          401,
+          403,
+          404
+        ]
+      }
+    },
+    {
+      "id": "api-ai-chat-post",
+      "path": "/api/ai/chat",
+      "methods": [
+        "POST"
+      ],
+      "group": "ai",
+      "smoke": {
+        "method": "POST",
+        "sample_path": "/api/ai/chat",
+        "expected_status": [
+          200,
+          204,
+          302,
+          401,
+          403,
+          404
+        ]
+      }
+    },
+    {
+      "id": "api-ai-history-get",
+      "path": "/api/ai/history",
+      "methods": [
+        "GET"
+      ],
+      "group": "ai",
+      "smoke": {
+        "method": "GET",
+        "sample_path": "/api/ai/history",
+        "expected_status": [
+          200,
+          204,
+          302,
+          401,
+          403,
+          404
+        ]
+      }
+    },
+    {
+      "id": "api-ai-history-delete",
+      "path": "/api/ai/history",
+      "methods": [
+        "DELETE"
+      ],
+      "group": "ai",
+      "smoke": {
+        "method": "DELETE",
+        "sample_path": "/api/ai/history",
+        "expected_status": [
+          200,
+          204,
+          302,
+          401,
+          403,
+          404
+        ]
+      }
+    },
+    {
+      "id": "api-ai-status-job_id-get",
+      "path": "/api/ai/status/<job_id>",
+      "methods": [
+        "GET"
+      ],
+      "group": "ai"
+    },
+    {
+      "id": "api-ai-upload-post",
+      "path": "/api/ai/upload",
+      "methods": [
+        "POST"
+      ],
+      "group": "ai",
+      "smoke": {
+        "method": "POST",
+        "sample_path": "/api/ai/upload",
+        "expected_status": [
+          200,
+          204,
+          302,
+          401,
+          403,
+          404
+        ]
+      }
+    },
+    {
+      "id": "api-automations-get",
+      "path": "/api/automations",
+      "methods": [
+        "GET"
+      ],
+      "group": "other",
+      "smoke": {
+        "method": "GET",
+        "sample_path": "/api/automations",
+        "expected_status": [
+          200,
+          204,
+          302,
+          401,
+          403,
+          404
+        ]
+      }
+    },
+    {
+      "id": "api-automations-post",
+      "path": "/api/automations",
+      "methods": [
+        "POST"
+      ],
+      "group": "other",
+      "smoke": {
+        "method": "POST",
+        "sample_path": "/api/automations",
+        "expected_status": [
+          200,
+          204,
+          302,
+          401,
+          403,
+          404
+        ]
+      }
+    },
+    {
+      "id": "api-automations-automation_id-put",
+      "path": "/api/automations/<int:automation_id>",
+      "methods": [
+        "PUT"
+      ],
+      "group": "other"
+    },
+    {
+      "id": "api-automations-automation_id-delete",
+      "path": "/api/automations/<int:automation_id>",
+      "methods": [
+        "DELETE"
+      ],
+      "group": "other"
+    },
+    {
+      "id": "api-create-user-post",
+      "path": "/api/create-user",
+      "methods": [
+        "POST"
+      ],
+      "group": "other",
+      "smoke": {
+        "method": "POST",
+        "sample_path": "/api/create-user",
+        "expected_status": [
+          200,
+          204,
+          302,
+          401,
+          403,
+          404
+        ]
+      }
+    },
+    {
+      "id": "api-customers-get",
+      "path": "/api/customers",
+      "methods": [
+        "GET"
+      ],
+      "group": "other",
+      "smoke": {
+        "method": "GET",
+        "sample_path": "/api/customers",
+        "expected_status": [
+          200,
+          204,
+          302,
+          401,
+          403,
+          404
+        ]
+      }
+    },
+    {
+      "id": "api-customers-post",
+      "path": "/api/customers",
+      "methods": [
+        "POST"
+      ],
+      "group": "other",
+      "smoke": {
+        "method": "POST",
+        "sample_path": "/api/customers",
+        "expected_status": [
+          200,
+          204,
+          302,
+          401,
+          403,
+          404
+        ]
+      }
+    },
+    {
+      "id": "api-customers-customer_id-put",
+      "path": "/api/customers/<int:customer_id>",
+      "methods": [
+        "PUT"
+      ],
+      "group": "other"
+    },
+    {
+      "id": "api-customers-customer_id-delete",
+      "path": "/api/customers/<int:customer_id>",
+      "methods": [
+        "DELETE"
+      ],
+      "group": "other"
+    },
+    {
+      "id": "api-dashboard-stats-get",
+      "path": "/api/dashboard/stats",
+      "methods": [
+        "GET"
+      ],
+      "group": "other",
+      "smoke": {
+        "method": "GET",
+        "sample_path": "/api/dashboard/stats",
+        "expected_status": [
+          200,
+          204,
+          302,
+          401,
+          403,
+          404
+        ]
+      }
+    },
+    {
+      "id": "api-dl-detect-post",
+      "path": "/api/dl/detect",
+      "methods": [
+        "POST"
+      ],
+      "group": "other",
+      "smoke": {
+        "method": "POST",
+        "sample_path": "/api/dl/detect",
+        "expected_status": [
+          200,
+          204,
+          302,
+          401,
+          403,
+          404
+        ]
+      }
+    },
+    {
+      "id": "api-dl-forecast-post",
+      "path": "/api/dl/forecast",
+      "methods": [
+        "POST"
+      ],
+      "group": "other",
+      "smoke": {
+        "method": "POST",
+        "sample_path": "/api/dl/forecast",
+        "expected_status": [
+          200,
+          204,
+          302,
+          401,
+          403,
+          404
+        ]
+      }
+    },
+    {
+      "id": "api-exports-get",
+      "path": "/api/exports",
+      "methods": [
+        "GET"
+      ],
+      "group": "import_export",
+      "smoke": {
+        "method": "GET",
+        "sample_path": "/api/exports",
+        "expected_status": [
+          200,
+          204,
+          302,
+          401,
+          403,
+          404
+        ]
+      }
+    },
+    {
+      "id": "api-exports-post",
+      "path": "/api/exports",
+      "methods": [
+        "POST"
+      ],
+      "group": "import_export",
+      "smoke": {
+        "method": "POST",
+        "sample_path": "/api/exports",
+        "expected_status": [
+          200,
+          204,
+          302,
+          401,
+          403,
+          404
+        ]
+      }
+    },
+    {
+      "id": "api-exports-export_id-get",
+      "path": "/api/exports/<int:export_id>",
+      "methods": [
+        "GET"
+      ],
+      "group": "import_export"
+    },
+    {
+      "id": "api-google-files-get",
+      "path": "/api/google/files",
+      "methods": [
+        "GET"
+      ],
+      "group": "other",
+      "smoke": {
+        "method": "GET",
+        "sample_path": "/api/google/files",
+        "expected_status": [
+          200,
+          204,
+          302,
+          401,
+          403,
+          404
+        ]
+      }
+    },
+    {
+      "id": "api-imports-get",
+      "path": "/api/imports",
+      "methods": [
+        "GET"
+      ],
+      "group": "import_export",
+      "smoke": {
+        "method": "GET",
+        "sample_path": "/api/imports",
+        "expected_status": [
+          200,
+          204,
+          302,
+          401,
+          403,
+          404
+        ]
+      }
+    },
+    {
+      "id": "api-imports-post",
+      "path": "/api/imports",
+      "methods": [
+        "POST"
+      ],
+      "group": "import_export",
+      "smoke": {
+        "method": "POST",
+        "sample_path": "/api/imports",
+        "expected_status": [
+          200,
+          204,
+          302,
+          401,
+          403,
+          404
+        ]
+      }
+    },
+    {
+      "id": "api-imports-import_id-get",
+      "path": "/api/imports/<int:import_id>",
+      "methods": [
+        "GET"
+      ],
+      "group": "import_export"
+    },
+    {
+      "id": "api-imports-download-template-get",
+      "path": "/api/imports/download/template",
+      "methods": [
+        "GET"
+      ],
+      "group": "import_export",
+      "smoke": {
+        "method": "GET",
+        "sample_path": "/api/imports/download/template",
+        "expected_status": [
+          200,
+          204,
+          302,
+          401,
+          403,
+          404
+        ]
+      }
+    },
+    {
+      "id": "api-imports-upload-excel-post",
+      "path": "/api/imports/upload/excel",
+      "methods": [
+        "POST"
+      ],
+      "group": "import_export",
+      "smoke": {
+        "method": "POST",
+        "sample_path": "/api/imports/upload/excel",
+        "expected_status": [
+          200,
+          204,
+          302,
+          401,
+          403,
+          404
+        ]
+      }
+    },
+    {
+      "id": "api-items-item_id-put",
+      "path": "/api/items/<int:item_id>",
+      "methods": [
+        "PUT"
+      ],
+      "group": "other"
+    },
+    {
+      "id": "api-items-item_id-delete",
+      "path": "/api/items/<int:item_id>",
+      "methods": [
+        "DELETE"
+      ],
+      "group": "other"
+    },
+    {
+      "id": "api-manager-users-permissions-get",
+      "path": "/api/manager/users-permissions",
+      "methods": [
+        "GET"
+      ],
+      "group": "other",
+      "smoke": {
+        "method": "GET",
+        "sample_path": "/api/manager/users-permissions",
+        "expected_status": [
+          200,
+          204,
+          302,
+          401,
+          403,
+          404
+        ]
+      }
+    },
+    {
+      "id": "api-products-get",
+      "path": "/api/products",
+      "methods": [
+        "GET"
+      ],
+      "group": "other",
+      "smoke": {
+        "method": "GET",
+        "sample_path": "/api/products",
+        "expected_status": [
+          200,
+          204,
+          302,
+          401,
+          403,
+          404
+        ]
+      }
+    },
+    {
+      "id": "api-products-post",
+      "path": "/api/products",
+      "methods": [
+        "POST"
+      ],
+      "group": "other",
+      "smoke": {
+        "method": "POST",
+        "sample_path": "/api/products",
+        "expected_status": [
+          200,
+          204,
+          302,
+          401,
+          403,
+          404
+        ]
+      }
+    },
+    {
+      "id": "api-products-product_id-put",
+      "path": "/api/products/<int:product_id>",
+      "methods": [
+        "PUT"
+      ],
+      "group": "other"
+    },
+    {
+      "id": "api-products-product_id-delete",
+      "path": "/api/products/<int:product_id>",
+      "methods": [
+        "DELETE"
+      ],
+      "group": "other"
+    },
+    {
+      "id": "api-products-product_id-sales_history-get",
+      "path": "/api/products/<int:product_id>/sales_history",
+      "methods": [
+        "GET"
+      ],
+      "group": "other"
+    },
+    {
+      "id": "api-products-import-excel-post",
+      "path": "/api/products/import-excel",
+      "methods": [
+        "POST"
+      ],
+      "group": "import_export",
+      "smoke": {
+        "method": "POST",
+        "sample_path": "/api/products/import-excel",
+        "expected_status": [
+          200,
+          204,
+          302,
+          401,
+          403,
+          404
+        ]
+      }
+    },
+    {
+      "id": "api-products-import-excel-preview-post",
+      "path": "/api/products/import-excel/preview",
+      "methods": [
+        "POST"
+      ],
+      "group": "import_export",
+      "smoke": {
+        "method": "POST",
+        "sample_path": "/api/products/import-excel/preview",
+        "expected_status": [
+          200,
+          204,
+          302,
+          401,
+          403,
+          404
+        ]
+      }
+    },
+    {
+      "id": "api-products-search-get",
+      "path": "/api/products/search",
+      "methods": [
+        "GET"
+      ],
+      "group": "other",
+      "smoke": {
+        "method": "GET",
+        "sample_path": "/api/products/search",
+        "expected_status": [
+          200,
+          204,
+          302,
+          401,
+          403,
+          404
+        ]
+      }
+    },
+    {
+      "id": "api-reports-scheduled-get",
+      "path": "/api/reports/scheduled",
+      "methods": [
+        "GET"
+      ],
+      "group": "other",
+      "smoke": {
+        "method": "GET",
+        "sample_path": "/api/reports/scheduled",
+        "expected_status": [
+          200,
+          204,
+          302,
+          401,
+          403,
+          404
+        ]
+      }
+    },
+    {
+      "id": "api-reports-scheduled-post",
+      "path": "/api/reports/scheduled",
+      "methods": [
+        "POST"
+      ],
+      "group": "other",
+      "smoke": {
+        "method": "POST",
+        "sample_path": "/api/reports/scheduled",
+        "expected_status": [
+          200,
+          204,
+          302,
+          401,
+          403,
+          404
+        ]
+      }
+    },
+    {
+      "id": "api-reports-scheduled-report_id-delete",
+      "path": "/api/reports/scheduled/<int:report_id>",
+      "methods": [
+        "DELETE"
+      ],
+      "group": "other"
+    },
+    {
+      "id": "api-reports-stats-get",
+      "path": "/api/reports/stats",
+      "methods": [
+        "GET"
+      ],
+      "group": "other",
+      "smoke": {
+        "method": "GET",
+        "sample_path": "/api/reports/stats",
+        "expected_status": [
+          200,
+          204,
+          302,
+          401,
+          403,
+          404
+        ]
+      }
+    },
+    {
+      "id": "api-sales-create-post",
+      "path": "/api/sales/create",
+      "methods": [
+        "POST"
+      ],
+      "group": "other",
+      "smoke": {
+        "method": "POST",
+        "sample_path": "/api/sales/create",
+        "expected_status": [
+          200,
+          204,
+          302,
+          401,
+          403,
+          404
+        ]
+      }
+    },
+    {
+      "id": "api-sales-history-get",
+      "path": "/api/sales/history",
+      "methods": [
+        "GET"
+      ],
+      "group": "other",
+      "smoke": {
+        "method": "GET",
+        "sample_path": "/api/sales/history",
+        "expected_status": [
+          200,
+          204,
+          302,
+          401,
+          403,
+          404
+        ]
+      }
+    },
+    {
+      "id": "api-sales-history-sale_id-delete",
+      "path": "/api/sales/history/<int:sale_id>",
+      "methods": [
+        "DELETE"
+      ],
+      "group": "other"
+    },
+    {
+      "id": "api-scenarios-get",
+      "path": "/api/scenarios",
+      "methods": [
+        "GET"
+      ],
+      "group": "workflow",
+      "smoke": {
+        "method": "GET",
+        "sample_path": "/api/scenarios",
+        "expected_status": [
+          200,
+          204,
+          302,
+          401,
+          403,
+          404
+        ]
+      }
+    },
+    {
+      "id": "api-scenarios-post",
+      "path": "/api/scenarios",
+      "methods": [
+        "POST"
+      ],
+      "group": "workflow",
+      "smoke": {
+        "method": "POST",
+        "sample_path": "/api/scenarios",
+        "expected_status": [
+          200,
+          204,
+          302,
+          401,
+          403,
+          404
+        ]
+      }
+    },
+    {
+      "id": "api-scenarios-scenario_id-get",
+      "path": "/api/scenarios/<int:scenario_id>",
+      "methods": [
+        "GET"
+      ],
+      "group": "workflow"
+    },
+    {
+      "id": "api-scenarios-scenario_id-put",
+      "path": "/api/scenarios/<int:scenario_id>",
+      "methods": [
+        "PUT"
+      ],
+      "group": "workflow"
+    },
+    {
+      "id": "api-scenarios-scenario_id-delete",
+      "path": "/api/scenarios/<int:scenario_id>",
+      "methods": [
+        "DELETE"
+      ],
+      "group": "workflow"
+    },
+    {
+      "id": "api-session-get",
+      "path": "/api/session",
+      "methods": [
+        "GET"
+      ],
+      "group": "other",
+      "smoke": {
+        "method": "GET",
+        "sample_path": "/api/session",
+        "expected_status": [
+          200,
+          204,
+          302,
+          401,
+          403,
+          404
+        ]
+      }
+    },
+    {
+      "id": "api-settings-update-post",
+      "path": "/api/settings/update",
+      "methods": [
+        "POST"
+      ],
+      "group": "other",
+      "smoke": {
+        "method": "POST",
+        "sample_path": "/api/settings/update",
+        "expected_status": [
+          200,
+          204,
+          302,
+          401,
+          403,
+          404
+        ]
+      }
+    },
+    {
+      "id": "api-user-profile-post",
+      "path": "/api/user/profile",
+      "methods": [
+        "POST"
+      ],
+      "group": "other",
+      "smoke": {
+        "method": "POST",
+        "sample_path": "/api/user/profile",
+        "expected_status": [
+          200,
+          204,
+          302,
+          401,
+          403,
+          404
+        ]
+      }
+    },
+    {
+      "id": "api-user-subscription-auto-renew-post",
+      "path": "/api/user/subscription/auto-renew",
+      "methods": [
+        "POST"
+      ],
+      "group": "other",
+      "smoke": {
+        "method": "POST",
+        "sample_path": "/api/user/subscription/auto-renew",
+        "expected_status": [
+          200,
+          204,
+          302,
+          401,
+          403,
+          404
+        ]
+      }
+    },
+    {
+      "id": "api-user-subscription-upgrade-post",
+      "path": "/api/user/subscription/upgrade",
+      "methods": [
+        "POST"
+      ],
+      "group": "other",
+      "smoke": {
+        "method": "POST",
+        "sample_path": "/api/user/subscription/upgrade",
+        "expected_status": [
+          200,
+          204,
+          302,
+          401,
+          403,
+          404
+        ]
+      }
+    },
+    {
+      "id": "api-user-wallet-get",
+      "path": "/api/user/wallet",
+      "methods": [
+        "GET"
+      ],
+      "group": "other",
+      "smoke": {
+        "method": "GET",
+        "sample_path": "/api/user/wallet",
+        "expected_status": [
+          200,
+          204,
+          302,
+          401,
+          403,
+          404
+        ]
+      }
+    },
+    {
+      "id": "api-user-wallet-topup-post",
+      "path": "/api/user/wallet/topup",
+      "methods": [
+        "POST"
+      ],
+      "group": "other",
+      "smoke": {
+        "method": "POST",
+        "sample_path": "/api/user/wallet/topup",
+        "expected_status": [
+          200,
+          204,
+          302,
+          401,
+          403,
+          404
+        ]
+      }
+    },
+    {
+      "id": "api-users-get",
+      "path": "/api/users",
+      "methods": [
+        "GET"
+      ],
+      "group": "other",
+      "smoke": {
+        "method": "GET",
+        "sample_path": "/api/users",
+        "expected_status": [
+          200,
+          204,
+          302,
+          401,
+          403,
+          404
+        ]
+      }
+    },
+    {
+      "id": "api-users-user_id-delete",
+      "path": "/api/users/<int:user_id>",
+      "methods": [
+        "DELETE"
+      ],
+      "group": "other"
+    },
+    {
+      "id": "api-users-user_id-reset-password-post",
+      "path": "/api/users/<int:user_id>/reset-password",
+      "methods": [
+        "POST"
+      ],
+      "group": "other"
+    },
+    {
+      "id": "api-workflow-execute-post",
+      "path": "/api/workflow/execute",
+      "methods": [
+        "POST"
+      ],
+      "group": "workflow",
+      "smoke": {
+        "method": "POST",
+        "sample_path": "/api/workflow/execute",
+        "expected_status": [
+          200,
+          204,
+          302,
+          401,
+          403,
+          404
+        ]
+      }
+    },
+    {
+      "id": "api-workflow-upload_file-post",
+      "path": "/api/workflow/upload_file",
+      "methods": [
+        "POST"
+      ],
+      "group": "workflow",
+      "smoke": {
+        "method": "POST",
+        "sample_path": "/api/workflow/upload_file",
+        "expected_status": [
+          200,
+          204,
+          302,
+          401,
+          403,
+          404
+        ]
+      }
+    },
+    {
+      "id": "api-workflows-get",
+      "path": "/api/workflows",
+      "methods": [
+        "GET"
+      ],
+      "group": "workflow",
+      "smoke": {
+        "method": "GET",
+        "sample_path": "/api/workflows",
+        "expected_status": [
+          200,
+          204,
+          302,
+          401,
+          403,
+          404
+        ]
+      }
+    },
+    {
+      "id": "api-workflows-post",
+      "path": "/api/workflows",
+      "methods": [
+        "POST"
+      ],
+      "group": "workflow",
+      "smoke": {
+        "method": "POST",
+        "sample_path": "/api/workflows",
+        "expected_status": [
+          200,
+          204,
+          302,
+          401,
+          403,
+          404
+        ]
+      }
+    },
+    {
+      "id": "api-workflows-workflow_id-delete",
+      "path": "/api/workflows/<int:workflow_id>",
+      "methods": [
+        "DELETE"
+      ],
+      "group": "workflow"
+    },
+    {
+      "id": "api-workflows-workflow_id-get",
+      "path": "/api/workflows/<int:workflow_id>",
+      "methods": [
+        "GET"
+      ],
+      "group": "workflow"
+    },
+    {
+      "id": "api-workspace-post",
+      "path": "/api/workspace",
+      "methods": [
+        "POST"
+      ],
+      "group": "other",
+      "smoke": {
+        "method": "POST",
+        "sample_path": "/api/workspace",
+        "expected_status": [
+          200,
+          204,
+          302,
+          401,
+          403,
+          404
+        ]
+      }
+    },
+    {
+      "id": "api-workspace-workspace_id-items-get",
+      "path": "/api/workspace/<int:workspace_id>/items",
+      "methods": [
+        "GET"
+      ],
+      "group": "other"
+    },
+    {
+      "id": "api-workspace-workspace_id-items-post",
+      "path": "/api/workspace/<int:workspace_id>/items",
+      "methods": [
+        "POST"
+      ],
+      "group": "other"
+    },
+    {
+      "id": "api-workspaces-get",
+      "path": "/api/workspaces",
+      "methods": [
+        "GET"
+      ],
+      "group": "other",
+      "smoke": {
+        "method": "GET",
+        "sample_path": "/api/workspaces",
+        "expected_status": [
+          200,
+          204,
+          302,
+          401,
+          403,
+          404
+        ]
+      }
+    },
+    {
+      "id": "auth-connect-google-get",
+      "path": "/auth/connect/google",
+      "methods": [
+        "GET"
+      ],
+      "group": "other",
+      "smoke": {
+        "method": "GET",
+        "sample_path": "/auth/connect/google",
+        "expected_status": [
+          200,
+          204,
+          302,
+          401,
+          403,
+          404
+        ]
+      }
+    },
+    {
+      "id": "auth-google-callback-get",
+      "path": "/auth/google/callback",
+      "methods": [
+        "GET"
+      ],
+      "group": "other",
+      "smoke": {
+        "method": "GET",
+        "sample_path": "/auth/google/callback",
+        "expected_status": [
+          200,
+          204,
+          302,
+          401,
+          403,
+          404
+        ]
+      }
+    },
+    {
+      "id": "auth-login-google-get",
+      "path": "/auth/login/google",
+      "methods": [
+        "GET"
+      ],
+      "group": "other",
+      "smoke": {
+        "method": "GET",
+        "sample_path": "/auth/login/google",
+        "expected_status": [
+          200,
+          204,
+          302,
+          401,
+          403,
+          404
+        ]
+      }
+    },
+    {
+      "id": "auth-signin-get",
+      "path": "/auth/signin",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "group": "other",
+      "smoke": {
+        "method": "GET",
+        "sample_path": "/auth/signin",
+        "expected_status": [
+          200,
+          204,
+          302,
+          401,
+          403,
+          404
+        ]
+      }
+    },
+    {
+      "id": "auth-signup-get",
+      "path": "/auth/signup",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "group": "other",
+      "smoke": {
+        "method": "GET",
+        "sample_path": "/auth/signup",
+        "expected_status": [
+          200,
+          204,
+          302,
+          401,
+          403,
+          404
+        ]
+      }
+    },
+    {
+      "id": "customers-get",
+      "path": "/customers",
+      "methods": [
+        "GET"
+      ],
+      "group": "other",
+      "smoke": {
+        "method": "GET",
+        "sample_path": "/customers",
+        "expected_status": [
+          200,
+          204,
+          302,
+          401,
+          403,
+          404
         ]
       }
     },
     {
       "id": "page-dashboard",
-      "group": "pages",
       "path": "/dashboard",
       "methods": [
         "GET"
       ],
+      "group": "other",
       "smoke": {
         "method": "GET",
         "sample_path": "/dashboard",
         "expected_status": [
           200,
-          302
-        ]
-      }
-    },
-    {
-      "id": "page-imports",
-      "group": "pages",
-      "path": "/imports",
-      "methods": [
-        "GET"
-      ],
-      "smoke": {
-        "method": "GET",
-        "sample_path": "/imports",
-        "expected_status": [
-          200,
-          302
+          204,
+          302,
+          401,
+          403,
+          404
         ]
       }
     },
     {
       "id": "page-exports",
-      "group": "pages",
       "path": "/exports",
       "methods": [
         "GET"
       ],
+      "group": "import_export",
       "smoke": {
         "method": "GET",
         "sample_path": "/exports",
         "expected_status": [
           200,
-          302
+          204,
+          302,
+          401,
+          403,
+          404
+        ]
+      }
+    },
+    {
+      "id": "page-imports",
+      "path": "/imports",
+      "methods": [
+        "GET"
+      ],
+      "group": "import_export",
+      "smoke": {
+        "method": "GET",
+        "sample_path": "/imports",
+        "expected_status": [
+          200,
+          204,
+          302,
+          401,
+          403,
+          404
+        ]
+      }
+    },
+    {
+      "id": "logout-get",
+      "path": "/logout",
+      "methods": [
+        "GET"
+      ],
+      "group": "other",
+      "smoke": {
+        "method": "GET",
+        "sample_path": "/logout",
+        "expected_status": [
+          200,
+          204,
+          302,
+          401,
+          403,
+          404
+        ]
+      }
+    },
+    {
+      "id": "manager-create-user-get",
+      "path": "/manager/create-user",
+      "methods": [
+        "GET"
+      ],
+      "group": "other",
+      "smoke": {
+        "method": "GET",
+        "sample_path": "/manager/create-user",
+        "expected_status": [
+          200,
+          204,
+          302,
+          401,
+          403,
+          404
+        ]
+      }
+    },
+    {
+      "id": "products-get",
+      "path": "/products",
+      "methods": [
+        "GET"
+      ],
+      "group": "other",
+      "smoke": {
+        "method": "GET",
+        "sample_path": "/products",
+        "expected_status": [
+          200,
+          204,
+          302,
+          401,
+          403,
+          404
+        ]
+      }
+    },
+    {
+      "id": "sale-get",
+      "path": "/sale",
+      "methods": [
+        "GET"
+      ],
+      "group": "other",
+      "smoke": {
+        "method": "GET",
+        "sample_path": "/sale",
+        "expected_status": [
+          200,
+          204,
+          302,
+          401,
+          403,
+          404
+        ]
+      }
+    },
+    {
+      "id": "scenarios-get",
+      "path": "/scenarios",
+      "methods": [
+        "GET"
+      ],
+      "group": "workflow",
+      "smoke": {
+        "method": "GET",
+        "sample_path": "/scenarios",
+        "expected_status": [
+          200,
+          204,
+          302,
+          401,
+          403,
+          404
+        ]
+      }
+    },
+    {
+      "id": "se-auto-import-get",
+      "path": "/se/auto-import",
+      "methods": [
+        "GET"
+      ],
+      "group": "import_export",
+      "smoke": {
+        "method": "GET",
+        "sample_path": "/se/auto-import",
+        "expected_status": [
+          200,
+          204,
+          302,
+          401,
+          403,
+          404
+        ]
+      }
+    },
+    {
+      "id": "se-reports-get",
+      "path": "/se/reports",
+      "methods": [
+        "GET"
+      ],
+      "group": "other",
+      "smoke": {
+        "method": "GET",
+        "sample_path": "/se/reports",
+        "expected_status": [
+          200,
+          204,
+          302,
+          401,
+          403,
+          404
+        ]
+      }
+    },
+    {
+      "id": "settings-get",
+      "path": "/settings",
+      "methods": [
+        "GET"
+      ],
+      "group": "other",
+      "smoke": {
+        "method": "GET",
+        "sample_path": "/settings",
+        "expected_status": [
+          200,
+          204,
+          302,
+          401,
+          403,
+          404
+        ]
+      }
+    },
+    {
+      "id": "static-path:filename-get",
+      "path": "/static/<path:filename>",
+      "methods": [
+        "GET"
+      ],
+      "group": "other"
+    },
+    {
+      "id": "wallet-get",
+      "path": "/wallet",
+      "methods": [
+        "GET"
+      ],
+      "group": "other",
+      "smoke": {
+        "method": "GET",
+        "sample_path": "/wallet",
+        "expected_status": [
+          200,
+          204,
+          302,
+          401,
+          403,
+          404
+        ]
+      }
+    },
+    {
+      "id": "workspace-get",
+      "path": "/workspace",
+      "methods": [
+        "GET"
+      ],
+      "group": "other",
+      "smoke": {
+        "method": "GET",
+        "sample_path": "/workspace",
+        "expected_status": [
+          200,
+          204,
+          302,
+          401,
+          403,
+          404
+        ]
+      }
+    },
+    {
+      "id": "workspace-builder-get",
+      "path": "/workspace/builder",
+      "methods": [
+        "GET"
+      ],
+      "group": "other",
+      "smoke": {
+        "method": "GET",
+        "sample_path": "/workspace/builder",
+        "expected_status": [
+          200,
+          204,
+          302,
+          401,
+          403,
+          404
         ]
       }
     }

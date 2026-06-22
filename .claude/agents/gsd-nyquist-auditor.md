@@ -8,7 +8,8 @@ tools:
   - Bash
   - Glob
   - Grep
-color: "#8B5CF6"
+color: purple
+effort: low
 ---
 
 <role>

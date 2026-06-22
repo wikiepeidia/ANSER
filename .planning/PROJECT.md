@@ -1,72 +1,72 @@
-# ANSER — Automated Nimble Software Easing Relaxation
+# Project: ANSER
 
-## What This Is
-
-A Flask-based RPAaaS (Robotic Process Automation as a Service) platform built as a university group project (USTH GEN14). ANSER provides Smart Import, Smart Export, a drag-and-drop workflow builder, AI-assisted workflow generation, Google OAuth, and supporting wallet/subscription flows.
-
-The project is now in normal collaborative development. The active work is engineering-focused: stabilize the refactored backend, fix concrete bugs, and continue small incremental improvements with the team.
+ANSER (Automated Nimble Software Easing Relaxation) is an AI/ML-integrated automation platform designed for retail management and workflow automation. It combines OCR for invoice processing, LSTM-based forecasting, AI-driven chat agents, and a flexible drag-and-drop workflow engine to streamline business operations.
 
 ## Core Value
+To provide a unified, intelligent platform that automates repetitive retail tasks (invoicing, inventory, forecasting) through a modular and extensible architecture, enabling business owners to focus on strategic growth rather than manual data entry.
 
-Deliver a working workflow automation platform with clear module boundaries so the team can change it safely without turning `app.py` back into a monolith.
+## High-Level Goals
+1. **Intelligent Automation**: Automate invoice data entry using high-accuracy OCR and AI parsing.
+2. **Predictive Analytics**: Provide reliable inventory and sales forecasting using LSTM models.
+3. **Conversational Interface**: Enable users to manage operations through an AI agent chat interface.
+4. **Flexible Workflows**: Allow users to build custom automation DAGs (Directed Acyclic Graphs) connecting Google services, webhooks, and AI models.
+5. **Robust Foundations**: Maintain a stable, refactored backend that supports collaborative development and scalable integrations.
 
-## Current Milestone
+## Target Audience
+- Retail business owners and managers.
+- Internal operations teams seeking to automate document processing.
+- Developers building modular AI-integrated automation tools.
 
-### v3.1 Post-Refactor Stabilization and Collaborative Development
+## Success Metrics
+- **Accuracy**: >90% accuracy in automated invoice field extraction.
+- **Efficiency**: >50% reduction in time spent on manual inventory updates.
+- **Stability**: <1% error rate in scheduled workflow executions.
+- **Developer Velocity**: New features can be added via isolated service/route modules without impacting the core monolith.
 
-Goal:
-Use the completed v3.0 backend refactor as the baseline, keep the extracted route and service structure stable, and support normal bug-fix and incremental development work.
+## Current Milestone: v1.1 Tech Debt Completion
 
-## Validated Baseline
+**Goal:** Finish all outstanding TODO items — clear remaining circular import issues, fix the automation engine schema bug, clean up DL service logging, and polish code hygiene.
 
-- Google OAuth login/callback and session management are working.
-- AI chat with background task processing is working.
-- DL proxy integration for OCR/forecast endpoints is wired.
-- Wallet and subscription flows still exist after refactor.
-- Drag-and-drop workflow builder and workflow execution engine remain available.
-- `app.py` is reduced to bootstrap/composition responsibilities.
-- Domain route handlers were extracted into dedicated route modules.
-- High-risk business logic moved into explicit service boundaries.
-- Backend guardrails, coverage gate, and parity verification exist from v3.0.
+**Target features:**
+- Fix `app.py` module-level `create_app()`, create `wsgi.py`, remove `dl_client` sys.path hack and set `use_local=False`
+- Fix `automation_engine.py` schema mismatch (missing `suppliers` table and `import_price` column in SQLite)
+- Replace `print()` with `get_logger()` in `dl_client` and DL service; validate OCR end-to-end
+- Code hygiene: `analytics_service` logger/Config.GA_PROPERTY_ID, `google_integration` escape fix, `utils.py` tuple→named column
 
-## Active Focus
+### Completed Milestones
 
-- Keep `app.py` as a composition root and avoid reintroducing mixed responsibilities.
-- Fix reproduced bugs in auth, workflow, AI, Smart Import/Export, wallet, and DL integration flows.
-- Add focused regression tests around touched route and service slices.
-- Keep top-level planning and ownership docs aligned with the live codebase.
-- Support small branch-safe changes from teammates without breaking route contracts.
+#### Deadline Rush: Backend Cleanup (June 2026)
+Successfully resolved critical technical debt including circular imports, logic duplication in authentication, environment isolation, and implemented async task infrastructure (Redis/RQ) for performance.
 
-## Out of Scope
-
-- Historical academic delivery work. This is archived context only.
-- Major architecture rewrites beyond the completed v3.0 refactor.
-- Unrelated feature sprawl that ignores current route/service boundaries.
-- Forced infrastructure migrations with no concrete engineering need.
-
-## Context
-
-- v3.0 is the accepted engineering baseline.
-- Current work should start from a failing behavior, a narrow code path, or a clear maintenance/documentation task.
-- Multiple people may work in parallel, so route contracts and ownership boundaries should stay predictable.
-- Historical pre-refactor phases remain archived for traceability, but they are no longer the live planning frame.
-
-## Constraints
-
-- Scope: stabilization, bug fixes, documentation refresh, and incremental team work.
-- Compatibility: existing runtime behavior should remain stable unless a breaking change is discussed explicitly.
-- Branching: prefer isolated, reviewable changes that do not block parallel teammates.
-- Timeline: no demo-driven countdown; prioritize correctness and maintainability.
-
-## Key Decisions
-
-- v3.0 refactor is the accepted baseline.
-- Route/service boundaries stay the default pattern.
-- SQLite remains the default local data layer.
-- Historical academic-planning context is archived, not active.
+## Active Requirements
+- CIRC-01: Remove module-level `app = create_app()` from `app.py`
+- CIRC-02: Create `wsgi.py` entry point for gunicorn
+- CIRC-03: Remove `sys.path.insert` from `core/services/dl_client.py`; set `use_local=False` default
+- AUTO-01: Fix `automation_engine.py` to not reference non-existent `suppliers` table or `import_price` column
+- AUTO-02: Align SQLite schema (or automation logic) so low-stock and scheduled import run without exception
+- DL-01: Replace all `print()` in `dl_client.py` and `dl_service/` with `get_logger()`
+- DL-02: Validate OCR end-to-end (upload → detect → invoice_data JSON)
+- DL-03: Confirm `dl_service` starts independently via `python run_dl_service.py`
+- HYG-01: Fix `analytics_service.py` — logger, remove duplicate except, read `GA_PROPERTY_ID` from `Config`
+- HYG-02: Fix `google_integration.py` list_files single-quote escape
+- HYG-03: Fix `utils.py` `format_workspace_tree` — named column access instead of tuple index
 
 ## Evolution
 
-Update this document when the active milestone changes, when team workflow changes materially, or when the accepted engineering baseline drifts.
+This document evolves at phase transitions and milestone boundaries.
 
-Last updated: 2026-05-07 after top-level planning context refresh.
+**After each phase transition** (via `/gsd-transition`):
+1. Requirements invalidated? → Move to Out of Scope with reason
+2. Requirements validated? → Move to Validated with phase reference
+3. New requirements emerged? → Add to Active
+4. Decisions to log? → Add to Key Decisions
+5. "What This Is" still accurate? → Update if drifted
+
+**After each milestone** (via `/gsd-complete-milestone`):
+1. Full review of all sections
+2. Core Value check — still the right priority?
+3. Audit Out of Scope — reasons still valid?
+4. Update Context with current state
+
+---
+*Last updated: 2026-06-13 (v1.1 Tech Debt Completion milestone started)*

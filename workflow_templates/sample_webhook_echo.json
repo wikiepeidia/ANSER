@@ -1,0 +1,35 @@
+{
+  "name": "Sample 1 — Webhook Echo",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "echo",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "id": "sample-webhook-001",
+      "name": "Webhook POST /echo",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $input.first().json;\nconsole.log('[ECHO]', new Date().toISOString(), JSON.stringify(body));\nreturn [{ json: { status: 'ok', received: body, timestamp: new Date().toISOString() } }];"
+      },
+      "id": "sample-code-001",
+      "name": "Log and Return",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 300]
+    }
+  ],
+  "connections": {
+    "Webhook POST /echo": {
+      "main": [[{ "node": "Log and Return", "type": "main", "index": 0 }]]
+    }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" }
+}

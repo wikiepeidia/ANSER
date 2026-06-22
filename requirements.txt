@@ -1,0 +1,2 @@
+# Default requirements for the main web application
+-r requirements-base.txt

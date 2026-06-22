@@ -1,13 +1,12 @@
 ---
 name: gsd-framework-selector
-description: Presents an interactive decision matrix to surface the right AI/LLM framework for the user's specific use case. Produces a scored recommendation with rationale. Spawned by /gsd-ai-integration-phase and /gsd-select-framework orchestrators.
+description: Presents an interactive decision matrix to surface the right AI/LLM framework for the user's specific use case. Produces a scored recommendation with rationale. Spawned by /gsd:ai-integration-phase and /gsd-select-framework orchestrators.
 tools:
   - read_file
   - run_shell_command
   - search_file_content
   - glob
   - google_web_search
-  - ask_user
 ---
 
 <role>
@@ -16,7 +15,7 @@ Run a ≤6-question interview, score frameworks, return a ranked recommendation 
 </role>
 
 <required_reading>
-Read `C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.gemini/get-shit-done/references/ai-frameworks.md` before asking questions. This is your decision matrix.
+Read `C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.gemini/gsd-core/references/ai-frameworks.md` before asking questions. This is your decision matrix.
 </required_reading>
 
 <project_context>
@@ -28,10 +27,10 @@ Read found files to extract: existing AI libraries, model providers, language, t
 </project_context>
 
 <interview>
-Use a single AskUserQuestion call with ≤ 6 questions. Skip what the codebase scan or upstream CONTEXT.md already answers.
+Use a single conversational prompting call with ≤ 6 questions. Skip what the codebase scan or upstream CONTEXT.md already answers.
 
 ```
-AskUserQuestion([
+conversational prompting([
   {
     question: "What type of AI system are you building?",
     header: "System Type",
@@ -156,7 +155,7 @@ Display to user:
 
 <success_criteria>
 - [ ] Codebase scanned for existing framework signals
-- [ ] Interview completed (≤ 6 questions, single AskUserQuestion call)
+- [ ] Interview completed (≤ 6 questions, single conversational prompting call)
 - [ ] Hard constraints applied to eliminate incompatible frameworks
 - [ ] Primary recommendation with clear rationale
 - [ ] Alternative identified

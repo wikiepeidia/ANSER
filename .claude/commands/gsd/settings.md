@@ -1,11 +1,12 @@
 ---
-name: gsd:settings
+name: gsd-settings
 description: Configure GSD workflow toggles and model profile
 allowed-tools:
   - Read
   - Write
   - Bash
   - AskUserQuestion
+requires: [quick]
 ---
 
 <objective>
@@ -20,7 +21,7 @@ Routes to the settings workflow which handles:
 </objective>
 
 <execution_context>
-@C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.claude/get-shit-done/workflows/settings.md
+@C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.claude/gsd-core/workflows/settings.md
 </execution_context>
 
 <process>

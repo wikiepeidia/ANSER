@@ -1,5 +1,5 @@
 ---
-name: gsd:explore
+name: gsd-explore
 description: Socratic ideation and idea routing — think through ideas before committing to plans
 allowed-tools:
   - Read
@@ -19,7 +19,7 @@ Accepts an optional topic argument: `/gsd-explore authentication strategy`
 </objective>
 
 <execution_context>
-@C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.claude/get-shit-done/workflows/explore.md
+@C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.claude/gsd-core/workflows/explore.md
 </execution_context>
 
 <process>

@@ -11,7 +11,6 @@ logger = get_logger(__name__)
 
 auth_bp = Blueprint('auth', __name__)
 
-
 @auth_bp.route('/signin', methods=['GET', 'POST'])
 @limiter.limit("5 per minute", methods=['POST'], error_message="Quá nhiều lần thử đăng nhập. Vui lòng thử lại sau.")
 def signin():
@@ -30,18 +29,17 @@ def signin():
                 )
                 logger.info("Login: %s role=%s", user.email, user.role)
                 
-                # The crucial fix: Sync Flask-Login with your custom AuthManager session check!
+                # Sync Flask-Login with custom AuthManager session check
                 login_user(user, remember=True)
-                session['user_id'] = user.id  # <-- THIS WAS MISSING
+                session['user_id'] = user.id  
                 session.permanent = True
                 
                 db_manager.log_activity(user.id, 'Login', f'User {user.email} logged in', request.remote_addr)
                 flash('Đăng nhập thành công!', 'success')
                 
-                # Use standard fallback redirects to avoid Blueprint naming errors
                 if user.role == 'admin':
-                    return redirect('/admin') # Try explicit path if url_for fails
-                return redirect('/workspace') # Try explicit path if url_for fails
+                    return redirect(url_for('pages.admin_dashboard'))
+                return redirect(url_for('pages.dashboard'))
                 
             flash('Email hoặc mật khẩu không đúng!', 'error')
         except Exception as e:
@@ -49,7 +47,6 @@ def signin():
             flash('Đã xảy ra lỗi không mong muốn. Vui lòng thử lại sau.', 'error')
     
     return render_template('signin.html')
-
 
 @auth_bp.route('/signup', methods=['GET', 'POST'])
 @limiter.limit("10 per hour", methods=['POST'], error_message="Quá nhiều lần đăng ký từ địa chỉ này. Vui lòng thử lại sau.")
@@ -67,7 +64,6 @@ def signup():
         
         if success:
             try:
-                # Use a raw DB query fallback here just in case get_user_by_email isn't robust
                 conn = db_manager.get_connection()
                 c = conn.cursor()
                 c.execute('SELECT id FROM users WHERE email = ?', (email,))
@@ -85,10 +81,9 @@ def signup():
         flash(message, 'error')
     return render_template('signup.html')
 
-
 @auth_bp.route('/logout')
 def logout():
-    """Added a proper logout route to clear the session cleanly."""
+    """Proper logout route to clear the session cleanly."""
     if 'user_id' in session:
         db_manager.log_activity(session['user_id'], 'Logout', 'User logged out', request.remote_addr)
     session.pop('user_id', None)

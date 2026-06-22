@@ -1,7 +1,7 @@
 """Inventory transaction blueprint routes extracted from app.py."""
 
-from flask import Blueprint, jsonify, request, send_file
-from flask_login import login_required
+from flask import Blueprint, jsonify, request, send_file, current_app
+from flask_login import current_user, login_required
 from werkzeug.utils import secure_filename
 
 from core.services import inventory_tx_service
@@ -14,18 +14,38 @@ logger = get_logger(__name__)
 inventory_bp = Blueprint("inventory", __name__)
 
 
-def _app_module():
-    """Lazy app module import to avoid circular imports at module load."""
-    import app as app_module
+def _notify_n8n_order(order_type, data, user_email):
+    """Fire-and-forget: notify n8n when import/export is created."""
+    import os
+    import threading
+    import requests
 
-    return app_module
+    discord_url = os.environ.get('DISCORD_WEBHOOK_URL', '')
+    if not discord_url:
+        return
+
+    def _send():
+        try:
+            payload = {
+                'type': order_type,
+                'items': data.get('items', []),
+                'notes': data.get('notes', ''),
+                'user': user_email,
+                'discord_url': discord_url,
+            }
+            requests.post('http://localhost:5678/webhook/new-order',
+                          json=payload, timeout=10)
+        except Exception:
+            pass
+
+    threading.Thread(target=_send, daemon=True).start()
 
 
 @inventory_bp.route('/api/imports', methods=['GET'])
 @login_required
 def api_get_imports():
     """Get all import transactions."""
-    conn = _app_module().db_manager.get_connection()
+    conn = current_app.extensions['database'].get_connection()
     c = conn.cursor()
     c.execute(
         'SELECT id, code, supplier_name, total_amount, notes, status, created_by, created_at'
@@ -53,11 +73,11 @@ def api_get_imports():
 def api_create_import():
     """Create a new import transaction."""
     data = request.get_json(silent=True) or {}
-    app_module = _app_module()
-    conn = app_module.db_manager.get_connection()
+    conn = current_app.extensions['database'].get_connection()
 
     try:
-        result = inventory_tx_service.create_import_transaction(conn, app_module.current_user.id, data)
+        result = inventory_tx_service.create_import_transaction(conn, current_user.id, data)
+        _notify_n8n_order('import', data, current_user.email)
         return jsonify({
             'success': True,
             'message': result['message'],
@@ -79,7 +99,7 @@ def api_create_import():
 @login_required
 def api_get_import_details(import_id):
     """Get import transaction details."""
-    conn = _app_module().db_manager.get_connection()
+    conn = current_app.extensions['database'].get_connection()
 
     try:
         result = inventory_tx_service.get_import_transaction_details(conn, import_id)
@@ -126,7 +146,7 @@ def api_upload_excel_import():
         if not result['success']:
             return jsonify({'success': False, 'error': result.get('error', 'Failed to parse Excel file')}), 400
         
-        logger.info(f"User {_app_module().current_user.id} uploaded Excel file with {result['row_count']} items")
+        logger.info(f"User {current_user.id} uploaded Excel file with {result['row_count']} items")
         
         return jsonify({
             'success': True,
@@ -162,7 +182,7 @@ def api_download_import_template():
 @login_required
 def api_get_exports():
     """Get all export transactions."""
-    conn = _app_module().db_manager.get_connection()
+    conn = current_app.extensions['database'].get_connection()
     c = conn.cursor()
     c.execute(
         'SELECT e.id, e.code, e.customer_id, e.total_amount, e.notes, e.status,'
@@ -194,16 +214,16 @@ def api_get_exports():
 def api_create_export():
     """Create a new export transaction."""
     data = request.get_json(silent=True) or {}
-    app_module = _app_module()
-    conn = app_module.db_manager.get_connection()
+    conn = current_app.extensions['database'].get_connection()
 
     try:
         result = inventory_tx_service.create_export_transaction(
             conn,
-            app_module.current_user.id,
+            current_user.id,
             data,
-            app_module.automation_engine,
+            current_app.extensions['automation_engine'],
         )
+        _notify_n8n_order('export', data, current_user.email)
         return jsonify({'success': True, 'message': result['message'], 'id': result['id']})
     except ServiceValidationError as e:
         return jsonify({'success': False, 'message': str(e)}), 400
@@ -219,7 +239,7 @@ def api_create_export():
 @login_required
 def api_get_export_details(export_id):
     """Get export transaction details."""
-    conn = _app_module().db_manager.get_connection()
+    conn = current_app.extensions['database'].get_connection()
 
     try:
         result = inventory_tx_service.get_export_transaction_details(conn, export_id)

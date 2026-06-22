@@ -1,0 +1,41 @@
+# ==================================================
+# Machine Learning & Deep Learning dependencies
+# ==================================================
+
+# AI / Deep Learning Core
+torch
+tensorflow
+transformers
+accelerate
+bitsandbytes
+protobuf
+sentencepiece
+sentence-transformers
+
+# OCR & Image Processing
+easyocr
+pytesseract
+opencv-python-headless>=4.5.0
+Pillow
+paddlepaddle>=2.4.0
+paddleocr>=2.6.0
+ultralytics
+
+# Vision & Model Utilities
+timm
+einops
+
+# RAG / Vector Database
+chromadb
+
+# File & Document Parsers
+pypdf
+python-docx
+
+# Search / Crawling / Utils
+ddgs
+addict
+easydict
+
+# Data Science (ML specific)
+scikit-learn
