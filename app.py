@@ -2,6 +2,20 @@ import os
 import sys
 import threading
 from datetime import timedelta
+import os
+from dotenv import load_dotenv
+# Force Python to read the .env file!
+load_dotenv()
+
+from flask import Flask, jsonify, redirect, request, flash, url_for
+# ... the rest of your imports ...
+
+app = Flask(__name__)
+
+# Try to get the key from .env, but if it fails, use this hardcoded fallback
+app.secret_key = os.environ.get('SECRET_KEY', 'my_super_secret_dev_key_123_fallback')
+
+# ... the rest of your app.py code stays the same ...
 
 from flask import Flask, jsonify, redirect, request, flash, url_for
 from werkzeug.middleware.proxy_fix import ProxyFix

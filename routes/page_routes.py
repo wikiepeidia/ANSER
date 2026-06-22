@@ -10,7 +10,6 @@ logger = get_logger(__name__)
 
 page_bp = Blueprint('pages', __name__)
 
-
 def _settings_config():
     return {
         'store': {
@@ -36,44 +35,28 @@ def _settings_config():
         },
     }
 
+# ---------------------------------------------------------------------------
+# PUBLIC ROUTES (No @login_required)
+# ---------------------------------------------------------------------------
 
 @page_bp.route('/')
 def index():
-    if current_user.is_authenticated:
-        return redirect(url_for('pages.workspace'))
-    return render_template('signin.html')
+    # This serves the public GSAP Landing Page to everyone
+    return render_template('index.html')
 
+# ---------------------------------------------------------------------------
+# PROTECTED DASHBOARD ROUTES
+# ---------------------------------------------------------------------------
 
-@page_bp.route('/admin')
-@login_required
-def admin_dashboard():
-    if not hasattr(current_user, 'role') or current_user.role != 'admin':
-        flash('You do not have permission to access this page', 'error')
-        return redirect(url_for('pages.workspace'))
-    db_type = 'PostgreSQL' if getattr(Config, 'USE_POSTGRES', False) else 'SQLite'
-    return render_template('admin_dashboard.html', user=current_user, db_type=db_type)
-
-
-@page_bp.route('/admin/workspace')
-@login_required
-def admin_workspace():
-    if not hasattr(current_user, 'role') or current_user.role != 'admin':
-        flash('You do not have permission to access this page', 'error')
-        return redirect(url_for('pages.workspace'))
-    return redirect(url_for('pages.admin_dashboard'))
-
+@page_bp.route('/workspace')
+@login_required # Fixed! Using standard Flask-Login protection
+def workspace():
+    return render_template('workspace.html', user=current_user)
 
 @page_bp.route('/dashboard')
 @login_required
 def dashboard():
     return render_template('dashboard.html', user=current_user)
-
-
-@page_bp.route('/workspace')
-@login_required
-def workspace():
-    return render_template('workspace.html', user=current_user)
-
 
 @page_bp.route('/settings')
 @login_required
@@ -90,6 +73,66 @@ def settings():
         logger.error("Error fetching settings: %s", e, exc_info=True)
     return render_template('settings.html', user=current_user, settings_sections=config, all_settings=all_settings)
 
+@page_bp.route('/customers')
+@login_required
+def customers():
+    return render_template('customers.html', user=current_user)
+
+@page_bp.route('/products')
+@login_required
+def products():
+    return render_template('products.html', user=current_user)
+
+@page_bp.route('/imports')
+@login_required
+def imports():
+    return render_template('imports.html', user=current_user)
+
+@page_bp.route('/exports')
+@login_required
+def exports():
+    return render_template('exports.html', user=current_user)
+
+@page_bp.route('/se/auto-import')
+@login_required
+def se_auto_import():
+    return render_template('se_auto_import.html', user=current_user)
+
+@page_bp.route('/se/reports')
+@login_required
+def se_reports():
+    return render_template('se_reports.html', user=current_user)
+
+@page_bp.route('/scenarios')
+@login_required
+def scenarios():
+    return render_template('scenarios.html', user=current_user)
+
+@page_bp.route('/workspace/builder')
+@login_required
+def workspace_builder():
+    return render_template('workspace_builder.html', user=current_user)
+
+# ---------------------------------------------------------------------------
+# PROTECTED ADMIN ROUTES
+# ---------------------------------------------------------------------------
+
+@page_bp.route('/admin')
+@login_required
+def admin_dashboard():
+    if not hasattr(current_user, 'role') or current_user.role != 'admin':
+        flash('You do not have permission to access this page', 'error')
+        return redirect(url_for('pages.workspace'))
+    db_type = 'PostgreSQL' if getattr(Config, 'USE_POSTGRES', False) else 'SQLite'
+    return render_template('admin_dashboard.html', user=current_user, db_type=db_type)
+
+@page_bp.route('/admin/workspace')
+@login_required
+def admin_workspace():
+    if not hasattr(current_user, 'role') or current_user.role != 'admin':
+        flash('You do not have permission to access this page', 'error')
+        return redirect(url_for('pages.workspace'))
+    return redirect(url_for('pages.admin_dashboard'))
 
 @page_bp.route('/manager/create-user')
 @login_required
@@ -99,7 +142,6 @@ def create_user_account():
         return redirect(url_for('pages.workspace'))
     return render_template('create_user_account.html', user=current_user)
 
-
 @page_bp.route('/admin/managers')
 @login_required
 def admin_managers():
@@ -107,7 +149,6 @@ def admin_managers():
         flash('You do not have permission to access this page', 'error')
         return redirect(url_for('pages.workspace'))
     return render_template('admin_managers.html', user=current_user)
-
 
 @page_bp.route('/admin/roles')
 @login_required
@@ -117,7 +158,6 @@ def admin_roles():
         return redirect(url_for('pages.workspace'))
     return render_template('admin_roles.html', user=current_user)
 
-
 @page_bp.route('/admin/analytics')
 @login_required
 def admin_analytics():
@@ -126,7 +166,6 @@ def admin_analytics():
         return redirect(url_for('pages.workspace'))
     return render_template('admin_analytics.html', user=current_user, analytics_data=None)
 
-
 @page_bp.route('/admin/subscriptions')
 @login_required
 def admin_subscriptions():
@@ -134,51 +173,3 @@ def admin_subscriptions():
         flash('You do not have permission to access this page', 'error')
         return redirect(url_for('pages.workspace'))
     return render_template('admin_subscriptions.html', user=current_user)
-
-
-@page_bp.route('/customers')
-@login_required
-def customers():
-    return render_template('customers.html', user=current_user)
-
-
-@page_bp.route('/products')
-@login_required
-def products():
-    return render_template('products.html', user=current_user)
-
-
-@page_bp.route('/imports')
-@login_required
-def imports():
-    return render_template('imports.html', user=current_user)
-
-
-@page_bp.route('/exports')
-@login_required
-def exports():
-    return render_template('exports.html', user=current_user)
-
-
-@page_bp.route('/se/auto-import')
-@login_required
-def se_auto_import():
-    return render_template('se_auto_import.html', user=current_user)
-
-
-@page_bp.route('/se/reports')
-@login_required
-def se_reports():
-    return render_template('se_reports.html', user=current_user)
-
-
-@page_bp.route('/scenarios')
-@login_required
-def scenarios():
-    return render_template('scenarios.html', user=current_user)
-
-
-@page_bp.route('/workspace/builder')
-@login_required
-def workspace_builder():
-    return render_template('workspace_builder.html', user=current_user)
