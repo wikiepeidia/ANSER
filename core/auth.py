@@ -26,20 +26,14 @@ class AuthManager:
         try:
             c = conn.cursor()
             
-            # ─────────────────────────────────────────────────────────────
-            # DEFENSIVE: Try to select password_version; if column doesn't
-            # exist (PostgreSQL missing column), fall back to legacy sha256
-            # ─────────────────────────────────────────────────────────────
+            # Try to fetch with password_version, fall back if column is missing
             try:
-                c.execute('SELECT id, email, name, avatar, role, google_token, password, password_version FROM users WHERE email = ?',
-                         (email,))
+                c.execute('SELECT id, email, name, avatar, role, google_token, password, password_version FROM users WHERE email = ?', (email,))
                 user = c.fetchone()
                 password_version_available = True
             except Exception as schema_err:
-                # Column doesn't exist — fetch without it and assume version 0
                 logger.warning("password_version column not found (schema error: %s) — falling back to legacy mode", schema_err)
-                c.execute('SELECT id, email, name, avatar, role, google_token, password FROM users WHERE email = ?',
-                         (email,))
+                c.execute('SELECT id, email, name, avatar, role, google_token, password FROM users WHERE email = ?', (email,))
                 user = c.fetchone()
                 password_version_available = False
 
@@ -47,16 +41,23 @@ class AuthManager:
                 return None
 
             stored_pw = user['password']
-            password_version = 0 if not password_version_available else (user['password_version'] or 0)
 
-            # Old sha256 hashes have version 0, bcrypt hashes have version 1
-            if password_version == 0:
-                # Legacy sha256 hash — verify then rehash on next login
+            # ─────────────────────────────────────────────────────────────
+            # THE FIX: Look at the actual hash string to determine the algorithm!
+            # Bcrypt hashes always start with $2b$ or $2a$
+            # ─────────────────────────────────────────────────────────────
+            if stored_pw and stored_pw.startswith('$2'):
+                # Modern bcrypt hash
+                if not AuthManager.verify_password(password, stored_pw):
+                    return None
+            else:
+                # Legacy sha256 hash
                 import hashlib
                 legacy_hash = hashlib.sha256(password.encode()).hexdigest()
                 if legacy_hash != stored_pw:
                     return None
-                # Rehash with bcrypt for next login (if column exists)
+                
+                # Upgrade to bcrypt if possible
                 if password_version_available:
                     new_hash = AuthManager.hash_password(password)
                     try:
@@ -65,10 +66,6 @@ class AuthManager:
                     except Exception as update_err:
                         logger.warning("Failed to update password_version: %s", update_err)
                         conn.rollback()
-            else:
-                # Modern bcrypt hash
-                if not AuthManager.verify_password(password, stored_pw):
-                    return None
 
             return {
                 'id': user['id'],
@@ -96,9 +93,6 @@ class AuthManager:
             has_password_version = 'password_version' in columns
             has_manager_id = 'manager_id' in columns
 
-            # ─────────────────────────────────────────────────────────────
-            # DEFENSIVE: Build INSERT based on available columns
-            # ─────────────────────────────────────────────────────────────
             if has_password_version and has_manager_id:
                 c.execute('INSERT INTO users (name, email, password, password_version, role, manager_id) VALUES (?, ?, ?, 1, ?, ?)',
                          (full_name, email, hashed_pw, role, manager_id))
@@ -122,25 +116,10 @@ class AuthManager:
             
             conn.commit()
             
-            # Send Welcome Email
+            # Send Welcome Email (Fail silently if it doesn't work locally)
             try:
                 subject = "Chào mừng bạn đến với Workflow Automation!"
-                body = f"""Xin chào {first_name},
-
-Chào mừng bạn đến với Workflow Automation for Retail! Chúng tôi rất vui khi có bạn tham gia.
-
-Tài khoản của bạn đã được tạo thành công. Bạn có thể bắt đầu xây dựng các quy trình tự động hóa thông minh cho doanh nghiệp bán lẻ của mình.
-
-Bắt đầu khám phá không gian làm việc cá nhân của bạn:
-- Quản lý khách hàng
-- Theo dõi hàng tồn kho
-- Tự động hóa tác vụ
-
-Nếu bạn có bất kỳ câu hỏi nào, vui lòng liên hệ với chúng tôi.
-
-Trân trọng,
-Đội ngũ Workflow Automation
-"""
+                body = f"""Xin chào {first_name},\n\nChào mừng bạn đến với Workflow Automation for Retail! Chúng tôi rất vui khi có bạn tham gia.\n\nTài khoản của bạn đã được tạo thành công."""
                 send_email(email, subject, body)
             except Exception as e:
                 logger.warning("Failed to send welcome email to %s: %s", email, e)
@@ -193,7 +172,6 @@ Trân trọng,
         @wraps(f)
         def decorated_function(*args, **kwargs):
             if 'user_id' not in session:
-                # If this is an API call, return a JSON 401 instead of HTML redirect
                 try:
                     path = request.path or ''
                     is_api = path.startswith('/api/')
@@ -204,7 +182,7 @@ Trân trọng,
 
                 if is_api or is_accepting_json or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
                     return jsonify({'success': False, 'message': 'Chưa đăng nhập'}), 401
-                # fallback to redirect for normal page loads
+                
                 flash('Vui lòng đăng nhập để tiếp tục', 'error')
                 return redirect(url_for('auth.signin'))
             return f(*args, **kwargs)
@@ -212,7 +190,6 @@ Trân trọng,
     
     @staticmethod
     def permission_required(permission_type):
-        """Decorator to check if user has specific permission"""
         def decorator(f):
             @wraps(f)
             def decorated_function(*args, **kwargs):
@@ -222,11 +199,9 @@ Trân trọng,
                 if not current_user.is_authenticated:
                     return jsonify({'success': False, 'message': 'Chưa đăng nhập'}), 401
                 
-                # Admin and Manager have all permissions
                 if hasattr(current_user, 'role') and current_user.role in ['admin', 'manager']:
                     return f(*args, **kwargs)
                 
-                # Kiểm tra permission trong database
                 db = current_app.extensions.get('database')
                 if db and db.has_permission(current_user.id, permission_type):
                     return f(*args, **kwargs)
