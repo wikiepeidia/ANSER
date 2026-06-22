@@ -290,5 +290,6 @@ if __name__ == '__main__':
     if not db_manager.use_postgres:
         db_manager.init_database()
     threading.Thread(target=run_n8n, daemon=True).start()
-    app.run(host='127.0.0.1', port=5000, debug=False, use_reloader=False,
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='127.0.0.1', port=port, debug=False, use_reloader=False,
             load_dotenv=False, threaded=True)
