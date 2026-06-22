@@ -1,219 +1,191 @@
 # External Integrations
 
-**Analysis Date:** 2026-05-16
+**Analysis Date:** 2026-06-08
 
-## Google OAuth 2.0 (Sign-In & API Access)
+## APIs & External Services
 
-**What it does:** Enables Google sign-in ("Login with Google") and grants per-user OAuth tokens for Drive, Sheets, Docs, Gmail, and Analytics. Tokens are stored in the `users.google_token` DB column and passed to Google API calls on each user request.
+**Google Identity:**
+- Google OAuth/OpenID - Used for login, account connection, and profile bootstrap.
+  - Implementation: `app.py` registers the Authlib Google client; `routes/google_routes.py` handles `/auth/login/google`, `/auth/connect/google`, and `/auth/google/callback`.
+  - SDK/Client: `authlib`, `oauthlib`, `google-auth-oauthlib`.
+  - Auth: `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, or OAuth client data in `secrets/google_oauth.json`.
 
-**Credential source:**
-- `GOOGLE_CLIENT_ID` — env var, read in `app.py` (`_configure_oauth()`, line 31)
-- `GOOGLE_CLIENT_SECRET` — env var, read in `app.py` (`_configure_oauth()`, line 32)
+**Google Workspace APIs:**
+- Google Drive - Lists Google files for workflow builder pickers.
+  - Implementation: `core/google_integration.py` `list_files()` and `routes/google_routes.py` `/api/google/files`.
+  - SDK/Client: `google-api-python-client`.
+  - Auth: User OAuth token stored as `users.google_token` through `routes/google_routes.py`; token files are also referenced at `secrets/token.json` and `secrets/token adminmail.json`.
+- Google Sheets - Reads and writes spreadsheet ranges for workflow nodes.
+  - Implementation: `core/google_integration.py` `read_sheet()` and `write_sheet()`; node execution in `core/workflow_engine.py`.
+  - SDK/Client: `google-api-python-client`.
+  - Auth: User OAuth token from `users.google_token` and scopes registered in `app.py`.
+- Google Docs - Reads and appends document content for workflow nodes.
+  - Implementation: `core/google_integration.py` `read_doc()` and `write_doc()`; node execution in `core/workflow_engine.py`.
+  - SDK/Client: `google-api-python-client`.
+  - Auth: User OAuth token from `users.google_token`.
+- Gmail API - Sends welcome emails and workflow emails.
+  - Implementation: `core/google_integration.py` `send_email()` and `core/auth.py` registration welcome email.
+  - SDK/Client: `google-api-python-client`.
+  - Auth: User OAuth token or admin token file `secrets/token adminmail.json`.
 
-**SDK:** `authlib` (`OAuth` class) + `google-auth-oauthlib` for token refresh
+**Analytics:**
+- Google Analytics 4 Data API - Provides admin analytics data and optional frontend tracking.
+  - Implementation: `core/services/analytics_service.py`, `core/google_integration.py` `get_analytics_report()`, and `routes/operations_routes.py` `/api/admin/analytics/data`.
+  - SDK/Client: `google-analytics-data` with `google.oauth2.service_account`.
+  - Auth: `GA_PROPERTY_ID` plus service-account file `secrets/analytics_service_account.json`.
+- Google Tag Manager / gtag.js - Browser tracking script is loaded from Google.
+  - Implementation: `ui/templates/base.html`.
+  - SDK/Client: Browser script `https://www.googletagmanager.com/gtag/js`.
+  - Auth: Measurement ID is embedded in `ui/templates/base.html`; server-side GA4 reads `GA_PROPERTY_ID` from `core/config.py`.
 
-**Code files:**
-- `app.py` — OAuth client registered via `authlib.integrations.flask_client.OAuth`; client stored in `app.extensions['google']`
-- `routes/google_routes.py` — Redirect (`/auth/login/google`), callback (`/auth/google/callback`), connect (`/auth/connect/google`)
-- `core/google_integration.py` — `get_google_service()` builds per-user `google.oauth2.credentials.Credentials` from stored token; `_load_client_credentials()` also falls back to reading `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET` from env
+**AI / LLM Services:**
+- Hugging Face-compatible AI HTTP service - Main app sends chat and upload requests to a remote or tunneled AI service.
+  - Implementation: `routes/ai_routes.py` calls `${HF_BASE_URL}/chat` and `${HF_BASE_URL}/upload`.
+  - SDK/Client: `requests`.
+  - Auth: `HF_BASE_URL`; optional bearer token `HF_TOKEN`.
+- Local FastAPI AI agent service - Provides `/chat`, `/upload`, and `/ocr` endpoints used by the main app and OCR fallback.
+  - Implementation: `ai_agent_service/src/server.py`; runtime model config in `ai_agent_service/src/core/engine.py`.
+  - SDK/Client: `fastapi`, `uvicorn`, `vllm`, `transformers`, `torch`.
+  - Auth: No endpoint authentication detected in `ai_agent_service/src/server.py`; exposure tooling is in `ai_agent_service/launch_demo.py`.
+- Qwen model downloads/runtime - AI agent loads Qwen model IDs from Hugging Face model identifiers.
+  - Implementation: `ai_agent_service/src/core/config.py` and `ai_agent_service/src/core/engine.py`.
+  - SDK/Client: `vllm`, `transformers`, `Qwen2VLForConditionalGeneration`, `AutoProcessor`.
+  - Auth: No Hugging Face token variable detected in `ai_agent_service/src/core/config.py`.
 
-**Scopes requested:**
-```
-openid email profile
-drive.readonly  drive.file
-spreadsheets    documents
-gmail.send      analytics.readonly
-```
+**OCR & Forecast Services:**
+- Deep Learning service - Main app proxies invoice detection and forecasting to a local or remote DL service.
+  - Implementation: `core/services/dl_client.py`, `routes/dl_routes.py`, `dl_service/model_app.py`, `dl_service/api/model1_routes.py`, and `dl_service/api/model2_routes.py`.
+  - SDK/Client: Local Python imports by default; remote mode uses `requests`.
+  - Auth: `DL_SERVICE_URL` and `DL_SERVICE_TIMEOUT`; no auth header detected in `core/services/dl_client.py`.
+- Brain VLM OCR endpoint - DL OCR attempts `${HF_BASE_URL}/ocr` before local OCR fallbacks.
+  - Implementation: `dl_service/services/ocr_service.py`.
+  - SDK/Client: `requests`.
+  - Auth: `HF_BASE_URL`; no token header detected for `/ocr` in `dl_service/services/ocr_service.py`.
+
+**Workflow Webhooks:**
+- Make/custom webhook, Slack webhook, Discord webhook - Workflow nodes send user-configured HTTP requests.
+  - Implementation: `core/make_integration.py` and node handling in `core/workflow_engine.py`.
+  - SDK/Client: `requests`.
+  - Auth: User-provided webhook URLs in workflow node config; no separate secret variable detected.
+
+**Search & Public Data:**
+- DuckDuckGo Search - AI agent retrieves market/search snippets.
+  - Implementation: `ai_agent_service/src/core/external_data.py` and `ai_agent_service/src/agents/researcher.py`.
+  - SDK/Client: `duckduckgo-search` / `DDGS`.
+  - Auth: None detected.
+- Open-Meteo - AI agent fetches weather forecasts.
+  - Implementation: `ai_agent_service/src/core/external_data.py`.
+  - SDK/Client: `requests`.
+  - Auth: None detected.
+
+**Archive/Offline AI Tools:**
+- DeepSeek/OpenAI-compatible APIs - Archive dataset refinement tools instantiate the OpenAI client against DeepSeek endpoints.
+  - Implementation: `ai_agent_service/src/archive/tools/refine_knowledge.py`, `ai_agent_service/src/archive/tools/refine_charts.py`, and `ai_agent_service/src/archive/tools/smart_filter.py`.
+  - SDK/Client: `openai` import detected in archive scripts; `openai` is not declared in `ai_agent_service/requirements.txt`.
+  - Auth: Script-local API key handling detected by imports/search; no runtime env var documented in `README.md`.
+
+**Frontend CDNs:**
+- Bootstrap, Axios, Marked, Chart.js, Font Awesome, Google Fonts - UI dependencies load from jsDelivr, cdnjs, and Google Fonts.
+  - Implementation: `ui/templates/base.html`, `ui/templates/admin_analytics.html`, and `templates/index.html`.
+  - SDK/Client: Browser scripts/stylesheets.
+  - Auth: None.
+
+## Data Storage
+
+**Databases:**
+- Main application database - SQLite by default, optional PostgreSQL/Neon.
+  - Connection: `DATABASE_PATH`, `POSTGRES_URL`, `USE_POSTGRES` in `core/config.py`.
+  - Client: `sqlite3` and `psycopg2.pool.ThreadedConnectionPool` in `core/db/connection.py`; Alembic/SQLAlchemy migration connection in `migrations/env.py`.
+  - Migration helper: `package/migrate_to_postgres.py` migrates SQLite rows to PostgreSQL and references `secrets/database.json`.
+- DL service database - SQLite invoice/forecast history.
+  - Connection: `dl_service/database/invoices.db` derived in `dl_service/utils/database.py`.
+  - Client: `sqlite3` in `dl_service/utils/database.py`.
+- AI agent memory database - SQLAlchemy connection with Postgres-compatible URLs or in-memory SQLite fallback.
+  - Connection: `DATABASE_URL` in `ai_agent_service/src/core/config.py`.
+  - Client: `SQLAlchemy` in `ai_agent_service/src/core/memory.py` and `ai_agent_service/src/core/saas_api.py`.
+- Vector database - Persistent Chroma vector store for agent RAG.
+  - Connection: `./data/vector_db` default in `ai_agent_service/src/core/knowledge.py`; repo data is present under `ai_agent_service/data/vector_db/`.
+  - Client: `chromadb.PersistentClient` in `ai_agent_service/src/core/knowledge.py`.
+
+**File Storage:**
+- Local uploads - Main app writes workflow uploads under `uploads/` through `routes/workflow_routes.py`.
+- DL uploads/models/data - DL paths are configured in `dl_service/config.py` for `dl_service/uploads/`, `dl_service/saved_models/`, and `dl_service/data/`.
+- AI job state - Chat jobs are stored as JSON files under `jobs/` by `routes/ai_routes.py`.
+- AI agent datasets and workflows - Local files live in `ai_agent_service/src/data/` and `ai_agent_service/my_workflows/`.
+- Secrets/config files - `secrets/` exists and contains integration credential files; contents were not read.
+
+**Caching:**
+- Google Analytics cache - `core/services/analytics_service.py` reads and writes `secrets/ga_cache.json`; `routes/operations_routes.py` can clear it.
+- Chroma persistence - `ai_agent_service/src/core/knowledge.py` persists vector data in `ai_agent_service/data/vector_db/`.
+- Redis or distributed cache: Not detected in `package/requirements.txt`, `core/`, `routes/`, or `ai_agent_service/`.
+
+## Authentication & Identity
+
+**Auth Provider:**
+- Custom email/password auth plus Google OAuth.
+  - Implementation: Password auth in `core/auth.py`; Flask-Login setup in `core/extensions.py` and `app.py`; Google OAuth in `app.py` and `routes/google_routes.py`.
+  - Password hashing: `bcrypt` in `core/auth.py`; legacy SHA-256 migration-on-login logic also exists in `core/auth.py`.
+  - Session auth: Flask session and Flask-Login cookies configured in `app.py`.
+  - OAuth scopes: Drive, Sheets, Docs, Gmail, and Analytics scopes are registered in `app.py`.
+
+## Monitoring & Observability
+
+**Error Tracking:**
+- External error tracking: None detected in `package/requirements.txt`, `requirements-dev.txt`, `core/`, or `routes/`.
+
+**Logs:**
+- App logging helper - `core/logger.py` defines structured logging utilities for main app modules.
+- DL logging helper - `dl_service/utils/logger.py` is used by DL API routes such as `dl_service/api/model1_routes.py`.
+- Console output - `app.py`, `routes/ai_routes.py`, `core/services/analytics_service.py`, and AI agent modules emit `print()` output for runtime status.
+
+## CI/CD & Deployment
+
+**Hosting:**
+- Not detected in repo config. No `Dockerfile`, `Procfile`, `runtime.txt`, or platform-specific deployment manifest was found.
+- Main app expects local Flask execution from `app.py`; DL service expects local Flask execution from `dl_service/model_app.py`; AI service expects Uvicorn/ngrok execution from `ai_agent_service/launch_demo.py` and `ai_agent_service/src/server.py`.
+
+**CI Pipeline:**
+- None detected. `.github/` contains repository metadata and GSD assets, but `.github/workflows/` was not detected.
+
+## Environment Configuration
+
+**Required env vars:**
+- `SECRET_KEY` - Main Flask secret in `app.py` and `core/config.py`; production raises when the default sentinel is used.
+- `FLASK_ENV` - Enables development OAuth transport behavior in `app.py` and is documented in `README.md`.
+- `POSTGRES_URL` - PostgreSQL/Neon database URL in `core/config.py`, `migrations/env.py`, and `package/migrate_to_postgres.py`.
+- `USE_POSTGRES` - Forces PostgreSQL mode in `core/config.py`.
+- `DATABASE_PATH` - SQLite database path in `core/config.py`.
+- `DATABASE_URL` - AI agent SQLAlchemy DB URL in `ai_agent_service/src/core/config.py`.
+- `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` - Google OAuth credentials in `app.py`, `core/google_integration.py`, and `README.md`.
+- `GA_PROPERTY_ID`, `GA_CACHE_LIFETIME_SECONDS` - Google Analytics config in `core/config.py` and `core/services/analytics_service.py`.
+- `HF_BASE_URL`, `HF_TOKEN` - AI chat/upload service config in `routes/ai_routes.py`; `HF_BASE_URL` also configures OCR brain fallback in `dl_service/services/ocr_service.py`.
+- `DL_SERVICE_URL`, `DL_SERVICE_TIMEOUT` - Remote DL service config in `core/services/dl_client.py`.
+- `SITE_DOMAIN`, `BASE_URL` - Public URL/domain values in `core/config.py` and template context in `app.py`.
+- `LAYOUT_WEIGHTS_PATH`, `LAYOUT_INFER_DEVICE` - Layout detector config in `dl_service/config.py`.
+- `PADDLE_OCR_USE_GPU`, `PADDLE_OCR_DEVICE`, `PADDLE_OCR_LANG` - PaddleOCR config in `dl_service/services/ocr_service.py`.
+
+**Secrets location:**
+- `.env` and `.env.example` exist at repo root and were not read.
+- `secrets/analytics_service_account.json` - Google Analytics service account path referenced in `core/config.py` and `core/services/analytics_service.py`.
+- `secrets/google_oauth.json` - OAuth client fallback referenced in `core/google_integration.py`.
+- `secrets/token.json` and `secrets/token adminmail.json` - Google OAuth token paths referenced in `core/google_integration.py`.
+- `secrets/database.json` - PostgreSQL URL fallback referenced in `package/migrate_to_postgres.py`.
+- `secrets/ga_cache.json` - Analytics cache referenced in `core/services/analytics_service.py` and `routes/operations_routes.py`.
+
+## Webhooks & Callbacks
+
+**Incoming:**
+- Google OAuth callback - `/auth/google/callback` in `routes/google_routes.py`.
+- Internal workflow execution - `/api/workflow/execute` in `routes/workflow_routes.py` executes saved workflow graph data.
+- Public webhook receiver: Not detected. `webhook_trigger` appears as a workflow node type in `static/js/workspace_builder.js`, but no Flask route accepts third-party webhook callbacks.
+
+**Outgoing:**
+- Make/custom webhooks - `core/workflow_engine.py` invokes `core/make_integration.py` for `make_webhook` nodes.
+- Slack webhooks - `core/workflow_engine.py` sends text payloads for `slack_notify` nodes.
+- Discord webhooks - `core/workflow_engine.py` sends content payloads for `discord_notify` nodes.
+- Google API callbacks/requests - `core/google_integration.py` calls Drive, Sheets, Docs, Gmail, and GA APIs.
+- AI/DL HTTP calls - `routes/ai_routes.py`, `core/services/dl_client.py`, and `dl_service/services/ocr_service.py` call configured AI/DL service URLs.
 
 ---
 
-## Google Drive API (v3)
-
-**What it does:** Lists and reads files from a user's Google Drive. Used as a workflow node source and for reading documents into the AI pipeline.
-
-**Credential source:** Per-user OAuth token (stored in DB; see Google OAuth above). Falls back to `secrets/token adminmail.json` if present.
-
-**SDK:** `google-api-python-client` (`build('drive', 'v3', ...)`)
-
-**Code files:**
-- `core/google_integration.py` — `list_files()`, `get_google_service('drive', 'v3', token_info)`
-- `core/workflow_engine.py` — `read_sheet` / `read_doc` workflow nodes call `google_integration` functions
-
----
-
-## Google Sheets API (v4)
-
-**What it does:** Reads and writes spreadsheet data as workflow node inputs/outputs (e.g. importing sales data, writing forecast results).
-
-**Credential source:** Per-user OAuth token.
-
-**SDK:** `google-api-python-client` (`build('sheets', 'v4', ...)`)
-
-**Code files:**
-- `core/google_integration.py` — `read_sheet()`, `write_sheet()` with smart sheet-name auto-detection retry
-- `core/workflow_engine.py` — `read_sheet` and `write_sheet` workflow node types
-
----
-
-## Google Docs API (v1)
-
-**What it does:** Reads document text and appends content to Google Docs as a workflow output step.
-
-**Credential source:** Per-user OAuth token.
-
-**SDK:** `google-api-python-client` (`build('docs', 'v1', ...)`)
-
-**Code files:**
-- `core/google_integration.py` — `read_doc()`, `write_doc()`
-- `core/workflow_engine.py` — `read_doc` and `write_doc` node types
-
----
-
-## Gmail API (v1)
-
-**What it does:** Sends transactional emails (workflow notifications, welcome mail, report delivery) from an admin Gmail account.
-
-**Credential source (two paths):**
-1. Per-user OAuth token (for user-initiated sends via workflow)
-2. `secrets/token adminmail.json` — pre-authorized OAuth token for the admin sender account; regenerated via `secrets/generate token for welcome mail.py`
-
-**SDK:** `google-api-python-client` (`build('gmail', 'v1', ...)`)
-
-**Code files:**
-- `core/google_integration.py` — `send_email()`, `get_google_service('gmail', 'v1', token_info)`; prefers `ADMIN_TOKEN_FILE` when it exists (line 119)
-- `core/workflow_engine.py` — `gmail_send` workflow node type
-
----
-
-## Google Analytics 4 (Data API v1beta)
-
-**What it does:** Fetches active users and page-view metrics for the admin analytics dashboard. Results are cached locally in `secrets/ga_cache.json` to reduce API calls.
-
-**Credential source:**
-- `secrets/analytics_service_account.json` — Google service account JSON key (cannot be flattened to env var); path set via `Config.GA_SERVICE_ACCOUNT_FILE`
-- `GA_PROPERTY_ID` — numeric GA4 Property ID, env var (default `517047582` in `core/config.py`)
-- `GA_CACHE_LIFETIME_SECONDS` — env var (default `3600`)
-
-**SDK:** `google-analytics-data` (`BetaAnalyticsDataClient`)
-
-**Code files:**
-- `core/google_integration.py` — `get_analytics_report(property_id)` sets `GOOGLE_APPLICATION_CREDENTIALS` env var and calls `BetaAnalyticsDataClient`
-- `core/services/analytics_service.py` — `AnalyticsService` class; instantiates `BetaAnalyticsDataClient` with `service_account.Credentials.from_service_account_file()`; includes cache and mock fallback
-- `core/config.py` — `GA_PROPERTY_ID`, `GA_SERVICE_ACCOUNT_FILE`, `GA_ENABLE_CACHING`, `GA_CACHE_LIFETIME_SECONDS`
-
----
-
-## HuggingFace / ngrok AI Agent Service
-
-**What it does:** The main Flask app posts user chat messages to a remote AI agent endpoint (hosted on HuggingFace Spaces or exposed via ngrok). The agent processes the message and returns a text response. The connection uses Bearer token auth.
-
-**Credential source:**
-- `HF_BASE_URL` — base URL of the AI agent endpoint (e.g. `https://xxx.ngrok-free.dev`); read via `os.environ.get('HF_BASE_URL')`
-- `HF_TOKEN` — HuggingFace API token for Bearer auth; read via `os.environ.get('HF_TOKEN')`
-
-**Protocol:** HTTP POST to `{HF_BASE_URL}/chat` with JSON body `{user_id, store_id, message}`; header `Authorization: Bearer {HF_TOKEN}`, `ngrok-skip-browser-warning: true`
-
-**Code files:**
-- `routes/ai_routes.py` — `background_ai_task()` (lines 56–76) builds the request and posts to `HF_BASE_URL/chat`
-- `dl_service/services/ocr_service.py` — `_get_brain_url()` reads `HF_BASE_URL` to optionally offload OCR interpretation to the AI agent
-
----
-
-## Neon / PostgreSQL (Cloud Database)
-
-**What it does:** Production database backend. When `POSTGRES_URL` is set, the app connects to a managed PostgreSQL instance (Neon recommended) instead of the local SQLite file.
-
-**Credential source:**
-- `POSTGRES_URL` — full connection string (e.g. `postgresql://user:pass@host/db?sslmode=require`); read in `core/config.py` line 16
-
-**Driver:** `psycopg2` (`psycopg2.connect(Config.POSTGRES_URL)`)
-
-**Code files:**
-- `core/config.py` — `POSTGRES_URL`, `USE_POSTGRES` derived flag
-- `core/database.py` — `Database.get_connection()` (line 96): branches on `self.use_postgres`; uses `PGShimCursor`/`PGShimConnection` to normalize `?` → `%s` and inject `RETURNING id` for INSERT last-row-id
-- `core/extensions.py` — `db_manager = Database()` singleton used throughout
-
-**SQLite fallback:** `group_project_ai_ml.db` (project root); used when `POSTGRES_URL` is absent.
-
----
-
-## Make.com / Generic Webhooks
-
-**What it does:** Workflow engine node that triggers arbitrary HTTP webhooks (Make.com scenarios, custom APIs) with configurable method and JSON payload.
-
-**Credential source:** Webhook URLs are stored per-workflow in the database (user-configured in the workflow canvas UI). No dedicated env var.
-
-**Code files:**
-- `core/make_integration.py` — `trigger_webhook(url, method, payload)` — raw `requests.post/get`
-- `core/workflow_engine.py` — `make_webhook` node type (line 267), `slack_notify` node (line 290), `discord_notify` node (line 316); all call `trigger_webhook()`
-
----
-
-## Slack Webhook Integration
-
-**What it does:** Workflow node that sends a message to a Slack channel via an Incoming Webhook URL.
-
-**Credential source:** Webhook URL stored per-workflow in DB (user-configured). No dedicated env var.
-
-**Code files:**
-- `core/workflow_engine.py` — `slack_notify` node type (lines 290–314); calls `trigger_webhook(url, "POST", {"text": message})`
-
----
-
-## Discord Webhook Integration
-
-**What it does:** Workflow node that sends a message to a Discord channel via a Webhook URL.
-
-**Credential source:** Webhook URL stored per-workflow in DB (user-configured). No dedicated env var.
-
-**Code files:**
-- `core/workflow_engine.py` — `discord_notify` node type (lines 316–340); calls `trigger_webhook(url, "POST", {"content": message})`
-
----
-
-## Deep Learning Service (Internal Microservice)
-
-**What it does:** Separate Flask process running on port 5001 that exposes OCR, invoice detection (YOLO + PaddleOCR), and LSTM sales forecasting endpoints. The main app communicates with it via `DLClient`.
-
-**Credential source:**
-- `DL_SERVICE_URL` — env var (default `http://localhost:5001`)
-- `DL_SERVICE_TIMEOUT` — env var (default `30` seconds)
-- `LAYOUT_WEIGHTS_PATH` — env var override for YOLO weights path
-- `LAYOUT_INFER_DEVICE` — env var (`cpu`/`cuda`/`auto`)
-
-**Code files:**
-- `core/services/dl_client.py` — `DLClient` class; local-import path (direct Python imports) or remote HTTP path
-- `dl_service/model_app.py` — Flask app serving `/api/model1/detect`, `/api/model2/forecast`, `/api/ocr/`, `/api/history`
-- `dl_service/config.py` — reads `LAYOUT_WEIGHTS_PATH`, `LAYOUT_INFER_DEVICE` from env
-- `run_dl_service.py` — process launcher for the DL service
-
----
-
-## Environment Configuration Summary
-
-**File to copy and fill:** `.env.example` → `.env` (gitignored)
-
-| Env Var | Service | Required |
-|---------|---------|----------|
-| `POSTGRES_URL` | Neon PostgreSQL | No (SQLite fallback) |
-| `GOOGLE_CLIENT_ID` | Google OAuth | Yes for OAuth login |
-| `GOOGLE_CLIENT_SECRET` | Google OAuth | Yes for OAuth login |
-| `HF_BASE_URL` | AI Agent (HuggingFace/ngrok) | Yes for AI chat |
-| `HF_TOKEN` | AI Agent | Yes if endpoint is protected |
-| `SECRET_KEY` | Flask sessions | Yes (always set in prod) |
-| `GA_PROPERTY_ID` | Google Analytics 4 | No (has default) |
-| `GA_CACHE_LIFETIME_SECONDS` | Google Analytics 4 | No (default 3600) |
-| `DL_SERVICE_URL` | DL microservice | No (default localhost:5001) |
-| `DL_SERVICE_TIMEOUT` | DL microservice | No (default 30s) |
-| `LAYOUT_WEIGHTS_PATH` | YOLO layout detector | No (default path in dl_service) |
-| `LAYOUT_INFER_DEVICE` | YOLO inference | No (default auto) |
-
-**JSON files still required in `secrets/`:**
-| File | Service | Notes |
-|------|---------|-------|
-| `secrets/analytics_service_account.json` | Google Analytics 4 | Service account key; not committable |
-| `secrets/token adminmail.json` | Gmail (admin sender) | OAuth token; regenerate via `secrets/generate token for welcome mail.py` |
-
----
-
-*Integration audit: 2026-05-16*
+*Integration audit: 2026-06-08*

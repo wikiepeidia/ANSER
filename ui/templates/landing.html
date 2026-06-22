@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 <!-- Main Landing Container -->
 <main class="landing-container">
     
@@ -29,3 +30,346 @@
     <!-- Future sections will go here... -->
 
 </main>
+=======
+{% extends 'base.html' %}
+
+{% block title %}ANSER — Nền tảng AI/ML quản lý bán lẻ thông minh{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/landing_page.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/animations.css') }}">
+{% endblock %}
+
+{% block body_class %}landing-page{% endblock %}
+
+{% block content %}
+
+<!-- ══════════════ HEADER ══════════════ -->
+<header class="header">
+    <div class="header__container">
+        <a href="{{ url_for('pages.landing') }}" class="header__logo">
+            <i class="fas fa-brain"></i>
+            <span>ANSER</span>
+        </a>
+        <nav class="header__nav">
+            <ul class="header__nav-list">
+                <li class="header__nav-item"><a href="{{ url_for('pages.landing') }}" class="header__nav-link">Trang
+                        chủ</a></li>
+                <li class="header__nav-item"><a href="#features" class="header__nav-link">Tính năng</a></li>
+                <li class="header__nav-item"><a href="#about" class="header__nav-link">Về chúng tôi</a></li>
+                <li class="header__nav-item"><a href="#contact" class="header__nav-link" id="contact-link">Liên hệ</a>
+                </li>
+                <li class="header__nav-item">
+                    <button id="landing-theme-toggle" class="theme-toggle-btn" aria-label="Đổi giao diện">
+                        <i id="theme-icon" class="fas fa-moon"></i>
+                    </button>
+                </li>
+                <li class="header__nav-item"><a href="{{ url_for('auth.signin') }}" class="btn btn-primary">Đăng
+                        nhập</a></li>
+            </ul>
+        </nav>
+    </div>
+</header>
+
+<!-- ══════════════ HERO ══════════════ -->
+<section class="hero">
+    <div class="hero-orb hero-orb-1"></div>
+    <div class="hero-orb hero-orb-2"></div>
+    <div class="hero-container">
+        <div class="hero-content">
+            <h1>Hệ Thống Quản Lý Doanh Nghiệp<span class="hero-cursor"></span></h1>
+            <p>Tự động hóa hóa đơn bằng OCR, dự báo doanh thu với LSTM và điều phối công việc qua AI Agent — tất cả
+                trong một nền tảng.</p>
+            <div class="hero-actions">
+                <a href="{{ url_for('auth.signup') }}" class="btn btn-primary">
+                    <i class="fas fa-rocket"></i> Dùng thử miễn phí
+                </a>
+                <a href="#features" class="btn btn-secondary">
+                    <i class="fas fa-play-circle"></i> Xem demo
+                </a>
+            </div>
+            <div class="hero-features">
+                <div class="feature-item">
+                    <div class="feature-icon"><i class="fas fa-file-invoice"></i></div>
+                    <span>Tự động đọc hóa đơn OCR</span>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon"><i class="fas fa-chart-line"></i></div>
+                    <span>Dự báo doanh thu LSTM</span>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon"><i class="fas fa-robot"></i></div>
+                    <span>AI Agent thông minh</span>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon"><i class="fas fa-store"></i></div>
+                    <span>Quản lý bán lẻ</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="hero-visual">
+            <div class="visual-container">
+                <div class="visual-header">
+                    <div class="visual-dots">
+                        <div class="visual-dot dot-red"></div>
+                        <div class="visual-dot dot-yellow"></div>
+                        <div class="visual-dot dot-green"></div>
+                    </div>
+                    <span class="visual-title">Bảng điều khiển ANSER</span>
+                </div>
+                <div class="visual-content">
+                    <div class="visual-sidebar">
+                        <div class="visual-bar visual-bar--blue visual-bar--tall"></div>
+                        <div class="visual-bar visual-bar--green"></div>
+                        <div class="visual-bar visual-bar--blue"></div>
+                        <div class="visual-bar visual-bar--yellow"></div>
+                        <div class="visual-bar visual-bar--green"></div>
+                        <div class="visual-bar visual-bar--blue visual-bar--tall"></div>
+                        <div class="visual-bar visual-bar--red"></div>
+                        <div class="visual-bar visual-bar--green visual-bar--tall"></div>
+                    </div>
+                    <div class="visual-main">
+                        <div class="visual-logo">
+                            <i class="fas fa-brain"></i>
+                        </div>
+                        <div class="visual-subtitle">
+                            <span class="visual-subtitle-accent">AI</span> · OCR · LSTM
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ══════════════ STATS ══════════════ -->
+<section class="stats-section">
+    <div class="stats-grid">
+        <div class="stat-item" data-reveal data-delay="1">
+            <div class="stat-number" data-count="3" data-suffix="+">3+</div>
+            <div class="stat-label">Mô hình AI</div>
+        </div>
+        <div class="stat-item" data-reveal data-delay="2">
+            <div class="stat-number" data-count="99" data-suffix="%">99%</div>
+            <div class="stat-label">Độ chính xác OCR</div>
+        </div>
+        <div class="stat-item" data-reveal data-delay="3">
+            <div class="stat-number">24/7</div>
+            <div class="stat-label">Phân tích trực tiếp</div>
+        </div>
+        <div class="stat-item" data-reveal data-delay="4">
+            <div class="stat-number">HT</div>
+            <div class="stat-label">Group</div>
+        </div>
+    </div>
+</section>
+
+<!-- ══════════════ FEATURES ══════════════ -->
+<section class="features" id="features">
+    <div class="section-header" data-reveal>
+        <div class="section-badge">Tính năng</div>
+        <h2>Mọi thứ bạn cần</h2>
+        <p>Tích hợp AI/ML vào quy trình bán lẻ hàng ngày một cách dễ dàng</p>
+    </div>
+    <div class="features__grid">
+        <div class="features__card" data-reveal data-delay="1">
+            <div class="features__icon icon-teal">
+                <i class="fas fa-warehouse"></i>
+            </div>
+            <h3>Quản lý kho</h3>
+            <p>Theo dõi tồn kho, nhập/xuất hàng và cảnh báo hết hàng tự động theo thời gian thực.</p>
+        </div>
+        <div class="features__card" data-reveal data-delay="2">
+            <div class="features__icon icon-blue">
+                <i class="fas fa-cash-register"></i>
+            </div>
+            <h3>POS bán hàng</h3>
+            <p>Giao diện bán hàng nhanh chóng, hỗ trợ quét barcode và tính tiền tự động.</p>
+        </div>
+        <div class="features__card" data-reveal data-delay="3">
+            <div class="features__icon icon-purple">
+                <i class="fas fa-file-invoice-dollar"></i>
+            </div>
+            <h3>AI đọc hóa đơn OCR</h3>
+            <p>Nhận dạng và trích xuất dữ liệu hóa đơn tự động bằng OCR, tiết kiệm 90% thời gian nhập liệu.</p>
+        </div>
+        <div class="features__card" data-reveal data-delay="4">
+            <div class="features__icon icon-orange">
+                <i class="fas fa-robot"></i>
+            </div>
+            <h3>Tự động hóa quy trình</h3>
+            <p>Kết nối Make.com webhook để tự động hóa tác vụ lặp lại, giảm thao tác thủ công.</p>
+        </div>
+        <div class="features__card" data-reveal data-delay="5">
+            <div class="features__icon icon-teal">
+                <i class="fas fa-chart-bar"></i>
+            </div>
+            <h3>Báo cáo thông minh</h3>
+            <p>Dự báo doanh thu bằng LSTM, hỗ trợ ra quyết định kinh doanh chính xác.</p>
+        </div>
+        <div class="features__card" data-reveal data-delay="6">
+            <div class="features__icon icon-blue">
+                <i class="fab fa-google"></i>
+            </div>
+            <h3>Tích hợp Google</h3>
+            <p>Đồng bộ Google Sheets, Drive và Calendar để quản lý dữ liệu liền mạch.</p>
+        </div>
+    </div>
+</section>
+
+<!-- ══════════════ ABOUT US ══════════════ -->
+<section class="about" id="about">
+    <div class="about__container">
+        <div class="about__visual" data-reveal="left">
+            <div class="about__visual-label">
+                <i class="fas fa-brain"></i>
+                <span>ANSER Platform</span>
+            </div>
+        </div>
+        <div class="about__content" data-reveal="right">
+            <h2>Về ANSER</h2>
+            <p class="about__text">
+                ANSER là nền tảng quản lý bán lẻ thông minh do nhóm HTGroup phát triển. Chúng tôi ứng dụng AI/ML để tự
+                động hóa quy trình kinh doanh — từ nhận dạng hóa đơn OCR đến dự báo doanh thu bằng LSTM. Sứ mệnh của
+                ANSER là giúp doanh nghiệp vừa và nhỏ tiếp cận công nghệ AI đơn giản và hiệu quả nhất.
+            </p>
+            <ul class="about__values">
+                <li class="about__value">
+                    <i class="fas fa-lightbulb"></i>
+                    <span><strong>Đổi mới sáng tạo</strong> — Ứng dụng AI/ML tiên tiến vào giải pháp thực tế</span>
+                </li>
+                <li class="about__value">
+                    <i class="fas fa-bolt"></i>
+                    <span><strong>Đơn giản & Hiệu quả</strong> — Giao diện thân thiện, quy trình tối ưu</span>
+                </li>
+                <li class="about__value">
+                    <i class="fas fa-users"></i>
+                    <span><strong>Hợp tác & Phát triển</strong> — Xây dựng cùng cộng đồng vững mạnh</span>
+                </li>
+            </ul>
+        </div>
+    </div>
+</section>
+
+<!-- ══════════════ HOW IT WORKS ══════════════ -->
+<section class="how-section" id="how-it-works">
+    <div class="how-section__inner">
+        <div class="section-header" data-reveal>
+            <div class="section-badge">Quy trình</div>
+            <h2>Cách hoạt động</h2>
+            <p>Từ dữ liệu thô đến phân tích kinh doanh chỉ trong vài bước</p>
+        </div>
+        <div class="steps-grid">
+            <div class="step-item" data-reveal data-delay="1">
+                <div class="step-number">1</div>
+                <h4>Tải hóa đơn lên</h4>
+                <p>Tải ảnh hóa đơn hoặc kết nối nguồn dữ liệu có sẵn</p>
+            </div>
+            <div class="step-item" data-reveal data-delay="2">
+                <div class="step-number">2</div>
+                <h4>AI xử lý tự động</h4>
+                <p>OCR và AI Agent trích xuất, làm sạch, chuẩn hóa dữ liệu</p>
+            </div>
+            <div class="step-item" data-reveal data-delay="3">
+                <div class="step-number">3</div>
+                <h4>Phân tích & Dự báo</h4>
+                <p>LSTM nhận diện xu hướng, dự báo doanh thu tương lai</p>
+            </div>
+            <div class="step-item" data-reveal data-delay="4">
+                <div class="step-number">4</div>
+                <h4>Ra quyết định</h4>
+                <p>Dashboard trực quan giúp bạn hành động từ dữ liệu thực</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ══════════════ CTA ══════════════ -->
+<section class="cta-section">
+    <div class="cta-box" data-reveal>
+        <h2>Sẵn sàng bắt đầu?</h2>
+        <p>Trải nghiệm sức mạnh AI/ML trong quản lý bán lẻ cùng ANSER ngay hôm nay.</p>
+        <div style="display:flex; gap:0.75rem; justify-content:center; flex-wrap:wrap;">
+            <a href="{{ url_for('auth.signup') }}" class="btn btn-primary">
+                <i class="fas fa-user-plus"></i> Tạo tài khoản
+            </a>
+            <a href="{{ url_for('auth.signin') }}" class="btn btn-secondary">
+                <i class="fas fa-sign-in-alt"></i> Đăng nhập
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- ══════════════ CONTACT MODAL ══════════════ -->
+<div class="modal-overlay" id="contact-modal">
+    <div class="modal-container">
+        <div class="modal-header">
+            <h3><i class="fas fa-users"></i> Đội ngũ phát triển</h3>
+            <button class="modal-close" id="modal-close-btn" aria-label="Đóng">&times;</button>
+        </div>
+        <div class="modal-body">
+            <p style="color:var(--text-secondary); margin-bottom:1.5rem;">
+                Dự án ANSER — USTH GEN14 · Báo lỗi hoặc đề xuất tính năng qua GitHub Issues.
+            </p>
+            <div class="table-responsive">
+                <table class="contact-table">
+                    <thead>
+                        <tr>
+                            <th>Tên</th>
+                            <th>Vai trò</th>
+                            <th>GitHub</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>namdzzgg</td>
+                            <td>Trưởng nhóm phát triển</td>
+                            <td><a href="#" target="_blank" rel="noopener">@namdzzgg</a></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════════ FOOTER ══════════════ -->
+<footer class="footer">
+    <div class="footer__container">
+        <div class="footer__columns">
+            <div class="footer__column">
+                <a href="{{ url_for('pages.landing') }}" class="footer__logo">
+                    <i class="fas fa-brain"></i> ANSER
+                </a>
+                <p class="footer__description">Nền tảng AI/ML hỗ trợ quản lý bán lẻ thông minh cho doanh nghiệp Việt
+                    Nam.</p>
+            </div>
+            <div class="footer__column">
+                <h4 class="footer__heading">Liên kết nhanh</h4>
+                <ul class="footer__links">
+                    <li><a href="#features" class="footer__link">Tính năng</a></li>
+                    <li><a href="#about" class="footer__link">Về chúng tôi</a></li>
+                    <li><a href="#contact" class="footer__link">Liên hệ</a></li>
+                </ul>
+            </div>
+            <div class="footer__column">
+                <h4 class="footer__heading">Liên hệ</h4>
+                <p class="footer__contact"><i class="fas fa-envelope"></i> HTG@gmail.com</p>
+                <p class="footer__contact"><i class="fas fa-map-marker-alt"></i> HTGroup, 22 Lương Khánh Thiện, Hà Nội
+                </p>
+            </div>
+        </div>
+        <div class="footer__bottom">
+            <p class="footer__copyright">&copy; 2026 ANSER &middot; HTGroup</p>
+        </div>
+    </div>
+</footer>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/reveal.js') }}"></script>
+<script src="{{ url_for('static', filename='js/landing.js') }}"></script>
+{% endblock %}
+>>>>>>> 440f07aaf3d3a32f5782a445371070ca2340fb0b

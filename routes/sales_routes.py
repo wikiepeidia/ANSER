@@ -13,6 +13,9 @@ logger = get_logger(__name__)
 
 sales_bp = Blueprint('sales', __name__)
 
+# Cache for product catalog
+PRODUCT_CATALOG_CACHE = None
+
 
 @sales_bp.route('/sale')
 @login_required
@@ -23,14 +26,24 @@ def sale_page():
 @sales_bp.route('/api/products/search')
 @login_required
 def search_products():
+    global PRODUCT_CATALOG_CACHE
     query = request.args.get('q', '').lower()
     random_mode = request.args.get('random') == 'true'
     try:
-        catalog_path = os.path.join(current_app.root_path, 'dl_service/data/product_catalogs.json')
-        if not os.path.exists(catalog_path):
-            catalog_path = os.path.join(os.getcwd(), 'dl_service/data/product_catalogs.json')
-        with open(catalog_path, 'r', encoding='utf-8') as f:
-            products = json.load(f)
+        if PRODUCT_CATALOG_CACHE is None:
+            catalog_path = os.path.join(current_app.root_path, 'dl_service/data/product_catalogs.json')
+            if not os.path.exists(catalog_path):
+                catalog_path = os.path.join(os.getcwd(), 'dl_service/data/product_catalogs.json')
+            
+            if os.path.exists(catalog_path):
+                with open(catalog_path, 'r', encoding='utf-8') as f:
+                    PRODUCT_CATALOG_CACHE = json.load(f)
+            else:
+                logger.warning("Product catalog file not found: %s", catalog_path)
+                PRODUCT_CATALOG_CACHE = []
+
+        products = PRODUCT_CATALOG_CACHE
+
         if random_mode:
             import random
             results = random.sample(products, min(len(products), 8))

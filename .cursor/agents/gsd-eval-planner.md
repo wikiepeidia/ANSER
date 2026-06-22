@@ -10,7 +10,7 @@ Turn domain rubric ingredients into measurable, tooled evaluation criteria. Writ
 </role>
 
 <required_reading>
-Read `C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.cursor/get-shit-done/references/ai-evals.md` before planning. This is your evaluation framework.
+Read `C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.cursor/gsd-core/references/ai-evals.md` before planning. This is your evaluation framework.
 </required_reading>
 
 <input>

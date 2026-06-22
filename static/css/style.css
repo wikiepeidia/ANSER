@@ -390,103 +390,92 @@ body.dark-mode .social-btn {
     transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
-/* ── Sidebar collapse toggle button ── */
+/* ── Sidebar collapse toggle button (ô vuông bo nhẹ trong brand) ── */
 .sidebar-collapse-btn {
-    position: absolute;
-    top: 16px;
-    right: -14px;
-    width: 28px;
-    height: 28px;
-    background: var(--primary);
+    width: 32px;
+    height: 32px;
+    background: rgba(255, 255, 255, 0.18);
     color: #fff;
     border: none;
-    border-radius: 50%;
+    border-radius: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    z-index: 101;
-    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.4);
-    transition: transform 0.3s ease, background 0.2s ease;
-    font-size: 11px;
+    margin-left: auto;
+    flex-shrink: 0;
+    transition: background 0.2s ease, color 0.2s ease;
+    font-size: 12px;
 }
 
 .sidebar-collapse-btn:hover {
-    background: var(--primary-dark);
+    background: rgba(255, 255, 255, 0.32);
 }
 
-/* When collapsed, flip the chevron and shift button */
-.modern-sidebar.collapsed .sidebar-collapse-btn {
-    right: -14px;
-}
-
-.modern-sidebar.collapsed .sidebar-collapse-btn i {
-    transform: rotate(180deg);
-}
-
-/* ── Collapsed state (64px icons-only) ── */
+/* ── Collapsed state — icon only, hide brand & user card ── */
 .modern-sidebar.collapsed {
-    width: 64px;
+    width: 60px;
 }
 
-/* Hide text elements when collapsed */
-.modern-sidebar.collapsed .brand-text,
-.modern-sidebar.collapsed .user-info,
+/* Ẩn user card + section title khi collapsed; brand vẫn hiện để giữ nút toggle */
+.modern-sidebar.collapsed .user-profile-card,
+.modern-sidebar.collapsed .section-title {
+    display: none !important;
+}
+
+/* Ẩn tất cả text, giữ icon */
 .modern-sidebar.collapsed .menu-label,
 .modern-sidebar.collapsed .menu-arrow,
-.modern-sidebar.collapsed .section-title span,
 .modern-sidebar.collapsed .logout-label {
     display: none;
 }
 
-/* Center the brand icon */
+/* Brand: ẩn logo + text, chỉ giữ nút toggle ở giữa */
 .modern-sidebar.collapsed .sidebar-brand {
     justify-content: center;
     padding: 20px 12px;
 }
-
-.modern-sidebar.collapsed .brand-icon {
-    margin-right: 0;
+.modern-sidebar.collapsed .brand-icon,
+.modern-sidebar.collapsed .brand-text {
+    display: none;
+}
+.modern-sidebar.collapsed .sidebar-collapse-btn {
+    margin-left: 0;
 }
 
-/* Center the user avatar */
+/* User avatar: căn giữa */
 .modern-sidebar.collapsed .user-profile-card {
     justify-content: center;
     padding: 16px 12px;
 }
-
 .modern-sidebar.collapsed .user-avatar-lg {
     margin-right: 0;
 }
 
-/* Center menu items, hide border animation */
+/* Menu items: căn giữa icon */
 .modern-sidebar.collapsed .menu-container {
     padding: 12px 8px;
 }
-
 .modern-sidebar.collapsed .menu-item {
     justify-content: center;
     padding: 10px;
     margin-bottom: 4px;
     position: relative;
 }
-
 .modern-sidebar.collapsed .menu-item:hover {
     transform: none;
 }
-
 .modern-sidebar.collapsed .menu-icon {
     margin-right: 0;
     width: 36px;
     height: 36px;
 }
-
 .modern-sidebar.collapsed .section-title {
     justify-content: center;
     padding: 6px 0;
 }
 
-/* Tooltip on hover when collapsed */
+/* Tooltip hiện tên khi hover icon */
 .modern-sidebar.collapsed .menu-item[data-tooltip]::after {
     content: attr(data-tooltip);
     position: absolute;
@@ -505,18 +494,16 @@ body.dark-mode .social-btn {
     z-index: 200;
     box-shadow: 0 4px 12px rgba(0,0,0,0.2);
 }
-
 .modern-sidebar.collapsed .menu-item[data-tooltip]:hover::after {
     opacity: 1;
 }
 
-/* Logout button when collapsed */
+/* Logout khi collapsed */
 .modern-sidebar.collapsed .logout-button {
     justify-content: center;
     padding: 10px;
     position: relative;
 }
-
 .modern-sidebar.collapsed .logout-button[data-tooltip]::after {
     content: attr(data-tooltip);
     position: absolute;
@@ -535,9 +522,13 @@ body.dark-mode .social-btn {
     z-index: 200;
     box-shadow: 0 4px 12px rgba(0,0,0,0.2);
 }
-
 .modern-sidebar.collapsed .logout-button[data-tooltip]:hover::after {
     opacity: 1;
+}
+
+/* Mũi tên quay phải khi collapsed */
+.modern-sidebar.collapsed .sidebar-collapse-btn i {
+    transform: none;
 }
 
 /* Adjust all content areas when sidebar is collapsed */
@@ -545,7 +536,7 @@ body.dark-mode .social-btn {
 .main-content.sidebar-collapsed,
 .scenario-main.sidebar-collapsed,
 .permissions-main.sidebar-collapsed {
-    margin-left: 64px;
+    margin-left: 60px;
 }
 
 /* Smooth transition for all main content areas */
@@ -581,8 +572,8 @@ body.dark-mode .social-btn {
 }
 
 .brand-icon {
-    width: 50px;
-    height: 50px;
+    width: 40px;
+    height: 40px;
     background: rgba(255, 255, 255, 0.2);
     border-radius: 12px;
     display: flex;
@@ -592,7 +583,7 @@ body.dark-mode .social-btn {
 }
 
 .brand-icon i {
-    font-size: 24px;
+    font-size: 20px;
     color: #fff;
 }
 

@@ -1,11 +1,12 @@
 ---
-name: gsd:cleanup
+name: gsd-cleanup
 description: Archive accumulated phase directories from completed milestones
 allowed-tools:
   - Read
   - Write
   - Bash
   - AskUserQuestion
+requires: [phase]
 ---
 <objective>
 Archive phase directories from completed milestones into `.planning/milestones/v{X.Y}-phases/`.
@@ -14,7 +15,7 @@ Use when `.planning/phases/` has accumulated directories from past milestones.
 </objective>
 
 <execution_context>
-@C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.claude/get-shit-done/workflows/cleanup.md
+@C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.claude/gsd-core/workflows/cleanup.md
 </execution_context>
 
 <process>

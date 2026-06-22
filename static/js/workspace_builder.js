@@ -100,6 +100,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 { source: 'node-1', target: 'node-2' },
                 { source: 'node-2', target: 'node-3' }
             ]
+        },
+        pos_pipeline: {
+            nodes: [
+                { id: 'node-1', title: 'POS Event Data', category: 'trigger', type: 'manual_trigger', left: 100, top: 150, description: 'Start with POS event (device_id, event_type, payload)' },
+                { id: 'node-2', title: 'Insert to NeonDB', category: 'integration', type: 'iot_db_insert', left: 420, top: 150, description: 'Save event to iot_events table' },
+                { id: 'node-3', title: 'Notify Discord', category: 'integration', type: 'discord_notify', left: 740, top: 150, description: 'Send notification to Discord channel' }
+            ],
+            connections: [
+                { source: 'node-1', target: 'node-2' },
+                { source: 'node-2', target: 'node-3' }
+            ]
         }
     };
 
@@ -782,8 +793,17 @@ document.addEventListener('DOMContentLoaded', () => {
             return 'full';
         }
         
+        if (type === 'iot_db_insert') {
+            if (!config.device_id && !hasInput) return 'missing';
+            if (!config.event_type) return 'partial';
+            return 'full';
+        }
+        if (type === 'iot_db_query') {
+            return 'full';
+        }
+
         // Default for unknown nodes
-        return 'full'; 
+        return 'full';
     }
 
     function updateNodeStatusIcon(node) {
@@ -2231,6 +2251,30 @@ document.addEventListener('DOMContentLoaded', () => {
                         document.getElementById('cfg-manual-integ-section').style.display = cb.checked ? 'none' : 'block';
                     });
                 }, 0);
+            } else if (type === 'iot_db_insert') {
+                html = `
+                    <label>Device ID</label>
+                    <input type="text" id="cfg-device-id" value="${config.device_id || ''}" placeholder="{{1.device_id}} hoặc POS-001">
+                    <label>Event Type</label>
+                    <input type="text" id="cfg-event-type" value="${config.event_type || ''}" placeholder="sale_completed">
+                    <label>Payload (JSON, tuỳ chọn)</label>
+                    <textarea id="cfg-payload" style="height:80px;" placeholder='{"amount": 100000}'>${config.payload || ''}</textarea>
+                    <div style="margin-top:8px; padding:8px; background:rgba(255,107,53,0.1); border-radius:6px; font-size:0.8rem; color:#FF6B35;">
+                        <i class="fas fa-info-circle"></i> Dữ liệu được lưu vào bảng <strong>iot_events</strong> trên NeonDB
+                    </div>
+                `;
+            } else if (type === 'iot_db_query') {
+                html = `
+                    <label>Số bản ghi tối đa</label>
+                    <input type="number" id="cfg-limit" value="${config.limit || 10}" min="1" max="100">
+                    <label>Lọc theo Device ID (tuỳ chọn)</label>
+                    <input type="text" id="cfg-device-filter" value="${config.device_id || ''}" placeholder="POS-001 (để trống = tất cả)">
+                    <label>Lọc theo Event Type (tuỳ chọn)</label>
+                    <input type="text" id="cfg-event-type-filter" value="${config.event_type || ''}" placeholder="sale_completed (để trống = tất cả)">
+                    <div style="margin-top:8px; padding:8px; background:rgba(0,150,136,0.1); border-radius:6px; font-size:0.8rem; color:#009688;">
+                        <i class="fas fa-info-circle"></i> Trả về mảng <strong>events[]</strong> từ bảng <strong>iot_events</strong>
+                    </div>
+                `;
             } else if (type === 'filter') {
                 html = `
                     <label>Contains Keyword</label>
@@ -2431,6 +2475,14 @@ document.addEventListener('DOMContentLoaded', () => {
             } else if (type === 'invoice_forecast') {
                 config.useParentData = document.getElementById('cfg-use-parent')?.checked ?? true;
                 config.data = document.getElementById('cfg-data')?.value;
+            } else if (type === 'iot_db_insert') {
+                config.device_id  = document.getElementById('cfg-device-id')?.value;
+                config.event_type = document.getElementById('cfg-event-type')?.value;
+                config.payload    = document.getElementById('cfg-payload')?.value;
+            } else if (type === 'iot_db_query') {
+                config.limit      = document.getElementById('cfg-limit')?.value || 10;
+                config.device_id  = document.getElementById('cfg-device-filter')?.value;
+                config.event_type = document.getElementById('cfg-event-type-filter')?.value;
             }
 
             node.dataset.config = JSON.stringify(config);

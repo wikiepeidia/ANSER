@@ -41,7 +41,13 @@ def _settings_config():
 
 @page_bp.route('/')
 def index():
-    # This serves the public GSAP Landing Page to everyone
+    if current_user.is_authenticated:
+        return redirect(url_for('pages.workspace'))
+    # Serve the GSAP Landing page for guests
+    return render_template('index.html')
+
+@page_bp.route('/landing')
+def landing():
     return render_template('index.html')
 
 # ---------------------------------------------------------------------------
@@ -49,7 +55,7 @@ def index():
 # ---------------------------------------------------------------------------
 
 @page_bp.route('/workspace')
-@login_required # Fixed! Using standard Flask-Login protection
+@login_required 
 def workspace():
     return render_template('workspace.html', user=current_user)
 
@@ -111,7 +117,12 @@ def scenarios():
 @page_bp.route('/workspace/builder')
 @login_required
 def workspace_builder():
-    return render_template('workspace_builder.html', user=current_user)
+    return redirect(url_for('pages.scenarios'))
+
+@page_bp.route('/iot-monitor')
+@login_required
+def iot_monitor():
+    return render_template('iot_monitor.html', user=current_user)
 
 # ---------------------------------------------------------------------------
 # PROTECTED ADMIN ROUTES

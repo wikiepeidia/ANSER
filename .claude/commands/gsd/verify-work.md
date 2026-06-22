@@ -1,7 +1,7 @@
 ---
-name: gsd:verify-work
+name: gsd-verify-work
 description: Validate built features through conversational UAT
-argument-hint: "[phase number, e.g., '4']"
+argument-hint: "[phase number, e.g., '4'] [--ws <name>]"
 allowed-tools:
   - Read
   - Bash
@@ -10,6 +10,7 @@ allowed-tools:
   - Edit
   - Write
   - Agent
+requires: [execute-phase, phase]
 ---
 <objective>
 Validate built features through conversational testing with persistent state.
@@ -20,8 +21,8 @@ Output: {phase_num}-UAT.md tracking all test results. If issues found: diagnosed
 </objective>
 
 <execution_context>
-@C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.claude/get-shit-done/workflows/verify-work.md
-@C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.claude/get-shit-done/templates/UAT.md
+@C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.claude/gsd-core/workflows/verify-work.md
+@C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.claude/gsd-core/templates/UAT.md
 </execution_context>
 
 <context>

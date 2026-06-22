@@ -448,13 +448,26 @@ class Database:
         finally:
             conn.close()
 
-    def create_user(self, email, password, name, role='user',
-                    first_name=None, last_name=None, manager_id=None):
+    def get_user_by_email(self, email):
+        conn = self.get_connection()
+        try:
+            return self._user_repo(conn).get_user_by_email(email)
+        finally:
+            conn.close()
+
+    def create_user(self, email, password, first_name, last_name, role='user', manager_id=None):
         conn = self.get_connection()
         try:
             return self._user_repo(conn).create_user(
-                email, password, name, role, first_name, last_name, manager_id,
+                email, password, first_name, last_name, role, manager_id,
             )
+        finally:
+            conn.close()
+
+    def update_password(self, user_id, hashed_password, version=1):
+        conn = self.get_connection()
+        try:
+            return self._user_repo(conn).update_password(user_id, hashed_password, version)
         finally:
             conn.close()
 
@@ -471,6 +484,34 @@ class Database:
         conn = self.get_connection()
         try:
             return self._user_repo(conn).get_all_users_with_permissions()
+        finally:
+            conn.close()
+
+    def get_all_users(self, role_filter=None):
+        conn = self.get_connection()
+        try:
+            return self._user_repo(conn).get_all_users(role_filter)
+        finally:
+            conn.close()
+
+    def get_users_for_manager(self, manager_id, role_filter=None):
+        conn = self.get_connection()
+        try:
+            return self._user_repo(conn).get_users_for_manager(manager_id, role_filter)
+        finally:
+            conn.close()
+
+    def delete_user(self, user_id):
+        conn = self.get_connection()
+        try:
+            return self._user_repo(conn).delete_user(user_id)
+        finally:
+            conn.close()
+
+    def set_user_role(self, user_id, new_role):
+        conn = self.get_connection()
+        try:
+            return self._user_repo(conn).set_user_role(user_id, new_role)
         finally:
             conn.close()
 

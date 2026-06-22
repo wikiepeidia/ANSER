@@ -1,5 +1,5 @@
 ---
-name: gsd:sketch
+name: gsd-sketch
 description: Sketch UI/design ideas with throwaway HTML mockups, or propose what to sketch next (frontier mode)
 argument-hint: "[design idea to explore] [--quick] [--text] [--wrap-up] or [frontier]"
 allowed-tools:
@@ -14,6 +14,7 @@ allowed-tools:
   - WebFetch
   - mcp__context7__resolve-library-id
   - mcp__context7__query-docs
+requires: [spike]
 ---
 <objective>
 Explore design directions through throwaway HTML mockups before committing to implementation.
@@ -25,17 +26,17 @@ Two modes:
 - **Idea mode** (default) — describe a design idea to sketch
 - **Frontier mode** (no argument or "frontier") — analyzes existing sketch landscape and proposes consistency and frontier sketches
 
-Does not require `/gsd-new-project` — auto-creates `.planning/sketches/` if needed.
+Does not require prior new-project setup — auto-creates `.planning/sketches/` if needed.
 </objective>
 
 <execution_context>
-@C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.claude/get-shit-done/workflows/sketch.md
-@C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.claude/get-shit-done/workflows/sketch-wrap-up.md
-@C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.claude/get-shit-done/references/ui-brand.md
-@C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.claude/get-shit-done/references/sketch-theme-system.md
-@C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.claude/get-shit-done/references/sketch-interactivity.md
-@C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.claude/get-shit-done/references/sketch-tooling.md
-@C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.claude/get-shit-done/references/sketch-variant-patterns.md
+@C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.claude/gsd-core/workflows/sketch.md
+@C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.claude/gsd-core/workflows/sketch-wrap-up.md
+@C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.claude/gsd-core/references/ui-brand.md
+@C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.claude/gsd-core/references/sketch-theme-system.md
+@C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.claude/gsd-core/references/sketch-interactivity.md
+@C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.claude/gsd-core/references/sketch-tooling.md
+@C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.claude/gsd-core/references/sketch-variant-patterns.md
 </execution_context>
 
 <runtime_note>

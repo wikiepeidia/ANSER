@@ -1,5 +1,5 @@
 ---
-name: gsd:plan-review-convergence
+name: gsd-plan-review-convergence
 description: "Cross-AI plan convergence loop — replan with review feedback until no HIGH concerns remain."
 argument-hint: "<phase> [--codex] [--gemini] [--claude] [--opencode] [--ollama] [--lm-studio] [--llama-cpp] [--text] [--ws <name>] [--all] [--max-cycles N]"
 allowed-tools:
@@ -10,24 +10,25 @@ allowed-tools:
   - Grep
   - Agent
   - AskUserQuestion
+requires: [phase, review]
 ---
 
 <objective>
 Cross-AI plan convergence loop — an outer revision gate around gsd-review and gsd-planner.
 Repeatedly: review plans with external AI CLIs → if HIGH concerns found → replan with --reviews feedback → re-review. Stops when no HIGH concerns remain or max cycles reached.
 
-**Flow:** Agent→Skill("gsd-plan-phase") → Agent→Skill("gsd-review") → check HIGHs → Agent→Skill("gsd-plan-phase --reviews") → Agent→Skill("gsd-review") → ... → Converge or escalate
+**Flow:** Skill("gsd-plan-phase") → Agent→Skill("gsd-review") → check HIGHs → Skill("gsd-plan-phase --reviews") → Agent→Skill("gsd-review") → ... → Converge or escalate
 
-Replaces gsd-plan-phase's internal gsd-plan-checker with external AI reviewers (codex, gemini, etc.). Each step runs inside an isolated Agent that calls the corresponding existing Skill — orchestrator only does loop control.
+Replaces gsd-plan-phase's internal gsd-plan-checker with external AI reviewers (codex, gemini, etc.). Plan-phase runs **inline** (bare Skill at depth 0) so it can spawn gsd-planner/gsd-plan-checker at depth 1. Review runs inside an isolated Agent (gsd-review is a Bash leaf — no sub-agents needed). Orchestrator only does loop control.
 
-**Orchestrator role:** Parse arguments, validate phase, spawn Agents for existing Skills, check HIGHs, stall detection, escalation gate.
+**Orchestrator role:** Parse arguments, validate phase, run plan-phase inline (Skill at depth 0), spawn an Agent for gsd-review, check HIGHs, stall detection, escalation gate.
 </objective>
 
 <execution_context>
-@C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.claude/get-shit-done/workflows/plan-review-convergence.md
-@C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.claude/get-shit-done/references/revision-loop.md
-@C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.claude/get-shit-done/references/gates.md
-@C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.claude/get-shit-done/references/agent-contracts.md
+@C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.claude/gsd-core/workflows/plan-review-convergence.md
+@C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.claude/gsd-core/references/revision-loop.md
+@C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.claude/gsd-core/references/gates.md
+@C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.claude/gsd-core/references/agent-contracts.md
 </execution_context>
 
 <runtime_note>

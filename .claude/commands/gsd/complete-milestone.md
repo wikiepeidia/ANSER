@@ -1,12 +1,13 @@
 ---
 type: prompt
-name: gsd:complete-milestone
+name: gsd-complete-milestone
 description: Archive completed milestone and prepare for next version
 argument-hint: <version>
 allowed-tools:
   - Read
   - Write
   - Bash
+requires: [audit-milestone, discuss-phase, execute-phase, new-milestone, phase, plan-phase, stats, update]
 ---
 
 <objective>
@@ -19,8 +20,8 @@ Output: Milestone archived (roadmap + requirements), PROJECT.md evolved, git tag
 <execution_context>
 **Load these files NOW (before proceeding):**
 
-- @C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.claude/get-shit-done/workflows/complete-milestone.md (main workflow)
-- @C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.claude/get-shit-done/templates/milestone-archive.md (archive template)
+- @C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.claude/gsd-core/workflows/complete-milestone.md (main workflow)
+- @C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.claude/gsd-core/templates/milestone-archive.md (archive template)
   </execution_context>
 
 <context>
@@ -125,7 +126,7 @@ Output: Milestone archived (roadmap + requirements), PROJECT.md evolved, git tag
 - `.planning/REQUIREMENTS.md` deleted (fresh for next milestone)
 - ROADMAP.md collapsed to one-line entry
 - PROJECT.md updated with current state
-- Git tag v{{version}} created
+- Git tag v{{version}} created (if `git.create_tag` enabled)
 - Commit successful
 - User knows next steps (including need for fresh requirements)
   </success_criteria>

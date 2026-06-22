@@ -1,4 +1,5 @@
 from datetime import datetime
+from collections import deque
 import cv2
 
 from utils.invoice_processor import parse_products_from_text, extract_products_from_text, load_product_catalogs, build_catalog_index
@@ -12,7 +13,7 @@ from services.layout_service import detect_layout_regions, crop_region, get_layo
 logger = get_logger(__name__)
 
 # Storage for invoice history (in-memory),backward compatibility
-invoice_history = []
+invoice_history = deque(maxlen=50)
 
 accuracy_stats = {
     'layout_conf_sum': 0.0,
@@ -24,7 +25,7 @@ accuracy_stats = {
 # ── Catalog singleton (loaded once at import time) ─────────────────
 _product_catalogs = load_product_catalogs(CATALOG_PATH)
 _catalog_index = build_catalog_index(_product_catalogs)
-print(f'[INVOICE_SERVICE] Catalog loaded: {len(_catalog_index)} SKUs from {CATALOG_PATH}', flush=True)
+logger.info("[INVOICE_SERVICE] Catalog loaded: %d SKUs from %s", len(_catalog_index), CATALOG_PATH)
 
 
 def _enrich_with_catalog(products, catalog_index):
@@ -48,14 +49,11 @@ def _enrich_with_catalog(products, catalog_index):
             product['product_id'] = best_match['product'].get('id')
             product['product_name'] = best_match['product'].get('name', raw_name)
     matched = sum(1 for p in products if p.get('product_id'))
-    print(f'[INVOICE_SERVICE] Catalog enrichment: {matched}/{len(products)} products matched', flush=True)
+    logger.info("[INVOICE_SERVICE] Catalog enrichment: %d/%d products matched", matched, len(products))
 
 
 def process_invoice_image(image):
    
-    print("\n" + "="*80)
-    print("[INVOICE_SERVICE] *** ENTRY POINT *** Starting process_invoice_image")
-    print("="*80 + "\n", flush=True)
     logger.info(f"[MODEL 1] *** ENTRY POINT *** Processing invoice image (shape: {image.shape})")
 
     invoice_id = f"INV_{datetime.now().strftime('%Y%m%d%H%M%S%f')}"
@@ -82,7 +80,7 @@ def process_invoice_image(image):
                 for name, region in detected.items()
             }
         invoice_data['layout_regions'] = layout_regions
-        print(f"[INVOICE_SERVICE] Layout regions detected: {list(layout_regions.keys())}", flush=True)
+        logger.info("[INVOICE_SERVICE] Layout regions detected: %s", list(layout_regions.keys()))
     except Exception as exc:
         logger.warning("[LAYOUT] Detector failed: %s", exc, exc_info=True)
         invoice_data['layout_warning'] = str(exc)
@@ -96,19 +94,25 @@ def process_invoice_image(image):
     try:
         ok, buffer = cv2.imencode('.png', table_image)
         if ok:
-            print(f"[INVOICE_SERVICE] Table crop encoded OK, buffer size={len(buffer.tobytes())} bytes", flush=True)
+            logger.info("[INVOICE_SERVICE] Table crop encoded OK, buffer size=%d bytes", len(buffer.tobytes()))
             ocr_result = extract_text_from_image_bytes(buffer.tobytes())
-            print(f"[INVOICE_SERVICE] OCR result: success={ocr_result.get('success')}, backend={ocr_result.get('backend')}, text_len={len(ocr_result.get('text',''))}, error={ocr_result.get('error')}", flush=True)
+            logger.info(
+                "[INVOICE_SERVICE] OCR result: success=%s, backend=%s, text_len=%d, error=%s",
+                ocr_result.get('success'),
+                ocr_result.get('backend'),
+                len(ocr_result.get('text', '')),
+                ocr_result.get('error'),
+            )
             if ocr_result.get('success'):
                 invoice_data['ocr_text'] = text = ocr_result.get('text', '').strip()
                 invoice_data['ocr_backend'] = ocr_result.get('backend')
                 invoice_data['ocr_confidence'] = float(ocr_result.get('confidence', 0.0))
                 
-                print(f"[INVOICE_SERVICE] Full OCR text:\n{text}\n{'='*80}", flush=True)
+                logger.debug("[INVOICE_SERVICE] Full OCR text:\n%s", text)
 
                 # Step 1: Structural parsing — correct qty/price/total via LINE_REGEX
                 parsed_products = parse_products_from_text(text)
-                print(f"[INVOICE_SERVICE] Structural parser found {len(parsed_products)} products", flush=True)
+                logger.info("[INVOICE_SERVICE] Structural parser found %d products", len(parsed_products))
 
                 # Step 2: Enrich with catalog names/IDs (keeps parsed numbers)
                 if parsed_products and _catalog_index:
@@ -117,12 +121,22 @@ def process_invoice_image(image):
                     catalog_products, _ = extract_products_from_text(text, _catalog_index)
                     if catalog_products:
                         parsed_products = catalog_products
-                        print(f"[INVOICE_SERVICE] Fallback catalog extraction found {len(catalog_products)} products", flush=True)
+                        logger.info(
+                            "[INVOICE_SERVICE] Fallback catalog extraction found %d products",
+                            len(catalog_products),
+                        )
 
-                print(f"[INVOICE_SERVICE] Parser found {len(parsed_products)} products", flush=True)
+                logger.info("[INVOICE_SERVICE] Parser found %d products", len(parsed_products))
                 if parsed_products:
                     for idx, p in enumerate(parsed_products[:3], 1):
-                        print(f"  [{idx}] {p['product_name'][:30]} qty={p['quantity']} unit={p['unit_price']} total={p['line_total']}", flush=True)
+                        logger.debug(
+                            "[INVOICE_SERVICE] Parsed product %d: %s qty=%s unit=%s total=%s",
+                            idx,
+                            p['product_name'][:30],
+                            p['quantity'],
+                            p['unit_price'],
+                            p['line_total'],
+                        )
                 logger.info(
                     "[OCR] Backend=%s confidence=%.3f parsed_items=%d",
                     invoice_data['ocr_backend'],
@@ -149,15 +163,15 @@ def process_invoice_image(image):
                 else:
                     invoice_data['products_source'] = 'ocr'
                     invoice_data['ocr_warning'] = 'OCR succeeded but no line items detected'
-                    print(f"[INVOICE_SERVICE] Parser returned 0 products from text length {len(text)}", flush=True)
+                    logger.info("[INVOICE_SERVICE] Parser returned 0 products from text length %d", len(text))
             else:
                 invoice_data['products_source'] = 'ocr'
                 invoice_data['ocr_error'] = ocr_result.get('error', 'OCR failed')
-                print(f"[INVOICE_SERVICE] OCR failed: {ocr_result.get('error')}", flush=True)
+                logger.warning("[INVOICE_SERVICE] OCR failed: %s", ocr_result.get('error'))
         else:
             invoice_data['products_source'] = 'ocr'
             invoice_data['ocr_error'] = 'Failed to encode image for OCR'
-            print("[INVOICE_SERVICE] cv2.imencode failed", flush=True)
+            logger.warning("[INVOICE_SERVICE] cv2.imencode failed")
     except Exception as exc:
         logger.error(f"[OCR] Exception during OCR processing: {exc}", exc_info=True)
         invoice_data['products_source'] = 'ocr'
@@ -169,7 +183,11 @@ def process_invoice_image(image):
     if not invoice_data['detection_confidence']:
         invoice_data['detection_confidence'] = 0.75
 
-    print(f"[INVOICE_SERVICE] OCR complete. products_source={invoice_data.get('products_source')}, product_count={len(invoice_data.get('products', []))}", flush=True)
+    logger.info(
+        "[INVOICE_SERVICE] OCR complete. products_source=%s, product_count=%d",
+        invoice_data.get('products_source'),
+        len(invoice_data.get('products', [])),
+    )
 
     invoice_metrics = {
         'layout_confidence': layout_score_actual if layout_score_actual is not None else invoice_data['detection_confidence'],
@@ -188,8 +206,6 @@ def process_invoice_image(image):
 
     # save to memory history (backward compatibility)
     invoice_history.append(invoice_data)
-    if len(invoice_history) > 50:#Keep50 invoices
-        invoice_history.pop(0)
 
     logger.info(f"[MODEL 1] Invoice detection completed:")
     logger.info(f" - Invoice ID: {invoice_data['invoice_id']}")
@@ -268,8 +284,7 @@ def get_invoice_history(limit=10):
 
 def clear_invoice_history():
     
-    global invoice_history
-    invoice_history = []
+    invoice_history.clear()
 
     try:
         from utils.database import clear_database

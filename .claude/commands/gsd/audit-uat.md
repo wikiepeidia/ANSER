@@ -1,5 +1,5 @@
 ---
-name: gsd:audit-uat
+name: gsd-audit-uat
 description: Cross-phase audit of all outstanding UAT and verification items
 allowed-tools:
   - Read
@@ -12,7 +12,7 @@ Scan all phases for pending, skipped, blocked, and human_needed UAT items. Cross
 </objective>
 
 <execution_context>
-@C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.claude/get-shit-done/workflows/audit-uat.md
+@C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.claude/gsd-core/workflows/audit-uat.md
 </execution_context>
 
 <context>

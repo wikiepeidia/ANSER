@@ -31,12 +31,16 @@ from config import (
 # Import services
 from services.model_loader import initialize_models
 from utils.database import init_database
+from utils.logger import get_logger, setup_logging
 
 # Import API blueprints
 from api.model1_routes import model1_bp
 from api.model2_routes import model2_bp
 from api.history_routes import history_bp
 from api.ocr_routes import ocr_bp
+
+setup_logging()
+logger = get_logger(__name__)
 
 # Create Flask app
 app = Flask(__name__)
@@ -72,19 +76,14 @@ init_database()
 initialize_models()
 
 if __name__ == '__main__':
-    print("\n" + "="*70)
-    print("INVOICE FORECAST SYSTEM - DEEP LEARNING DEMO")
-    print("="*70)
-    print("Model 1: YOLO Layout Detector + OCR Pipeline")
-    print("Model 2: LSTM - Quantity Forecasting")
-    print("="*70)
-    print(f"Server: http://{FLASK_HOST}:{FLASK_PORT}")
-    print("\nAPI Endpoints:")
-    print(" POST /api/model1/detect - Upload invoice image")
-    print(" POST /api/model2/forecast - Get quantity forecast")
-    print(" POST /api/ocr/ - Upload image for OCR (field: 'image' or 'file')")
-    print(" GET /api/history - View invoice history")
-    print(" POST /api/history/clear - Clear history")
-    print("="*70 + "\n")
+    logger.info("INVOICE FORECAST SYSTEM - DEEP LEARNING DEMO")
+    logger.info("Model 1: YOLO Layout Detector + OCR Pipeline")
+    logger.info("Model 2: LSTM - Quantity Forecasting")
+    logger.info("Server: http://%s:%s", FLASK_HOST, FLASK_PORT)
+    logger.info("API endpoint: POST /api/model1/detect - Upload invoice image")
+    logger.info("API endpoint: POST /api/model2/forecast - Get quantity forecast")
+    logger.info("API endpoint: POST /api/ocr/ - Upload image for OCR (field: 'image' or 'file')")
+    logger.info("API endpoint: GET /api/history - View invoice history")
+    logger.info("API endpoint: POST /api/history/clear - Clear history")
 
     app.run(debug=FLASK_DEBUG, port=FLASK_PORT, host=FLASK_HOST, use_reloader=False)

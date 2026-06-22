@@ -13,12 +13,27 @@
 | Python | 3.10+ |
 | pip | 23+ |
 
-### 2. Cài dependencies
+### 2. Cài dependencies (Modular Installation)
 
-```bash
-pip install -r package/requirements.txt
-pip install bcrypt
-```
+Dự án hiện đã được chia nhỏ các dependencies để tối ưu hiệu năng:
+
+- **Cài đặt cơ bản (Chỉ Web App):** 
+  ```bash
+  pip install -r requirements.txt
+  ```
+  *(Sẽ cài đặt `requirements-base.txt` chứa Flask, Database, Auth...)*
+
+- **Cài đặt Deep Learning / ML:** 
+  ```bash
+  pip install -r requirements-ml.txt
+  ```
+  *(Dùng khi bạn cần chạy `dl_service` hoặc `ai_agent_service` local. Lưu ý: `dl_service` đang trong quá trình tách thành repo riêng).*
+
+- **Cài đặt cho Developers:** 
+  ```bash
+  pip install -r requirements-dev.txt
+  ```
+  *(Cài đặt pytest, ruff, black...)*
 
 ### 3. Tạo file `.env`
 

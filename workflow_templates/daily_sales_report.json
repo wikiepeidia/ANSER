@@ -1,0 +1,62 @@
+{
+  "name": "Báo cáo doanh số hàng ngày",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": { "interval": [{ "field": "hours", "hoursInterval": 24, "triggerAtHour": 20 }] }
+      },
+      "id": "ds-trigger",
+      "name": "Mỗi ngày 20h",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [180, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "http://rag-service:8001/daily-sales",
+        "authentication": "none",
+        "options": {}
+      },
+      "id": "ds-fetch",
+      "name": "Lấy doanh số hôm nay",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [420, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $input.first().json;\nconst s = data.summary || {};\nconst tops = (data.top_products || []).map((p,i) => `${i+1}. ${p.product_name} — ${p.qty_sold} cái — ${new Intl.NumberFormat('vi-VN').format(p.revenue)} đ`).join('\\n') || 'Chưa có dữ liệu';\nconst fmt = n => new Intl.NumberFormat('vi-VN').format(n);\nconst body = {\n  embeds: [{\n    title: '📊 Báo cáo doanh số hôm nay',\n    color: 3066993,\n    fields: [\n      { name: 'Tổng đơn hàng', value: String(s.total_orders || 0), inline: true },\n      { name: 'Doanh thu', value: fmt(s.total_revenue || 0) + ' đ', inline: true },\n      { name: 'Nhân viên bán', value: String(s.unique_staff || 0), inline: true },\n      { name: 'Top sản phẩm', value: tops, inline: false }\n    ],\n    footer: { text: 'ANSER Auto Report • NeonDB' },\n    timestamp: new Date().toISOString()\n  }]\n};\nreturn [{ json: { discord_body: JSON.stringify(body) } }];"
+      },
+      "id": "ds-format",
+      "name": "Tạo Discord embed",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [660, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://discord.com/api/webhooks/1515444369480745063/ZlYUlYstgHrc5-P7lZTrcZcsGVGrqo2rvxq_IAPPREB_YP4ci1EZVe0oVC7SZX1Da89R",
+        "authentication": "none",
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ $json.discord_body }}",
+        "options": {}
+      },
+      "id": "ds-discord",
+      "name": "Gửi Discord",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [900, 300]
+    }
+  ],
+  "connections": {
+    "Mỗi ngày 20h":         { "main": [[{ "node": "Lấy doanh số hôm nay", "type": "main", "index": 0 }]] },
+    "Lấy doanh số hôm nay": { "main": [[{ "node": "Tạo Discord embed",    "type": "main", "index": 0 }]] },
+    "Tạo Discord embed":    { "main": [[{ "node": "Gửi Discord",           "type": "main", "index": 0 }]] }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" }
+}

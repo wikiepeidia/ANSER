@@ -34,6 +34,10 @@ CREDENTIALS_FILE = os.path.join(BASE_DIR, 'secrets', 'google_oauth.json')
 TOKEN_FILE = os.path.join(BASE_DIR, 'secrets', 'token.json')
 ADMIN_TOKEN_FILE = os.path.join(BASE_DIR, 'secrets', 'token adminmail.json')
 
+
+def _escape_drive_query_value(value):
+    return value.replace("\\", "\\\\").replace("'", "\\'")
+
 def get_google_service(service_name, version, token_info=None):
     """
     Attempts to authenticate and return a Google API service.
@@ -195,7 +199,7 @@ def list_files(token_info=None, mime_types=None, query_text=None, page_size=50, 
         mime_filters = [f"mimeType='{m}'" for m in mime_types]
         q_parts.append("(" + " or ".join(mime_filters) + ")")
     if query_text:
-        safe = query_text.replace("'", "\'")
+        safe = _escape_drive_query_value(query_text)
         q_parts.append(f"name contains '{safe}'")
     q = " and ".join(q_parts)
 

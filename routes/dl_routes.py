@@ -1,6 +1,6 @@
 """DL proxy and product-sales-history routes extracted from app.py."""
 
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, current_app
 from flask_login import login_required
 
 from core.services.dl_client import DLClient
@@ -10,13 +10,6 @@ logger = get_logger(__name__)
 
 
 dl_bp = Blueprint("dl", __name__)
-
-
-def _app_module():
-    """Lazy app module import to avoid circular imports at module load."""
-    import app as app_module
-
-    return app_module
 
 
 @dl_bp.route('/api/dl/detect', methods=['POST'])
@@ -71,7 +64,7 @@ def api_get_product_sales_history(product_id):
     """Get sales history series for a product from export details."""
     conn = None
     try:
-        conn = _app_module().db_manager.get_connection()
+        conn = current_app.extensions['database'].get_connection()
         c = conn.cursor()
 
         c.execute(

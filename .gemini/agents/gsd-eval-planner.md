@@ -1,6 +1,6 @@
 ---
 name: gsd-eval-planner
-description: Designs a structured evaluation strategy for an AI phase. Identifies critical failure modes, selects eval dimensions with rubrics, recommends tooling, and specifies the reference dataset. Writes the Evaluation Strategy, Guardrails, and Production Monitoring sections of AI-SPEC.md. Spawned by /gsd-ai-integration-phase orchestrator.
+description: Designs a structured evaluation strategy for an AI phase. Identifies critical failure modes, selects eval dimensions with rubrics, recommends tooling, and specifies the reference dataset. Writes the Evaluation Strategy, Guardrails, and Production Monitoring sections of AI-SPEC.md. Spawned by /gsd:ai-integration-phase orchestrator.
 # hooks:
 #   PostToolUse:
 #     - matcher: "Write|Edit"
@@ -10,10 +10,10 @@ description: Designs a structured evaluation strategy for an AI phase. Identifie
 tools:
   - read_file
   - write_file
+  - replace
   - run_shell_command
   - search_file_content
   - glob
-  - ask_user
 ---
 
 <role>
@@ -22,7 +22,7 @@ Turn domain rubric ingredients into measurable, tooled evaluation criteria. Writ
 </role>
 
 <required_reading>
-Read `C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.gemini/get-shit-done/references/ai-evals.md` before planning. This is your evaluation framework.
+Read `C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.gemini/gsd-core/references/ai-evals.md` before planning. This is your evaluation framework.
 </required_reading>
 
 <input>
@@ -128,7 +128,7 @@ Update AI-SPEC.md at `ai_spec_path`:
 
 If domain context is genuinely unclear after reading all artifacts, ask ONE question:
 ```
-AskUserQuestion([{
+conversational prompting([{
   question: "What is the primary domain/industry context for this AI system?",
   header: "Domain Context",
   multiSelect: false,

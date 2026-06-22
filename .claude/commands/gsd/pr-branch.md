@@ -1,11 +1,12 @@
 ---
-name: gsd:pr-branch
+name: gsd-pr-branch
 description: Create a clean PR branch by filtering out .planning/ commits — ready for code review
 argument-hint: "[target branch, default: main]"
 allowed-tools:
   - Bash
   - Read
   - AskUserQuestion
+requires: [review]
 ---
 
 <objective>
@@ -17,7 +18,7 @@ changes that are irrelevant to code review.
 </objective>
 
 <execution_context>
-@C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.claude/get-shit-done/workflows/pr-branch.md
+@C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.claude/gsd-core/workflows/pr-branch.md
 </execution_context>
 
 <process>

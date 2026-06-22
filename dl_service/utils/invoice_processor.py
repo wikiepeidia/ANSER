@@ -11,6 +11,9 @@ from utils.data_processor import (
 )
 import re
 from typing import List, Dict
+from utils.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 def load_product_catalogs(catalog_file: Path):
@@ -24,7 +27,7 @@ def load_product_catalogs(catalog_file: Path):
                 if isinstance(data, list):
                     return {'default': data}
         except (OSError, ValueError) as exc:
-            print(f"Warning: Unable to load product catalogs ({exc})")
+            logger.warning("Unable to load product catalogs: %s", exc)
     return {}
 
 
