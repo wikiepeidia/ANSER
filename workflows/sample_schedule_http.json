@@ -1,0 +1,34 @@
+{
+  "name": "Sample 2 — Schedule 5min HTTP Request",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [{ "field": "minutes", "minutesInterval": 5 }]
+        }
+      },
+      "id": "sample-schedule-001",
+      "name": "Every 5 Minutes",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const res = await $http.get('https://httpbin.org/get');\nconst data = res.data;\nconsole.log('[SCHEDULE HIT]', new Date().toISOString(), '| origin:', data.origin);\nreturn [{ json: { origin: data.origin, checked_at: new Date().toISOString() } }];"
+      },
+      "id": "sample-code-002",
+      "name": "HTTP Request + Log",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 300]
+    }
+  ],
+  "connections": {
+    "Every 5 Minutes": {
+      "main": [[{ "node": "HTTP Request + Log", "type": "main", "index": 0 }]]
+    }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" }
+}
