@@ -92,12 +92,7 @@ def create_app(config_object=None):
     def allow_n8n_iframe(response):
         if request.path.startswith('/n8n'):
             response.headers.pop('X-Frame-Options', None)
-            csp = response.headers.get('Content-Security-Policy', '')
-            if 'frame-ancestors' in csp:
-                parts = [p.strip() for p in csp.split(';')
-                         if 'frame-ancestors' not in p]
-                response.headers['Content-Security-Policy'] = (
-                    '; '.join(parts) if parts else '')
+            response.headers.pop('Content-Security-Policy', None)
         return response
 
     # ── Talisman ───────────────────────────────────────────────────────────
