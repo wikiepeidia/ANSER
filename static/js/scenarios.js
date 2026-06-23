@@ -89,7 +89,7 @@ window.startInteractiveTutorial = function() {
     // Placeholder for interactive tour
     bootstrap.Modal.getInstance(document.getElementById('tutorialModal')).hide();
     localStorage.setItem('hasSeenWorkflowTutorial', 'true');
-    alert('Interactive tour starting... (This is a placeholder)');
+    alert('Đang bắt đầu hướng dẫn tương tác... (Tính năng giữ chỗ)');
 };
 
 document.addEventListener('DOMContentLoaded', initScenariosPage);
@@ -161,9 +161,9 @@ function renderScenarioGrid() {
 
 function buildScenarioCard(scenario) {
     const statusMap = {
-        active: { label: 'Active', className: 'badge-success' },
-        inactive: { label: 'Inactive', className: 'badge-secondary' },
-        concept: { label: 'Concept', className: 'badge-warning' }
+        active: { label: 'Đang hoạt động', className: 'badge-success' },
+        inactive: { label: 'Ngừng hoạt động', className: 'badge-secondary' },
+        concept: { label: 'Bản nháp', className: 'badge-warning' }
     };
 
     const statusMeta = statusMap[scenario.status] || statusMap.inactive;
@@ -173,26 +173,26 @@ function buildScenarioCard(scenario) {
         <article class="scenario-card">
             <header class="scenario-card__header">
                 <div>
-                    <p class="scenario-card__id">${scenario.id || 'SCN-NEW'}</p>
-                    <h3 class="scenario-card__title">${scenario.name || 'Untitled Scenario'}</h3>
-                </div>
-                <span class="badge ${statusMeta.className}">${statusMeta.label}</span>
-            </header>
-            <p class="scenario-card__description">${scenario.description || 'No description provided yet.'}</p>
+<p class="scenario-card__id">${scenario.id || 'SCN-MOI'}</p>
+                <h3 class="scenario-card__title">${scenario.name || 'Kịch bản chưa đặt tên'}</h3>
+            </div>
+            <span class="badge ${statusMeta.className}">${statusMeta.label}</span>
+        </header>
+        <p class="scenario-card__description">${scenario.description || 'Chưa có mô tả.'}</p>
             <footer class="scenario-card__footer">
                 <div class="scenario-card__meta">
-                    <span><i class="fas fa-sync"></i> Runs: ${scenario.runs ?? 0}</span>
-                    <span><i class="fas fa-clock"></i> Updated: ${lastUpdated}</span>
+                    <span><i class="fas fa-sync"></i> Lượt chạy: ${scenario.runs ?? 0}</span>
+                    <span><i class="fas fa-clock"></i> Cập nhật: ${lastUpdated}</span>
                 </div>
                 <div class="d-flex justify-content-between align-items-center mt-3 w-100">
                      <button class="scenario-card__action me-2" type="button" onclick="openBuilder('${scenario.id || ''}')">
-                        Open Builder
+                        Mở trình tạo
                     </button>
                     <div>
-                        <button class="btn btn-sm btn-link text-secondary p-0 me-2" type="button" onclick="editScenario('${scenario.id}')" title="Edit">
+                        <button class="btn btn-sm btn-link text-secondary p-0 me-2" type="button" onclick="editScenario('${scenario.id}')" title="Sửa">
                             <i class="fas fa-edit"></i>
                         </button>
-                        <button class="btn btn-sm btn-link text-danger p-0" type="button" onclick="deleteScenario('${scenario.id}')" title="Delete">
+                        <button class="btn btn-sm btn-link text-danger p-0" type="button" onclick="deleteScenario('${scenario.id}')" title="Xóa">
                             <i class="fas fa-trash"></i>
                         </button>
                     </div>
@@ -225,7 +225,7 @@ function updateScenarioCounts() {
         const folderKey = node.dataset.folderCount;
         if (folderKey && typeof folderCountMap[folderKey] !== 'undefined') {
             const count = folderCountMap[folderKey];
-            node.textContent = `${count} ${count === 1 ? 'scenario' : 'scenarios'}`;
+            node.textContent = `${count} ${count === 1 ? 'kịch bản' : 'kịch bản'}`;
         }
     });
 
@@ -255,9 +255,9 @@ function selectTab(tabKey = 'all') {
 
 function createFolder() {
     if (typeof showNotification === 'function') {
-        showNotification('Folder management is coming soon.', 'info');
+        showNotification('Tính năng quản lý thư mục sẽ sớm ra mắt.', 'info');
     } else {
-        alert('Folder management is coming soon.');
+        alert('Tính năng quản lý thư mục sẽ sớm ra mắt.');
     }
 }
 
@@ -273,7 +273,7 @@ function editScenario(id) {
     document.getElementById('scenarioId').value = scenario.id;
     document.getElementById('scenarioName').value = scenario.name;
     document.getElementById('scenarioDescription').value = scenario.description || '';
-    document.getElementById('scenarioModalLabel').textContent = 'Edit Scenario';
+    document.getElementById('scenarioModalLabel').textContent = 'Sửa kịch bản';
     
     const modalEl = document.getElementById('scenarioModal');
     if (modalEl && typeof bootstrap !== 'undefined') {
@@ -288,7 +288,7 @@ async function saveScenario() {
     const description = document.getElementById('scenarioDescription').value;
 
     if (!name) {
-        alert('Please enter a scenario name');
+        alert('Vui lòng nhập tên kịch bản');
         return;
     }
 
@@ -322,16 +322,16 @@ async function saveScenario() {
         loadScenarios();
         
         if (typeof showNotification === 'function') {
-            showNotification('Scenario saved successfully', 'success');
+            showNotification('Lưu kịch bản thành công', 'success');
         }
     } catch (error) {
         console.error('Error saving scenario:', error);
-        alert('Error saving scenario: ' + error.message);
+        alert('Lỗi khi lưu kịch bản: ' + error.message);
     }
 }
 
 async function deleteScenario(id) {
-    if (!confirm('Are you sure you want to delete this scenario?')) return;
+    if (!confirm('Bạn có chắc chắn muốn xóa kịch bản này?')) return;
 
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
 
@@ -348,11 +348,11 @@ async function deleteScenario(id) {
         loadScenarios();
         
         if (typeof showNotification === 'function') {
-            showNotification('Scenario deleted successfully', 'success');
+            showNotification('Xóa kịch bản thành công', 'success');
         }
     } catch (error) {
         console.error('Error deleting scenario:', error);
-        alert('Error deleting scenario: ' + error.message);
+        alert('Lỗi khi xóa kịch bản: ' + error.message);
     }
 }
 
@@ -366,27 +366,27 @@ function openBuilder(scenarioId = '') {
 
 function browseTemplates() {
     if (typeof showNotification === 'function') {
-        showNotification('Template marketplace will be available soon.', 'info');
+        showNotification('Chợ mẫu kịch bản sẽ sớm ra mắt.', 'info');
     } else {
-        alert('Template marketplace will be available soon.');
+        alert('Chợ mẫu kịch bản sẽ sớm ra mắt.');
     }
 }
 
 function formatScenarioDate(dateValue) {
     if (!dateValue) {
-        return 'Not run yet';
+        return 'Chưa chạy';
     }
     try {
         const date = new Date(dateValue);
         if (Number.isNaN(date.getTime())) {
-            return 'Not run yet';
+            return 'Chưa chạy';
         }
-        return date.toLocaleString('en-US', {
+        return date.toLocaleString('vi-VN', {
             dateStyle: 'medium',
             timeStyle: 'short'
         });
     } catch (error) {
-        return 'Not run yet';
+        return 'Chưa chạy';
     }
 }
 

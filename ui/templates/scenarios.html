@@ -41,12 +41,16 @@
         </div>
 
         <!-- Templates panel -->
-        <div id="tplPanel" style="padding:20px 32px; background:var(--scenario-panel); border-bottom:1px solid var(--scenario-border); overflow:hidden;">
-            <div style="font-size:.78rem; font-weight:600; color:#999; text-transform:uppercase; letter-spacing:.04em; margin-bottom:12px;">
+        <div id="tplPanel" class="scenario-templates-panel">
+            <div class="scenario-templates-label">
                 Workflow Templates — click để deploy vào n8n
             </div>
-            <div class="sc-tpl-grid" id="tplGrid" style="overflow-x:auto; scrollbar-width:thin; -webkit-overflow-scrolling:touch; padding-bottom:8px;">
-                <div style="color:#aaa; font-size:.85rem;">Đang tải...</div>
+            <div class="sc-tpl-viewport">
+                <button class="sc-tpl-nav prev" data-tpl-dir="prev" aria-label="Cuộn trái"><i class="fas fa-chevron-left"></i></button>
+                <div class="sc-tpl-grid" id="tplGrid">
+                    <div class="sc-tpl-loading">Đang tải...</div>
+                </div>
+                <button class="sc-tpl-nav next" data-tpl-dir="next" aria-label="Cuộn phải"><i class="fas fa-chevron-right"></i></button>
             </div>
         </div>
 

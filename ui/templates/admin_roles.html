@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Manage Roles - Admin{% endblock %}
+{% block title %}Quản lý vai trò - Admin{% endblock %}
 
 {% block styles %}
 {{ super() }}
@@ -19,19 +19,19 @@
     <main class="app-content main-content roles-page">
         <div
             class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-            <h1 class="h2"><i class="fas fa-user-shield"></i> Account Role Management</h1>
+            <h1 class="h2"><i class="fas fa-user-shield"></i> Quản lý vai trò tài khoản</h1>
         </div>
 
         <div class="row mb-3">
             <div class="col-md-12">
                 <div class="alert alert-info">
-                    <i class="fas fa-info-circle"></i> <strong>Note:</strong> Only Admin can upgrade a User
-                    to Manager or demote a Manager to User.
+                    <i class="fas fa-info-circle"></i> <strong>Lưu ý:</strong> Chỉ Admin mới có thể nâng cấp User
+                    lên Manager hoặc hạ cấp Manager xuống User.
                 </div>
             </div>
         </div>
 
-        <!-- Statistics Cards -->
+        <!-- Thẻ thống kê -->
         <div class="row mb-4">
             <div class="col-md-4">
                 <div class="stats-card bg-gradient-danger">
@@ -68,11 +68,11 @@
             </div>
         </div>
 
-        <!-- Filter Tabs -->
+        <!-- Tab lọc -->
         <ul class="nav nav-tabs mb-3" id="roleTabs">
             <li class="nav-item">
                 <a class="nav-link active" data-role="all" href="#" onclick="filterByRole('all'); return false;">
-                    <i class="fas fa-list"></i> All
+                    <i class="fas fa-list"></i> Tất cả
                 </a>
             </li>
             <li class="nav-item">
@@ -92,20 +92,20 @@
             </li>
         </ul>
 
-        <!-- Users Table -->
+        <!-- Bảng người dùng -->
         <div class="card">
             <div class="card-body">
-                <h5 class="card-title">Accounts list</h5>
+                <h5 class="card-title">Danh sách tài khoản</h5>
                 <div class="table-responsive">
                     <table class="table table-hover">
                         <thead>
                             <tr>
                                 <th>ID</th>
-                                <th>Name</th>
+                                <th>Tên</th>
                                 <th>Email</th>
-                                <th>Role</th>
-                                <th>Created at</th>
-                                <th>Actions</th>
+                                <th>Vai trò</th>
+                                <th>Ngày tạo</th>
+                                <th>Thao tác</th>
                             </tr>
                         </thead>
                         <tbody id="usersTableBody">

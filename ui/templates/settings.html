@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Settings - {{ project_name }}{% endblock %}
+{% block title %}Cài đặt - {{ project_name }}{% endblock %}
 
 {% block styles %}
 {{ super() }}
@@ -24,12 +24,12 @@
                         <i class="fas fa-sliders-h"></i>
                     </div>
                     <div>
-                        <p class="text-muted mb-0">Configuration</p>
-                        <h3 class="mb-0">Settings</h3>
+                        <p class="text-muted mb-0">Cấu hình</p>
+                        <h3 class="mb-0">Cài đặt</h3>
                     </div>
                 </div>
                 <div class="ms-auto d-flex align-items-center gap-2 flex-wrap">
-                    <!-- <span class="badge bg-light text-dark border">Click cards to configure</span> -->
+                    <!-- <span class="badge bg-light text-dark border">Nhấp vào thẻ để cấu hình</span> -->
                 </div>
             </div>
 
@@ -51,7 +51,7 @@
                     </div>
                     <div id="saveStatus" class="mt-3 text-center text-muted small"
                         style="opacity: 0; transition: opacity 0.3s;">
-                        <i class="fas fa-check-circle text-success"></i> Saved
+                        <i class="fas fa-check-circle text-success"></i> Đã lưu
                     </div>
                 </div>
 
@@ -69,77 +69,75 @@
                                     <form class="settings-form">
                                         {% if key == 'store' %}
                                         <div class="mb-3">
-                                            <label class="form-label">Store Name</label>
+                                            <label class="form-label">Tên cửa hàng</label>
                                             <input type="text" class="form-control setting-input" name="store_name"
-                                                value="{{ all_settings.get('store_name', 'My AI Store') }}"
+                                                value="{{ all_settings.get('store_name', 'Cửa hàng AI của tôi') }}"
                                                 data-group="store">
                                         </div>
                                         <div class="mb-3">
-                                            <label class="form-label">Address</label>
+                                            <label class="form-label">Địa chỉ</label>
                                             <input type="text" class="form-control setting-input" name="store_address"
                                                 value="{{ all_settings.get('store_address', '') }}" data-group="store">
                                         </div>
                                         <div class="mb-3">
-                                            <label class="form-label">Currency</label>
+                                            <label class="form-label">Đơn vị tiền tệ</label>
                                             <select class="form-select setting-input" name="currency"
                                                 data-group="store">
                                                 <option value="VND" {% if all_settings.get('currency')=='VND'
-                                                    %}selected{% endif %}>VND (Vietnamese Dong)</option>
+                                                    %}selected{% endif %}>VND (Đồng Việt Nam)</option>
                                                 <option value="USD" {% if all_settings.get('currency')=='USD'
-                                                    %}selected{% endif %}>USD (US Dollar)</option>
+                                                    %}selected{% endif %}>USD (Đô la Mỹ)</option>
                                             </select>
                                         </div>
 
                                         {% elif key == 'appearance' %}
                                         <div class="mb-3">
-                                            <label class="form-label d-block">Theme Preferences</label>
+                                            <label class="form-label d-block">Tùy chọn giao diện</label>
                                             <div class="d-grid gap-2 d-md-flex justify-content-md-start">
                                                 <button type="button"
                                                     class="btn btn-outline-primary theme-option flex-grow-1"
                                                     data-theme-option="system">
-                                                    <i class="fas fa-desktop me-2"></i> System (Auto)
+                                                    <i class="fas fa-desktop me-2"></i> Hệ thống (Tự động)
                                                 </button>
                                                 <button type="button"
                                                     class="btn btn-outline-dark theme-option flex-grow-1"
                                                     data-theme-option="dark">
-                                                    <i class="fas fa-moon me-2"></i> Dark Mode
+                                                    <i class="fas fa-moon me-2"></i> Chế độ tối
                                                 </button>
                                                 <button type="button"
                                                     class="btn btn-outline-warning theme-option flex-grow-1"
                                                     data-theme-option="light">
-                                                    <i class="fas fa-sun me-2"></i> Light Mode
+                                                    <i class="fas fa-sun me-2"></i> Chế độ sáng
                                                 </button>
                                             </div>
                                             <div class="form-text mt-2">
-                                                Choose how the application looks to you. System mode automatically
-                                                switches based on your device settings.
+                                                Chọn cách hiển thị ứng dụng. Chế độ Hệ thống tự động chuyển theo cài đặt thiết bị của bạn.
                                             </div>
                                         </div>
 
                                         {% elif key == 'system' %}
                                         <div class="mb-3">
-                                            <label class="form-label">Backup Frequency</label>
+                                            <label class="form-label">Tần suất sao lưu</label>
                                             <select class="form-select setting-input" name="backup_frequency"
                                                 data-group="system">
                                                 <option value="daily" {% if
                                                     all_settings.get('backup_frequency')=='daily' %}selected{% endif %}>
-                                                    Daily</option>
+                                                    Hằng ngày</option>
                                                 <option value="weekly" {% if
                                                     all_settings.get('backup_frequency')=='weekly' %}selected{% endif
-                                                    %}>Weekly</option>
+                                                    %}>Hằng tuần</option>
                                                 <option value="manual" {% if
                                                     all_settings.get('backup_frequency')=='manual' %}selected{% endif
-                                                    %}>Manual Only</option>
+                                                    %}>Chỉ thủ công</option>
                                             </select>
                                         </div>
                                         <div class="mb-3">
-                                            <label class="form-label">Keep Uploaded Images (Days)</label>
+                                            <label class="form-label">Giữ ảnh đã tải lên (ngày)</label>
                                             <input type="number" class="form-control setting-input"
                                                 name="keep_images_days"
                                                 value="{{ all_settings.get('keep_images_days', '30') }}"
                                                 data-group="system">
-                                            <div class="form-text">Images older than this will be automatically deleted
-                                                to save space.</div>
+                                            <div class="form-text">Ảnh cũ hơn số ngày này sẽ tự động bị xóa để tiết kiệm dung lượng.</div>
                                         </div>
                                         {% endif %}
                                     </form>
@@ -165,7 +163,7 @@
                 saveSetting(this);
             });
 
-            // For text inputs, also save on blur to catch changes
+            // Với input text, lưu khi blur để bắt thay đổi
             if (input.type === 'text' || input.type === 'number' || input.type === 'email') {
                 input.addEventListener('blur', function () {
                     saveSetting(this);
@@ -196,7 +194,7 @@
                     showStatus();
                 }
             } catch (error) {
-                console.error('Error saving setting:', error);
+                console.error('Lỗi khi lưu cài đặt:', error);
             }
         }
 

@@ -1,4 +1,4 @@
-"""Workflow service functions extracted from route handlers."""
+"""Các hàm service cho workflow được tách ra từ các route handler."""
 
 import json
 
@@ -8,7 +8,7 @@ from .service_errors import ServiceValidationError
 
 
 def _decode_google_token(raw_token):
-    """Decode persisted token payload into a dictionary when possible."""
+    """Giải mã payload token đã lưu thành dictionary nếu có thể."""
     if not raw_token:
         return None
     if isinstance(raw_token, dict):
@@ -22,18 +22,18 @@ def _decode_google_token(raw_token):
 
 
 def execute_user_workflow(workflow_data, google_token_raw):
-    """Execute workflow with token decoding delegated from the route layer."""
+    """Thực thi workflow với việc giải mã token được ủy quyền từ tầng route."""
     if not isinstance(workflow_data, dict):
-        raise ServiceValidationError("workflow_data must be a dictionary")
+        raise ServiceValidationError("workflow_data phải là một dictionary")
 
     token_info = _decode_google_token(google_token_raw)
     return execute_workflow(workflow_data, token_info)
 
 
 def list_workflows_for_user(db_conn, user_id):
-    """Return serialized workflow rows for a user."""
+    """Trả về các hàng workflow đã được serialize cho người dùng."""
     if user_id is None:
-        raise ServiceValidationError("user_id is required")
+        raise ServiceValidationError("user_id là bắt buộc")
 
     cursor = db_conn.cursor()
     cursor.execute(
@@ -64,13 +64,13 @@ def list_workflows_for_user(db_conn, user_id):
 
 
 def save_workflow_for_user(db_conn, user_id, payload):
-    """Create or update a workflow for a user."""
+    """Tạo hoặc cập nhật một workflow cho người dùng."""
     if user_id is None:
-        raise ServiceValidationError("user_id is required")
+        raise ServiceValidationError("user_id là bắt buộc")
     if not isinstance(payload, dict):
-        raise ServiceValidationError("payload must be a dictionary")
+        raise ServiceValidationError("payload phải là một dictionary")
 
-    name = payload.get("name", "Untitled Workflow")
+    name = payload.get("name", "Workflow chưa đặt tên")
     workflow_data = json.dumps(payload.get("data", {}))
     workflow_id = payload.get("id")
 
@@ -91,14 +91,14 @@ def save_workflow_for_user(db_conn, user_id, payload):
     db_conn.commit()
     return {
         "id": workflow_id,
-        "message": "Workflow saved successfully",
+        "message": "Đã lưu workflow thành công",
     }
 
 
 def delete_workflow_for_user(db_conn, user_id, workflow_id):
-    """Delete a workflow owned by a user."""
+    """Xóa một workflow thuộc sở hữu của người dùng."""
     if user_id is None:
-        raise ServiceValidationError("user_id is required")
+        raise ServiceValidationError("user_id là bắt buộc")
 
     cursor = db_conn.cursor()
     cursor.execute(
@@ -108,14 +108,14 @@ def delete_workflow_for_user(db_conn, user_id, workflow_id):
     db_conn.commit()
 
     return {
-        "message": "Workflow deleted",
+        "message": "Đã xóa workflow",
     }
 
 
 def get_workflow_for_user(db_conn, user_id, workflow_id):
-    """Fetch one workflow payload for a user."""
+    """Lấy payload của một workflow cho người dùng."""
     if user_id is None:
-        raise ServiceValidationError("user_id is required")
+        raise ServiceValidationError("user_id là bắt buộc")
 
     cursor = db_conn.cursor()
     cursor.execute(

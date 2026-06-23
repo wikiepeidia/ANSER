@@ -1,11 +1,11 @@
 # core/models.py
 """
-Domain models for the application.
+Model miền cho ứng dụng.
 
-User is defined here (not in app.py) so that Blueprint files and route
-handlers can import it without creating circular imports back to app.py.
+User được định nghĩa ở đây (không phải trong app.py) để các tệp Blueprint và
+route handler có thể import mà không tạo vòng import ngược về app.py.
 
-Usage:
+Cách dùng:
     from core.models import User
 """
 from flask_login import UserMixin

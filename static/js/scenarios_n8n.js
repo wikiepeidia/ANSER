@@ -30,10 +30,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const d = await r.json();
             if (d.online) {
                 statusEl.className = 'sc-status online';
-                statusTxt.textContent = 'n8n Online';
+                statusTxt.textContent = 'n8n Trực tuyến';
             } else {
                 statusEl.className = 'sc-status offline';
-                statusTxt.textContent = 'n8n Offline';
+                statusTxt.textContent = 'n8n Ngoại tuyến';
             }
         } catch {
             statusEl.className = 'sc-status offline';
@@ -65,23 +65,23 @@ document.addEventListener('DOMContentLoaded', () => {
                         <button class="sc-wf-badge ${wf.active ? 'on' : 'off'}"
                                 onclick="toggleActive('${wf.id}', ${!wf.active})">
                             <i class="fas fa-${wf.active ? 'check-circle' : 'pause-circle'}"></i>
-                            ${wf.active ? 'Active' : 'Inactive'}
+                            ${wf.active ? 'Hoạt động' : 'Tạm dừng'}
                         </button>
                     </div>
                     <div class="sc-wf-meta">
-                        <span class="sc-wf-meta-item"><i class="fas fa-project-diagram"></i> ${wf.nodes} nodes</span>
+                        <span class="sc-wf-meta-item"><i class="fas fa-project-diagram"></i> ${wf.nodes} nút</span>
                         <span class="sc-wf-meta-item"><i class="fas fa-clock"></i> ${timeAgo(wf.updatedAt)}</span>
                         ${wf.tags.length ? wf.tags.map(t => `<span class="sc-wf-meta-item"><i class="fas fa-tag"></i> ${esc(t)}</span>`).join('') : ''}
                     </div>
                     <div class="sc-wf-actions">
                         <button class="sc-wf-btn run" onclick="runWorkflow('${wf.id}', this)">
-                            <i class="fas fa-play"></i> Run
+                            <i class="fas fa-play"></i> Chạy
                         </button>
                         <button class="sc-wf-btn edit" onclick="openEditor('${wf.id}', '${esc(wf.name)}')">
-                            <i class="fas fa-edit"></i> Edit
+                            <i class="fas fa-edit"></i> Sửa
                         </button>
                         <button class="sc-wf-btn history" onclick="toggleHistory('${wf.id}', this)">
-                            <i class="fas fa-history"></i> History
+                            <i class="fas fa-history"></i> Lịch sử
                         </button>
                         <button class="sc-wf-btn delete" onclick="deleteWorkflow('${wf.id}', '${esc(wf.name)}')">
                             <i class="fas fa-trash"></i>
@@ -105,7 +105,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // ── Run workflow ─────────────────────────────────────
     window.runWorkflow = async function(id, btn) {
         const origHTML = btn.innerHTML;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Running...';
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang chạy...';
         btn.classList.add('running');
         btn.disabled = true;
 
@@ -125,7 +125,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const text = await r.text();
             console.log('Run response body:', text);
             let d;
-            try { d = JSON.parse(text); } catch { d = { success: false, error: 'Response không phải JSON: ' + text.substring(0, 100) }; }
+            try { d = JSON.parse(text); } catch { d = { success: false, error: 'Phản hồi không phải JSON: ' + text.substring(0, 100) }; }
             btn.innerHTML = origHTML;
             btn.classList.remove('running');
             btn.disabled = false;
@@ -172,7 +172,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             const d = await r.json();
             if (d.success) {
-                showToast(d.active ? 'Đã kích hoạt workflow' : 'Đã tắt workflow', true);
+                showToast(d.active ? 'Đã kích hoạt quy trình' : 'Đã tắt quy trình', true);
                 loadWorkflows();
             } else {
                 showToast(d.error || 'Không thể kích hoạt', false);
@@ -190,7 +190,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        panel.innerHTML = '<div style="padding:8px 0;color:#aaa;font-size:.78rem;"><i class="fas fa-spinner fa-spin"></i> Loading...</div>';
+        panel.innerHTML = '<div style="padding:8px 0;color:#aaa;font-size:.78rem;"><i class="fas fa-spinner fa-spin"></i> Đang tải...</div>';
         panel.classList.add('open');
 
         try {
@@ -198,7 +198,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const d = await r.json();
 
             if (!d.success || !d.executions.length) {
-                panel.innerHTML = '<div class="sc-exec-empty">Chưa có execution nào</div>';
+                panel.innerHTML = '<div class="sc-exec-empty">Chưa có lần chạy nào</div>';
                 return;
             }
 
@@ -218,7 +218,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ── Editor panel ─────────────────────────────────────
     window.openEditor = function(id, name) {
-        document.getElementById('editorTitle').textContent = name || 'n8n Editor';
+        document.getElementById('editorTitle').textContent = name || 'Trình soạn n8n';
         document.getElementById('editorFrame').src = id ? '/n8n/workflow/' + id : '/n8n/workflows';
         document.getElementById('editorPanel').style.display = 'block';
     };
@@ -231,7 +231,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ── Delete workflow ─────────────────────────────────
     window.deleteWorkflow = async function(id, name) {
-        if (!confirm('Xóa workflow "' + name + '"? Không thể hoàn tác.')) return;
+        if (!confirm('Xóa quy trình "' + name + '"? Không thể hoàn tác.')) return;
         try {
             const r = await fetch('/api/n8n/workflows/' + id, {
                 method: 'DELETE',
@@ -239,10 +239,10 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             const d = await r.json();
             if (d.success) {
-                showToast('Đã xóa workflow', true);
+                showToast('Đã xóa quy trình', true);
                 loadWorkflows();
             } else {
-                showToast('Lỗi: ' + (d.error || 'Unknown'), false);
+                showToast('Lỗi: ' + (d.error || 'Không xác định'), false);
             }
         } catch {
             showToast('Không kết nối được n8n', false);
@@ -252,19 +252,36 @@ document.addEventListener('DOMContentLoaded', () => {
     // ── Templates ────────────────────────────────────────
     window.toggleTemplates = function() {
         const panel = document.getElementById('tplPanel');
-        panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+        panel.classList.toggle('is-collapsed');
+        // After toggle finishes, refresh arrow visibility
+        setTimeout(updateTplNavState, 250);
     };
 
     async function loadTemplates() {
+        // Show skeleton while loading so the row doesn't jump
+        tplGrid.innerHTML = `
+            <div class="sc-tpl-skeleton">
+                <div class="sc-tpl-skel-card"></div>
+                <div class="sc-tpl-skel-card"></div>
+                <div class="sc-tpl-skel-card"></div>
+                <div class="sc-tpl-skel-card"></div>
+            </div>`;
+        updateTplNavState();
+
         try {
             const r = await fetch('/api/n8n/templates');
             const d = await r.json();
             if (!d.success || !d.templates.length) {
-                tplGrid.innerHTML = '<div style="color:#aaa;font-size:.85rem;">Không có template</div>';
+                tplGrid.innerHTML = `
+                    <div class="sc-tpl-empty">
+                        <i class="fas fa-inbox" style="font-size:1.4rem;display:block;margin-bottom:8px;opacity:.5;"></i>
+                        Chưa có mẫu nào — hãy tạo quy trình trong trình soạn n8n.
+                    </div>`;
+                updateTplNavState();
                 return;
             }
             tplGrid.innerHTML = d.templates.map(t => `
-                <div class="sc-tpl-card" data-slug="${t.slug}" onclick="deployTemplate(this, '${t.slug}')">
+                <div class="sc-tpl-card" tabindex="0" data-slug="${t.slug}" onclick="deployTemplate(this, '${t.slug}')">
                     <div class="sc-tpl-icon" style="background:${t.color}">
                         <i class="fas ${t.icon}"></i>
                     </div>
@@ -274,9 +291,179 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                 </div>
             `).join('');
+            enableDragScroll(tplGrid);
+            syncOverflowState(tplGrid);
+            updateTplNavState();
         } catch {
-            tplGrid.innerHTML = '<div style="color:#F44336;font-size:.85rem;">Lỗi tải templates</div>';
+            tplGrid.innerHTML = `
+                <div class="sc-tpl-empty" style="color:#F44336;border-color:rgba(244,67,54,.3);">
+                    <i class="fas fa-triangle-exclamation" style="font-size:1.4rem;display:block;margin-bottom:8px;"></i>
+                    Không tải được mẫu. Bấm Làm mới để thử lại.
+                </div>`;
+            updateTplNavState();
         }
+    }
+
+    // ── Drag-to-scroll + vertical wheel => horizontal scroll ──
+    function enableDragScroll(el) {
+        if (!el || el.__dragScrollBound) return;
+        el.__dragScrollBound = true;
+
+        let isDown = false;
+        let startX = 0;
+        let startScroll = 0;
+        let moved = 0;
+
+        const onDown = (e) => {
+            if (e.button === 2) return;
+            isDown = true;
+            moved = 0;
+            startX = (e.touches ? e.touches[0].pageX : e.pageX) - el.getBoundingClientRect().left;
+            startScroll = el.scrollLeft;
+            el.classList.add('is-dragging');
+        };
+        const onMove = (e) => {
+            if (!isDown) return;
+            const x = (e.touches ? e.touches[0].pageX : e.pageX) - el.getBoundingClientRect().left;
+            const walk = (x - startX) * 1.2;
+            moved = Math.abs(walk);
+            el.scrollLeft = startScroll - walk;
+            if (e.cancelable) e.preventDefault();
+        };
+        const onUp = () => {
+            if (!isDown) return;
+            isDown = false;
+            el.classList.remove('is-dragging');
+            // Suppress click if we actually dragged (so deploy doesn't fire)
+            if (moved > 5) {
+                el.querySelectorAll('.sc-tpl-card').forEach(card => {
+                    const handler = (ev) => {
+                        ev.stopPropagation();
+                        ev.preventDefault();
+                        card.removeEventListener('click', handler, true);
+                    };
+                    card.addEventListener('click', handler, true);
+                });
+            }
+            syncOverflowState(el);
+        };
+
+        el.addEventListener('mousedown', onDown);
+        window.addEventListener('mousemove', onMove);
+        window.addEventListener('mouseup', onUp);
+        el.addEventListener('touchstart', onDown, { passive: true });
+        el.addEventListener('touchmove', onMove, { passive: false });
+        el.addEventListener('touchend', onUp);
+
+        // Keep nav arrow enabled/disabled state in sync
+        el.addEventListener('scroll', updateTplNavState, { passive: true });
+
+        // Keyboard navigation when the strip itself is focused
+        el.addEventListener('keydown', (e) => {
+            const card = e.target.closest('.sc-tpl-card');
+            if (!card) return;
+            if (e.key === 'ArrowRight') {
+                e.preventDefault();
+                const next = card.nextElementSibling;
+                if (next && next.classList.contains('sc-tpl-card')) {
+                    next.focus();
+                    next.scrollIntoView({ behavior: 'smooth', inline: 'start', block: 'nearest' });
+                }
+            } else if (e.key === 'ArrowLeft') {
+                e.preventDefault();
+                const prev = card.previousElementSibling;
+                if (prev && prev.classList.contains('sc-tpl-card')) {
+                    prev.focus();
+                    prev.scrollIntoView({ behavior: 'smooth', inline: 'start', block: 'nearest' });
+                }
+            } else if (e.key === 'Home') {
+                e.preventDefault();
+                el.scrollTo({ left: 0, behavior: 'smooth' });
+            } else if (e.key === 'End') {
+                e.preventDefault();
+                el.scrollTo({ left: el.scrollWidth, behavior: 'smooth' });
+            }
+        });
+
+        // Prevent focus from scrolling the whole page when tabbing through cards
+        el.addEventListener('focusin', (e) => {
+            const card = e.target.closest('.sc-tpl-card');
+            if (card) card.scrollIntoView({ block: 'nearest', inline: 'start' });
+        });
+    }
+
+    // ── Prev/Next arrow buttons for the template strip ──
+    function scrollTemplates(dir) {
+        if (!tplGrid) return;
+        const step = Math.max(240, tplGrid.clientWidth * 0.7);
+        tplGrid.scrollBy({ left: dir * step, behavior: 'smooth' });
+    }
+
+    function syncOverflowState(el) {
+        if (!el) return;
+        const overflows = el.scrollWidth > el.clientWidth + 1;
+        el.classList.toggle('has-overflow', overflows);
+    }
+
+    function updateTplNavState() {
+        if (!tplGrid) return;
+        const prev = document.querySelector('.sc-tpl-nav.prev');
+        const next = document.querySelector('.sc-tpl-nav.next');
+        if (!prev || !next) return;
+        const max = tplGrid.scrollWidth - tplGrid.clientWidth;
+        const hasOverflow = max > 1;
+        syncOverflowState(tplGrid);
+        prev.disabled  = !hasOverflow || tplGrid.scrollLeft <= 0;
+        next.disabled  = !hasOverflow || tplGrid.scrollLeft >= max - 1;
+    }
+
+    document.querySelectorAll('.sc-tpl-nav').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const dir = btn.dataset.tplDir === 'next' ? 1 : -1;
+            scrollTemplates(dir);
+        });
+    });
+
+    // Re-evaluate arrows on resize (cards wrap width changes)
+    window.addEventListener('resize', () => {
+        syncOverflowState(tplGrid);
+        updateTplNavState();
+    });
+
+    // Wheel scroll on template grid and its viewport container
+    function handleTplWheel(e) {
+        if (!tplGrid) return;
+        if (tplGrid.scrollWidth <= tplGrid.clientWidth) return;
+        if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+            tplGrid.scrollLeft += e.deltaY * 3;
+            updateTplNavState();
+            if (e.cancelable) e.preventDefault();
+        }
+    }
+    if (tplGrid) {
+        tplGrid.addEventListener('wheel', handleTplWheel, { passive: false });
+    }
+    const tplViewport = document.querySelector('.sc-tpl-viewport');
+    if (tplViewport) {
+        tplViewport.addEventListener('wheel', handleTplWheel, { passive: false });
+    }
+
+    // Sync template strip when sidebar collapses/expands
+    const sidebar = document.getElementById('main-sidebar');
+    if (sidebar) {
+        sidebar.addEventListener('transitionend', () => {
+            syncOverflowState(tplGrid);
+            updateTplNavState();
+        });
+    }
+    const collapseBtn = document.getElementById('sidebar-collapse-toggle');
+    if (collapseBtn) {
+        collapseBtn.addEventListener('click', () => {
+            setTimeout(() => {
+                syncOverflowState(tplGrid);
+                updateTplNavState();
+            }, 350);
+        });
     }
 
     window.deployTemplate = async function(card, slug) {
@@ -292,10 +479,10 @@ document.addEventListener('DOMContentLoaded', () => {
             card.classList.remove('deploying');
             if (d.success) {
                 card.classList.add('deployed');
-                showToast(d.existing ? 'Workflow đã có trong n8n' : 'Deploy thành công!', true);
+                showToast(d.existing ? 'Quy trình đã có trong n8n' : 'Triển khai thành công!', true);
                 loadWorkflows();
             } else {
-                showToast('Lỗi: ' + (d.error || 'Unknown'), false);
+                showToast('Lỗi: ' + (d.error || 'Không xác định'), false);
             }
         } catch {
             card.classList.remove('deploying');

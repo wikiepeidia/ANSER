@@ -13,6 +13,14 @@
     --scenario-card-bg: #ffffff;
     --scenario-card-soft: #f4f6fb;
     --scenario-chip-bg: rgba(102, 126, 234, 0.12);
+
+    /* Unified layout + interaction tokens */
+    --scenario-gutter: 32px;          /* outer padding for header / content / templates */
+    --scenario-radius-lg: 18px;
+    --scenario-radius-md: 14px;
+    --scenario-radius-sm: 10px;
+    --scenario-transition: 0.25s cubic-bezier(0.25, 0.1, 0.25, 1);  /* matches sidebar collapse timing */
+    --scenario-row-max: 1440px;       /* keep wide screens from stretching forever */
 }
 
 html[data-theme='dark'],
@@ -28,6 +36,28 @@ body.dark-mode {
     --scenario-card-bg: rgba(15, 23, 42, 0.95);
     --scenario-card-soft: rgba(15, 23, 42, 0.75);
     --scenario-chip-bg: rgba(99, 102, 241, 0.25);
+}
+
+/* Dark-mode tweaks for the new container classes */
+html[data-theme='dark'] .scenario-templates-panel,
+body.dark-mode .scenario-templates-panel {
+    background: var(--scenario-panel);
+}
+html[data-theme='dark'] .scenario-templates-label,
+body.dark-mode .scenario-templates-label {
+    color: var(--scenario-muted);
+}
+html[data-theme='dark'] .sc-tpl-skel-card,
+body.dark-mode .sc-tpl-skel-card {
+    background: linear-gradient(90deg,
+        rgba(148,163,184,.10) 0%,
+        rgba(148,163,184,.22) 50%,
+        rgba(148,163,184,.10) 100%);
+    background-size: 200% 100%;
+}
+html[data-theme='dark'] .sc-tpl-empty,
+body.dark-mode .sc-tpl-empty {
+    border-color: var(--scenario-border);
 }
 
 /* Dark mode support for modal */
@@ -134,7 +164,7 @@ body.scenarios-page {
     color: var(--scenario-text);
     text-decoration: none;
     font-size: 0.85rem;
-    transition: all 0.2s ease;
+    transition: all var(--scenario-transition);
 }
 
 .logout-btn:hover {
@@ -159,6 +189,10 @@ body.scenarios-page {
 
 .search-input::placeholder {
     color: var(--scenario-muted);
+}
+
+.search-input {
+    transition: border-color var(--scenario-transition), background var(--scenario-transition);
 }
 
 .search-input:focus {
@@ -200,7 +234,7 @@ body.scenarios-page {
     cursor: pointer;
     padding: 6px;
     border-radius: 8px;
-    transition: background 0.2s;
+    transition: background var(--scenario-transition), color var(--scenario-transition);
 }
 
 .add-folder-btn:hover {
@@ -211,10 +245,10 @@ body.scenarios-page {
     display: flex;
     align-items: center;
     padding: 14px 16px;
-    border-radius: 14px;
+    border-radius: var(--scenario-radius-md);
     border: 1px solid transparent;
     margin-bottom: 10px;
-    transition: all 0.2s ease;
+    transition: all var(--scenario-transition);
     cursor: pointer;
 }
 
@@ -263,16 +297,46 @@ body.scenarios-page {
     display: flex;
     flex-direction: column;
     background: var(--scenario-surface);
+    margin-left: 280px;
+    transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.main-content.sidebar-collapsed {
+    margin-left: 60px;
 }
 
 .content-header {
     background: var(--scenario-panel);
     border-bottom: 1px solid var(--scenario-border);
-    padding: 32px;
+    padding: var(--scenario-gutter);
     display: flex;
     justify-content: space-between;
     gap: 24px;
     align-items: flex-start;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* Inner row to keep header / templates / grid perfectly aligned */
+.content-header > .content-header-inner,
+.content-area > .content-area-inner,
+.scenario-templates-panel > .scenario-templates-inner {
+    width: 100%;
+    max-width: var(--scenario-row-max);
+    margin: 0 auto;
+}
+
+/* Header action row — keep title + status + buttons in one tidy line */
+.sc-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+/* Small button variant used inside the header row */
+.sc-btn-sm {
+    padding: 6px 14px !important;
+    font-size: .82rem !important;
 }
 
 .nav-breadcrumb {
@@ -332,7 +396,7 @@ body.scenarios-page {
 
 .create-btn {
     border: none;
-    border-radius: 12px;
+    border-radius: var(--scenario-radius-sm);
     padding: 12px 20px;
     background: var(--scenario-gradient);
     color: #ffffff;
@@ -343,7 +407,7 @@ body.scenarios-page {
     gap: 8px;
     cursor: pointer;
     box-shadow: 0 12px 25px rgba(102, 126, 234, 0.25);
-    transition: transform 0.2s ease;
+    transition: transform var(--scenario-transition), box-shadow var(--scenario-transition);
 }
 
 .create-btn:hover {
@@ -355,10 +419,19 @@ body.scenarios-page {
     background: var(--scenario-panel);
     color: var(--scenario-muted);
     padding: 12px 20px;
-    border-radius: 12px;
+    border-radius: var(--scenario-radius-sm);
     font-weight: 600;
     cursor: pointer;
-    transition: background 0.2s ease;
+    transition: background var(--scenario-transition), color var(--scenario-transition), border-color var(--scenario-transition);
+}
+.btn-secondary:focus-visible {
+    outline: 2px solid var(--scenario-accent, #667eea);
+    outline-offset: 2px;
+}
+
+.create-btn:focus-visible {
+    outline: 2px solid var(--scenario-accent, #667eea);
+    outline-offset: 3px;
 }
 
 .btn-secondary:hover {
@@ -367,8 +440,45 @@ body.scenarios-page {
 
 .content-area {
     flex: 1;
-    padding: 32px;
+    padding: var(--scenario-gutter);
     overflow-y: auto;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* Templates panel — same horizontal gutter as header & content-area */
+.scenario-templates-panel {
+    padding: 20px var(--scenario-gutter);
+    background: var(--scenario-panel);
+    border-bottom: 1px solid var(--scenario-border);
+    width: 100%;
+    box-sizing: border-box;
+    overflow: hidden;
+    max-height: 500px;             /* big enough to fit the strip + a little breathing room */
+    transition: max-height var(--scenario-transition),
+                padding var(--scenario-transition),
+                border-color var(--scenario-transition),
+                opacity var(--scenario-transition);
+    opacity: 1;
+}
+.scenario-templates-panel.is-collapsed {
+    max-height: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    border-bottom-color: transparent;
+    opacity: 0;
+}
+
+.scenario-templates-panel .scenario-templates-label {
+    font-size: .78rem;
+    font-weight: 600;
+    color: #999;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    margin-bottom: 12px;
+    max-width: var(--scenario-row-max);
+    margin-left: auto;
+    margin-right: auto;
 }
 
 .empty-state {
@@ -380,6 +490,8 @@ body.scenarios-page {
     max-width: 720px;
     margin: 0 auto;
     box-shadow: var(--scenario-shadow);
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .empty-icon {
@@ -420,16 +532,17 @@ body.scenarios-page {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
     gap: 20px;
+    width: 100%;
     margin-top: 32px;
 }
 
 .scenario-card {
     background: var(--scenario-card-bg);
-    border-radius: 18px;
+    border-radius: var(--scenario-radius-lg);
     border: 1px solid var(--scenario-border);
     padding: 24px;
     box-shadow: 0 15px 35px rgba(15, 23, 42, 0.08);
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    transition: transform var(--scenario-transition), box-shadow var(--scenario-transition);
 }
 
 .scenario-card:hover {
@@ -461,7 +574,8 @@ body.scenarios-page {
     }
 
     .content-header,
-    .content-area {
+    .content-area,
+    .scenario-templates-panel {
         padding: 24px;
     }
 }
@@ -469,6 +583,10 @@ body.scenarios-page {
 @media (max-width: 900px) {
     .scenario-container {
         flex-direction: column;
+    }
+
+    .main-content {
+        margin-left: 0 !important;
     }
 
     .sidebar {
@@ -496,7 +614,8 @@ body.scenarios-page {
 
 @media (max-width: 600px) {
     .content-header,
-    .content-area {
+    .content-area,
+    .scenario-templates-panel {
         padding: 20px;
     }
 

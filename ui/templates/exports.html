@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Exports - {{ project_name }}{% endblock %}
+{% block title %}Quản lý xuất hàng - {{ project_name }}{% endblock %}
 
 {% block styles %}
 {{ super() }}
@@ -19,9 +19,9 @@
     <main class="app-content main-content exports-page">
         <div
             class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-            <h1 class="h2"><i class="fas fa-arrow-up"></i> Manage Exports</h1>
+            <h1 class="h2"><i class="fas fa-arrow-up"></i> Quản lý xuất hàng</h1>
             <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createExportModal">
-                <i class="fas fa-plus"></i> Create Export
+                <i class="fas fa-plus"></i> Tạo phiếu xuất
             </button>
         </div>
 
@@ -29,7 +29,7 @@
             <div class="col-md-3">
                 <div class="card text-white bg-warning">
                     <div class="card-body">
-                        <h5 class="card-title">Total export orders</h5>
+                        <h5 class="card-title">Tổng phiếu xuất</h5>
                         <h2 id="totalExports">0</h2>
                     </div>
                 </div>
@@ -37,7 +37,7 @@
             <div class="col-md-3">
                 <div class="card text-white bg-success">
                     <div class="card-body">
-                        <h5 class="card-title">Completed</h5>
+                        <h5 class="card-title">Đã hoàn thành</h5>
                         <h2 id="completedExports">0</h2>
                     </div>
                 </div>
@@ -45,7 +45,7 @@
             <div class="col-md-3">
                 <div class="card text-white bg-danger">
                     <div class="card-body">
-                        <h5 class="card-title">Total revenue</h5>
+                        <h5 class="card-title">Tổng doanh thu</h5>
                         <h2 id="totalRevenue">0 VND</h2>
                     </div>
                 </div>
@@ -54,18 +54,18 @@
 
         <div class="card">
             <div class="card-body">
-                <h5 class="card-title">Export orders list</h5>
+                <h5 class="card-title">Danh sách phiếu xuất</h5>
                 <div class="table-responsive">
                     <table class="table table-hover">
                         <thead>
                             <tr>
-                                <th>Order code</th>
-                                <th>Customer</th>
-                                <th>Total</th>
-                                <th>Status</th>
-                                <th>Export date</th>
-                                <th>Notes</th>
-                                <th>Actions</th>
+                                <th>Mã phiếu</th>
+                                <th>Khách hàng</th>
+                                <th>Tổng tiền</th>
+                                <th>Trạng thái</th>
+                                <th>Ngày xuất</th>
+                                <th>Ghi chú</th>
+                                <th>Thao tác</th>
                             </tr>
                         </thead>
                         <tbody id="exportsTableBody">
@@ -82,92 +82,92 @@
     </main>
 </div>
 
-<!-- Create Export Modal -->
+<!-- Modal: Tạo phiếu xuất -->
 <div class="modal fade" id="createExportModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Create Export Transaction</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <h5 class="modal-title">Tạo phiếu xuất hàng</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
             </div>
             <div class="modal-body">
                 <form id="createExportForm">
                     <div class="row mb-3">
                         <div class="col-md-6">
-                            <label class="form-label">Customer</label>
+                            <label class="form-label">Khách hàng</label>
                             <select class="form-select" name="customer_id" id="customerSelect" required>
-                                <option value="">Select Customer</option>
+                                <option value="">-- Chọn khách hàng --</option>
                             </select>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">Notes</label>
+                            <label class="form-label">Ghi chú</label>
                             <input type="text" class="form-control" name="notes">
                         </div>
                     </div>
 
                     <hr>
-                    <h6>Items</h6>
+                    <h6>Sản phẩm</h6>
                     <div class="table-responsive mb-3">
                         <table class="table table-bordered" id="exportItemsTable">
                             <thead>
                                 <tr>
-                                    <th>Product</th>
-                                    <th width="150">Quantity</th>
-                                    <th width="200">Unit Price</th>
+                                    <th>Sản phẩm</th>
+                                    <th width="150">Số lượng</th>
+                                    <th width="200">Đơn giá</th>
                                     <th width="50"></th>
                                 </tr>
                             </thead>
                             <tbody id="exportItemsBody">
-                                <!-- Items will be added here -->
+                                <!-- Sản phẩm sẽ được thêm tại đây -->
                             </tbody>
                         </table>
                     </div>
                     <button type="button" class="btn btn-secondary btn-sm" onclick="addExportItemRow()">
-                        <i class="fas fa-plus"></i> Add Item
+                        <i class="fas fa-plus"></i> Thêm sản phẩm
                     </button>
                 </form>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                <button type="button" class="btn btn-primary" onclick="submitExport()">Create Export</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                <button type="button" class="btn btn-primary" onclick="submitExport()">Tạo phiếu xuất</button>
             </div>
         </div>
     </div>
 </div>
 
-<!-- View Export Modal -->
+<!-- Modal: Xem phiếu xuất -->
 <div class="modal fade" id="viewExportModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Export Details</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <h5 class="modal-title">Chi tiết phiếu xuất</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
             </div>
             <div class="modal-body">
                 <div class="row mb-3">
                     <div class="col-md-6">
-                        <strong>Code:</strong> <span id="viewExportCode"></span><br>
-                        <strong>Customer:</strong> <span id="viewExportCustomer"></span><br>
-                        <strong>Date:</strong> <span id="viewExportDate"></span>
+                        <strong>Mã:</strong> <span id="viewExportCode"></span><br>
+                        <strong>Khách hàng:</strong> <span id="viewExportCustomer"></span><br>
+                        <strong>Ngày:</strong> <span id="viewExportDate"></span>
                     </div>
                     <div class="col-md-6 text-end">
-                        <strong>Status:</strong> <span id="viewExportStatus"></span><br>
-                        <strong>Total:</strong> <span id="viewExportTotal" class="h5 text-primary"></span>
+                        <strong>Trạng thái:</strong> <span id="viewExportStatus"></span><br>
+                        <strong>Tổng tiền:</strong> <span id="viewExportTotal" class="h5 text-primary"></span>
                     </div>
                 </div>
                 <div class="mb-3">
-                    <strong>Notes:</strong> <span id="viewExportNotes"></span>
+                    <strong>Ghi chú:</strong> <span id="viewExportNotes"></span>
                 </div>
 
                 <div class="table-responsive">
                     <table class="table table-striped">
                         <thead>
                             <tr>
-                                <th>Product Code</th>
-                                <th>Product Name</th>
-                                <th class="text-end">Quantity</th>
-                                <th class="text-end">Unit Price</th>
-                                <th class="text-end">Total</th>
+                                <th>Mã sản phẩm</th>
+                                <th>Tên sản phẩm</th>
+                                <th class="text-end">Số lượng</th>
+                                <th class="text-end">Đơn giá</th>
+                                <th class="text-end">Thành tiền</th>
                             </tr>
                         </thead>
                         <tbody id="viewExportItemsBody"></tbody>
@@ -175,7 +175,7 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
             </div>
         </div>
     </div>

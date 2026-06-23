@@ -1,5 +1,5 @@
 {
-  "name": "POS Demo — IoT → NeonDB → Discord",
+  "name": "Demo POS — IoT → NeonDB → Discord",
   "nodes": [
     {
       "parameters": {
@@ -9,17 +9,17 @@
         "options": {}
       },
       "id": "pos-webhook-001",
-      "name": "Receive POS Event",
+      "name": "Nhận sự kiện POS",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
       "position": [180, 300]
     },
     {
       "parameters": {
-        "jsCode": "const raw = $input.first().json;\nconst body = (raw.body && typeof raw.body === 'object') ? raw.body : raw;\nconst missing = [];\nif (!body.device_id)  missing.push('device_id');\nif (!body.event_type) missing.push('event_type');\nif (missing.length > 0) {\n  return [{ json: { valid: false, error: `Missing required fields: ${missing.join(', ')}` } }];\n}\nconst amount = body.payload?.amount || 0;\nconst d = {\n  valid: true,\n  device_id:  String(body.device_id),\n  event_type: String(body.event_type),\n  payload:    body.payload || {},\n  amount_vnd: amount,\n  amount_fmt: new Intl.NumberFormat('vi-VN').format(amount) + ' VND'\n};\nd.request_body = JSON.stringify({ device_id: d.device_id, event_type: d.event_type, payload: d.payload });\nreturn [{ json: d }];"
+        "jsCode": "const raw = $input.first().json;\nconst body = (raw.body && typeof raw.body === 'object') ? raw.body : raw;\nconst missing = [];\nif (!body.device_id)  missing.push('device_id');\nif (!body.event_type) missing.push('event_type');\nif (missing.length > 0) {\n  return [{ json: { valid: false, error: `Thiếu trường bắt buộc: ${missing.join(', ')}` } }];\n}\nconst amount = body.payload?.amount || 0;\nconst d = {\n  valid: true,\n  device_id:  String(body.device_id),\n  event_type: String(body.event_type),\n  payload:    body.payload || {},\n  amount_vnd: amount,\n  amount_fmt: new Intl.NumberFormat('vi-VN').format(amount) + ' VND'\n};\nd.request_body = JSON.stringify({ device_id: d.device_id, event_type: d.event_type, payload: d.payload });\nreturn [{ json: d }];"
       },
       "id": "pos-code-001",
-      "name": "Validate + Enrich",
+      "name": "Kiểm tra và làm giàu dữ liệu",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [400, 300]
@@ -31,7 +31,7 @@
         }
       },
       "id": "pos-if-001",
-      "name": "Valid?",
+      "name": "Hợp lệ?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [620, 300]
@@ -48,17 +48,17 @@
         "options": {}
       },
       "id": "pos-httpreq-001",
-      "name": "Call iot-insert",
+      "name": "Gọi iot-insert",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [840, 180]
     },
     {
       "parameters": {
-        "jsCode": "const dbResult = $input.first().json;\nconst orig = $('Validate + Enrich').first().json;\nconst d = { ...orig, db_id: dbResult.id, created_at: dbResult.created_at, db_ok: true };\nconst isInvoice = ['sale_completed', 'payment_received', 'invoice'].includes(d.event_type);\nd.discord_body = JSON.stringify({\n  embeds: [{\n    title: (isInvoice ? 'Hoa don moi' : 'Su kien POS') + ' — ' + d.device_id,\n    color: isInvoice ? 52307 : 16744448,\n    fields: [\n      { name: 'Thiet bi',  value: d.device_id,             inline: true  },\n      { name: 'Loai',      value: d.event_type,            inline: true  },\n      { name: 'DB Record', value: '#' + (d.db_id || '?'),  inline: true  },\n      { name: 'So tien',   value: d.amount_fmt || 'N/A',   inline: true  },\n      { name: 'Thoi gian', value: d.created_at || new Date().toISOString(), inline: false }\n    ],\n    footer: { text: 'n8n IoT Pipeline • NeonDB' }\n  }]\n});\nd.response_201 = JSON.stringify({ status: 'ok', id: d.db_id, device: d.device_id, event: d.event_type, timestamp: d.created_at });\nreturn [{ json: d }];"
+        "jsCode": "const dbResult = $input.first().json;\nconst orig = $('Kiểm tra và làm giàu dữ liệu').first().json;\nconst d = { ...orig, db_id: dbResult.id, created_at: dbResult.created_at, db_ok: true };\nconst isInvoice = ['sale_completed', 'payment_received', 'invoice'].includes(d.event_type);\nd.discord_body = JSON.stringify({\n  embeds: [{\n    title: (isInvoice ? 'Hóa đơn mới' : 'Sự kiện POS') + ' — ' + d.device_id,\n    color: isInvoice ? 52307 : 16744448,\n    fields: [\n      { name: 'Thiết bị',  value: d.device_id,             inline: true  },\n      { name: 'Loại',      value: d.event_type,            inline: true  },\n      { name: 'DB Record', value: '#' + (d.db_id || '?'),  inline: true  },\n      { name: 'Số tiền',   value: d.amount_fmt || 'N/A',   inline: true  },\n      { name: 'Thời gian', value: d.created_at || new Date().toISOString(), inline: false }\n    ],\n    footer: { text: 'n8n IoT Pipeline • NeonDB' }\n  }]\n});\nd.response_201 = JSON.stringify({ status: 'ok', id: d.db_id, device: d.device_id, event: d.event_type, timestamp: d.created_at });\nreturn [{ json: d }];"
       },
       "id": "pos-code-002",
-      "name": "Enrich + Build Discord",
+      "name": "Làm giàu & dựng Discord embed",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [1060, 180]
@@ -75,7 +75,7 @@
         "options": {}
       },
       "id": "pos-httpreq-002",
-      "name": "Notify Discord",
+      "name": "Gửi thông báo Discord",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [1280, 180]
@@ -83,11 +83,11 @@
     {
       "parameters": {
         "respondWith": "json",
-        "responseBody": "={{ $('Enrich + Build Discord').first().json.response_201 }}",
+        "responseBody": "={{ $('Làm giàu & dựng Discord embed').first().json.response_201 }}",
         "options": { "responseCode": 201 }
       },
       "id": "pos-respond-201",
-      "name": "Respond 201",
+      "name": "Trả về 201",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [1500, 180]
@@ -99,24 +99,24 @@
         "options": { "responseCode": 400 }
       },
       "id": "pos-respond-400",
-      "name": "Respond 400",
+      "name": "Trả về 400",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [840, 420]
     }
   ],
   "connections": {
-    "Receive POS Event":     { "main": [[{ "node": "Validate + Enrich",       "type": "main", "index": 0 }]] },
-    "Validate + Enrich":     { "main": [[{ "node": "Valid?",                   "type": "main", "index": 0 }]] },
-    "Valid?": {
+    "Nhận sự kiện POS":     { "main": [[{ "node": "Kiểm tra và làm giàu dữ liệu",       "type": "main", "index": 0 }]] },
+    "Kiểm tra và làm giàu dữ liệu":     { "main": [[{ "node": "Hợp lệ?",                   "type": "main", "index": 0 }]] },
+    "Hợp lệ?": {
       "main": [
-        [{ "node": "Call iot-insert", "type": "main", "index": 0 }],
-        [{ "node": "Respond 400",     "type": "main", "index": 0 }]
+        [{ "node": "Gọi iot-insert", "type": "main", "index": 0 }],
+        [{ "node": "Trả về 400",     "type": "main", "index": 0 }]
       ]
     },
-    "Call iot-insert":       { "main": [[{ "node": "Enrich + Build Discord",  "type": "main", "index": 0 }]] },
-    "Enrich + Build Discord":{ "main": [[{ "node": "Notify Discord",          "type": "main", "index": 0 }]] },
-    "Notify Discord":        { "main": [[{ "node": "Respond 201",             "type": "main", "index": 0 }]] }
+    "Gọi iot-insert":       { "main": [[{ "node": "Làm giàu & dựng Discord embed",  "type": "main", "index": 0 }]] },
+    "Làm giàu & dựng Discord embed":{ "main": [[{ "node": "Gửi thông báo Discord",          "type": "main", "index": 0 }]] },
+    "Gửi thông báo Discord":        { "main": [[{ "node": "Trả về 201",             "type": "main", "index": 0 }]] }
   },
   "active": false,
   "settings": { "executionOrder": "v1" }

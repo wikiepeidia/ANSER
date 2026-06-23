@@ -9,10 +9,10 @@ logger = get_logger(__name__)
 
 def trigger_webhook(url, method="POST", payload=None):
     """
-    Triggers a real HTTP request.
+    Kích hoạt một yêu cầu HTTP thực.
     """
     logger.info("HTTP %s %s", method, url)
-    logger.info("HTTP payload: %s", payload)
+    logger.info("Payload HTTP: %s", payload)
 
     try:
         if method.upper() == "POST":
@@ -20,9 +20,9 @@ def trigger_webhook(url, method="POST", payload=None):
         elif method.upper() == "GET":
             response = requests.get(url, params=payload, timeout=5)
         else:
-            return {"status": "error", "message": f"Unsupported method: {method}"}
+            return {"status": "error", "message": f"Phương thức không được hỗ trợ: {method}"}
 
-        # Try to parse JSON response, otherwise return text
+        # Cố gắng phân tích phản hồi JSON, nếu không được thì trả về text
         try:
             data = response.json()
         except (ValueError, requests.exceptions.JSONDecodeError):
@@ -35,5 +35,5 @@ def trigger_webhook(url, method="POST", payload=None):
         }
 
     except requests.RequestException as e:
-        logger.error("HTTP request error for %s %s: %s", method, url, e, exc_info=True)
+        logger.error("Lỗi yêu cầu HTTP cho %s %s: %s", method, url, e, exc_info=True)
         return {"status": "error", "message": str(e)}

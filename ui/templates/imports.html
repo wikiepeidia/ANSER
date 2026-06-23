@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Imports - {{ project_name }}{% endblock %}
+{% block title %}Quản lý nhập hàng - {{ project_name }}{% endblock %}
 
 {% block styles %}
 {{ super() }}
@@ -33,20 +33,20 @@
     <main class="app-content main-content imports-page">
         <div
             class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-            <h1 class="h2"><i class="fas fa-arrow-down"></i> Manage Imports</h1>
+            <h1 class="h2"><i class="fas fa-arrow-down"></i> Quản lý nhập hàng</h1>
             <div>
                 <button class="btn btn-warning text-dark me-2"
                     onclick="window.location.href='{{ url_for('pages.se_auto_import') }}'">
-                    <i class="fas fa-bolt"></i> Auto import
+                    <i class="fas fa-bolt"></i> Nhập tự động
                 </button>
                 <button class="btn btn-info text-white me-2" data-bs-toggle="modal" data-bs-target="#ocrImportModal">
-                    <i class="fas fa-magic"></i> OCR Invoice
+                    <i class="fas fa-magic"></i> OCR hóa đơn
                 </button>
                 <button class="btn btn-success me-2" data-bs-toggle="modal" data-bs-target="#excelImportModal">
-                    <i class="fas fa-file-excel"></i> Import Excel
+                    <i class="fas fa-file-excel"></i> Nhập từ Excel
                 </button>
                 <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createImportModal">
-                    <i class="fas fa-plus"></i> Create Import
+                    <i class="fas fa-plus"></i> Tạo phiếu nhập
                 </button>
             </div>
         </div>
@@ -55,7 +55,7 @@
             <div class="col-md-3">
                 <div class="card text-white bg-primary">
                     <div class="card-body">
-                        <h5 class="card-title">Total import orders</h5>
+                        <h5 class="card-title">Tổng phiếu nhập</h5>
                         <h2 id="totalImports">0</h2>
                     </div>
                 </div>
@@ -63,7 +63,7 @@
             <div class="col-md-3">
                 <div class="card text-white bg-success">
                     <div class="card-body">
-                        <h5 class="card-title">Completed</h5>
+                        <h5 class="card-title">Đã hoàn thành</h5>
                         <h2 id="completedImports">0</h2>
                     </div>
                 </div>
@@ -71,7 +71,7 @@
             <div class="col-md-3">
                 <div class="card text-white bg-info">
                     <div class="card-body">
-                        <h5 class="card-title">Total amount</h5>
+                        <h5 class="card-title">Tổng giá trị</h5>
                         <h2 id="totalAmount">0 VND</h2>
                     </div>
                 </div>
@@ -80,18 +80,18 @@
 
         <div class="card">
             <div class="card-body">
-                <h5 class="card-title">Import orders list</h5>
+                <h5 class="card-title">Danh sách phiếu nhập</h5>
                 <div class="table-responsive">
                     <table class="table table-hover">
                         <thead>
                             <tr>
-                                <th>Order code</th>
-                                <th>Supplier</th>
-                                <th>Total</th>
-                                <th>Status</th>
-                                <th>Import date</th>
-                                <th>Notes</th>
-                                <th>Actions</th>
+                                <th>Mã phiếu</th>
+                                <th>Nhà cung cấp</th>
+                                <th>Tổng tiền</th>
+                                <th>Trạng thái</th>
+                                <th>Ngày nhập</th>
+                                <th>Ghi chú</th>
+                                <th>Thao tác</th>
                             </tr>
                         </thead>
                         <tbody id="importsTableBody">
@@ -108,90 +108,90 @@
     </main>
 </div>
 
-<!-- Create Import Modal -->
+<!-- Modal: Tạo phiếu nhập -->
 <div class="modal fade" id="createImportModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Create Import Transaction</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <h5 class="modal-title">Tạo phiếu nhập hàng</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
             </div>
             <div class="modal-body">
                 <form id="createImportForm">
                     <div class="row mb-3">
                         <div class="col-md-6">
-                            <label class="form-label">Supplier Name</label>
+                            <label class="form-label">Tên nhà cung cấp</label>
                             <input type="text" class="form-control" name="supplier_name" required>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">Notes</label>
+                            <label class="form-label">Ghi chú</label>
                             <input type="text" class="form-control" name="notes">
                         </div>
                     </div>
 
                     <hr>
-                    <h6>Items</h6>
+                    <h6>Sản phẩm</h6>
                     <div class="table-responsive mb-3">
                         <table class="table table-bordered" id="importItemsTable">
                             <thead>
                                 <tr>
-                                    <th>Product</th>
-                                    <th width="150">Quantity</th>
-                                    <th width="200">Unit Price</th>
+                                    <th>Sản phẩm</th>
+                                    <th width="150">Số lượng</th>
+                                    <th width="200">Đơn giá</th>
                                     <th width="50"></th>
                                 </tr>
                             </thead>
                             <tbody id="importItemsBody">
-                                <!-- Items will be added here -->
+                                <!-- Sản phẩm sẽ được thêm tại đây -->
                             </tbody>
                         </table>
                     </div>
                     <button type="button" class="btn btn-secondary btn-sm" onclick="addImportItemRow()">
-                        <i class="fas fa-plus"></i> Add Item
+                        <i class="fas fa-plus"></i> Thêm sản phẩm
                     </button>
                 </form>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                <button type="button" class="btn btn-primary" onclick="submitImport()">Create Import</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                <button type="button" class="btn btn-primary" onclick="submitImport()">Tạo phiếu nhập</button>
             </div>
         </div>
     </div>
 </div>
 
-<!-- View Import Modal -->
+<!-- Modal: Xem phiếu nhập -->
 <div class="modal fade" id="viewImportModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Import Details</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <h5 class="modal-title">Chi tiết phiếu nhập</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
             </div>
             <div class="modal-body">
                 <div class="row mb-3">
                     <div class="col-md-6">
-                        <strong>Code:</strong> <span id="viewImportCode"></span><br>
-                        <strong>Supplier:</strong> <span id="viewImportSupplier"></span><br>
-                        <strong>Date:</strong> <span id="viewImportDate"></span>
+                        <strong>Mã:</strong> <span id="viewImportCode"></span><br>
+                        <strong>Nhà cung cấp:</strong> <span id="viewImportSupplier"></span><br>
+                        <strong>Ngày:</strong> <span id="viewImportDate"></span>
                     </div>
                     <div class="col-md-6 text-end">
-                        <strong>Status:</strong> <span id="viewImportStatus"></span><br>
-                        <strong>Total:</strong> <span id="viewImportTotal" class="h5 text-primary"></span>
+                        <strong>Trạng thái:</strong> <span id="viewImportStatus"></span><br>
+                        <strong>Tổng tiền:</strong> <span id="viewImportTotal" class="h5 text-primary"></span>
                     </div>
                 </div>
                 <div class="mb-3">
-                    <strong>Notes:</strong> <span id="viewImportNotes"></span>
+                    <strong>Ghi chú:</strong> <span id="viewImportNotes"></span>
                 </div>
 
                 <div class="table-responsive">
                     <table class="table table-striped">
                         <thead>
                             <tr>
-                                <th>Product Code</th>
-                                <th>Product Name</th>
-                                <th class="text-end">Quantity</th>
-                                <th class="text-end">Unit Price</th>
-                                <th class="text-end">Total</th>
+                                <th>Mã sản phẩm</th>
+                                <th>Tên sản phẩm</th>
+                                <th class="text-end">Số lượng</th>
+                                <th class="text-end">Đơn giá</th>
+                                <th class="text-end">Thành tiền</th>
                             </tr>
                         </thead>
                         <tbody id="viewImportItemsBody"></tbody>
@@ -199,29 +199,28 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
             </div>
         </div>
     </div>
 </div>
 
-<!-- OCR Import Modal -->
+<!-- Modal: OCR hóa đơn -->
 <div class="modal fade" id="ocrImportModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title"><i class="fas fa-robot"></i> OCR Invoice</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <h5 class="modal-title"><i class="fas fa-robot"></i> OCR hóa đơn</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
             </div>
             <div class="modal-body">
                 <div class="alert alert-info">
-                    Upload an invoice image (JPG, PNG) to automatically extract products and quantities using our Deep
-                    Learning model.
+                    Tải lên ảnh hóa đơn (JPG, PNG) để tự động trích xuất sản phẩm và số lượng bằng mô hình Deep Learning của chúng tôi.
                 </div>
 
                 <form id="ocrImportForm">
                     <div class="mb-3">
-                        <label class="form-label">Invoice Image</label>
+                        <label class="form-label">Ảnh hóa đơn</label>
                         <input type="file" class="form-control" id="ocrFile" accept="image/*" required>
                     </div>
                     <div class="text-center" id="ocrLoading" style="display:none;">
@@ -230,18 +229,18 @@
                                 role="progressbar" style="width: 0%">0%</div>
                         </div>
                         <p id="ocrStatusText" class="small mt-1 text-center font-monospace"
-                            style="min-height: 1.5em; transition: color 0.3s;">Initializing...</p>
+                            style="min-height: 1.5em; transition: color 0.3s;">Đang khởi tạo...</p>
                     </div>
                     <div id="ocrResult" style="display:none;">
-                        <h6>Extracted Data <small class="text-muted">(editable)</small>:</h6>
+                        <h6>Dữ liệu trích xuất <small class="text-muted">(có thể chỉnh sửa)</small>:</h6>
                         <div class="table-responsive">
                             <table class="table table-sm table-bordered">
                                 <thead>
                                     <tr>
-                                        <th>Product</th>
-                                        <th width="80">Qty</th>
-                                        <th width="100">Price</th>
-                                        <th width="100">Total</th>
+                                        <th>Sản phẩm</th>
+                                        <th width="80">SL</th>
+                                        <th width="100">Giá</th>
+                                        <th width="100">Tổng</th>
                                         <th width="40"></th>
                                     </tr>
                                 </thead>
@@ -249,72 +248,72 @@
                             </table>
                         </div>
                         <div class="alert alert-warning small">
-                            <i class="fas fa-info-circle"></i> Please verify and edit the extracted data before saving.
-                            Select existing products from dropdown or create new ones.
+                            <i class="fas fa-info-circle"></i> Vui lòng kiểm tra và chỉnh sửa dữ liệu trích xuất trước khi lưu.
+                            Chọn sản phẩm có sẵn từ dropdown hoặc tạo mới.
                         </div>
                     </div>
                 </form>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" id="btnSaveOcrImport" disabled>Create Import</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-primary" id="btnSaveOcrImport" disabled>Tạo phiếu nhập</button>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Excel Import Modal -->
+<!-- Modal: Nhập từ Excel -->
 <div class="modal fade" id="excelImportModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title"><i class="fas fa-file-excel"></i> Import from Excel</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <h5 class="modal-title"><i class="fas fa-file-excel"></i> Nhập từ Excel</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
             </div>
             <div class="modal-body">
                 <div class="alert alert-info">
-                    <i class="fas fa-info-circle"></i> Upload an Excel file (.xlsx) with product import data.
-                    <a href="javascript:downloadExcelTemplate()" class="alert-link"><i class="fas fa-download"></i> Download Template</a>
+                    <i class="fas fa-info-circle"></i> Tải lên file Excel (.xlsx) chứa dữ liệu nhập hàng.
+                    <a href="javascript:downloadExcelTemplate()" class="alert-link"><i class="fas fa-download"></i> Tải template mẫu</a>
                 </div>
 
                 <form id="excelImportForm">
                     <div class="mb-3">
-                        <label class="form-label">Supplier Name</label>
+                        <label class="form-label">Tên nhà cung cấp</label>
                         <input type="text" class="form-control" name="supplier_name" required>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Notes</label>
+                        <label class="form-label">Ghi chú</label>
                         <textarea class="form-control" name="notes" rows="2"></textarea>
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label">Excel File</label>
+                        <label class="form-label">File Excel</label>
                         <div class="input-group">
                             <input type="file" class="form-control" id="excelFile" accept=".xlsx,.xls" required>
                             <button type="button" class="btn btn-outline-secondary" id="btnClearExcelFile">
                                 <i class="fas fa-times"></i>
                             </button>
                         </div>
-                        <small class="text-muted">Supported formats: Excel (.xlsx, .xls)</small>
+                        <small class="text-muted">Định dạng hỗ trợ: Excel (.xlsx, .xls)</small>
                     </div>
 
                     <div id="excelLoading" style="display:none;">
                         <div class="progress mb-2" style="height: 25px;">
                             <div id="excelProgressBar" class="progress-bar progress-bar-striped progress-bar-animated"
-                                role="progressbar" style="width: 50%">Processing...</div>
+                                role="progressbar" style="width: 50%">Đang xử lý...</div>
                         </div>
                     </div>
 
                     <div id="excelPreview" style="display:none;">
-                        <h6>Preview Data <small class="text-muted">(editable)</small>:</h6>
+                        <h6>Xem trước dữ liệu <small class="text-muted">(có thể chỉnh sửa)</small>:</h6>
                         <div class="table-responsive">
                             <table class="table table-sm table-bordered">
                                 <thead>
                                     <tr>
-                                        <th>Product Code</th>
-                                        <th>Product Name</th>
-                                        <th width="80">Quantity</th>
-                                        <th width="120">Unit Price</th>
+                                        <th>Mã sản phẩm</th>
+                                        <th>Tên sản phẩm</th>
+                                        <th width="80">Số lượng</th>
+                                        <th width="120">Đơn giá</th>
                                         <th width="40"></th>
                                     </tr>
                                 </thead>
@@ -326,16 +325,16 @@
                 </form>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
                 <button type="button" class="btn btn-primary" id="btnUploadExcel" onclick="submitExcelImport()" disabled>
-                    <i class="fas fa-upload"></i> Upload & Create Import
+                    <i class="fas fa-upload"></i> Tải lên & Tạo phiếu nhập
                 </button>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Success Modal -->
+<!-- Modal: Thành công -->
 <div class="modal fade" id="successModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg">

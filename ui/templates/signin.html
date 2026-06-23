@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Sign In - Workflow Automation for Retail{% endblock %}
+{% block title %}Đăng nhập - Tự động hóa quy trình bán lẻ{% endblock %}
 
 {% block body_class %}auth-page{% endblock %}
 
@@ -20,38 +20,37 @@
         <div class="brand-logo">
             <i class="fas fa-rocket"></i>
         </div>
-        <h1 class="brand-title">Workflow Automation for Retail</h1>
+        <h1 class="brand-title">Tự động hóa quy trình bán lẻ</h1>
         <p class="brand-subtitle">
-            Intelligent management system to help organize work efficiently with layered structure and powerful
-            connected channels.
+            Hệ thống quản lý thông minh giúp tổ chức công việc hiệu quả với cấu trúc phân lớp và các kênh kết nối mạnh mẽ.
         </p>
         <div class="feature-list">
             <div class="feature-item">
                 <div class="feature-icon"><i class="fas fa-users"></i></div>
                 <div class="feature-content">
-                    <h4>Customer Management</h4>
-                    <p>Manage customers and keep your contacts organized.</p>
+                    <h4>Quản lý khách hàng</h4>
+                    <p>Quản lý khách hàng và giữ liên hệ của bạn luôn ngăn nắp.</p>
                 </div>
             </div>
             <div class="feature-item">
                 <div class="feature-icon"><i class="fas fa-box"></i></div>
                 <div class="feature-content">
-                    <h4>Product & Inventory Management</h4>
-                    <p>Track products, stock levels, and movements in one place.</p>
+                    <h4>Quản lý sản phẩm & kho hàng</h4>
+                    <p>Theo dõi sản phẩm, tồn kho và biến động tại một nơi duy nhất.</p>
                 </div>
             </div>
             <div class="feature-item">
                 <div class="feature-icon"><i class="fas fa-magic"></i></div>
                 <div class="feature-content">
-                    <h4>Intelligent Automation</h4>
-                    <p>Automate routine tasks and get smart, ready-to-use reports.</p>
+                    <h4>Tự động hóa thông minh</h4>
+                    <p>Tự động hóa các tác vụ thường ngày và nhận báo cáo thông minh, sẵn sàng dùng.</p>
                 </div>
             </div>
             <div class="feature-item">
                 <div class="feature-icon"><i class="fas fa-chart-line"></i></div>
                 <div class="feature-content">
-                    <h4>Reports & Analytics</h4>
-                    <p>Monitor performance with clear dashboards and insights.</p>
+                    <h4>Báo cáo & phân tích</h4>
+                    <p>Theo dõi hiệu suất với dashboard rõ ràng và các insight giá trị.</p>
                 </div>
             </div>
         </div>
@@ -59,8 +58,8 @@
 
     <div class="auth-right">
         <div class="auth-header">
-            <h2 class="auth-title">Welcome back!</h2>
-            <p class="auth-subtitle">Sign in to continue using the workspace</p>
+            <h2 class="auth-title">Chào mừng trở lại!</h2>
+            <p class="auth-subtitle">Đăng nhập để tiếp tục sử dụng không gian làm việc</p>
         </div>
 
         {% with messages = get_flashed_messages(with_categories=true) %}
@@ -77,17 +76,17 @@
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <div class="form-group">
                 <label for="email" class="form-label">Email</label>
-                <input type="email" id="email" name="email" class="form-input" placeholder="Enter your email address"
+                <input type="email" id="email" name="email" class="form-input" placeholder="Nhập địa chỉ email của bạn"
                     required>
             </div>
 
             <div class="form-group">
-                <label for="password" class="form-label">Password</label>
-                <input type="password" id="password" name="password" class="form-input" placeholder="Enter password"
+                <label for="password" class="form-label">Mật khẩu</label>
+                <input type="password" id="password" name="password" class="form-input" placeholder="Nhập mật khẩu"
                     required>
             </div>
 
-            <button type="submit" class="auth-btn">Sign In</button>
+            <button type="submit" class="auth-btn">Đăng nhập</button>
         </form>
 
         <a href="{{ url_for('google.google_login') }}" class="google-signin-btn">
@@ -103,37 +102,37 @@
                         d="M5.277 14.268A7.12 7.12 0 0 1 4.909 12c0-.782.125-1.533.357-2.235L1.24 6.65A11.934 11.934 0 0 0 0 12c0 1.92.445 3.73 1.237 5.335l4.04-3.067Z" />
                 </g>
             </svg>
-            <span>Sign in with Google</span>
+            <span>Đăng nhập bằng Google</span>
         </a>
 
         <div class="auth-switch">
-            Don't have an account? <a href="{{ url_for('auth.signup') }}">Create account</a>
+            Chưa có tài khoản? <a href="{{ url_for('auth.signup') }}">Tạo tài khoản</a>
         </div>
 
         <div class="demo-section">
             <div class="demo-title">
                 <i class="fas fa-gamepad"></i>
-                Try demo accounts
+                Dùng thử tài khoản demo
             </div>
             <div class="demo-accounts">
                 <div class="demo-account" data-demo-email="admin@fun.com" data-demo-password="admin123">
                     <div class="demo-role">
                         <i class="fas fa-crown"></i>
-                        Admin
+                        Quản trị viên
                     </div>
                     <div class="demo-email">admin@fun.com / admin123</div>
                 </div>
                 <div class="demo-account" data-demo-email="manager@fun.com" data-demo-password="manager123">
                     <div class="demo-role">
                         <i class="fas fa-user-shield"></i>
-                        Manager
+                        Quản lý
                     </div>
                     <div class="demo-email">manager@fun.com / manager123</div>
                 </div>
                 <div class="demo-account" data-demo-email="user@fun.com" data-demo-password="user123">
                     <div class="demo-role">
                         <i class="fas fa-user"></i>
-                        User
+                        Người dùng
                     </div>
                     <div class="demo-email">user@fun.com / user123</div>
                 </div>

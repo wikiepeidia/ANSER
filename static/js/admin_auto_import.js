@@ -20,7 +20,7 @@ function renderAutomationsTable() {
         tbody.innerHTML = `
             <tr>
                 <td colspan="6" class="text-center">
-                    No automations yet. Click "Create automation" to get started.
+                    Chưa có quy tự động nào. Nhấn "Tạo quy tự động" để bắt đầu.
                 </td>
             </tr>`;
         return;
@@ -38,7 +38,7 @@ function renderAutomationsTable() {
                     <label class="form-check-label" id="status-label-${auto.id}">${auto.status}</label>
                 </div>
             </td>
-            <td>${auto.last_run ? new Date(auto.last_run).toLocaleString() : 'Never'}</td>
+            <td>${auto.last_run ? new Date(auto.last_run).toLocaleString() : 'Chưa chạy'}</td>
             <td><small class="text-muted font-monospace">${formatConfig(auto.type, auto.config)}</small></td>
             <td>
                 <button class="btn btn-sm btn-primary me-1" onclick="editAutomation(${auto.id})">
@@ -68,9 +68,9 @@ function updateStats() {
 
 function formatType(type) {
     const types = {
-        'low_stock': '<span class="badge bg-warning text-dark">Low Stock</span>',
-        'scheduled': '<span class="badge bg-info">Scheduled</span>',
-        'smart_forecast': '<span class="badge bg-primary">AI Forecast</span>'
+        'low_stock': '<span class="badge bg-warning text-dark">Tồn kho thấp</span>',
+        'scheduled': '<span class="badge bg-info">Theo lịch</span>',
+        'smart_forecast': '<span class="badge bg-primary">Dự báo AI</span>'
     };
     return types[type] || type;
 }
@@ -79,11 +79,11 @@ function formatConfig(type, config) {
     try {
         const c = typeof config === 'string' ? JSON.parse(config) : config;
         if (type === 'low_stock') {
-            return `Threshold: < ${c.threshold}, Order: ${c.reorder_quantity}`;
+            return `Ngưỡng: < ${c.threshold}, Đặt: ${c.reorder_quantity}`;
         } else if (type === 'scheduled') {
-            return `${c.frequency} at ${c.time} (${c.day || 'All'})`;
+            return `${c.frequency} lúc ${c.time} (${c.day || 'Tất cả'})`;
         } else if (type === 'smart_forecast') {
-            return `Look ahead: ${c.look_ahead_days} days`;
+            return `Nhìn trước: ${c.look_ahead_days} ngày`;
         }
         return JSON.stringify(c).substring(0, 30) + '...';
     } catch (e) {
@@ -108,9 +108,9 @@ window.useTemplate = function(type) {
     // Set default name
     const nameInput = document.querySelector('input[name="name"]');
     if (type === 'low_stock') {
-        nameInput.value = 'Auto Import on Low Stock';
+        nameInput.value = 'Tự động nhập khi tồn kho thấp';
     } else if (type === 'scheduled') {
-        nameInput.value = 'Weekly Scheduled Import';
+        nameInput.value = 'Nhập hàng theo lịch hàng tuần';
     }
     
     modal.show();
@@ -226,11 +226,11 @@ window.updateConfigPlaceholder = function() {
     configArea.placeholder = templates[type] || '{}';
     
     const helpTexts = {
-        'low_stock': 'Trigger when stock falls below threshold.',
-        'scheduled': 'Run import generation on a fixed schedule.',
-        'smart_forecast': 'Use AI to predict demand and generate orders.'
+        'low_stock': 'Kích hoạt khi tồn kho xuống dưới ngưỡng.',
+        'scheduled': 'Chạy tạo phiếu nhập theo lịch cố định.',
+        'smart_forecast': 'Dùng AI dự báo nhu cầu và tạo đơn hàng.'
     };
-    helpText.textContent = helpTexts[type] || 'Configuration parameters in JSON format.';
+    helpText.textContent = helpTexts[type] || 'Tham số cấu hình ở định dạng JSON.';
 };
 
 window.submitAutomation = async function() {
@@ -251,7 +251,7 @@ window.submitAutomation = async function() {
         try {
             JSON.parse(data.config);
         } catch (e) {
-            alert('Invalid JSON configuration');
+            alert('Cấu hình JSON không hợp lệ');
             return;
         }
     }
@@ -280,12 +280,12 @@ window.submitAutomation = async function() {
             form.reset();
             currentEditId = null;
             loadAutomations();
-            alert(currentEditId ? 'Automation updated successfully' : 'Automation created successfully');
+            alert(currentEditId ? 'Cập nhật quy tự động thành công' : 'Tạo quy tự động thành công');
         } else {
             alert(result.message);
         }
     } catch (error) {
-        alert('Error: ' + error.message);
+        alert('Lỗi: ' + error.message);
     }
 };
 

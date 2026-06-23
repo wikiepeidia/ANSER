@@ -64,7 +64,7 @@
             const { activities = [] } = await fetchJson('/api/admin/activity');
             
             if (activities.length === 0) {
-                container.innerHTML = '<div class="text-center text-muted p-3">No recent activity</div>';
+                container.innerHTML = '<div class="text-center text-muted p-3">Chưa có hoạt động nào gần đây</div>';
                 return;
             }
 
@@ -89,7 +89,7 @@
             `).join('');
         } catch (error) {
             console.error('Failed to load activities', error);
-            container.innerHTML = '<div class="text-center text-danger p-3">Failed to load activity</div>';
+            container.innerHTML = '<div class="text-center text-danger p-3">Không tải được hoạt động</div>';
         }
     };
 
@@ -105,22 +105,22 @@
     };
 
     const timeAgo = (dateString) => {
-        if (!dateString) return 'some time ago';
+        if (!dateString) return 'một lúc trước';
         const date = new Date(dateString);
-        if (isNaN(date.getTime())) return 'some time ago';
+        if (isNaN(date.getTime())) return 'một lúc trước';
         const seconds = Math.floor((new Date() - date) / 1000);
-        if (seconds < 0) return 'just now';
+        if (seconds < 0) return 'vừa xong';
         let interval = seconds / 31536000;
-        if (interval > 1) return Math.floor(interval) + " years ago";
+        if (interval > 1) return Math.floor(interval) + " năm trước";
         interval = seconds / 2592000;
-        if (interval > 1) return Math.floor(interval) + " months ago";
+        if (interval > 1) return Math.floor(interval) + " tháng trước";
         interval = seconds / 86400;
-        if (interval > 1) return Math.floor(interval) + " days ago";
+        if (interval > 1) return Math.floor(interval) + " ngày trước";
         interval = seconds / 3600;
-        if (interval > 1) return Math.floor(interval) + " hours ago";
+        if (interval > 1) return Math.floor(interval) + " giờ trước";
         interval = seconds / 60;
-        if (interval > 1) return Math.floor(interval) + " minutes ago";
-        return Math.floor(seconds) + " seconds ago";
+        if (interval > 1) return Math.floor(interval) + " phút trước";
+        return Math.floor(seconds) + " giây trước";
     };
 
     const updateUptime = () => {
