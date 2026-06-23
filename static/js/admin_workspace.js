@@ -21,7 +21,7 @@ async function loadWorkspaces() {
         }
     } catch (error) {
         console.error('Error loading workspaces:', error);
-        showNotification('Error loading workspaces', 'error');
+        showNotification('Lỗi khi tải không gian làm việc', 'error');
     }
 }
 
@@ -34,7 +34,7 @@ async function loadWorkspaceItems(workspaceId) {
         updateWorkspaceItemsDisplay(items);
     } catch (error) {
         console.error('Error loading workspace items:', error);
-        showNotification('Error loading items', 'error');
+        showNotification('Lỗi khi tải mục', 'error');
     }
 }
 
@@ -79,7 +79,7 @@ async function saveItem() {
     const data = Object.fromEntries(formData);
 
     if (!data.title.trim()) {
-        showNotification('Title is required', 'error');
+        showNotification('Vui lòng nhập tiêu đề', 'error');
         return;
     }
 
@@ -116,12 +116,12 @@ async function saveItem() {
         }
     } catch (error) {
         console.error('Error saving item:', error);
-        showNotification('Error saving item', 'error');
+        showNotification('Lỗi khi lưu mục', 'error');
     }
 }
 
 async function deleteItem(itemId) {
-    if (!confirm('Are you sure you want to delete this item?')) {
+    if (!confirm('Bạn có chắc chắn muốn xóa mục này?')) {
         return;
     }
 
@@ -141,7 +141,7 @@ async function deleteItem(itemId) {
         }
     } catch (error) {
         console.error('Error deleting item:', error);
-        showNotification('Error deleting item', 'error');
+        showNotification('Lỗi khi xóa mục', 'error');
     }
 }
 
@@ -152,7 +152,7 @@ async function saveWorkspace() {
     const data = Object.fromEntries(formData);
 
     if (!data.name.trim()) {
-        showNotification('Workspace name is required', 'error');
+        showNotification('Vui lòng nhập tên không gian làm việc', 'error');
         return;
     }
 
@@ -176,7 +176,7 @@ async function saveWorkspace() {
         }
     } catch (error) {
         console.error('Error creating workspace:', error);
-        showNotification('Error creating workspace', 'error');
+        showNotification('Lỗi khi tạo không gian làm việc', 'error');
     }
 }
 
@@ -188,7 +188,7 @@ function showItemDetail(item) {
     document.getElementById('itemDetailType').textContent = item.type;
     document.getElementById('itemDetailPriority').textContent = item.priority;
     document.getElementById('itemDetailStatus').textContent = item.status;
-    document.getElementById('itemDetailDescription').textContent = item.description || 'No description available';
+    document.getElementById('itemDetailDescription').textContent = item.description || 'Chưa có mô tả';
 
     const panel = document.getElementById('itemDetailPanel');
     panel.style.display = 'flex';
@@ -213,7 +213,7 @@ function editCurrentItem() {
         document.getElementById('itemPriority').value = currentEditingItem.priority;
         document.getElementById('itemStatus').value = currentEditingItem.status;
 
-        document.getElementById('modalTitle').textContent = 'Edit Item';
+        document.getElementById('modalTitle').textContent = 'Sửa mục';
         openModal('createItemModal');
         closeItemDetail();
     }
@@ -269,22 +269,22 @@ function switchSidebarView(view) {
 
     switch (view) {
         case 'explorer':
-            sidebarTitle.textContent = 'EXPLORER';
+            sidebarTitle.textContent = 'KHÁM PHÁ';
             break;
         case 'search':
-            sidebarTitle.textContent = 'SEARCH';
+            sidebarTitle.textContent = 'TÌM KIẾM';
             break;
         case 'git':
-            sidebarTitle.textContent = 'SOURCE CONTROL';
+            sidebarTitle.textContent = 'QUẢN LÝ MÃ NGUỒN';
             break;
         case 'debug':
-            sidebarTitle.textContent = 'RUN AND DEBUG';
+            sidebarTitle.textContent = 'CHẠY VÀ GỠ LỖI';
             break;
         case 'extensions':
-            sidebarTitle.textContent = 'EXTENSIONS';
+            sidebarTitle.textContent = 'TIỆN ÍCH MỞ RỘNG';
             break;
         case 'scenarios':
-            sidebarTitle.textContent = 'SCENARIOS';
+            sidebarTitle.textContent = 'KỊCH BẢN';
             break;
     }
 }
@@ -309,12 +309,12 @@ function contextAction(action) {
     switch (action) {
         case 'new-file':
             document.getElementById('itemType').value = 'task';
-            document.getElementById('modalTitle').textContent = 'Create New Todo';
+            document.getElementById('modalTitle').textContent = 'Tạo việc cần làm mới';
             openModal('createItemModal');
             break;
         case 'new-folder':
             document.getElementById('itemType').value = 'note';
-            document.getElementById('modalTitle').textContent = 'Create New Note';
+            document.getElementById('modalTitle').textContent = 'Tạo ghi chú mới';
             openModal('createItemModal');
             break;
         case 'rename':
@@ -333,7 +333,7 @@ function contextAction(action) {
 // Welcome screen actions
 function createNewItem(type) {
     document.getElementById('itemType').value = type;
-    document.getElementById('modalTitle').textContent = `Create New ${type.charAt(0).toUpperCase() + type.slice(1)}`;
+    document.getElementById('modalTitle').textContent = `Tạo mới ${type.charAt(0).toUpperCase() + type.slice(1)}`;
     openModal('createItemModal');
 }
 

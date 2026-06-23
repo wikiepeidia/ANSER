@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Point of Sale - {{ project_name }}{% endblock %}
+{% block title %}Điểm bán hàng - {{ project_name }}{% endblock %}
 
 {% block styles %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/sale.css') }}">
@@ -9,15 +9,15 @@
 {% block content %}
 <div class="sale-container">
     <div class="row h-100 g-0">
-        <!-- Left Side: Product Search & Grid -->
+        <!-- Bên trái: Tìm kiếm & lưới sản phẩm -->
         <div class="col-md-7 col-lg-8 d-flex flex-column p-3 left-panel">
             <div class="d-flex align-items-center mb-3">
                 <a href="{{ url_for('pages.workspace') }}" class="btn btn-outline-secondary me-3">
-                    <i class="fas fa-arrow-left"></i> Back
+                    <i class="fas fa-arrow-left"></i> Quay lại
                 </a>
-                <h4 class="mb-0 me-auto">Point of Sale</h4>
+                <h4 class="mb-0 me-auto">Điểm bán hàng</h4>
                 <button class="btn btn-info text-white" onclick="showHistory()">
-                    <i class="fas fa-history"></i> History
+                    <i class="fas fa-history"></i> Lịch sử
                 </button>
             </div>
             <div class="search-section mb-3">
@@ -25,41 +25,41 @@
                     <span class="input-group-text search-icon border-end-0"><i
                             class="fas fa-search text-muted"></i></span>
                     <input type="text" id="productSearch" class="form-control border-start-0 ps-0"
-                        placeholder="Search products (scan barcode or type name)..." autocomplete="off">
+                        placeholder="Tìm sản phẩm (quét mã vạch hoặc gõ tên)..." autocomplete="off">
                 </div>
                 <div id="searchResults" class="search-results-dropdown shadow-sm" style="display: none;"></div>
             </div>
 
             <div class="products-grid-container flex-grow-1">
-                <h5 class="mb-3 section-title"><i class="fas fa-box-open me-2"></i>Product Suggestions</h5>
+                <h5 class="mb-3 section-title"><i class="fas fa-box-open me-2"></i>Gợi ý sản phẩm</h5>
                 <div id="productSuggestions" class="row row-cols-2 row-cols-md-3 row-cols-xl-4 g-3">
-                    <!-- Random products will be loaded here -->
+                    <!-- Sản phẩm ngẫu nhiên sẽ được tải tại đây -->
                 </div>
             </div>
         </div>
 
-        <!-- Right Side: Cart & Payment -->
+        <!-- Bên phải: Giỏ hàng & thanh toán -->
         <div class="col-md-5 col-lg-4 d-flex flex-column border-start right-panel shadow-lg">
 
             <div class="cart-header p-3 border-bottom">
                 <div class="d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0"><i class="fas fa-shopping-cart me-2"></i>Current Sale</h5>
-                    <span class="badge bg-primary rounded-pill" id="cartItemCount">0 items</span>
+                    <h5 class="mb-0"><i class="fas fa-shopping-cart me-2"></i>Đơn hàng hiện tại</h5>
+                    <span class="badge bg-primary rounded-pill" id="cartItemCount">0 sản phẩm</span>
                 </div>
             </div>
 
             <div class="cart-items flex-grow-1 p-0 overflow-auto" id="cartItemsContainer">
                 <div class="text-center text-muted mt-5 pt-5 empty-cart-msg">
                     <i class="fas fa-basket-shopping fa-3x mb-3 opacity-25"></i>
-                    <p>Cart is empty</p>
-                    <small>Search products to start selling</small>
+                    <p>Giỏ hàng đang trống</p>
+                    <small>Tìm sản phẩm để bắt đầu bán</small>
                 </div>
                 <table class="table table-hover mb-0 cart-table" style="display: none;">
                     <thead class="sticky-top">
                         <tr>
-                            <th scope="col" width="45%">Item</th>
-                            <th scope="col" width="20%">Qty</th>
-                            <th scope="col" width="25%">Price</th>
+                            <th scope="col" width="45%">Sản phẩm</th>
+                            <th scope="col" width="20%">SL</th>
+                            <th scope="col" width="25%">Giá</th>
                             <th scope="col" width="10%"></th>
                         </tr>
                     </thead>
@@ -70,13 +70,13 @@
 
             <div class="payment-section p-4 border-top">
                 <div class="d-flex justify-content-between mb-2">
-                    <span class="h5 mb-0 fw-normal">Total</span>
+                    <span class="h5 mb-0 fw-normal">Tổng cộng</span>
                     <span class="h5 mb-0 fw-bold text-primary" id="grandTotal">0 ₫</span>
                 </div>
 
                 <div class="mb-3">
-                    <label for="customerGiven" class="form-label small text-muted text-uppercase fw-bold">Customer
-                        Given</label>
+                    <label for="customerGiven" class="form-label small text-muted text-uppercase fw-bold">Khách
+                        đưa</label>
                     <div class="input-group">
                         <input type="number" class="form-control form-control-lg text-end fw-bold" id="customerGiven"
                             placeholder="0">
@@ -85,36 +85,36 @@
                 </div>
 
                 <div class="d-flex justify-content-between mb-4">
-                    <span class="mb-0 text-muted">Refund (Change)</span>
+                    <span class="mb-0 text-muted">Tiền thừa</span>
                     <span class="h5 mb-0 fw-bold text-success" id="refundAmount">0 ₫</span>
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label small text-muted text-uppercase fw-bold">Payment Method</label>
-                    <div class="btn-group w-100" role="group" aria-label="Payment Method">
+                    <label class="form-label small text-muted text-uppercase fw-bold">Phương thức thanh toán</label>
+                    <div class="btn-group w-100" role="group" aria-label="Phương thức thanh toán">
                         <input type="radio" class="btn-check" name="paymentMethod" id="payCash" value="Cash" checked>
                         <label class="btn btn-outline-primary" for="payCash">
-                            <i class="fas fa-money-bill-wave me-1"></i> Cash
+                            <i class="fas fa-money-bill-wave me-1"></i> Tiền mặt
                         </label>
 
                         <input type="radio" class="btn-check" name="paymentMethod" id="payCard" value="Card">
                         <label class="btn btn-outline-primary" for="payCard">
-                            <i class="fas fa-credit-card me-1"></i> Card
+                            <i class="fas fa-credit-card me-1"></i> Thẻ
                         </label>
 
                         <input type="radio" class="btn-check" name="paymentMethod" id="payTransfer" value="Transfer">
                         <label class="btn btn-outline-primary" for="payTransfer">
-                            <i class="fas fa-university me-1"></i> Transfer
+                            <i class="fas fa-university me-1"></i> Chuyển khoản
                         </label>
                     </div>
                 </div>
 
                 <div class="d-grid gap-2">
                     <button class="btn btn-primary btn-lg py-3 fw-bold" id="btnCompleteSale" disabled>
-                        <i class="fas fa-check-circle me-2"></i> COMPLETE SALE
+                        <i class="fas fa-check-circle me-2"></i> HOÀN TẤT BÁN HÀNG
                     </button>
                     <button class="btn btn-outline-danger" id="btnClearCart">
-                        <i class="fas fa-trash-alt me-2"></i> Clear Cart
+                        <i class="fas fa-trash-alt me-2"></i> Xóa giỏ hàng
                     </button>
                 </div>
             </div>
@@ -122,37 +122,37 @@
     </div>
 </div>
 
-<!-- Receipt Modal (Optional, for future) -->
+<!-- Modal: Hóa đơn (tùy chọn, dùng sau) -->
 <div class="modal fade" id="receiptModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-sm">
         <div class="modal-content">
             <div class="modal-body text-center p-4">
                 <div class="display-1 text-success mb-3"><i class="fas fa-check-circle"></i></div>
-                <h4 class="mb-3">Sale Completed!</h4>
-                <p class="text-muted">Transaction saved successfully.</p>
-                <button type="button" class="btn btn-primary w-100" data-bs-dismiss="modal">New Sale</button>
+                <h4 class="mb-3">Bán hàng thành công!</h4>
+                <p class="text-muted">Giao dịch đã được lưu.</p>
+                <button type="button" class="btn btn-primary w-100" data-bs-dismiss="modal">Bán tiếp</button>
             </div>
         </div>
     </div>
 </div>
 
-<!-- History Modal -->
+<!-- Modal: Lịch sử -->
 <div class="modal fade" id="historyModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title"><i class="fas fa-history me-2"></i>Sales History</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <h5 class="modal-title"><i class="fas fa-history me-2"></i>Lịch sử bán hàng</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
             </div>
             <div class="modal-body p-0">
-                <!-- Toolbar -->
+                <!-- Thanh công cụ -->
                 <div class="p-3 border-bottom d-flex gap-2 history-toolbar">
                     <div class="input-group">
                         <span class="input-group-text"><i class="fas fa-search text-muted"></i></span>
                         <input type="text" id="historySearchInput" class="form-control"
-                            placeholder="Search by ID or Payment Method...">
+                            placeholder="Tìm theo mã hoặc phương thức thanh toán...">
                     </div>
-                    <button class="btn btn-outline-secondary" onclick="refreshHistory()" title="Refresh">
+                    <button class="btn btn-outline-secondary" onclick="refreshHistory()" title="Làm mới">
                         <i class="fas fa-sync-alt"></i>
                     </button>
                 </div>
@@ -162,58 +162,58 @@
                         <thead class="sticky-top shadow-sm history-table-head" style="top: 0; z-index: 10;">
                             <tr>
                                 <th>ID</th>
-                                <th>Date</th>
-                                <th>Payment</th>
-                                <th class="text-center">Items</th>
-                                <th class="text-end">Amount</th>
-                                <th class="text-center" style="width: 100px;">Actions</th>
+                                <th>Ngày</th>
+                                <th>Thanh toán</th>
+                                <th class="text-center">Sản phẩm</th>
+                                <th class="text-end">Số tiền</th>
+                                <th class="text-center" style="width: 100px;">Thao tác</th>
                             </tr>
                         </thead>
                         <tbody id="historyTableBody">
                             <tr>
-                                <td colspan="6" class="text-center py-4">Loading...</td>
+                                <td colspan="6" class="text-center py-4">Đang tải...</td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Sale Details Modal -->
+<!-- Modal: Chi tiết đơn bán -->
 <div class="modal fade" id="saleDetailsModal" tabindex="-1" aria-hidden="true" style="z-index: 1060;">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Sale Details #<span id="detailSaleId"></span></h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <h5 class="modal-title">Chi tiết đơn bán #<span id="detailSaleId"></span></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
             </div>
             <div class="modal-body">
                 <div class="mb-3 d-flex justify-content-between align-items-center details-header p-2 rounded">
-                    <span><strong>Date:</strong> <span id="detailSaleDate"></span></span>
-                    <span><strong>Method:</strong> <span id="detailSaleMethod" class="badge bg-secondary"></span></span>
+                    <span><strong>Ngày:</strong> <span id="detailSaleDate"></span></span>
+                    <span><strong>Phương thức:</strong> <span id="detailSaleMethod" class="badge bg-secondary"></span></span>
                 </div>
-                <!-- Error Alert Box -->
+                <!-- Hộp cảnh báo lỗi -->
                 <div id="detailError" class="alert alert-danger d-none my-2"></div>
 
                 <div class="table-responsive">
                     <table class="table table-sm table-bordered mb-0">
                         <thead class="details-table-header">
                             <tr>
-                                <th>Item</th>
-                                <th class="text-center">Qty</th>
-                                <th class="text-end">Price</th>
-                                <th class="text-end">Total</th>
+                                <th>Sản phẩm</th>
+                                <th class="text-center">SL</th>
+                                <th class="text-end">Giá</th>
+                                <th class="text-end">Tổng</th>
                             </tr>
                         </thead>
                         <tbody id="detailItemsBody"></tbody>
                         <tfoot class="details-table-footer fw-bold">
                             <tr>
-                                <td colspan="3" class="text-end">Total:</td>
+                                <td colspan="3" class="text-end">Tổng cộng:</td>
                                 <td class="text-end" id="detailSaleTotal"></td>
                             </tr>
                         </tfoot>
@@ -221,7 +221,7 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
             </div>
         </div>
     </div>

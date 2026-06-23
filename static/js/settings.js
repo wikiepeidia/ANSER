@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('Settings page loaded');
+    console.log('Trang cài đặt đã tải');
     
     // Handle "Open editor" buttons
     document.querySelectorAll('.btn-outline-primary:not(.theme-option)').forEach(btn => {
@@ -17,7 +17,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else if (sectionTitle === 'Security') {
                     showSecurityModal();
                 } else {
-                    showNotification(`Configuration editor for ${sectionTitle} is ready.`, 'info');
+                    showNotification(`Trình chỉnh cấu hình cho ${sectionTitle} đã sẵn sàng.`, 'info');
                 }
             } else if (title === 'Sync Data') {
                 syncData(sectionTitle);
@@ -45,12 +45,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 const data = await response.json();
                 if (data.success) {
-                    showNotification(`${label} ${isChecked ? 'enabled' : 'disabled'}`, 'success');
+                    showNotification(`${label} ${isChecked ? 'đã bật' : 'đã tắt'}`, 'success');
                 } else {
                     throw new Error(data.message);
                 }
             } catch (error) {
-                showNotification(`Failed to update ${label}`, 'error');
+                showNotification(`Không cập nhật được ${label}`, 'error');
                 e.target.checked = !isChecked; // Revert
             }
         });
@@ -64,13 +64,13 @@ function showProfileModal() {
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Edit Profile</h5>
+                    <h5 class="modal-title">Sửa hồ sơ</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <form id="profileForm">
                         <div class="mb-3">
-                            <label class="form-label">Full Name</label>
+                            <label class="form-label">Họ và tên</label>
                             <input type="text" class="form-control" name="name" required>
                         </div>
                         <div class="mb-3">
@@ -80,8 +80,8 @@ function showProfileModal() {
                     </form>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="button" class="btn btn-primary" onclick="saveProfile()">Save changes</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                    <button type="button" class="btn btn-primary" onclick="saveProfile()">Lưu thay đổi</button>
                 </div>
             </div>
         </div>
@@ -115,22 +115,22 @@ async function saveProfile() {
             body: JSON.stringify({ name })
         });
         if (response.ok) {
-            showNotification('Profile updated successfully', 'success');
+            showNotification('Cập nhật hồ sơ thành công', 'success');
             bootstrap.Modal.getInstance(document.getElementById('profileModal')).hide();
             setTimeout(() => location.reload(), 1000);
         }
     } catch (e) {
-        showNotification('Error updating profile', 'error');
+        showNotification('Lỗi cập nhật hồ sơ', 'error');
     }
 }
 
 function showSecurityModal() {
-    showNotification('Security settings are managed via your identity provider.', 'info');
+    showNotification('Cài đặt bảo mật được quản lý qua nhà cung cấp danh tính của bạn.', 'info');
 }
 
 async function syncData(section) {
-    showNotification(`Syncing data for ${section}...`, 'info');
+    showNotification(`Đang đồng bộ dữ liệu cho ${section}...`, 'info');
     setTimeout(() => {
-        showNotification('Sync completed successfully.', 'success');
+        showNotification('Đồng bộ hoàn tất.', 'success');
     }, 2000);
 }

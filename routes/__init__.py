@@ -1,1 +1,1 @@
-"""Route blueprints package for app composition."""
+"""Gói blueprints của route để lắp ráp ứng dụng."""

@@ -1,4 +1,4 @@
-"""Inventory import/export transaction service functions."""
+"""Các hàm service cho giao dịch nhập/xuất kho."""
 
 import secrets
 from datetime import datetime
@@ -8,23 +8,23 @@ from .service_errors import ServiceInvariantError, ServiceValidationError
 
 def _require_payload(payload):
     if not isinstance(payload, dict):
-        raise ServiceValidationError("payload must be a dictionary")
+        raise ServiceValidationError("payload phải là một dictionary")
 
 
 def _require_user(user_id):
     if user_id is None:
-        raise ServiceValidationError("user_id is required")
+        raise ServiceValidationError("user_id là bắt buộc")
 
 
 def _require_items(payload, label):
     items = payload.get("items", [])
     if not items:
-        raise ServiceValidationError(f"No items in {label}")
+        raise ServiceValidationError(f"Không có mục nào trong {label}")
     return items
 
 
 def create_import_transaction(db_conn, user_id, payload):
-    """Create import transaction, details, and stock updates in one transaction."""
+    """Tạo giao dịch nhập, chi tiết và cập nhật tồn kho trong một giao dịch."""
     _require_user(user_id)
     _require_payload(payload)
     items = _require_items(payload, "import")

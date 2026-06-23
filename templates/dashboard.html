@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - {{ project_name }}</title>
+    <title>Bảng điều khiển - {{ project_name }}</title>
     <!-- Favicons -->
     <link rel="icon" href="{{ url_for('static', filename='img/favicon.svg') }}" type="image/svg+xml">
     <link rel="shortcut icon" href="{{ url_for('static', filename='img/favicon.svg') }}">
@@ -16,16 +16,16 @@
 <body>
     <div class="dashboard">
         <div class="header">
-            <h1>Welcome to your dashboard</h1>
-            <p>Hello <strong>{{ user }}</strong> ({{ role }})</p>
+            <h1>Chào mừng đến với bảng điều khiển của bạn</h1>
+            <p>Xin chào <strong>{{ user }}</strong> ({{ role }})</p>
         </div>
 
         <div class="dashboard-content">
-            <h2>You're signed in successfully.</h2>
-            <p>This is the {{ project_name }} dashboard.</p>
+            <h2>Bạn đã đăng nhập thành công.</h2>
+            <p>Đây là bảng điều khiển của {{ project_name }}.</p>
 
             <div class="actions">
-                <a href="{{ url_for('logout') }}" class="btn-logout">Sign out</a>
+                <a href="{{ url_for('logout') }}" class="btn-logout">Đăng xuất</a>
             </div>
         </div>
     </div>

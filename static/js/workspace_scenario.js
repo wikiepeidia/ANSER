@@ -8,16 +8,16 @@
 // --- 1. MODULE CATALOG (Original) ---
 if (typeof moduleCatalog === 'undefined') {
     var moduleCatalog = [
-        { id: 'shopify-new-order', name: 'Shopify - New Order', vendor: 'Shopify', group: 'trigger', color: '#ec4899', icon: 'fas fa-shopping-bag', info: 'Triggered when a new order is created' },
-        { id: 'stripe-payment', name: 'Stripe - Payment Succeeded', vendor: 'Stripe', group: 'trigger', color: '#6366f1', icon: 'fas fa-credit-card', info: 'Track successful payments' },
-        { id: 'gmail-send', name: 'Gmail - Send Email', vendor: 'Google', group: 'action', color: '#f97316', icon: 'fas fa-envelope', info: 'Send personalized email' },
-        { id: 'notion-create', name: 'Notion - Create Record', vendor: 'Notion', group: 'action', color: '#14b8a6', icon: 'fas fa-book', info: 'Create a record in database' },
-        { id: 'slack-message', name: 'Slack - Post Message', vendor: 'Slack', group: 'action', color: '#a855f7', icon: 'fab fa-slack-hash', info: 'Notify a channel' },
-        { id: 'google-sheets', name: 'Google Sheets', vendor: 'Google', group: 'data', color: '#22d3ee', icon: 'fas fa-table', info: 'Append data to Google Sheet' },
-        { id: 'airtable-sync', name: 'Airtable - Sync', vendor: 'Airtable', group: 'data', color: '#f59e0b', icon: 'fas fa-database', info: 'Sync CRM table' },
+        { id: 'shopify-new-order', name: 'Shopify - Đơn hàng mới', vendor: 'Shopify', group: 'trigger', color: '#ec4899', icon: 'fas fa-shopping-bag', info: 'Kích hoạt khi có đơn hàng mới' },
+        { id: 'stripe-payment', name: 'Stripe - Thanh toán thành công', vendor: 'Stripe', group: 'trigger', color: '#6366f1', icon: 'fas fa-credit-card', info: 'Theo dõi các thanh toán thành công' },
+        { id: 'gmail-send', name: 'Gmail - Gửi email', vendor: 'Google', group: 'action', color: '#f97316', icon: 'fas fa-envelope', info: 'Gửi email cá nhân hóa' },
+        { id: 'notion-create', name: 'Notion - Tạo bản ghi', vendor: 'Notion', group: 'action', color: '#14b8a6', icon: 'fas fa-book', info: 'Tạo bản ghi trong cơ sở dữ liệu' },
+        { id: 'slack-message', name: 'Slack - Gửi tin nhắn', vendor: 'Slack', group: 'action', color: '#a855f7', icon: 'fab fa-slack-hash', info: 'Thông báo cho một kênh' },
+        { id: 'google-sheets', name: 'Google Sheets', vendor: 'Google', group: 'data', color: '#22d3ee', icon: 'fas fa-table', info: 'Thêm dữ liệu vào Google Sheet' },
+        { id: 'airtable-sync', name: 'Airtable - Đồng bộ', vendor: 'Airtable', group: 'data', color: '#f59e0b', icon: 'fas fa-database', info: 'Đồng bộ bảng CRM' },
         // Added Filter/Custom for AI compatibility
-        { id: 'filter', name: 'Logic - Filter', vendor: 'System', group: 'logic', color: '#fbbf24', icon: 'fas fa-filter', info: 'Filter data stream' },
-        { id: 'custom-module', name: 'Generic Action', vendor: 'System', group: 'action', color: '#64748b', icon: 'fas fa-cogs', info: 'Generic Action' }
+        { id: 'filter', name: 'Logic - Bộ lọc', vendor: 'Hệ thống', group: 'logic', color: '#fbbf24', icon: 'fas fa-filter', info: 'Lọc luồng dữ liệu' },
+        { id: 'custom-module', name: 'Hành động chung', vendor: 'Hệ thống', group: 'action', color: '#64748b', icon: 'fas fa-cogs', info: 'Hành động chung' }
     ];
 }
 
@@ -25,7 +25,7 @@ if (typeof APP_CONFIG === 'undefined') {
     var APP_CONFIG = window.APP_CONFIG || { projectName: 'Project Store', locale: 'en-US', currency: 'VND' }; 
 }
 
-var PROJECT_NAME = APP_CONFIG.projectName || 'Project Store';
+var PROJECT_NAME = APP_CONFIG.projectName || 'Cửa hàng dự án';
 
 // --- 2. STATE VARIABLES ---
 var scenarioNodes = (typeof scenarioNodes !== 'undefined') ? scenarioNodes : [];
@@ -71,7 +71,7 @@ async function checkAndLoadWorkflow() {
     
     if (loadId) {
         try {
-            if(typeof showToast === 'function') showToast('Loading workflow from AI...', 'info');
+            if(typeof showToast === 'function') showToast('Đang tải quy trình từ AI...', 'info');
             const res = await fetch(`/api/workflows/${loadId}`);
             const data = await res.json();
             
@@ -102,7 +102,7 @@ async function checkAndLoadWorkflow() {
 
                 nodeCounter = scenarioNodes.length;
                 renderCanvas();
-                if(typeof showToast === 'function') showToast('Workflow loaded successfully!', 'success');
+                if(typeof showToast === 'function') showToast('Tải quy trình thành công!', 'success');
                 
                 const nameInput = document.querySelector('.workflow-name-input');
                 if(nameInput && data.name) nameInput.value = data.name;
@@ -145,7 +145,7 @@ function renderCanvas() {
     surface.querySelectorAll('.scenario-node').forEach(el => el.remove());
 
     scenarioNodes.forEach(node => {
-        const module = moduleCatalog.find(m => m.id === node.module) || { name: node.module, color: '#64748b', icon: 'fas fa-cube', info: 'Action' };
+        const module = moduleCatalog.find(m => m.id === node.module) || { name: node.module, color: '#64748b', icon: 'fas fa-cube', info: 'Hành động' };
         
         const nodeEl = document.createElement('div');
         nodeEl.className = 'scenario-node';
@@ -157,14 +157,14 @@ function renderCanvas() {
         // --- ORIGINAL HTML STRUCTURE ---
         nodeEl.innerHTML = `
             <div class="node-actions">
-                <button type="button" class="node-action-btn" title="Delete module" onclick="event.stopPropagation(); deleteNode('${node.id}')">
+                <button type="button" class="node-action-btn" title="Xóa module" onclick="event.stopPropagation(); deleteNode('${node.id}')">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
             <div class="node-icon" style="background:${module.color}33; color:${module.color};">
                 <i class="${module.icon}"></i>
             </div>
-            <div class="node-badge">${node.status === 'trigger' ? 'Trigger' : 'Action'}</div>
+            <div class="node-badge">${node.status === 'trigger' ? 'Kích hoạt' : 'Hành động'}</div>
             <strong class="d-block mt-2">${module.name}</strong>
             <small class="text-muted">${module.info || ''}</small>
         `;
@@ -259,7 +259,7 @@ function addModuleToCanvas(moduleId, options = {}) {
         x: typeof options.x === 'number' ? options.x : (lastNode?.x || 120) + 260,
         y: typeof options.y === 'number' ? options.y : ((scenarioNodes.length % 2 === 0) ? 200 : 80),
         status: 'action',
-        config: { note: 'Not configured' }
+        config: { note: 'Chưa cấu hình' }
     };
     
     scenarioNodes.push(newNode);
@@ -272,7 +272,7 @@ function addModuleToCanvas(moduleId, options = {}) {
     selectedNodeId = newNode.id;
     renderCanvas();
     renderInspector();
-    showToast(`${module.name} was added to the scenario`);
+    showToast(`${module.name} đã được thêm vào kịch bản`);
 }
 
 function deleteNode(nodeId) {
@@ -280,7 +280,7 @@ function deleteNode(nodeId) {
     scenarioConnections = scenarioConnections.filter(c => c.from !== nodeId && c.to !== nodeId);
     renderCanvas();
     renderInspector();
-    showToast('Module removed');
+    showToast('Đã xóa module');
 }
 
 function selectNode(nodeId) {
@@ -295,7 +295,7 @@ function renderInspector(tab = 'properties') {
     const node = scenarioNodes.find(n => n.id === selectedNodeId);
     
     if (!node) {
-        panel.innerHTML = '<p class="text-muted">Select a module to view configuration details.</p>';
+        panel.innerHTML = '<p class="text-muted">Chọn một module để xem chi tiết cấu hình.</p>';
         return;
     }
     
@@ -305,10 +305,10 @@ function renderInspector(tab = 'properties') {
         <h5>${module.name}</h5>
         <p class="text-muted">${module.info || ''}</p>
         <div class="mb-3">
-            <label class="form-label">Config JSON</label>
+            <label class="form-label">Cấu hình JSON</label>
             <pre class="bg-dark text-success p-2 rounded" style="font-size:11px; overflow:auto;">${JSON.stringify(node.config, null, 2)}</pre>
         </div>
-        <button class="btn btn-danger btn-sm w-100" onclick="deleteNode('${node.id}')">Delete Node</button>
+        <button class="btn btn-danger btn-sm w-100" onclick="deleteNode('${node.id}')">Xóa node</button>
     `;
 }
 
@@ -355,24 +355,24 @@ function handleCanvasDragLeave(e) {}
 
 // --- 8. BUTTON HANDLERS ---
 function runScenarioNow() {
-    showToast('Starting workflow execution...', 'info');
+    showToast('Đang bắt đầu chạy quy trình...', 'info');
     setTimeout(() => {
         runHistory.unshift({ time: new Date().toLocaleTimeString(), status: 'success', duration: '1.2s' });
         renderRunHistory();
-        showToast('Workflow completed successfully', 'success');
+        showToast('Quy trình chạy thành công', 'success');
     }, 1500);
 }
 
 function saveScenario() {
-    showToast('Scenario saved (draft)', 'success');
+    showToast('Đã lưu kịch bản (bản nháp)', 'success');
 }
 
 function clearAllNodes() {
-    if (!confirm('Clear canvas?')) return;
+    if (!confirm('Xóa toàn bộ canvas?')) return;
     scenarioNodes = [];
     scenarioConnections = [];
     renderCanvas();
-    showToast('Canvas cleared', 'info');
+    showToast('Đã xóa canvas', 'info');
 }
 
 function renderRunHistory() {

@@ -12,10 +12,10 @@ async function loadExports() {
             renderExportsTable();
             updateStats();
         } else {
-            showAlert('error', 'Error loading data');
+            showAlert('error', 'Lỗi khi tải dữ liệu');
         }
     } catch (error) {
-        showAlert('error', 'Error: ' + error.message);
+        showAlert('error', 'Lỗi: ' + error.message);
     }
 }
 
@@ -39,7 +39,7 @@ async function loadCustomers() {
             customers = data.customers;
             const select = document.getElementById('customerSelect');
             if (select) {
-                select.innerHTML = '<option value="">Select Customer</option>' + 
+                select.innerHTML = '<option value="">Chọn khách hàng</option>' + 
                     customers.map(c => `<option value="${c.id}">${c.name} (${c.phone || '-'})</option>`).join('');
             }
         }
@@ -52,16 +52,16 @@ function renderExportsTable() {
     const tbody = document.getElementById('exportsTableBody');
 
     if (exportsData.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" class="text-center">No export orders found</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center">Không tìm thấy đơn xuất hàng</td></tr>';
         return;
     }
 
     tbody.innerHTML = exportsData.map(exp => `
         <tr>
             <td><strong>${exp.code}</strong></td>
-            <td>${exp.customer_name || 'Retail customer'}</td>
+            <td>${exp.customer_name || 'Khách lẻ'}</td>
             <td class="text-end"><strong>${Number(exp.total_amount).toLocaleString('en-US')} VND</strong></td>
-            <td><span class="badge bg-${exp.status === 'completed' ? 'success' : 'warning'}">${exp.status === 'completed' ? 'Completed' : 'Processing'}</span></td>
+            <td><span class="badge bg-${exp.status === 'completed' ? 'success' : 'warning'}">${exp.status === 'completed' ? 'Hoàn thành' : 'Đang xử lý'}</span></td>
             <td>${new Date(exp.created_at).toLocaleDateString('en-US')}</td>
             <td>${exp.notes || '-'}</td>
             <td>
@@ -98,12 +98,12 @@ function addExportItemRow() {
     const tbody = document.getElementById('exportItemsBody');
     const row = document.createElement('tr');
     
-    const productOptions = products.map(p => `<option value="${p.id}" data-price="${p.price}">${p.code} - ${p.name} (Stock: ${p.stock_quantity})</option>`).join('');
-    
+    const productOptions = products.map(p => `<option value="${p.id}" data-price="${p.price}">${p.code} - ${p.name} (Tồn: ${p.stock_quantity})</option>`).join('');
+
     row.innerHTML = `
         <td>
             <select class="form-select product-select" name="product_id" required onchange="updatePrice(this)">
-                <option value="">Select Product</option>
+                <option value="">Chọn sản phẩm</option>
                 ${productOptions}
             </select>
         </td>
@@ -150,7 +150,7 @@ async function submitExport() {
     });
 
     if (items.length === 0) {
-        alert('Please add at least one item');
+        alert('Vui lòng thêm ít nhất một sản phẩm');
         return;
     }
 
@@ -164,18 +164,18 @@ async function submitExport() {
             body: JSON.stringify({ customer_id, notes, items })
         });
         
-        const data = await response.json();
+const data = await response.json();
         if (data.success) {
             bootstrap.Modal.getInstance(document.getElementById('createExportModal')).hide();
             form.reset();
             document.getElementById('exportItemsBody').innerHTML = '';
             loadExports();
-            showAlert('success', 'Export created successfully');
+            showAlert('success', 'Tạo đơn xuất hàng thành công');
         } else {
             alert(data.message);
         }
     } catch (error) {
-        alert('Error: ' + error.message);
+        alert('Lỗi: ' + error.message);
     }
 }
 
@@ -209,7 +209,7 @@ async function viewExport(id) {
             alert(data.message);
         }
     } catch (error) {
-        alert('Error: ' + error.message);
+        alert('Lỗi: ' + error.message);
     }
 }
 

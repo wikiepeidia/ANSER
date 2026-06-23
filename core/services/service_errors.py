@@ -1,13 +1,13 @@
-"""Service-layer exception types for route-to-service delegation."""
+"""Các loại exception tầng service để ủy quyền từ route sang service."""
 
 
 class ServiceValidationError(Exception):
-    """Raised when incoming domain input fails validation."""
+    """Được raise khi dữ liệu đầu vào của miền không vượt qua kiểm tra hợp lệ."""
 
 
 class ServiceAuthorizationError(Exception):
-    """Raised when a caller lacks permission to perform an operation."""
+    """Được raise khi người gọi không có quyền thực hiện thao tác."""
 
 
 class ServiceInvariantError(Exception):
-    """Raised when business invariants are violated during processing."""
+    """Được raise khi các ràng buộc nghiệp vụ bị vi phạm trong quá trình xử lý."""

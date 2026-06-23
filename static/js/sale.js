@@ -193,7 +193,7 @@ document.addEventListener('DOMContentLoaded', function () {
         `).join('');
 
         // Update counts and totals
-        cartItemCount.innerText = cart.reduce((acc, item) => acc + item.qty, 0) + ' items';
+        cartItemCount.innerText = cart.reduce((acc, item) => acc + item.qty, 0) + ' sản phẩm';
         
         const total = cart.reduce((acc, item) => acc + (item.price * item.qty), 0);
         grandTotalEl.innerText = formatCurrency(total);
@@ -227,7 +227,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Clear Cart
     btnClearCart.addEventListener('click', () => {
-        if(confirm('Are you sure you want to clear the cart?')) {
+        if(confirm('Bạn có chắc chắn muốn xóa giỏ hàng?')) {
             cart = [];
             customerGivenInput.value = '';
             calculateRefund();
@@ -245,7 +245,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const tbody = document.getElementById('historyTableBody');
         
         // Show loading state if it is a manual refresh or first load
-        tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-body"><i class="fas fa-spinner fa-spin me-2"></i>Loading...</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-body"><i class="fas fa-spinner fa-spin me-2"></i>Đang tải...</td></tr>';
         
         try {
             // Fetch 20 records by default
@@ -255,7 +255,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 currentHistoryData = history; // Store for details view
 
                 if (history.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-muted">No sales found.</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-muted">Không tìm thấy giao dịch nào.</td></tr>';
                 } else {
                     tbody.innerHTML = history.map(sale => `
                         <tr>
@@ -281,16 +281,16 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
             } else {
                 console.error('Sales History Error:', response.status, response.statusText);
-                tbody.innerHTML = `<tr><td colspan="6" class="text-center text-danger py-4">Failed to load history (${response.status}).</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="6" class="text-center text-danger py-4">Không tải được lịch sử (${response.status}).</td></tr>`;
             }
         } catch (error) {
             console.error('Error fetching history:', error);
-            tbody.innerHTML = `<tr><td colspan="6" class="text-center text-danger py-4">Error: ${error.message}</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="6" class="text-center text-danger py-4">Lỗi: ${error.message}</td></tr>`;
         }
     }
 
     window.deleteSale = async function(saleId) {
-        if (!confirm('Are you sure you want to delete this sale record? It cannot be undone.')) return;
+        if (!confirm('Bạn có chắc chắn muốn xóa giao dịch này? Hành động này không thể hoàn tác.')) return;
         
         try {
             const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
@@ -306,11 +306,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 // Refresh list
                 refreshHistory();
             } else {
-                alert('Failed to delete: ' + result.message);
+                alert('Không xóa được: ' + result.message);
             }
         } catch (error) {
             console.error('Error deleting sale:', error);
-            alert('An unexpected error occurred.');
+            alert('Đã xảy ra lỗi không mong muốn.');
         }
     }
 
@@ -332,7 +332,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 return `
                     <tr>
                         <td>
-                            <div class="fw-bold">${item.name || 'Unknown Item'}</div>
+                            <div class="fw-bold">${item.name || 'Sản phẩm không xác định'}</div>
                             <small class="text-muted">${item.id || ''}</small>
                         </td>
                         <td class="text-center align-middle">${qty}</td>
@@ -342,7 +342,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 `;
             }).join('');
         } else {
-            tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">No items data available</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">Không có dữ liệu sản phẩm</td></tr>';
         }
 
         const modal = new bootstrap.Modal(document.getElementById('saleDetailsModal'));
@@ -389,7 +389,7 @@ document.addEventListener('DOMContentLoaded', function () {
         
         // Basic check for Cash
         if (paymentMethod === 'Cash' && given < total) {
-             alert('Insufficient amount given for cash payment.');
+             alert('Số tiền khách đưa không đủ cho thanh toán tiền mặt.');
              return;
         }
 
@@ -407,7 +407,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         try {
             btnCompleteSale.disabled = true;
-            btnCompleteSale.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Processing...';
+            btnCompleteSale.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Đang xử lý...';
 
             const response = await fetch('/api/sales/create', {
                 method: 'POST',
@@ -432,18 +432,18 @@ document.addEventListener('DOMContentLoaded', function () {
                     // Reset to Cash
                     document.getElementById('payCash').checked = true;
                     updateCartUI();
-                    btnCompleteSale.innerHTML = '<i class="fas fa-check-circle me-2"></i> COMPLETE SALE';
+                    btnCompleteSale.innerHTML = '<i class="fas fa-check-circle me-2"></i> HOÀN TẤT BÁN HÀNG';
                 });
             } else {
                 alert('Error processing sale: ' + result.message);
                 btnCompleteSale.disabled = false;
-                btnCompleteSale.innerHTML = '<i class="fas fa-check-circle me-2"></i> COMPLETE SALE';
+                btnCompleteSale.innerHTML = '<i class="fas fa-check-circle me-2"></i> HOÀN TẤT BÁN HÀNG';
             }
         } catch (error) {
             console.error('Error:', error);
             alert('An unexpected error occurred.');
             btnCompleteSale.disabled = false;
-            btnCompleteSale.innerHTML = '<i class="fas fa-check-circle me-2"></i> COMPLETE SALE';
+            btnCompleteSale.innerHTML = '<i class="fas fa-check-circle me-2"></i> HOÀN TẤT BÁN HÀNG';
         }
     });
 });

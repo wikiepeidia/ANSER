@@ -1,4 +1,4 @@
-"""DL proxy and product-sales-history routes extracted from app.py."""
+"""Các route proxy cho DL và lịch sử bán hàng sản phẩm, tách ra từ app.py."""
 
 from flask import Blueprint, jsonify, request, current_app
 from flask_login import login_required
@@ -15,13 +15,13 @@ dl_bp = Blueprint("dl", __name__)
 @dl_bp.route('/api/dl/detect', methods=['POST'])
 @login_required
 def api_dl_detect():
-    """Proxy to DL Service for invoice detection."""
+    """Proxy tới DL Service để nhận diện hóa đơn."""
     if 'file' not in request.files:
-        return jsonify({'success': False, 'error': 'No file uploaded'}), 400
+        return jsonify({'success': False, 'error': 'Chưa tải tệp lên'}), 400
 
     file = request.files['file']
     if file.filename == '':
-        return jsonify({'success': False, 'error': 'No file selected'}), 400
+        return jsonify({'success': False, 'error': 'Chưa chọn tệp'}), 400
 
     try:
         client = DLClient()
@@ -43,7 +43,7 @@ def api_dl_forecast():
     """Proxy to DL Service for quantity forecasting."""
     data = request.get_json(silent=True)
     if not data:
-        return jsonify({'success': False, 'error': 'No data provided'}), 400
+        return jsonify({'success': False, 'error': 'Chưa cung cấp dữ liệu'}), 400
 
     try:
         client = DLClient()
@@ -61,7 +61,7 @@ def api_dl_forecast():
 @dl_bp.route('/api/products/<int:product_id>/sales_history', methods=['GET'])
 @login_required
 def api_get_product_sales_history(product_id):
-    """Get sales history series for a product from export details."""
+    """Lấy chuỗi lịch sử bán hàng của sản phẩm từ chi tiết xuất hàng."""
     conn = None
     try:
         conn = current_app.extensions['database'].get_connection()

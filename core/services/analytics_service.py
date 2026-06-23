@@ -25,10 +25,10 @@ class AnalyticsService:
                 credentials = service_account.Credentials.from_service_account_file(self.credentials_path)
                 self.client = BetaAnalyticsDataClient(credentials=credentials)
             except Exception as e:
-                logger.warning("Failed to init Analytics Client: %s", e)
+                logger.warning("Khởi tạo Analytics Client thất bại: %s", e)
 
     def get_report(self, property_id=None):
-        """Return a structured analytics report with caching and mock fallback."""
+        """Trả về báo cáo analytics có cấu trúc, kèm cache và mock fallback."""
         pid = property_id or Config.GA_PROPERTY_ID
 
         # Cache file next to service account file
@@ -63,19 +63,19 @@ class AnalyticsService:
                         cache_valid = False
 
                     if cache_valid and age < cache_ttl:
-                        logger.info("Using cached analytics (age=%.1fs)", age)
+                        logger.info("Đang dùng cache analytics (tuổi=%.1fs)", age)
                         return {'success': True, 'data': cached_data, 'source': 'cache'}
                     else:
-                        logger.info("Analytics cache ignored (valid=%s, age=%.1fs)", cache_valid, age)
-                        # Remove invalid/empty cache so we don't repeatedly serve empty data
+                        logger.info("Bỏ qua cache analytics (hợp lệ=%s, tuổi=%.1fs)", cache_valid, age)
+                        # Xóa cache không hợp lệ/rỗng để không phục vụ dữ liệu rỗng lặp lại
                         try:
                             if os.path.exists(cache_file):
                                 os.remove(cache_file)
-                                logger.info("Removed invalid analytics cache")
+                                logger.info("Đã xóa cache analytics không hợp lệ")
                         except Exception:
                             pass
         except Exception as e:
-            logger.warning("Error reading analytics cache: %s", e)
+            logger.warning("Lỗi khi đọc cache analytics: %s", e)
 
         # If client not initialized, return mock data
         if not self.client:

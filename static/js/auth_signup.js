@@ -1,4 +1,4 @@
-// Placeholder for future signup enhancements; keeps structure aligned with signin page
+// Giữ chỗ cho các cải tiến đăng ký trong tương lai; giữ cấu trúc đồng bộ với trang đăng nhập
 window.addEventListener('DOMContentLoaded', () => {
-    // Reserved for client-side validations or UX polish
+    // Dành cho xác thực phía client hoặc tinh chỉnh UX
 });

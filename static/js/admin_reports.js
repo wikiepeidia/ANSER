@@ -34,7 +34,7 @@ function renderReportsTable() {
         tbody.innerHTML = `
             <tr>
                 <td colspan="7" class="text-center">
-                    No scheduled reports yet. Click "Schedule report" to get started.
+                    Chưa có báo cáo đã lên lịch. Nhấn "Lên lịch báo cáo" để bắt đầu.
                 </td>
             </tr>`;
         return;
@@ -47,7 +47,7 @@ function renderReportsTable() {
             <td><span class="badge bg-info">${report.frequency}</span></td>
             <td>${report.channel}</td>
             <td><span class="badge bg-${report.status === 'active' ? 'success' : 'secondary'}">${report.status}</span></td>
-            <td>${report.last_sent_at ? new Date(report.last_sent_at).toLocaleString() : 'Never'}</td>
+            <td>${report.last_sent_at ? new Date(report.last_sent_at).toLocaleString() : 'Chưa gửi'}</td>
             <td>
                 <button class="btn btn-sm btn-danger" onclick="deleteReport(${report.id})">
                     <i class="fas fa-trash"></i>
@@ -59,9 +59,9 @@ function renderReportsTable() {
 
 function formatReportType(type) {
     const types = {
-        'revenue_expense': 'Revenue & Expense',
-        'inventory': 'Inventory Status',
-        'customer_activity': 'Customer Activity'
+        'revenue_expense': 'Doanh thu & Chi phí',
+        'inventory': 'Tình trạng tồn kho',
+        'customer_activity': 'Hoạt động khách hàng'
     };
     return types[type] || type;
 }
@@ -108,17 +108,17 @@ async function submitScheduleReport() {
             form.reset();
             loadScheduledReports();
             loadStats(); // Update stats if needed
-            alert('Report scheduled successfully');
+            alert('Đã lên lịch báo cáo thành công');
         } else {
             alert(result.message);
         }
     } catch (error) {
-        alert('Error: ' + error.message);
+        alert('Lỗi: ' + error.message);
     }
 }
 
 async function deleteReport(id) {
-    if (!confirm('Are you sure you want to delete this scheduled report?')) return;
+    if (!confirm('Bạn có chắc chắn muốn xóa báo cáo đã lên lịch này?')) return;
 
     try {
         const response = await fetch(`/api/reports/scheduled/${id}`, {
@@ -135,7 +135,7 @@ async function deleteReport(id) {
             alert(result.message);
         }
     } catch (error) {
-        alert('Error: ' + error.message);
+        alert('Lỗi: ' + error.message);
     }
 }
 

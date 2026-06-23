@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Subscription Management - Admin{% endblock %}
+{% block title %}Quản lý gói dịch vụ - Admin{% endblock %}
 
 {% block styles %}
 {{ super() }}
@@ -19,24 +19,24 @@
     <main class="app-content main-content subscriptions-page">
         <!-- Header -->
         <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4 border-bottom">
-            <h1 class="h2"><i class="fas fa-crown"></i> Subscription Management</h1>
+            <h1 class="h2"><i class="fas fa-crown"></i> Quản lý gói dịch vụ</h1>
             <div class="btn-toolbar">
                 <button class="btn btn-modern btn-modern--primary me-2" onclick="loadManagers()">
-                    <i class="fas fa-sync-alt"></i> <span>Refresh</span>
+                    <i class="fas fa-sync-alt"></i> <span>Làm mới</span>
                 </button>
                 <button class="btn btn-modern btn-modern--success" data-bs-toggle="modal" data-bs-target="#addManagerModal">
-                    <i class="fas fa-user-plus"></i> <span>Add Manager</span>
+                    <i class="fas fa-user-plus"></i> <span>Thêm Manager</span>
                 </button>
             </div>
         </div>
 
-        <!-- Stats Overview -->
+        <!-- Tổng quan thống kê -->
         <div class="row g-3 mb-4">
             <div class="col-md-3">
                 <div class="stat-card stat-card--purple">
                     <div class="stat-icon"><i class="fas fa-users"></i></div>
                     <div class="stat-content">
-                        <div class="stat-label">Total Managers</div>
+                        <div class="stat-label">Tổng Manager</div>
                         <div class="stat-value" id="totalManagers">0</div>
                     </div>
                 </div>
@@ -45,7 +45,7 @@
                 <div class="stat-card stat-card--green">
                     <div class="stat-icon"><i class="fas fa-check-circle"></i></div>
                     <div class="stat-content">
-                        <div class="stat-label">Active Subscriptions</div>
+                        <div class="stat-label">Gói đang hoạt động</div>
                         <div class="stat-value" id="activeSubscriptions">0</div>
                     </div>
                 </div>
@@ -54,9 +54,9 @@
                 <div class="stat-card stat-card--orange">
                     <div class="stat-icon"><i class="fas fa-exclamation-triangle"></i></div>
                     <div class="stat-content">
-                        <div class="stat-label">Expiring Soon</div>
+                        <div class="stat-label">Sắp hết hạn</div>
                         <div class="stat-value" id="expiringSoon">0</div>
-                        <div class="stat-sublabel">Next 7 days</div>
+                        <div class="stat-sublabel">7 ngày tới</div>
                     </div>
                 </div>
             </div>
@@ -64,20 +64,20 @@
                 <div class="stat-card stat-card--blue">
                     <div class="stat-icon"><i class="fas fa-dollar-sign"></i></div>
                     <div class="stat-content">
-                        <div class="stat-label">Monthly Revenue</div>
+                        <div class="stat-label">Doanh thu tháng</div>
                         <div class="stat-value" id="monthlyRevenue">0 VND</div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Active Managers Table -->
+        <!-- Bảng Manager đang hoạt động -->
         <div class="card mb-4 shadow-sm">
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h5 class="card-title mb-0"><i class="fas fa-user-tie"></i> Active Manager Accounts</h5>
+                    <h5 class="card-title mb-0"><i class="fas fa-user-tie"></i> Tài khoản Manager đang hoạt động</h5>
                     <div class="input-group" style="max-width: 300px;">
-                        <input type="text" class="form-control form-control-sm" id="searchManager" placeholder="Search managers...">
+                        <input type="text" class="form-control form-control-sm" id="searchManager" placeholder="Tìm Manager...">
                         <button class="btn btn-outline-secondary btn-sm"><i class="fas fa-search"></i></button>
                     </div>
                 </div>
@@ -87,18 +87,18 @@
                             <tr>
                                 <th>Manager</th>
                                 <th>Email</th>
-                                <th>Plan</th>
-                                <th>Start Date</th>
-                                <th>Expires On</th>
-                                <th>Status</th>
-                                <th>Actions</th>
+                                <th>Gói</th>
+                                <th>Ngày bắt đầu</th>
+                                <th>Ngày hết hạn</th>
+                                <th>Trạng thái</th>
+                                <th>Thao tác</th>
                             </tr>
                         </thead>
                         <tbody id="managersTable">
                             <tr>
                                 <td colspan="7" class="text-center py-4">
                                     <div class="spinner-border text-primary" role="status"></div>
-                                    <p class="text-muted mt-2">Loading managers...</p>
+                                    <p class="text-muted mt-2">Đang tải danh sách Manager...</p>
                                 </td>
                             </tr>
                         </tbody>
@@ -107,28 +107,28 @@
             </div>
         </div>
 
-        <!-- Payment History -->
+        <!-- Lịch sử thanh toán -->
         <div class="card shadow-sm">
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h5 class="card-title mb-0"><i class="fas fa-history"></i> Recent Transactions</h5>
+                    <h5 class="card-title mb-0"><i class="fas fa-history"></i> Giao dịch gần đây</h5>
                     <select class="form-select form-select-sm" style="max-width: 200px;" id="filterTransactions">
-                        <option value="all">All Transactions</option>
-                        <option value="completed">Completed</option>
-                        <option value="pending">Pending</option>
-                        <option value="failed">Failed</option>
+                        <option value="all">Tất cả giao dịch</option>
+                        <option value="completed">Đã hoàn thành</option>
+                        <option value="pending">Đang chờ</option>
+                        <option value="failed">Thất bại</option>
                     </select>
                 </div>
                 <div class="table-responsive">
                     <table class="table table-sm">
                         <thead>
                             <tr>
-                                <th>Date</th>
+                                <th>Ngày</th>
                                 <th>Manager</th>
-                                <th>Plan</th>
-                                <th>Amount</th>
-                                <th>Method</th>
-                                <th>Status</th>
+                                <th>Gói</th>
+                                <th>Số tiền</th>
+                                <th>Phương thức</th>
+                                <th>Trạng thái</th>
                             </tr>
                         </thead>
                         <tbody id="transactionsTable">
@@ -145,58 +145,58 @@
     </main>
 </div>
 
-<!-- Add Manager Modal -->
+<!-- Modal: Thêm Manager -->
 <div class="modal fade" id="addManagerModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title"><i class="fas fa-user-plus"></i> Add New Manager</h5>
+                <h5 class="modal-title"><i class="fas fa-user-plus"></i> Thêm Manager mới</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <div class="mb-3">
-                    <label class="form-label">Select User <span class="text-danger">*</span></label>
+                    <label class="form-label">Chọn người dùng <span class="text-danger">*</span></label>
                     <select class="form-select" id="selectUser">
-                        <option value="">Choose a user...</option>
+                        <option value="">-- Chọn người dùng --</option>
                     </select>
-                    <small class="text-muted">Only non-manager users are shown</small>
+                    <small class="text-muted">Chỉ hiện các user chưa phải manager</small>
                 </div>
                 <div class="mb-3">
-                    <label class="form-label">Subscription Plan <span class="text-danger">*</span></label>
+                    <label class="form-label">Gói dịch vụ <span class="text-danger">*</span></label>
                     <select class="form-select" id="selectPlan">
-                        <option value="trial">Trial - Free (30 days)</option>
-                        <option value="monthly">Monthly - 500,000 VND (30 days)</option>
-                        <option value="quarterly" selected>Quarterly - 1,200,000 VND (90 days)</option>
-                        <option value="yearly">Yearly - 4,000,000 VND (365 days)</option>
+                        <option value="trial">Dùng thử - Miễn phí (30 ngày)</option>
+                        <option value="monthly">Hàng tháng - 500.000 VND (30 ngày)</option>
+                        <option value="quarterly" selected>Hàng quý - 1.200.000 VND (90 ngày)</option>
+                        <option value="yearly">Hàng năm - 4.000.000 VND (365 ngày)</option>
                     </select>
                 </div>
                 <div class="mb-3">
-                    <label class="form-label">Payment Method</label>
+                    <label class="form-label">Phương thức thanh toán</label>
                     <select class="form-select" id="paymentMethod">
-                        <option value="bank_transfer">Bank Transfer</option>
-                        <option value="cash">Cash</option>
+                        <option value="bank_transfer">Chuyển khoản ngân hàng</option>
+                        <option value="cash">Tiền mặt</option>
                         <option value="momo">MoMo</option>
                         <option value="vnpay">VNPay</option>
-                        <option value="admin_grant">Admin Grant (Free)</option>
+                        <option value="admin_grant">Admin cấp miễn phí</option>
                     </select>
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
                 <button type="button" class="btn btn-success" onclick="createManager()">
-                    <i class="fas fa-check"></i> Create Manager
+                    <i class="fas fa-check"></i> Tạo Manager
                 </button>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Extend Subscription Modal -->
+<!-- Modal: Gia hạn gói -->
 <div class="modal fade" id="extendModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title"><i class="fas fa-calendar-plus"></i> Extend Subscription</h5>
+                <h5 class="modal-title"><i class="fas fa-calendar-plus"></i> Gia hạn gói dịch vụ</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
@@ -206,31 +206,31 @@
                     <input type="text" class="form-control" id="extendUserName" readonly>
                 </div>
                 <div class="mb-3">
-                    <label class="form-label">Current Expiry</label>
+                    <label class="form-label">Ngày hết hạn hiện tại</label>
                     <input type="text" class="form-control" id="currentExpiry" readonly>
                 </div>
                 <div class="mb-3">
-                    <label class="form-label">Extension Plan <span class="text-danger">*</span></label>
+                    <label class="form-label">Gói gia hạn <span class="text-danger">*</span></label>
                     <select class="form-select" id="extendPlan">
-                        <option value="monthly">Monthly - 500,000 VND (+ 30 days)</option>
-                        <option value="quarterly" selected>Quarterly - 1,200,000 VND (+ 90 days)</option>
-                        <option value="yearly">Yearly - 4,000,000 VND (+ 365 days)</option>
+                        <option value="monthly">Hàng tháng - 500.000 VND (+ 30 ngày)</option>
+                        <option value="quarterly" selected>Hàng quý - 1.200.000 VND (+ 90 ngày)</option>
+                        <option value="yearly">Hàng năm - 4.000.000 VND (+ 365 ngày)</option>
                     </select>
                 </div>
                 <div class="mb-3">
-                    <label class="form-label">Payment Method</label>
+                    <label class="form-label">Phương thức thanh toán</label>
                     <select class="form-select" id="extendPaymentMethod">
-                        <option value="bank_transfer">Bank Transfer</option>
-                        <option value="cash">Cash</option>
+                        <option value="bank_transfer">Chuyển khoản ngân hàng</option>
+                        <option value="cash">Tiền mặt</option>
                         <option value="momo">MoMo</option>
                         <option value="vnpay">VNPay</option>
                     </select>
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
                 <button type="button" class="btn btn-primary" onclick="processExtension()">
-                    <i class="fas fa-check"></i> Extend Subscription
+                    <i class="fas fa-check"></i> Gia hạn gói
                 </button>
             </div>
         </div>
@@ -238,4 +238,3 @@
 </div>
 
 {% endblock %}
-    
