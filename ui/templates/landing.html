@@ -1,341 +1,309 @@
-{% extends 'base.html' %}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ANSER - Định hình tương lai bán lẻ</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
 
-{% block title %}ANSER — Nền tảng AI/ML quản lý bán lẻ thông minh{% endblock %}
+    <style>
+        /* --- LINEAR.APP PREMIUM DARK THEME --- */
+        :root {
+            --bg-void: #000000;
+            --bg-surface: #0a0a0a;
+            --bg-elevated: #111111;
+            
+            --text-high: #ffffff;
+            --text-med: #a1a1aa;
+            --text-low: #52525b;
+            
+            --border-subtle: rgba(255, 255, 255, 0.08);
+            --border-hover: rgba(255, 255, 255, 0.2);
+            
+            --accent-primary: #ffffff;
+            --accent-glow: rgba(255, 255, 255, 0.15);
+        }
 
-{% block styles %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/landing_page.css') }}">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/animations.css') }}">
-{% endblock %}
+        * { box-sizing: border-box; margin: 0; padding: 0; }
 
-{% block body_class %}landing-page{% endblock %}
+        body, html {
+            background-color: var(--bg-void);
+            color: var(--text-high);
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
 
-{% block content %}
+        a { text-decoration: none; }
 
-<!-- ══════════════ HEADER ══════════════ -->
-<header class="header">
-    <div class="header__container">
-        <a href="{{ url_for('pages.landing') }}" class="header__logo">
-            <i class="fas fa-brain"></i>
-            <span>ANSER</span>
-        </a>
-        <nav class="header__nav">
-            <ul class="header__nav-list">
-                <li class="header__nav-item"><a href="{{ url_for('pages.landing') }}" class="header__nav-link">Trang
-                        chủ</a></li>
-                <li class="header__nav-item"><a href="#features" class="header__nav-link">Tính năng</a></li>
-                <li class="header__nav-item"><a href="#about" class="header__nav-link">Về chúng tôi</a></li>
-                <li class="header__nav-item"><a href="#contact" class="header__nav-link" id="contact-link">Liên hệ</a>
-                </li>
-                <li class="header__nav-item">
-                    <button id="landing-theme-toggle" class="theme-toggle-btn" aria-label="Đổi giao diện">
-                        <i id="theme-icon" class="fas fa-moon"></i>
-                    </button>
-                </li>
-                <li class="header__nav-item"><a href="{{ url_for('auth.signin') }}" class="btn btn-primary">Đăng
-                        nhập</a></li>
-            </ul>
-        </nav>
-    </div>
-</header>
+        /* --- 1. MINIMALIST NAVBAR --- */
+        .navbar {
+            position: fixed; top: 0; left: 0; width: 100%;
+            padding: 16px 8%; display: flex; justify-content: space-between; align-items: center;
+            background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            z-index: 1000; border-bottom: 1px solid transparent; transition: border-color 0.4s ease;
+        }
+        .navbar.scrolled { border-bottom: 1px solid var(--border-subtle); }
 
-<!-- ══════════════ HERO ══════════════ -->
-<section class="hero">
-    <div class="hero-orb hero-orb-1"></div>
-    <div class="hero-orb hero-orb-2"></div>
-    <div class="hero-container">
-        <div class="hero-content">
-            <h1>Hệ Thống Quản Lý Doanh Nghiệp<span class="hero-cursor"></span></h1>
-            <p>Tự động hóa hóa đơn bằng OCR, dự báo doanh thu với LSTM và điều phối công việc qua AI Agent — tất cả
-                trong một nền tảng.</p>
-            <div class="hero-actions">
-                <a href="{{ url_for('auth.signup') }}" class="btn btn-primary">
-                    <i class="fas fa-rocket"></i> Dùng thử miễn phí
-                </a>
-                <a href="#features" class="btn btn-secondary">
-                    <i class="fas fa-play-circle"></i> Xem demo
-                </a>
-            </div>
-            <div class="hero-features">
-                <div class="feature-item">
-                    <div class="feature-icon"><i class="fas fa-file-invoice"></i></div>
-                    <span>Tự động đọc hóa đơn OCR</span>
-                </div>
-                <div class="feature-item">
-                    <div class="feature-icon"><i class="fas fa-chart-line"></i></div>
-                    <span>Dự báo doanh thu LSTM</span>
-                </div>
-                <div class="feature-item">
-                    <div class="feature-icon"><i class="fas fa-robot"></i></div>
-                    <span>AI Agent thông minh</span>
-                </div>
-                <div class="feature-item">
-                    <div class="feature-icon"><i class="fas fa-store"></i></div>
-                    <span>Quản lý bán lẻ</span>
-                </div>
-            </div>
-        </div>
+        .navbar-logo { font-size: 1.25rem; font-weight: 700; color: var(--text-high); letter-spacing: -0.5px; display: flex; align-items: center; gap: 10px; }
+        .navbar-links { display: flex; gap: 32px; align-items: center; }
+        .nav-item { color: var(--text-med); font-weight: 500; font-size: 0.9rem; transition: color 0.2s ease; }
+        .nav-item:hover { color: var(--text-high); }
 
-        <div class="hero-visual">
-            <div class="visual-container">
-                <div class="visual-header">
-                    <div class="visual-dots">
-                        <div class="visual-dot dot-red"></div>
-                        <div class="visual-dot dot-yellow"></div>
-                        <div class="visual-dot dot-green"></div>
-                    </div>
-                    <span class="visual-title">Bảng điều khiển ANSER</span>
-                </div>
-                <div class="visual-content">
-                    <div class="visual-sidebar">
-                        <div class="visual-bar visual-bar--blue visual-bar--tall"></div>
-                        <div class="visual-bar visual-bar--green"></div>
-                        <div class="visual-bar visual-bar--blue"></div>
-                        <div class="visual-bar visual-bar--yellow"></div>
-                        <div class="visual-bar visual-bar--green"></div>
-                        <div class="visual-bar visual-bar--blue visual-bar--tall"></div>
-                        <div class="visual-bar visual-bar--red"></div>
-                        <div class="visual-bar visual-bar--green visual-bar--tall"></div>
-                    </div>
-                    <div class="visual-main">
-                        <div class="visual-logo">
-                            <i class="fas fa-brain"></i>
-                        </div>
-                        <div class="visual-subtitle">
-                            <span class="visual-subtitle-accent">AI</span> · OCR · LSTM
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
+        .btn-primary {
+            background: var(--text-high); color: var(--bg-void);
+            padding: 10px 20px; border-radius: 6px; font-weight: 600; font-size: 0.9rem;
+            transition: all 0.2s ease;
+        }
+        .btn-primary:hover { background: #d4d4d8; transform: translateY(-1px); box-shadow: 0 4px 15px rgba(255,255,255,0.1); }
 
-<!-- ══════════════ STATS ══════════════ -->
-<section class="stats-section">
-    <div class="stats-grid">
-        <div class="stat-item" data-reveal data-delay="1">
-            <div class="stat-number" data-count="3" data-suffix="+">3+</div>
-            <div class="stat-label">Mô hình AI</div>
-        </div>
-        <div class="stat-item" data-reveal data-delay="2">
-            <div class="stat-number" data-count="99" data-suffix="%">99%</div>
-            <div class="stat-label">Độ chính xác OCR</div>
-        </div>
-        <div class="stat-item" data-reveal data-delay="3">
-            <div class="stat-number">24/7</div>
-            <div class="stat-label">Phân tích trực tiếp</div>
-        </div>
-        <div class="stat-item" data-reveal data-delay="4">
-            <div class="stat-number">HT</div>
-            <div class="stat-label">Group</div>
-        </div>
-    </div>
-</section>
+        /* --- 2. CINEMATIC HERO --- */
+        .hero {
+            min-height: 90vh; display: flex; flex-direction: column; justify-content: center; align-items: center;
+            text-align: center; padding: 180px 5% 100px; position: relative;
+        }
+        
+        .hero::before {
+            content: ''; position: absolute; top: -20%; left: 50%; transform: translateX(-50%);
+            width: 800px; height: 600px; background: radial-gradient(circle, rgba(255,255,255,0.07) 0%, transparent 60%);
+            z-index: -1; border-radius: 50%;
+        }
 
-<!-- ══════════════ FEATURES ══════════════ -->
-<section class="features" id="features">
-    <div class="section-header" data-reveal>
-        <div class="section-badge">Tính năng</div>
-        <h2>Mọi thứ bạn cần</h2>
-        <p>Tích hợp AI/ML vào quy trình bán lẻ hàng ngày một cách dễ dàng</p>
-    </div>
-    <div class="features__grid">
-        <div class="features__card" data-reveal data-delay="1">
-            <div class="features__icon icon-teal">
-                <i class="fas fa-warehouse"></i>
-            </div>
-            <h3>Quản lý kho</h3>
-            <p>Theo dõi tồn kho, nhập/xuất hàng và cảnh báo hết hàng tự động theo thời gian thực.</p>
-        </div>
-        <div class="features__card" data-reveal data-delay="2">
-            <div class="features__icon icon-blue">
-                <i class="fas fa-cash-register"></i>
-            </div>
-            <h3>POS bán hàng</h3>
-            <p>Giao diện bán hàng nhanh chóng, hỗ trợ quét barcode và tính tiền tự động.</p>
-        </div>
-        <div class="features__card" data-reveal data-delay="3">
-            <div class="features__icon icon-purple">
-                <i class="fas fa-file-invoice-dollar"></i>
-            </div>
-            <h3>AI đọc hóa đơn OCR</h3>
-            <p>Nhận dạng và trích xuất dữ liệu hóa đơn tự động bằng OCR, tiết kiệm 90% thời gian nhập liệu.</p>
-        </div>
-        <div class="features__card" data-reveal data-delay="4">
-            <div class="features__icon icon-orange">
-                <i class="fas fa-robot"></i>
-            </div>
-            <h3>Tự động hóa quy trình</h3>
-            <p>Kết nối Make.com webhook để tự động hóa tác vụ lặp lại, giảm thao tác thủ công.</p>
-        </div>
-        <div class="features__card" data-reveal data-delay="5">
-            <div class="features__icon icon-teal">
-                <i class="fas fa-chart-bar"></i>
-            </div>
-            <h3>Báo cáo thông minh</h3>
-            <p>Dự báo doanh thu bằng LSTM, hỗ trợ ra quyết định kinh doanh chính xác.</p>
-        </div>
-        <div class="features__card" data-reveal data-delay="6">
-            <div class="features__icon icon-blue">
-                <i class="fab fa-google"></i>
-            </div>
-            <h3>Tích hợp Google</h3>
-            <p>Đồng bộ Google Sheets, Drive và Calendar để quản lý dữ liệu liền mạch.</p>
-        </div>
-    </div>
-</section>
+        .hero-badge {
+            background: rgba(255,255,255,0.03); border: 1px solid var(--border-subtle);
+            color: var(--text-med); padding: 8px 16px; border-radius: 100px;
+            font-size: 0.85rem; font-weight: 500; margin-bottom: 30px;
+        }
 
-<!-- ══════════════ ABOUT US ══════════════ -->
-<section class="about" id="about">
-    <div class="about__container">
-        <div class="about__visual" data-reveal="left">
-            <div class="about__visual-label">
-                <i class="fas fa-brain"></i>
-                <span>ANSER Platform</span>
-            </div>
-        </div>
-        <div class="about__content" data-reveal="right">
-            <h2>Về ANSER</h2>
-            <p class="about__text">
-                ANSER là nền tảng quản lý bán lẻ thông minh do nhóm HTGroup phát triển. Chúng tôi ứng dụng AI/ML để tự
-                động hóa quy trình kinh doanh — từ nhận dạng hóa đơn OCR đến dự báo doanh thu bằng LSTM. Sứ mệnh của
-                ANSER là giúp doanh nghiệp vừa và nhỏ tiếp cận công nghệ AI đơn giản và hiệu quả nhất.
-            </p>
-            <ul class="about__values">
-                <li class="about__value">
-                    <i class="fas fa-lightbulb"></i>
-                    <span><strong>Đổi mới sáng tạo</strong> — Ứng dụng AI/ML tiên tiến vào giải pháp thực tế</span>
-                </li>
-                <li class="about__value">
-                    <i class="fas fa-bolt"></i>
-                    <span><strong>Đơn giản & Hiệu quả</strong> — Giao diện thân thiện, quy trình tối ưu</span>
-                </li>
-                <li class="about__value">
-                    <i class="fas fa-users"></i>
-                    <span><strong>Hợp tác & Phát triển</strong> — Xây dựng cùng cộng đồng vững mạnh</span>
-                </li>
-            </ul>
-        </div>
-    </div>
-</section>
+        .hero-title {
+            font-size: clamp(3.5rem, 7vw, 6.5rem); font-weight: 800; line-height: 1; letter-spacing: -0.05em;
+            margin-bottom: 24px; max-width: 900px;
+            background: linear-gradient(180deg, #FFFFFF 0%, rgba(255, 255, 255, 0.4) 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
 
-<!-- ══════════════ HOW IT WORKS ══════════════ -->
-<section class="how-section" id="how-it-works">
-    <div class="how-section__inner">
-        <div class="section-header" data-reveal>
-            <div class="section-badge">Quy trình</div>
-            <h2>Cách hoạt động</h2>
-            <p>Từ dữ liệu thô đến phân tích kinh doanh chỉ trong vài bước</p>
-        </div>
-        <div class="steps-grid">
-            <div class="step-item" data-reveal data-delay="1">
-                <div class="step-number">1</div>
-                <h4>Tải hóa đơn lên</h4>
-                <p>Tải ảnh hóa đơn hoặc kết nối nguồn dữ liệu có sẵn</p>
-            </div>
-            <div class="step-item" data-reveal data-delay="2">
-                <div class="step-number">2</div>
-                <h4>AI xử lý tự động</h4>
-                <p>OCR và AI Agent trích xuất, làm sạch, chuẩn hóa dữ liệu</p>
-            </div>
-            <div class="step-item" data-reveal data-delay="3">
-                <div class="step-number">3</div>
-                <h4>Phân tích & Dự báo</h4>
-                <p>LSTM nhận diện xu hướng, dự báo doanh thu tương lai</p>
-            </div>
-            <div class="step-item" data-reveal data-delay="4">
-                <div class="step-number">4</div>
-                <h4>Ra quyết định</h4>
-                <p>Dashboard trực quan giúp bạn hành động từ dữ liệu thực</p>
-            </div>
-        </div>
-    </div>
-</section>
+        .hero-subtitle {
+            font-size: 1.25rem; color: var(--text-med); max-width: 600px; margin: 0 auto 40px; line-height: 1.6; font-weight: 400;
+        }
 
-<!-- ══════════════ CTA ══════════════ -->
-<section class="cta-section">
-    <div class="cta-box" data-reveal>
-        <h2>Sẵn sàng bắt đầu?</h2>
-        <p>Trải nghiệm sức mạnh AI/ML trong quản lý bán lẻ cùng ANSER ngay hôm nay.</p>
-        <div style="display:flex; gap:0.75rem; justify-content:center; flex-wrap:wrap;">
-            <a href="{{ url_for('auth.signup') }}" class="btn btn-primary">
-                <i class="fas fa-user-plus"></i> Tạo tài khoản
-            </a>
-            <a href="{{ url_for('auth.signin') }}" class="btn btn-secondary">
-                <i class="fas fa-sign-in-alt"></i> Đăng nhập
+        /* --- 3. BENTO GRID SYSTEM --- */
+        .section-wrapper { padding: 100px 8%; max-width: 1300px; margin: 0 auto; }
+        
+        .section-title {
+            text-align: center; font-size: 3rem; font-weight: 800; letter-spacing: -1px;
+            margin-bottom: 80px; color: var(--text-high);
+        }
+
+        .bento-grid {
+            display: grid; grid-template-columns: repeat(12, 1fr); gap: 24px;
+        }
+
+        .card {
+            background: var(--bg-surface); border: 1px solid var(--border-subtle);
+            border-radius: 16px; padding: 40px; transition: border-color 0.3s;
+            position: relative; overflow: hidden;
+        }
+        .card:hover { border-color: var(--border-hover); background: var(--bg-elevated); }
+
+        .card.span-8 { grid-column: span 8; }
+        .card.span-4 { grid-column: span 4; }
+        .card.span-6 { grid-column: span 6; }
+        .card.span-12 { grid-column: span 12; display: flex; align-items: center; justify-content: space-between; }
+
+        @media (max-width: 900px) {
+            .card.span-8, .card.span-4, .card.span-6, .card.span-12 { grid-column: span 12; flex-direction: column; text-align: center; }
+        }
+
+        .card-icon {
+            width: 48px; height: 48px; border-radius: 12px; background: rgba(255,255,255,0.05);
+            display: flex; justify-content: center; align-items: center; font-size: 1.2rem;
+            margin-bottom: 24px; border: 1px solid var(--border-subtle); color: var(--text-high);
+        }
+
+        .card h3 { font-size: 1.5rem; font-weight: 600; margin-bottom: 12px; letter-spacing: -0.5px; }
+        .card p { color: var(--text-med); line-height: 1.6; font-size: 1rem; }
+
+        /* Card Visuals (Abstract art instead of broken images) */
+        .abstract-chart {
+            margin-top: 30px; height: 150px; display: flex; align-items: flex-end; gap: 8px;
+            border-bottom: 1px solid var(--border-subtle); padding-bottom: 10px;
+        }
+        .chart-bar { flex: 1; background: rgba(255,255,255,0.1); border-radius: 4px; transition: height 1s ease; }
+        .chart-bar.active { background: var(--text-high); box-shadow: 0 0 20px rgba(255,255,255,0.2); }
+
+        .abstract-laser {
+            margin-top: 30px; height: 100px; border: 1px dashed var(--border-subtle);
+            border-radius: 8px; position: relative; overflow: hidden;
+        }
+        .laser-beam {
+            position: absolute; top: 0; left: 0; width: 100%; height: 2px;
+            background: var(--text-high); box-shadow: 0 0 15px #fff;
+        }
+
+        /* --- 4. CLEAN CTA FOOTER --- */
+        .footer {
+            border-top: 1px solid var(--border-subtle); padding: 120px 8% 40px; text-align: center;
+        }
+        .footer h2 { font-size: 4rem; font-weight: 800; letter-spacing: -2px; margin-bottom: 40px; }
+        .footer-bottom {
+            margin-top: 100px; padding-top: 30px; border-top: 1px solid var(--border-subtle);
+            display: flex; justify-content: space-between; color: var(--text-low); font-size: 0.9rem;
+        }
+
+        /* Essential for GSAP */
+        .hidden { opacity: 0; visibility: hidden; }
+    </style>
+</head>
+<body>
+
+    <header class="navbar">
+        <a href="#" class="navbar-logo"><i class="fas fa-layer-group"></i> ANSER</a>
+        <div class="navbar-links">
+            <a href="#features" class="nav-item">Tính năng</a>
+            <a href="{{ url_for('auth.signin') }}" class="nav-item">Đăng nhập</a>
+            <a href="{{ url_for('auth.signup') }}" class="btn-primary">Bắt đầu ngay</a>
+        </div>
+    </header>
+
+    <section class="hero">
+        <div class="hero-badge hero-anim">ANSER Engine v2.0</div>
+        <h1 class="hero-title hero-anim">Chuẩn hóa dữ liệu.<br>Dự báo tương lai.</h1>
+        <p class="hero-subtitle hero-anim">Hệ điều hành tối thượng cho doanh nghiệp bán lẻ. Nhận dạng hóa đơn OCR, dự đoán tồn kho LSTM và AI Agent hoàn toàn tự động.</p>
+        
+        <div class="hero-anim">
+            <a href="{{ url_for('auth.signup') }}" class="btn-primary" style="padding: 16px 32px; font-size: 1.1rem; margin-top: 20px;">
+                Tạo không gian làm việc
             </a>
         </div>
-    </div>
-</section>
+    </section>
 
-<!-- ══════════════ CONTACT MODAL ══════════════ -->
-<div class="modal-overlay" id="contact-modal">
-    <div class="modal-container">
-        <div class="modal-header">
-            <h3><i class="fas fa-users"></i> Đội ngũ phát triển</h3>
-            <button class="modal-close" id="modal-close-btn" aria-label="Đóng">&times;</button>
-        </div>
-        <div class="modal-body">
-            <p style="color:var(--text-secondary); margin-bottom:1.5rem;">
-                Dự án ANSER — USTH GEN14 · Báo lỗi hoặc đề xuất tính năng qua GitHub Issues.
-            </p>
-            <div class="table-responsive">
-                <table class="contact-table">
-                    <thead>
-                        <tr>
-                            <th>Tên</th>
-                            <th>Vai trò</th>
-                            <th>GitHub</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>HTGroup</td>
-                            <td>Trưởng nhóm phát triển</td>
-                            <td><a href="#" target="_blank" rel="noopener">@HTGroup</a></td>
-                        </tr>
-                    </tbody>
-                </table>
+    <section id="features" class="section-wrapper">
+        <h2 class="section-title animate-slide">Hệ sinh thái thông minh</h2>
+
+        <div class="bento-grid">
+            <div class="card span-8 animate-pop">
+                <div class="card-icon"><i class="fas fa-file-invoice"></i></div>
+                <h3>Thị giác máy tính OCR</h3>
+                <p>Quét, đọc và trích xuất dữ liệu từ hàng ngàn biên lai và hóa đơn nhập xuất kho. Biến hình ảnh tĩnh thành dữ liệu có cấu trúc hoàn hảo ngay lập tức.</p>
+                
+                <div class="abstract-laser">
+                    <div class="laser-beam"></div>
+                    <div style="padding: 20px; color: var(--text-low); font-family: monospace;">{"invoice_id": "INV-1029", "total": "5,000,000"}</div>
+                </div>
+            </div>
+
+            <div class="card span-4 animate-pop">
+                <div class="card-icon"><i class="fab fa-google"></i></div>
+                <h3>Đồng bộ Google</h3>
+                <p>Kết nối hai chiều mượt mà với Google Sheets, Drive và Calendar. Dữ liệu của bạn luôn được cập nhật liên tục trên mọi nền tảng.</p>
+            </div>
+
+            <div class="card span-6 animate-pop">
+                <div class="card-icon"><i class="fas fa-robot"></i></div>
+                <h3>AI Agents Độc Lập</h3>
+                <p>Giao việc cho Planner, Security Auditor và Researcher. Lực lượng lao động số hoạt động 24/7 để phân tích dữ liệu và tự động sửa lỗi quy trình.</p>
+            </div>
+
+            <div class="card span-6 animate-pop">
+                <div class="card-icon"><i class="fas fa-chart-line"></i></div>
+                <h3>Dự Báo LSTM</h3>
+                <p>Chấm dứt tình trạng cháy hàng. Mạng nơ-ron LSTM quét qua dữ liệu lịch sử để dự đoán nhu cầu thị trường với độ chính xác tuyệt đối.</p>
+                
+                <div class="abstract-chart">
+                    <div class="chart-bar bar-anim" style="height: 30%;"></div>
+                    <div class="chart-bar bar-anim" style="height: 50%;"></div>
+                    <div class="chart-bar bar-anim" style="height: 40%;"></div>
+                    <div class="chart-bar bar-anim" style="height: 70%;"></div>
+                    <div class="chart-bar bar-anim active" style="height: 90%;"></div>
+                </div>
+            </div>
+
+            <div class="card span-12 animate-slide">
+                <div>
+                    <h3>Sẵn sàng tự động hóa luồng công việc?</h3>
+                    <p>Khởi tạo webhook Make.com và kết nối API nội bộ chỉ với một click.</p>
+                </div>
+                <a href="{{ url_for('auth.signup') }}" class="btn-primary" style="background: var(--bg-elevated); border: 1px solid var(--border-hover); color: var(--text-high);">Xem tài liệu API &rarr;</a>
             </div>
         </div>
-    </div>
-</div>
+    </section>
 
-<!-- ══════════════ FOOTER ══════════════ -->
-<footer class="footer">
-    <div class="footer__container">
-        <div class="footer__columns">
-            <div class="footer__column">
-                <a href="{{ url_for('pages.landing') }}" class="footer__logo">
-                    <i class="fas fa-brain"></i> ANSER
-                </a>
-                <p class="footer__description">Nền tảng AI/ML hỗ trợ quản lý bán lẻ thông minh cho doanh nghiệp Việt
-                    Nam.</p>
-            </div>
-            <div class="footer__column">
-                <h4 class="footer__heading">Liên kết nhanh</h4>
-                <ul class="footer__links">
-                    <li><a href="#features" class="footer__link">Tính năng</a></li>
-                    <li><a href="#about" class="footer__link">Về chúng tôi</a></li>
-                    <li><a href="#contact" class="footer__link">Liên hệ</a></li>
-                </ul>
-            </div>
-            <div class="footer__column">
-                <h4 class="footer__heading">Liên hệ</h4>
-                <p class="footer__contact"><i class="fas fa-envelope"></i> HTG@gmail.com</p>
-                <p class="footer__contact"><i class="fas fa-map-marker-alt"></i> HTGroup, 22 Lương Khánh Thiện, Hà Nội
-                </p>
-            </div>
+    <footer class="footer">
+        <h2 class="animate-pop">Bắt đầu kỷ nguyên mới.</h2>
+        <a href="{{ url_for('auth.signup') }}" class="btn-primary animate-pop" style="padding: 16px 40px; font-size: 1.2rem;">Triển khai ANSER ngay</a>
+        
+        <div class="footer-bottom">
+            <span>© 2026 ANSER. Phát triển bởi HTGroup.</span>
+            <span>Trạng thái: Máy chủ Online</span>
         </div>
-        <div class="footer__bottom">
-            <p class="footer__copyright">&copy; 2026 ANSER &middot; HTGroup</p>
-        </div>
-    </div>
-</footer>
+    </footer>
 
-{% endblock %}
+    <script>
+        gsap.registerPlugin(ScrollTrigger);
 
-{% block scripts %}
-<script src="{{ url_for('static', filename='js/reveal.js') }}"></script>
-<script src="{{ url_for('static', filename='js/landing.js') }}"></script>
-{% endblock %}
+        document.addEventListener('DOMContentLoaded', () => {
+            
+            // 1. Hero Reveal (Immediate Load)
+            gsap.fromTo(".hero-anim", 
+                { opacity: 0, y: 30 },
+                { opacity: 1, y: 0, duration: 1, stagger: 0.15, ease: "power3.out", delay: 0.2 }
+            );
+
+            // 2. The "POP IN / POP OUT" Effect
+            // Notice toggleActions: "play reverse play reverse". It reverses when you scroll up!
+            gsap.utils.toArray('.animate-pop').forEach(el => {
+                gsap.fromTo(el, 
+                    { opacity: 0, scale: 0.9, y: 50 },
+                    { 
+                        opacity: 1, scale: 1, y: 0, 
+                        duration: 0.6, ease: "back.out(1.5)",
+                        scrollTrigger: {
+                            trigger: el,
+                            start: "top 85%", // When the top of the element hits 85% down the screen
+                            toggleActions: "play reverse play reverse" // Scroll down: play. Scroll up: reverse.
+                        }
+                    }
+                );
+            });
+
+            // 3. Smooth Slide Effect
+            gsap.utils.toArray('.animate-slide').forEach(el => {
+                gsap.fromTo(el, 
+                    { opacity: 0, y: 50 },
+                    { 
+                        opacity: 1, y: 0, 
+                        duration: 0.8, ease: "power2.out",
+                        scrollTrigger: {
+                            trigger: el,
+                            start: "top 90%",
+                            toggleActions: "play reverse play reverse"
+                        }
+                    }
+                );
+            });
+
+            // 4. Navbar Background Blur trigger
+            window.addEventListener('scroll', () => {
+                if (window.scrollY > 50) {
+                    document.querySelector('.navbar').classList.add('scrolled');
+                } else {
+                    document.querySelector('.navbar').classList.remove('scrolled');
+                }
+            });
+
+            // 5. Laser Animation Loop
+            gsap.fromTo(".laser-beam", 
+                { top: 0 }, 
+                { top: "100%", duration: 2, ease: "none", repeat: -1, yoyo: true }
+            );
+
+        });
+    </script>
+</body>
+</html>
