@@ -1,313 +1,181 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ANSER - AI Retail Ecosystem</title>
-    
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
-    
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+{% extends "base.html" %}
 
-    <style>
-        :root {
-            --bg-deep: #0a0a0c;
-            --text-main: #ffffff;
-            --text-muted: #88888b;
-            --accent-glow: #00f0ff;
-        }
+{% block title %}Workflow Automation for Retail - RPAaaS Platform{% endblock %}
 
-        body, html {
-            margin: 0;
-            padding: 0;
-            background-color: var(--bg-deep);
-            color: var(--text-main);
-            font-family: 'Inter', sans-serif;
-            overflow-x: hidden;
-        }
+{% block body_class %}landing-page{% endblock %}
 
-        /* Hero Section */
-        .hero-section {
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            text-align: center;
-            position: relative;
-            background: radial-gradient(circle at center, rgba(0, 240, 255, 0.08) 0%, transparent 60%);
-        }
+{% block styles %}
+{{ super() }}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/landing_page.css') }}">
+{% endblock %}
 
-        .reveal-mask {
-            overflow: hidden;
-            margin-bottom: 5px;
-        }
-
-        .hero-title {
-            font-size: 5rem;
-            font-weight: 800;
-            margin: 0;
-            line-height: 1.1;
-            letter-spacing: -2px;
-        }
-
-        .hero-subtitle {
-            font-size: 1.2rem;
-            color: var(--text-muted);
-            max-width: 600px;
-            margin-top: 20px;
-        }
-
-        /* CTA Buttons */
-        .cta-link {
-            text-decoration: none;
-            display: inline-block;
-        }
-
-        .hero-cta {
-            margin-top: 40px;
-            padding: 16px 40px;
-            font-size: 1.1rem;
-            font-weight: 600;
-            color: var(--bg-deep);
-            background-color: var(--text-main);
-            border: none;
-            border-radius: 50px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .hero-cta:hover {
-            box-shadow: 0 0 25px rgba(0, 240, 255, 0.5);
-            transform: translateY(-2px);
-        }
-
-        /* Features Layout */
-        .feature-section {
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 10%;
-            position: relative;
-        }
-
-        .feature-content { flex: 1; max-width: 500px; }
-        .feature-title { font-size: 3.5rem; margin-bottom: 20px; line-height: 1.1; }
-        .feature-visual { flex: 1; display: flex; justify-content: center; align-items: center; position: relative; }
-
-        /* Receipt Visual */
-        .receipt-card {
-            width: 300px; height: 400px; background: #1a1a1f;
-            border: 1px solid #333; border-radius: 10px; padding: 20px;
-            position: relative; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.5);
-        }
-        .receipt-line { height: 12px; background: #333; margin-bottom: 15px; border-radius: 4px; width: 100%; }
-        .receipt-line.short { width: 60%; }
-        .receipt-line.medium { width: 80%; }
-
-        .scanner-laser {
-            position: absolute; top: 0; left: 0; width: 100%; height: 3px;
-            background: var(--accent-glow); box-shadow: 0 0 15px var(--accent-glow); z-index: 10;
-        }
-
-        /* Chart Visual */
-        .chart-container {
-            display: flex; align-items: flex-end; gap: 15px; height: 300px; width: 400px;
-            border-bottom: 2px solid #333; border-left: 2px solid #333; padding: 20px 0 0 20px;
-        }
-        .chart-bar {
-            flex: 1; background: linear-gradient(to top, #1a1a1f, var(--accent-glow));
-            border-radius: 4px 4px 0 0; height: 0%; opacity: 0.8;
-        }
-
-        /* Agents Gallery */
-        .agents-section { background: #050505; overflow: hidden; padding-top: 100px; }
-        .agents-header { padding: 0 10%; margin-bottom: 50px; }
-        .gallery-container { width: 100%; height: 100vh; display: flex; align-items: center; }
-        .gallery-wrapper { display: flex; gap: 40px; padding: 0 10vw; width: max-content; }
-        
-        .agent-card {
-            width: 400px; height: 500px; flex-shrink: 0; background: rgba(255, 255, 255, 0.02);
-            border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 20px; padding: 40px;
-            display: flex; flex-direction: column; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-            transition: border-color 0.3s ease, transform 0.3s ease;
-        }
-        .agent-card:hover { border-color: var(--accent-glow); transform: translateY(-10px); }
-        .agent-icon { font-size: 3.5rem; margin-bottom: 20px; }
-        .agent-card h3 { font-size: 2rem; margin-bottom: 15px; font-weight: 600; }
-        .agent-card p { color: var(--text-muted); font-size: 1.1rem; line-height: 1.6; }
-
-        /* Magnetic Footer */
-        .footer-section {
-            min-height: 100vh; display: flex; flex-direction: column; justify-content: center;
-            align-items: center; text-align: center; background-color: var(--bg-deep);
-            position: relative; padding: 20px;
-        }
-        .footer-title { font-size: 6rem; font-weight: 800; line-height: 1.1; margin-bottom: 50px; letter-spacing: -3px; }
-        .magnetic-wrapper { display: inline-block; padding: 40px; border-radius: 50%; cursor: pointer; }
-        
-        .magnetic-btn {
-            background-color: var(--accent-glow); color: var(--bg-deep); border: none;
-            border-radius: 50%; width: 180px; height: 180px; font-size: 1.2rem; font-weight: 700;
-            display: flex; justify-content: center; align-items: center;
-            box-shadow: 0 0 30px rgba(0, 240, 255, 0.3); pointer-events: none;
-        }
-        .footer-bottom {
-            position: absolute; bottom: 30px; width: 100%; display: flex; justify-content: space-between;
-            padding: 0 10%; box-sizing: border-box; color: var(--text-muted); font-size: 0.9rem;
-        }
-    </style>
-</head>
-<body>
-
-    <section class="hero-section">
-        <div class="reveal-mask">
-            <h1 class="hero-title hero-text-anim">The Brain Behind</h1>
-        </div>
-        <div class="reveal-mask">
-            <h1 class="hero-title hero-text-anim" style="color: var(--accent-glow);">Your Retail Business.</h1>
-        </div>
-        <div class="reveal-mask">
-            <p class="hero-subtitle hero-text-anim">ANSER integrates OCR data extraction, LSTM forecasting, and autonomous AI agents into one seamless retail platform.</p>
-        </div>
-        <div class="reveal-mask">
-            <a href="{{ url_for('auth.signup') if 'auth.signup' in request.endpoint else '/auth/signup' }}" class="cta-link">
-                <button class="hero-cta hero-text-anim">Explore The Platform</button>
-            </a>
-        </div>
-    </section>
-    
-    <section class="feature-section">
-        <div class="feature-content">
-            <h2 class="feature-title scroll-text">Intelligent<br><span style="color: var(--accent-glow);">OCR Extraction.</span></h2>
-            <p class="hero-subtitle scroll-text">Turn messy paper trails into structured, actionable data instantly. Our advanced vision models read, classify, and format retail invoices with perfect accuracy.</p>
-        </div>
-        <div class="feature-visual">
-            <div class="receipt-card">
-                <div class="scanner-laser"></div>
-                <div class="receipt-line"></div>
-                <div class="receipt-line medium"></div>
-                <div class="receipt-line short"></div>
-                <div class="receipt-line"></div>
-                <div class="receipt-line medium"></div>
-                <div class="receipt-line"></div>
-                <div class="receipt-line short"></div>
+{% block content %}
+<nav class="nav">
+    <div class="nav-container">
+        <div class="nav-left">
+            <div class="nav-logo" aria-label="Workflow Automation for Retail">
+                <i class="fas fa-robot" aria-hidden="true"></i>
+                <span>Workflow Automation for Retail</span>
             </div>
+            <!-- Nav links removed -->
         </div>
-    </section>
+        <div class="nav-actions">
+            <a href="{{ url_for('auth.signin') }}" class="btn btn-secondary">Sign In</a>
+            <a href="{{ url_for('auth.signup') }}" class="btn btn-primary">Get Started</a>
+        </div>
+    </div>
+</nav>
 
-    <section class="feature-section" style="flex-direction: row-reverse;">
-        <div class="feature-content" style="padding-left: 50px;">
-            <h2 class="feature-title scroll-text">Predict The<br><span style="color: var(--accent-glow);">Future.</span></h2>
-            <p class="hero-subtitle scroll-text">Powered by LSTM neural networks, ANSER analyzes historical inventory and sales data to predict exactly what you will sell tomorrow, preventing stockouts before they happen.</p>
-        </div>
-        <div class="feature-visual">
-            <div class="chart-container">
-                <div class="chart-bar" data-height="30%"></div>
-                <div class="chart-bar" data-height="50%"></div>
-                <div class="chart-bar" data-height="40%"></div>
-                <div class="chart-bar" data-height="70%"></div>
-                <div class="chart-bar" data-height="60%"></div>
-                <div class="chart-bar" data-height="95%"></div>
+<section class="hero">
+    <div class="hero-container">
+        <div class="hero-content">
+            <h1>Automate Your Retail Workflows with AI-Powered RPA</h1>
+            <p>
+                Build and scale intelligent automation workflows for your retail business.
+                Connect inventory, orders, customer data, and more with our no-code workflow builder.
+            </p>
+
+            <div class="hero-actions">
+                <a href="{{ url_for('auth.signup') }}" class="btn btn-primary">
+                    <i class="fas fa-rocket"></i>
+                    Start Free Trial
+                </a>
+                <button id="contactBtn" class="btn btn-secondary">
+                    <i class="fas fa-envelope"></i>
+                    Contact Us
+                </button>
             </div>
-        </div>
-    </section>
 
-    <section class="agents-section">
-        <div class="agents-header">
-            <h2 class="feature-title scroll-text">Meet Your Digital<br><span style="color: var(--accent-glow);">Workforce.</span></h2>
-        </div>
-        <div class="gallery-container">
-            <div class="gallery-wrapper">
-                <div class="agent-card">
-                    <div class="agent-icon">🧠</div>
-                    <h3>Advisor Researcher</h3>
-                    <p>Analyzes your project constraints, scopes complex requirements, and researches the optimal technical paths forward before a single line of code is written.</p>
+            <div class="hero-features">
+                <div class="feature-item">
+                    <div class="feature-icon">
+                        <i class="fas fa-sitemap"></i>
+                    </div>
+                    <span>Visual Workflow Builder</span>
                 </div>
-                <div class="agent-card">
-                    <div class="agent-icon">🏗️</div>
-                    <h3>The Planner</h3>
-                    <p>Breaks down massive architectural goals into bite-sized, executable milestones. It ensures the team is always working on the highest-priority tasks.</p>
+                <div class="feature-item">
+                    <div class="feature-icon">
+                        <i class="fas fa-store"></i>
+                    </div>
+                    <span>Retail Integration</span>
                 </div>
-                <div class="agent-card">
-                    <div class="agent-icon">🛡️</div>
-                    <h3>Security Auditor</h3>
-                    <p>Relentlessly scans your codebase for vulnerabilities, ensuring your retail data and user credentials maintain enterprise-grade compliance and safety.</p>
+                <div class="feature-item">
+                    <div class="feature-icon">
+                        <i class="fas fa-robot"></i>
+                    </div>
+                    <span>AI-Powered Automation</span>
                 </div>
-                <div class="agent-card">
-                    <div class="agent-icon">✨</div>
-                    <h3>UI Checker</h3>
-                    <p>Evaluates frontend interfaces against strict design systems and accessibility standards, ensuring a pixel-perfect experience across all devices.</p>
-                </div>
-                <div class="agent-card" style="display: flex; justify-content: center; align-items: center; border: 2px dashed rgba(255,255,255,0.2);">
-                    <h3>+ 15 More Agents</h3>
+                <div class="feature-item">
+                    <div class="feature-icon">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <span>Real-time Analytics</span>
                 </div>
             </div>
         </div>
-    </section>
 
-    <footer class="footer-section">
-        <h2 class="footer-title footer-anim">Ready to upgrade<br>your retail brain?</h2>
-        
-        <a href="{{ url_for('auth.signup') if 'auth.signup' in request.endpoint else '/auth/signup' }}" class="cta-link">
-            <div class="magnetic-wrapper footer-anim">
-                <div class="magnetic-btn">Deploy ANSER</div>
+        <div class="hero-visual">
+            <div class="visual-container">
+                <div class="visual-header">
+                    <div class="visual-dots">
+                        <div class="visual-dot dot-red"></div>
+                        <div class="visual-dot dot-yellow"></div>
+                        <div class="visual-dot dot-green"></div>
+                    </div>
+                    <div class="visual-title">Workflow Automation for Retail</div>
+                </div>
+                <div class="visual-content">
+                    <div class="visual-sidebar">
+                        <div class="visual-bar visual-bar--tall visual-bar--blue"></div>
+                        <div class="visual-bar visual-bar--green"></div>
+                        <div class="visual-bar visual-bar--yellow"></div>
+                        <div class="visual-bar visual-bar--red"></div>
+                    </div>
+                    <div class="visual-main">
+                        <div class="visual-logo" aria-label="Workflow Automation emblem">
+                            <i class="fas fa-robot" aria-hidden="true"></i>
+                        </div>
+                        <div class="visual-subtitle">
+                            Your retail automation<br>
+                            <span class="visual-subtitle-accent">starts here</span>
+                        </div>
+                    </div>
+                </div>
             </div>
-        </a>
-
-        <div class="footer-bottom footer-anim">
-            <span>© 2026 ANSER - USTH GEN14. All rights reserved.</span>
-            <span>System Status: <span style="color: #00ff00;">Online</span></span>
         </div>
-    </footer>
+    </div>
+</section>
 
-    <script>
-        gsap.registerPlugin(ScrollTrigger);
+<!-- Contact Modal -->
+<div id="contactModal" class="modal-overlay" aria-hidden="true">
+    <div class="modal-container">
+        <div class="modal-header">
+            <h3>Contact Us</h3>
+            <button class="modal-close" aria-label="Close">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="contact-info-card" style="padding: 1rem;">
+                <div style="margin-bottom: 1rem;">
+                    <strong>Name:</strong> Workflow Automation Team
+                </div>
+                <div style="margin-bottom: 1rem;">
+                    <strong>Email:</strong> <a
+                        href="mailto:support@workflow-automation.com">support@workflow-automation.com</a>
+                </div>
+                <div>
+                    <strong>Info:</strong> For inquiries and support, please contact our team.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
-        document.addEventListener('DOMContentLoaded', () => {
-            gsap.from(".hero-text-anim", { y: 120, opacity: 0, duration: 1.4, stagger: 0.2, ease: "power4.out", delay: 0.2 });
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const modal = document.getElementById('contactModal');
+        const btn = document.getElementById('contactBtn');
+        const close = document.querySelector('.modal-close');
+        const overlay = document.querySelector('.modal-overlay');
 
-            const scrollTexts = document.querySelectorAll(".scroll-text");
-            scrollTexts.forEach(text => {
-                gsap.from(text, { scrollTrigger: { trigger: text, start: "top 80%" }, y: 50, opacity: 0, duration: 1, ease: "power3.out" });
-            });
+        function openModal(e) {
+            e.preventDefault();
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
 
-            gsap.to(".scanner-laser", {
-                scrollTrigger: { trigger: ".receipt-card", start: "top 60%", toggleActions: "play none none reverse" },
-                top: "100%", duration: 2, ease: "linear", repeat: -1, yoyo: true  
-            });
+        function closeModal() {
+            modal.classList.remove('active');
+            document.body.style.overflow = '';
+        }
 
-            const chartBars = document.querySelectorAll(".chart-bar");
-            chartBars.forEach((bar, index) => {
-                gsap.to(bar, { scrollTrigger: { trigger: ".chart-container", start: "top 70%" }, height: bar.dataset.height, duration: 1.5, ease: "power4.out", delay: index * 0.1 });
-            });
-
-            const galleryWrapper = document.querySelector(".gallery-wrapper");
-            function getScrollAmount() { return -(galleryWrapper.scrollWidth - window.innerWidth); }
-
-            gsap.to(galleryWrapper, {
-                x: getScrollAmount, ease: "none", 
-                scrollTrigger: { trigger: ".agents-section", start: "top top", end: () => `+=${(getScrollAmount() * -1) * 0.4}`, pin: true, scrub: 0.1, invalidateOnRefresh: true }
-            });
-
-            gsap.from(".footer-anim", { scrollTrigger: { trigger: ".footer-section", start: "top 75%" }, y: 50, opacity: 0, duration: 1, stagger: 0.2, ease: "power3.out" });
-
-            const magneticBtn = document.querySelector(".magnetic-btn");
-            const magneticWrapper = document.querySelector(".magnetic-wrapper");
-
-            magneticWrapper.addEventListener("mousemove", (e) => {
-                const bound = magneticWrapper.getBoundingClientRect();
-                const centerX = bound.left + bound.width / 2;
-                const centerY = bound.top + bound.height / 2;
-                gsap.to(magneticBtn, { x: (e.clientX - centerX) * 0.4, y: (e.clientY - centerY) * 0.4, duration: 0.4, ease: "power2.out" });
-            });
-
-            magneticWrapper.addEventListener("mouseleave", () => {
-                gsap.to(magneticBtn, { x: 0, y: 0, duration: 0.8, ease: "elastic.out(1, 0.3)" });
-            });
+        if (btn) btn.addEventListener('click', openModal);
+        if (close) close.addEventListener('click', closeModal);
+        if (overlay) overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) closeModal();
         });
-    </script>
-</body>
-</html>
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && modal.classList.contains('active')) {
+                closeModal();
+            }
+        });
+    });
+</script>
+
+<footer class="landing-footer">
+    <div class="footer-container">
+        <div class="footer-content">
+            <div class="copyright">
+                &copy; 2025 {{ project_name }}. Licensed under <a href="https://opensource.org/licenses/MIT"
+                    target="_blank">MIT License</a>.
+            </div>
+            <div class="social-links">
+                <a href="https://github.com/wikiepeidia/Group-project-AI-ML" target="_blank">
+                    <i class="fab fa-github"></i>
+                    <span>View source code (github)</span>
+                </a>
+            </div>
+        </div>
+    </div>
+</footer>
+{% endblock %}
