@@ -28,24 +28,22 @@ class AuthManager:
                 return None
 
             stored_pw = user.get('password')
-            password_version = user.get('password_version', 0)
 
-            # Old sha256 hashes have version 0, bcrypt hashes have version 1
-            if password_version == 0:
-                # Legacy sha256 hash — verify then rehash on next login
+            # THE FIX: Check hash format instead of database column version
+            if stored_pw and stored_pw.startswith('$2'):
+                # Modern bcrypt hash
+                if not AuthManager.verify_password(password, stored_pw):
+                    return None
+            else:
+                # Legacy sha256 hash
                 import hashlib
                 legacy_hash = hashlib.sha256(password.encode()).hexdigest()
                 if legacy_hash != stored_pw:
                     return None
-                # Rehash with bcrypt for next login
+                # Upgrade to bcrypt immediately upon successful legacy login
                 new_hash = AuthManager.hash_password(password)
                 self.db.update_password(user['id'], new_hash, version=1)
-            else:
-                # Modern bcrypt hash
-                if not AuthManager.verify_password(password, stored_pw):
-                    return None
 
-            # Return standardized user dictionary (without password)
             return {
                 'id': user['id'],
                 'email': user['email'],
@@ -70,25 +68,9 @@ class AuthManager:
                 manager_id=manager_id
             )
             
-            # Send Welcome Email
             try:
                 subject = "Chào mừng bạn đến với Workflow Automation!"
-                body = f"""Xin chào {first_name},
-
-Chào mừng bạn đến với Workflow Automation for Retail! Chúng tôi rất vui khi có bạn tham gia.
-
-Tài khoản của bạn đã được tạo thành công. Bạn có thể bắt đầu xây dựng các quy trình tự động hóa thông minh cho doanh nghiệp bán lẻ của mình.
-
-Bắt đầu khám phá không gian làm việc cá nhân của bạn:
-- Quản lý khách hàng
-- Theo dõi hàng tồn kho
-- Tự động hóa tác vụ
-
-Nếu bạn có bất kỳ câu hỏi nào, vui lòng liên hệ với chúng tôi.
-
-Trân trọng,
-Đội ngũ Workflow Automation
-"""
+                body = f"Xin chào {first_name},\n\nChào mừng bạn đến với Workflow Automation for Retail! Chúng tôi rất vui khi có bạn tham gia.\n\nTài khoản của bạn đã được tạo thành công."
                 send_email(email, subject, body)
             except Exception as e:
                 logger.warning("Failed to send welcome email to %s: %s", email, e)
@@ -126,7 +108,6 @@ Trân trọng,
         @wraps(f)
         def decorated_function(*args, **kwargs):
             if 'user_id' not in session:
-                # If this is an API call, return a JSON 401 instead of HTML redirect
                 try:
                     path = request.path or ''
                     is_api = path.startswith('/api/')
@@ -137,7 +118,7 @@ Trân trọng,
 
                 if is_api or is_accepting_json or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
                     return jsonify({'success': False, 'message': 'Chưa đăng nhập'}), 401
-                # fallback to redirect for normal page loads
+                
                 flash('Vui lòng đăng nhập để tiếp tục', 'error')
                 return redirect(url_for('auth.signin'))
             return f(*args, **kwargs)
@@ -145,7 +126,6 @@ Trân trọng,
     
     @staticmethod
     def permission_required(permission_type):
-        """Decorator to check if user has specific permission"""
         def decorator(f):
             @wraps(f)
             def decorated_function(*args, **kwargs):
@@ -155,11 +135,9 @@ Trân trọng,
                 if not current_user.is_authenticated:
                     return jsonify({'success': False, 'message': 'Chưa đăng nhập'}), 401
                 
-                # Admin and Manager have all permissions
                 if hasattr(current_user, 'role') and current_user.role in ['admin', 'manager']:
                     return f(*args, **kwargs)
                 
-                # Kiểm tra permission trong database
                 db = current_app.extensions.get('database')
                 if db and db.has_permission(current_user.id, permission_type):
                     return f(*args, **kwargs)

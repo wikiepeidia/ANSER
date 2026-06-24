@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 services:
   n8n:
     image: n8nio/n8n:latest
@@ -14,3 +15,83 @@ services:
 
 volumes:
   n8n_data:
+=======
+version: '3.8'
+
+services:
+  n8n:
+    image: n8nio/n8n:latest
+    restart: always
+    ports:
+      - "${N8N_PORT:-5678}:5678"
+    environment:
+      - N8N_BASIC_AUTH_ACTIVE=true
+      - N8N_BASIC_AUTH_USER=${N8N_USER:-admin}
+      - N8N_BASIC_AUTH_PASSWORD=${N8N_PASSWORD:-changeme123}
+      - N8N_HOST=localhost
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=http
+      - WEBHOOK_URL=http://localhost:${N8N_PORT:-5678}/
+      - GENERIC_TIMEZONE=Asia/Ho_Chi_Minh
+      - N8N_LOG_LEVEL=info
+      - EXECUTIONS_DATA_SAVE_ON_ERROR=all
+      - EXECUTIONS_DATA_SAVE_ON_SUCCESS=all
+    volumes:
+      - n8n_data:/home/node/.n8n
+    depends_on:
+      - chromadb
+    networks:
+      - ai_security_net
+
+  n8n-proxy:
+    image: nginx:alpine
+    restart: always
+    ports:
+      - "${N8N_EMBED_PORT:-5679}:80"
+    volumes:
+      - ./nginx/n8n.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - n8n
+    networks:
+      - ai_security_net
+
+  chromadb:
+    image: chromadb/chroma:latest
+    restart: always
+    ports:
+      - "${CHROMA_PORT:-8000}:8000"
+    volumes:
+      - chroma_data:/chroma/chroma
+    environment:
+      - CHROMA_SERVER_HOST=0.0.0.0
+      - CHROMA_SERVER_HTTP_PORT=8000
+      - ANONYMIZED_TELEMETRY=false
+    networks:
+      - ai_security_net
+
+  rag-service:
+    image: python:3.11-slim
+    restart: always
+    ports:
+      - "8001:8001"
+    volumes:
+      - ./rag_service:/app
+    working_dir: /app
+    environment:
+      - POSTGRES_URL=${POSTGRES_URL}
+    command: >
+      sh -c "pip install fastapi uvicorn chromadb psycopg2-binary --quiet &&
+             uvicorn main:app --host 0.0.0.0 --port 8001"
+    depends_on:
+      - chromadb
+    networks:
+      - ai_security_net
+
+networks:
+  ai_security_net:
+    driver: bridge
+
+volumes:
+  n8n_data:
+  chroma_data:
+>>>>>>> f7fef83fb139ef6abcb07c2a02a10f7512378a9e
