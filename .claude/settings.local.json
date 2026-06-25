@@ -24,7 +24,8 @@
       "Bash(git add *)",
       "Bash(git commit -m ' *)",
       "Bash(git pull *)",
-      "Bash(git stash *)"
+      "Bash(git stash *)",
+      "Bash(git revert *)"
     ],
     "deny": [
       "Read(.env)",
