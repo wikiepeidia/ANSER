@@ -87,14 +87,6 @@ def create_app(config_object=None):
     # ── OAuth ──────────────────────────────────────────────────────────────
     _configure_oauth(flask_app)
 
-    # ── n8n iframe: strip X-Frame-Options for proxy routes ──────────────
-    @flask_app.after_request
-    def allow_n8n_iframe(response):
-        if request.path.startswith('/n8n'):
-            response.headers.pop('X-Frame-Options', None)
-            response.headers.pop('Content-Security-Policy', None)
-        return response
-
     # ── Talisman ───────────────────────────────────────────────────────────
     Talisman(
         flask_app,
@@ -248,11 +240,6 @@ def create_app(config_object=None):
     flask_app.register_blueprint(dl_bp)
     flask_app.register_blueprint(n8n_api_bp)
     csrf.exempt(n8n_api_bp)
-
-    from routes.n8n_proxy import n8n_proxy_bp, init_websocket
-    flask_app.register_blueprint(n8n_proxy_bp)
-    csrf.exempt(n8n_proxy_bp)
-    init_websocket(flask_app)
 
     return flask_app
 

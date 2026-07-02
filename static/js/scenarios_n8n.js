@@ -77,9 +77,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         <button class="sc-wf-btn run" onclick="runWorkflow('${wf.id}', this)">
                             <i class="fas fa-play"></i> Chạy
                         </button>
-                        <button class="sc-wf-btn edit" onclick="openEditor('${wf.id}', '${esc(wf.name)}')">
-                            <i class="fas fa-edit"></i> Sửa
-                        </button>
                         <button class="sc-wf-btn history" onclick="toggleHistory('${wf.id}', this)">
                             <i class="fas fa-history"></i> Lịch sử
                         </button>
@@ -216,19 +213,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // ── Editor panel ─────────────────────────────────────
-    window.openEditor = function(id, name) {
-        document.getElementById('editorTitle').textContent = name || 'Trình soạn n8n';
-        document.getElementById('editorFrame').src = id ? '/n8n/workflow/' + id : '/n8n/workflows';
-        document.getElementById('editorPanel').style.display = 'block';
-    };
-
-    window.closeEditor = function() {
-        document.getElementById('editorPanel').style.display = 'none';
-        document.getElementById('editorFrame').src = '';
-        loadWorkflows();
-    };
-
     // ── Delete workflow ─────────────────────────────────
     window.deleteWorkflow = async function(id, name) {
         if (!confirm('Xóa quy trình "' + name + '"? Không thể hoàn tác.')) return;
@@ -275,7 +259,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 tplGrid.innerHTML = `
                     <div class="sc-tpl-empty">
                         <i class="fas fa-inbox" style="font-size:1.4rem;display:block;margin-bottom:8px;opacity:.5;"></i>
-                        Chưa có mẫu nào — hãy tạo quy trình trong trình soạn n8n.
+                        Chưa có mẫu nào.
                     </div>`;
                 updateTplNavState();
                 return;

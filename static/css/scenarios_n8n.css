@@ -175,8 +175,6 @@
 .sc-wf-btn.run { background: #FF6B35; color: #fff; }
 .sc-wf-btn.run:hover { background: #e55a28; }
 .sc-wf-btn.run.running { background: #FF9800; }
-.sc-wf-btn.edit { background: var(--scenario-card-soft, #f0f0f0); color: var(--scenario-text, #333); }
-.sc-wf-btn.edit:hover { background: var(--scenario-border, #e0e0e0); }
 .sc-wf-btn.history { background: var(--scenario-card-soft, #f0f0f0); color: var(--scenario-text, #333); }
 .sc-wf-btn.delete { background: var(--scenario-card-soft, #f0f0f0); color: #E53935; }
 .sc-wf-btn.delete:hover { background: #FFEBEE; }

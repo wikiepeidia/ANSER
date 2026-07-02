@@ -1,1 +1,12 @@
-{}
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl -s http://localhost:5678/healthz)",
+      "Bash(python -c ' *)",
+      "Bash(git -C /d/ANSER log --oneline --all -- ai_agent_service)",
+      "Bash(git -C /d/ANSER status --short)",
+      "Bash(git -C /d/ANSER status)",
+      "Bash(git -C /d/ANSER log --oneline -3 -- docker-compose.yml)"
+    ]
+  }
+}

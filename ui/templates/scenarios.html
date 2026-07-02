@@ -30,9 +30,6 @@
                     <button class="btn-secondary" onclick="toggleTemplates()" style="padding:6px 14px; font-size:.82rem;">
                         <i class="fas fa-magic"></i> Templates
                     </button>
-                    <button class="btn-secondary" onclick="openEditor('', 'n8n Editor')" style="padding:6px 14px; font-size:.82rem;">
-                        <i class="fas fa-project-diagram"></i> n8n Editor
-                    </button>
                     <button class="create-btn" onclick="refreshAll()" style="padding:6px 14px; font-size:.82rem;">
                         <i class="fas fa-sync-alt"></i> Refresh
                     </button>
@@ -62,34 +59,15 @@
             <div id="wfEmpty" class="empty-state" style="display:none;">
                 <div class="empty-icon"><i class="fas fa-project-diagram"></i></div>
                 <h3 class="empty-title">Chưa có workflow nào</h3>
-                <p class="empty-description">Deploy template có sẵn hoặc tạo workflow mới trong n8n Editor.</p>
+                <p class="empty-description">Deploy một template có sẵn để bắt đầu.</p>
                 <div class="empty-actions">
                     <button class="create-btn" onclick="toggleTemplates()">
                         <i class="fas fa-magic"></i> Xem Templates
                     </button>
-                    <a href="http://localhost:5678" target="_blank" class="btn-secondary">
-                        <i class="fas fa-plus"></i> Tạo trong n8n
-                    </a>
                 </div>
             </div>
             <div id="wfGrid" class="scenarios-grid" style="display:none;"></div>
         </div>
-    </div>
-</div>
-
-<!-- n8n Editor Panel (iframe overlay) -->
-<div id="editorPanel" onclick="if(event.target===this)closeEditor()" style="display:none; position:fixed; inset:0; z-index:9000; background:rgba(0,0,0,.5); cursor:pointer;">
-    <div style="position:absolute; inset:12px; background:var(--scenario-panel,#fff); border-radius:16px; overflow:hidden; display:flex; flex-direction:column; box-shadow:0 20px 60px rgba(0,0,0,.3);">
-        <div style="display:flex; align-items:center; justify-content:space-between; padding:12px 20px; border-bottom:1px solid var(--scenario-border,#eee); flex-shrink:0;">
-            <div style="display:flex; align-items:center; gap:10px;">
-                <span style="font-weight:700; font-size:.95rem;" id="editorTitle">n8n Editor</span>
-                <span style="font-size:.72rem; background:rgba(255,107,53,.1); color:#FF6B35; padding:2px 10px; border-radius:12px;">ANSER Automation</span>
-            </div>
-            <button onclick="closeEditor()" style="border:none; background:#f44336; color:#fff; font-size:.85rem; font-weight:600; cursor:pointer; padding:8px 18px; border-radius:8px; z-index:9999; position:relative;">
-                <i class="fas fa-times"></i> Đóng
-            </button>
-        </div>
-        <iframe id="editorFrame" style="flex:1; border:none; width:100%; height:100%;"></iframe>
     </div>
 </div>
 

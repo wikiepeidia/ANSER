@@ -236,16 +236,16 @@ def _do_run_workflow(wf_id):
         if not active:
             return jsonify({'success': False,
                             'error': 'Không thể kích hoạt workflow. '
-                                     'Mở Editor kiểm tra cấu hình rồi thử lại.'}), 400
+                                     'Liên hệ quản trị viên để kiểm tra cấu hình.'}), 400
 
     if trigger_type == 'webhook':
         webhook_path = trigger_node.get('parameters', {}).get('path', '')
         if not webhook_path:
             return jsonify({'success': False,
-                            'error': 'Webhook path chưa cấu hình. Mở Editor để sửa.'}), 400
+                            'error': 'Webhook path chưa cấu hình cho template này.'}), 400
         if not active:
             return jsonify({'success': False,
-                            'error': 'Workflow chưa active. Mở Editor cấu hình credentials trước.'}), 400
+                            'error': 'Workflow chưa active. Liên hệ quản trị viên cấu hình credentials.'}), 400
         url = f'{_N8N_ORIGIN}/webhook/{webhook_path}'
         method = trigger_node.get('parameters', {}).get('httpMethod', 'POST').upper()
         try:
@@ -271,16 +271,16 @@ def _do_run_workflow(wf_id):
     elif trigger_type == 'schedule':
         if not active:
             return jsonify({'success': False,
-                            'error': 'Không thể kích hoạt. Mở Editor cấu hình credentials trước.'}), 400
+                            'error': 'Không thể kích hoạt. Liên hệ quản trị viên cấu hình credentials.'}), 400
         return jsonify({'success': True,
                         'message': 'Workflow đã kích hoạt! Chạy tự động theo lịch.'})
 
     elif trigger_type == 'manual':
         return jsonify({'success': False,
-                        'error': 'Workflow này cần chạy từ n8n Editor. Click "Edit".'}), 400
+                        'error': 'Workflow này không hỗ trợ chạy trực tiếp từ giao diện.'}), 400
     else:
         return jsonify({'success': False,
-                        'error': 'Mở n8n Editor để chạy workflow này.'}), 400
+                        'error': 'Không xác định được cách chạy workflow này.'}), 400
 
 
 @n8n_api_bp.route('/api/n8n/workflows/<wf_id>', methods=['DELETE'])
