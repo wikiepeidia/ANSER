@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Tech Debt Completion
 status: complete
-last_updated: "2026-06-14T21:00:00Z"
-last_activity: 2026-06-14
+last_updated: "2026-07-02T12:00:00Z"
+last_activity: 2026-07-02
 progress:
   total_phases: 5
   completed_phases: 5
@@ -75,9 +75,11 @@ Progress: [##########] 100% (4/4 phases complete)
 | 2026-06-14 | Phase 28 Execution | Completed Plan 28-01: analytics Config/logger, Drive query escaping, workspace named-field access. |
 | 2026-06-14 | v1.1 Milestone Complete | All 4 phases (25-28) done; all HYG/DL/AUTO/CIRC requirements satisfied. |
 | 2026-06-14 | Phase 18 Execution | Fixed 33 failing tests: sqlite3.Row bug, stale app factory refs, PGShim arg, async job migration. 171/171 passing. NFR-STAB-03 satisfied. |
+| 2026-07-02 | SECURITY.md Refresh | Replaced placeholder SECURITY.MD with an ANSER-specific policy (reporting flow, supported versions, in-/out-of-scope, operator hardening notes). |
+| 2026-07-02 | SECURITY.md Vietnamese | Translated SECURITY.MD to Vietnamese at user request; technical content unchanged. |
 
 ## Session Continuity
 
 - Previous state: v1.1 milestone (Phases 25-28) complete.
-- Current state: Phase 18 regression hardening complete. All phases done. 171/171 tests passing.
+- Current state: Phase 18 regression hardening complete; SECURITY.md refreshed for GitHub. 171/171 tests passing.
 - Next: Choose next milestone (v1.2 features or jury prep).
