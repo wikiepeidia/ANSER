@@ -76,6 +76,7 @@ Progress: [##########] 100% (4/4 phases complete)
 | 2026-06-14 | v1.1 Milestone Complete | All 4 phases (25-28) done; all HYG/DL/AUTO/CIRC requirements satisfied. |
 | 2026-06-14 | Phase 18 Execution | Fixed 33 failing tests: sqlite3.Row bug, stale app factory refs, PGShim arg, async job migration. 171/171 passing. NFR-STAB-03 satisfied. |
 | 2026-07-02 | SECURITY.md Refresh | Replaced placeholder SECURITY.MD with an ANSER-specific policy (reporting flow, supported versions, in-/out-of-scope, operator hardening notes). |
+| 2026-07-02 | SECURITY.md Vietnamese | Translated SECURITY.MD to Vietnamese at user request; technical content unchanged. |
 
 ## Session Continuity
 
