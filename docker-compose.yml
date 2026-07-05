@@ -4,11 +4,14 @@ services:
     container_name: anser-n8n
     restart: unless-stopped
     ports:
-      - "5678:5678"
+      - "${N8N_PORT:-5680}:5678"
     environment:
       - N8N_SECURE_COOKIE=false
       - GENERIC_TIMEZONE=Asia/Ho_Chi_Minh
       # N8N_SECURE_COOKIE=false required for HTTP (non-HTTPS) communication
+      # Without this, n8n reports webhook URLs using its internal port (5678)
+      # instead of the actual host-mapped port, which breaks manual testing.
+      - WEBHOOK_URL=http://localhost:${N8N_PORT:-5680}/
     volumes:
       - n8n_data:/home/node/.n8n
 

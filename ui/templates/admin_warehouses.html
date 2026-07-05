@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+
+{% block title %}Quản lý Kho - Cảnh báo tồn kho{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script src="{{ url_for('static', filename='js/admin_warehouses.js') }}" defer></script>
+{% endblock %}
+
+{% block content %}
+<div class="app-layout">
+    {% include 'components/sidebar.html' %}
+
+    <main class="app-content main-content">
+        <div
+            class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+            <h1 class="h2 page-title"><i class="fas fa-warehouse"></i><span>Quản lý Kho</span></h1>
+            <button class="btn btn-primary" onclick="openAddWarehouseModal()">
+                <i class="fas fa-plus"></i> Thêm Kho
+            </button>
+        </div>
+
+        <div class="row mb-3">
+            <div class="col-md-12">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> <strong>Lưu ý:</strong> Mỗi kho là 1 hồ sơ cảnh báo tồn kho độc
+                    lập (ngưỡng + kênh Discord riêng). Automation "Cảnh báo tồn kho thấp" trong n8n sẽ tự lặp qua các
+                    kho đang bật ở đây — không cần deploy nhiều bản workflow.
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Danh sách Kho</h5>
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Tên kho</th>
+                                <th>Ngưỡng cảnh báo</th>
+                                <th>Discord Webhook</th>
+                                <th>Trạng thái</th>
+                                <th>Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody id="warehousesTableBody">
+                            <tr>
+                                <td colspan="6" class="text-center">
+                                    <div class="spinner-border" role="status"></div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<!-- Modal: Thêm/Sửa Kho -->
+<div class="modal fade" id="warehouseModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="warehouseModalTitle">Thêm Kho</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="warehouseId">
+                <div class="mb-3">
+                    <label class="form-label">Tên kho <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="warehouseName" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Ngưỡng cảnh báo tồn kho</label>
+                    <input type="number" class="form-control" id="warehouseThreshold" value="10" min="0">
+                    <small class="text-muted">Cảnh báo khi tồn kho sản phẩm dưới mức này</small>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Discord Webhook URL</label>
+                    <input type="url" class="form-control" id="warehouseDiscordUrl"
+                        placeholder="https://discord.com/api/webhooks/...">
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="warehouseActive" checked>
+                    <label class="form-check-label" for="warehouseActive">Đang hoạt động</label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-primary" onclick="saveWarehouse()">Lưu</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

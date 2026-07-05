@@ -1,6 +1,6 @@
 """Inventory transaction blueprint routes extracted from app.py."""
 
-from flask import Blueprint, jsonify, request, send_file, current_app
+from flask import Blueprint, jsonify, request, send_file, current_app, session
 from flask_login import current_user, login_required
 from werkzeug.utils import secure_filename
 
@@ -20,6 +20,8 @@ def _notify_n8n_order(order_type, data, user_email):
     import threading
     import requests
 
+    from core.config import Config
+
     discord_url = os.environ.get('DISCORD_WEBHOOK_URL', '')
     if not discord_url:
         return
@@ -33,7 +35,7 @@ def _notify_n8n_order(order_type, data, user_email):
                 'user': user_email,
                 'discord_url': discord_url,
             }
-            requests.post('http://localhost:5678/webhook/new-order',
+            requests.post(f'{Config.N8N_ORIGIN}/webhook/new-order',
                           json=payload, timeout=10)
         except Exception:
             pass
@@ -44,13 +46,18 @@ def _notify_n8n_order(order_type, data, user_email):
 @inventory_bp.route('/api/imports', methods=['GET'])
 @login_required
 def api_get_imports():
-    """Get all import transactions."""
+    """Get all import transactions — scoped to the active warehouse, if one is selected."""
     conn = current_app.extensions['database'].get_connection()
     c = conn.cursor()
-    c.execute(
-        'SELECT id, code, supplier_name, total_amount, notes, status, created_by, created_at'
-        ' FROM import_transactions ORDER BY created_at DESC'
-    )
+    warehouse_id = session.get('active_warehouse_id')
+    query = ('SELECT id, code, supplier_name, total_amount, notes, status, created_by,'
+             ' warehouse_id, created_at FROM import_transactions')
+    params = ()
+    if warehouse_id:
+        query += ' WHERE warehouse_id = ?'
+        params = (warehouse_id,)
+    query += ' ORDER BY created_at DESC'
+    c.execute(query, params)
     imports = []
     for row in c.fetchall():
         imports.append(
@@ -76,7 +83,8 @@ def api_create_import():
     conn = current_app.extensions['database'].get_connection()
 
     try:
-        result = inventory_tx_service.create_import_transaction(conn, current_user.id, data)
+        result = inventory_tx_service.create_import_transaction(
+            conn, current_user.id, data, session.get('active_warehouse_id'))
         _notify_n8n_order('import', data, current_user.email)
         return jsonify({
             'success': True,
@@ -181,16 +189,22 @@ def api_download_import_template():
 @inventory_bp.route('/api/exports', methods=['GET'])
 @login_required
 def api_get_exports():
-    """Get all export transactions."""
+    """Get all export transactions — scoped to the active warehouse, if one is selected."""
     conn = current_app.extensions['database'].get_connection()
     c = conn.cursor()
-    c.execute(
+    warehouse_id = session.get('active_warehouse_id')
+    query = (
         'SELECT e.id, e.code, e.customer_id, e.total_amount, e.notes, e.status,'
-        ' e.created_by, e.created_at, c.name AS customer_name'
+        ' e.created_by, e.warehouse_id, e.created_at, c.name AS customer_name'
         ' FROM export_transactions e'
         ' LEFT JOIN customers c ON e.customer_id = c.id'
-        ' ORDER BY e.created_at DESC'
     )
+    params = ()
+    if warehouse_id:
+        query += ' WHERE e.warehouse_id = ?'
+        params = (warehouse_id,)
+    query += ' ORDER BY e.created_at DESC'
+    c.execute(query, params)
     exports = []
     for row in c.fetchall():
         exports.append(
@@ -222,6 +236,7 @@ def api_create_export():
             current_user.id,
             data,
             current_app.extensions['automation_engine'],
+            session.get('active_warehouse_id'),
         )
         _notify_n8n_order('export', data, current_user.email)
         return jsonify({'success': True, 'message': result['message'], 'id': result['id']})

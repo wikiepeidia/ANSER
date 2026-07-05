@@ -85,12 +85,26 @@ def detect_column_mapping(raw_columns):
     return result
 
 
-def get_all_products(conn):
+def get_all_products(conn, warehouse_id=None):
+    """List products. If warehouse_id given, stock_quantity reflects that
+    warehouse's own stock (from warehouse_stock) instead of the system-wide
+    total — 0 if the product has no stock recorded at that warehouse yet."""
     c = conn.cursor()
-    c.execute(
-        'SELECT id, code, name, category, unit, price, stock_quantity, description, created_at, image_url'
-        ' FROM products ORDER BY created_at DESC'
-    )
+    if warehouse_id:
+        c.execute(
+            'SELECT p.id, p.code, p.name, p.category, p.unit, p.price,'
+            ' COALESCE(ws.stock_quantity, 0) AS stock_quantity,'
+            ' p.description, p.created_at, p.image_url'
+            ' FROM products p'
+            ' LEFT JOIN warehouse_stock ws ON ws.product_id = p.id AND ws.warehouse_id = ?'
+            ' ORDER BY p.created_at DESC',
+            (warehouse_id,),
+        )
+    else:
+        c.execute(
+            'SELECT id, code, name, category, unit, price, stock_quantity, description, created_at, image_url'
+            ' FROM products ORDER BY created_at DESC'
+        )
     rows = c.fetchall()
     return [
         {'id': r['id'], 'code': r['code'], 'name': r['name'], 'category': r['category'],

@@ -223,6 +223,7 @@ def create_app(config_object=None):
     from routes.workflow_routes import workflow_bp
     from routes.dl_routes import dl_bp
     from routes.n8n_api import n8n_api_bp
+    from routes.admin_warehouse_routes import admin_warehouse_bp
 
     flask_app.register_blueprint(auth_bp,         url_prefix='/auth')
     flask_app.register_blueprint(page_bp)
@@ -239,6 +240,7 @@ def create_app(config_object=None):
     flask_app.register_blueprint(ai_bp)
     flask_app.register_blueprint(dl_bp)
     flask_app.register_blueprint(n8n_api_bp)
+    flask_app.register_blueprint(admin_warehouse_bp)
     csrf.exempt(n8n_api_bp)
 
     return flask_app
@@ -262,13 +264,15 @@ def run_n8n():
     """Check n8n reachability. n8n is expected to run externally (Docker or local)."""
     import socket
     import time
+    from core.config import Config
+    port = int(Config.N8N_PORT)
     for _ in range(10):
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as _s:
-            if _s.connect_ex(('localhost', 5678)) == 0:
-                print('[n8n] Detected on port 5678.', flush=True)
+            if _s.connect_ex(('localhost', port)) == 0:
+                print(f'[n8n] Detected on port {port}.', flush=True)
                 return
         time.sleep(2)
-    print('[n8n] Warning: n8n not reachable on port 5678. '
+    print(f'[n8n] Warning: n8n not reachable on port {port}. '
           'Start Docker container: docker start anser-n8n', flush=True)
 
 

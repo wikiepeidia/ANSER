@@ -1,7 +1,7 @@
 """Analytics, dashboard, reports, and automation routes — operations_bp Blueprint."""
 import os
 
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, session
 from flask_login import current_user, login_required
 
 from core.services.analytics_service import analytics_service
@@ -53,7 +53,7 @@ def api_admin_clear_analytics_cache():
 @login_required
 def api_get_dashboard_stats():
     try:
-        stats = get_dashboard_stats(current_user.id)
+        stats = get_dashboard_stats(current_user.id, session.get('active_warehouse_id'))
         return jsonify({'success': True, 'pending_returns': 0, 'credits': 100,
                         'subscription_status': 'Active', **stats})
     except Exception as e:

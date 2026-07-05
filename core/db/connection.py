@@ -249,6 +249,23 @@ class Database:
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 image_url TEXT
             );
+            CREATE TABLE IF NOT EXISTS warehouses (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                low_stock_threshold INTEGER DEFAULT 10,
+                discord_webhook_url TEXT,
+                is_active INTEGER DEFAULT 1,
+                created_by INTEGER,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+            CREATE TABLE IF NOT EXISTS warehouse_stock (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                warehouse_id INTEGER NOT NULL,
+                product_id INTEGER NOT NULL,
+                stock_quantity INTEGER DEFAULT 0,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(warehouse_id, product_id)
+            );
             CREATE TABLE IF NOT EXISTS import_transactions (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 code TEXT,
@@ -257,6 +274,7 @@ class Database:
                 notes TEXT,
                 status TEXT DEFAULT 'completed',
                 created_by INTEGER,
+                warehouse_id INTEGER,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
             CREATE TABLE IF NOT EXISTS import_details (
@@ -275,6 +293,7 @@ class Database:
                 notes TEXT,
                 status TEXT DEFAULT 'completed',
                 created_by INTEGER,
+                warehouse_id INTEGER,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
             CREATE TABLE IF NOT EXISTS export_details (
@@ -295,6 +314,7 @@ class Database:
                 payment_method TEXT DEFAULT 'cash',
                 workspace_id INTEGER,
                 category TEXT DEFAULT 'Retail',
+                warehouse_id INTEGER,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
             CREATE TABLE IF NOT EXISTS manager_subscriptions (
@@ -412,6 +432,15 @@ class Database:
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
         ''')
+
+        # CREATE TABLE IF NOT EXISTS above is a no-op on a DB file created
+        # before warehouse_id existed — ADD COLUMN explicitly so pre-existing
+        # dev SQLite files pick up the new column too (same class of bug as
+        # the earlier missing google_email column).
+        for table in ('sales', 'import_transactions', 'export_transactions'):
+            if 'warehouse_id' not in self.get_table_columns(table, cursor=c):
+                c.execute(f'ALTER TABLE {table} ADD COLUMN warehouse_id INTEGER')
+
         conn.commit()
         conn.close()
 

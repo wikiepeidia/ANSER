@@ -37,6 +37,48 @@
         </div>
     </div>
 
+    <!-- Cửa hàng đang thao tác — mọi role đều cần chọn để dữ liệu nhập/xuất/bán hàng/dashboard tách riêng theo cửa hàng -->
+    <div class="warehouse-switcher" style="padding: 10px 16px; border-bottom: 1px solid rgba(255,255,255,.08);">
+        <label for="activeWarehouseSelect"
+            style="display:block; font-size:.72rem; text-transform:uppercase; opacity:.6; margin-bottom:4px;">
+            <i class="fas fa-store"></i> Cửa hàng đang thao tác
+        </label>
+        <select id="activeWarehouseSelect" class="form-select form-select-sm"
+            style="width:100%; font-size:.82rem;">
+            <option value="">Đang tải...</option>
+        </select>
+    </div>
+    <script>
+        (function () {
+            const select = document.getElementById('activeWarehouseSelect');
+            if (!select) return;
+
+            fetch('/api/warehouses')
+                .then((r) => r.json())
+                .then((d) => {
+                    if (!d.success) return;
+                    const opts = ['<option value="">Tất cả cửa hàng (gộp)</option>']
+                        .concat(d.warehouses.map((w) =>
+                            `<option value="${w.id}" ${String(w.id) === String(d.active_warehouse_id) ? 'selected' : ''}>${w.name}</option>`
+                        ));
+                    select.innerHTML = opts.join('');
+                })
+                .catch(() => { select.innerHTML = '<option value="">Không tải được danh sách</option>'; });
+
+            select.addEventListener('change', () => {
+                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+                fetch('/api/session/active-warehouse', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+                    body: JSON.stringify({ warehouse_id: select.value || null }),
+                })
+                    .then((r) => r.json())
+                    .then(() => window.location.reload())
+                    .catch(() => window.location.reload());
+            });
+        })();
+    </script>
+
     <div class="menu-container">
         <!-- Admin Section: System Administration -->
         {% if user.role == 'admin' %}
@@ -61,6 +103,12 @@
                 <div class="menu-icon" style="background: linear-gradient(135deg, #ffd89b 0%, #ff8a00 100%);"><i
                         class="fas fa-credit-card"></i></div>
                 <div class="menu-label">Manage Subscriptions</div>
+                <div class="menu-arrow"><i class="fas fa-chevron-right"></i></div>
+            </a>
+            <a class="menu-item" href="{{ url_for('pages.admin_warehouses') }}" data-tooltip="Manage Warehouses">
+                <div class="menu-icon" style="background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);"><i
+                        class="fas fa-warehouse"></i></div>
+                <div class="menu-label">Manage Warehouses</div>
                 <div class="menu-arrow"><i class="fas fa-chevron-right"></i></div>
             </a>
         </div>

@@ -2,7 +2,7 @@
 import json
 import os
 
-from flask import Blueprint, current_app, jsonify, render_template, request
+from flask import Blueprint, current_app, jsonify, render_template, request, session
 from flask_login import current_user, login_required
 
 from core.extensions import db_manager
@@ -68,7 +68,7 @@ def api_create_sale():
             conn, current_user.id, data.get('total_amount'), data.get('amount_given'),
             data.get('change_amount'), data.get('items', []),
             data.get('payment_method', 'cash'), data.get('workspace_id'),
-            data.get('category', 'Retail'),
+            data.get('category', 'Retail'), session.get('active_warehouse_id'),
         )
         return jsonify({'success': True, 'message': 'Ghi lại giao dịch thành công'})
     except Exception as e:
@@ -85,7 +85,8 @@ def api_get_sales_history():
     limit = request.args.get('limit', 10, type=int)
     conn = db_manager.get_connection()
     try:
-        history = get_sales_history(conn, current_user.id, search_query, limit)
+        history = get_sales_history(conn, current_user.id, search_query, limit,
+                                     session.get('active_warehouse_id'))
         return jsonify(history)
     except Exception as e:
         logger.error("Error fetching sales history for user %s: %s", current_user.id, e, exc_info=True)

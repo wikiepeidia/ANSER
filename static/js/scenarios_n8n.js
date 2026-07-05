@@ -339,6 +339,13 @@ document.addEventListener('DOMContentLoaded', () => {
         el.addEventListener('touchmove', onMove, { passive: false });
         el.addEventListener('touchend', onUp);
 
+        // Track whether the next focus came from a pointer (click/tap) so we
+        // don't fight the scroll position on plain clicks — only auto-scroll
+        // into view for keyboard (Tab) focus.
+        let focusedViaPointer = false;
+        el.addEventListener('mousedown', () => { focusedViaPointer = true; }, true);
+        el.addEventListener('touchstart', () => { focusedViaPointer = true; }, true);
+
         // Keep nav arrow enabled/disabled state in sync
         el.addEventListener('scroll', updateTplNavState, { passive: true });
 
@@ -369,10 +376,15 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        // Prevent focus from scrolling the whole page when tabbing through cards
+        // Prevent focus from scrolling the whole page when tabbing through cards.
+        // Skip it for pointer-driven focus (click/tap) so clicking a card
+        // doesn't yank the strip's scroll position.
         el.addEventListener('focusin', (e) => {
             const card = e.target.closest('.sc-tpl-card');
-            if (card) card.scrollIntoView({ block: 'nearest', inline: 'start' });
+            if (card && !focusedViaPointer) {
+                card.scrollIntoView({ block: 'nearest', inline: 'start' });
+            }
+            focusedViaPointer = false;
         });
     }
 

@@ -23,8 +23,52 @@ def _require_items(payload, label):
     return items
 
 
-def create_import_transaction(db_conn, user_id, payload):
-    """Tạo giao dịch nhập, chi tiết và cập nhật tồn kho trong một giao dịch."""
+def get_warehouse_stock(cursor, warehouse_id, product_id):
+    """Tồn kho của 1 sản phẩm tại 1 kho cụ thể (0 nếu chưa có dòng nào)."""
+    if not warehouse_id:
+        return None
+    cursor.execute(
+        "SELECT stock_quantity FROM warehouse_stock WHERE warehouse_id = ? AND product_id = ?",
+        (warehouse_id, product_id),
+    )
+    row = cursor.fetchone()
+    return row["stock_quantity"] if row else 0
+
+
+def _adjust_warehouse_stock(cursor, warehouse_id, product_id, delta):
+    """Cộng/trừ tồn kho của 1 sản phẩm tại 1 kho, tạo dòng nếu chưa có."""
+    current = get_warehouse_stock(cursor, warehouse_id, product_id) or 0
+    new_qty = current + delta
+    cursor.execute(
+        """INSERT INTO warehouse_stock (warehouse_id, product_id, stock_quantity, updated_at)
+           VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+           ON CONFLICT(warehouse_id, product_id)
+           DO UPDATE SET stock_quantity = excluded.stock_quantity, updated_at = CURRENT_TIMESTAMP""",
+        (warehouse_id, product_id, new_qty),
+    )
+    return new_qty
+
+
+def _sync_product_total_stock(cursor, product_id):
+    """products.stock_quantity = tổng tồn kho của sản phẩm này trên tất cả các kho.
+
+    Giữ cột này như một tổng hợp toàn hệ thống (cho các chỗ đọc chưa nhận
+    thức được khái niệm kho, vd cảnh báo tồn kho thấp cũ), thay vì xóa cột.
+    """
+    cursor.execute(
+        "UPDATE products SET stock_quantity = "
+        "(SELECT COALESCE(SUM(stock_quantity), 0) FROM warehouse_stock WHERE product_id = ?) "
+        "WHERE id = ?",
+        (product_id, product_id),
+    )
+
+
+def create_import_transaction(db_conn, user_id, payload, warehouse_id=None):
+    """Tạo giao dịch nhập, chi tiết và cập nhật tồn kho trong một giao dịch.
+
+    warehouse_id: kho đang thao tác (None = tương thích ngược, chỉ cập nhật
+    products.stock_quantity như trước, không ghi vào warehouse_stock).
+    """
     _require_user(user_id)
     _require_payload(payload)
     items = _require_items(payload, "import")
@@ -39,9 +83,9 @@ def create_import_transaction(db_conn, user_id, payload):
 
         cursor.execute(
             """INSERT INTO import_transactions
-               (code, supplier_name, total_amount, notes, created_by)
-               VALUES (?, ?, ?, ?, ?)""",
-            (code, supplier_name, total_amount, notes, user_id),
+               (code, supplier_name, total_amount, notes, created_by, warehouse_id)
+               VALUES (?, ?, ?, ?, ?, ?)""",
+            (code, supplier_name, total_amount, notes, user_id, warehouse_id),
         )
         import_id = cursor.lastrowid
 
@@ -90,10 +134,14 @@ def create_import_transaction(db_conn, user_id, payload):
                        VALUES (?, ?, ?, ?, ?)""",
                     (import_id, product_id, quantity, unit_price, total_price),
                 )
-                cursor.execute(
-                    "UPDATE products SET stock_quantity = stock_quantity + ? WHERE id = ?",
-                    (quantity, product_id),
-                )
+                if warehouse_id:
+                    _adjust_warehouse_stock(cursor, warehouse_id, product_id, quantity)
+                    _sync_product_total_stock(cursor, product_id)
+                else:
+                    cursor.execute(
+                        "UPDATE products SET stock_quantity = stock_quantity + ? WHERE id = ?",
+                        (quantity, product_id),
+                    )
 
         db_conn.commit()
         return {
@@ -164,8 +212,12 @@ def get_import_transaction_details(db_conn, import_id):
         raise ServiceInvariantError(str(exc))
 
 
-def create_export_transaction(db_conn, user_id, payload, automation_engine=None):
-    """Create export transaction with stock checks and rollback on violations."""
+def create_export_transaction(db_conn, user_id, payload, automation_engine=None, warehouse_id=None):
+    """Create export transaction with stock checks and rollback on violations.
+
+    warehouse_id: kho đang thao tác (None = tương thích ngược, kiểm tra/trừ
+    thẳng products.stock_quantity như trước, không ghi vào warehouse_stock).
+    """
     _require_user(user_id)
     _require_payload(payload)
     items = _require_items(payload, "export")
@@ -181,9 +233,9 @@ def create_export_transaction(db_conn, user_id, payload, automation_engine=None)
 
         cursor.execute(
             """INSERT INTO export_transactions
-               (code, customer_id, total_amount, notes, created_by)
-               VALUES (?, ?, ?, ?, ?)""",
-            (code, customer_id, total_amount, notes, user_id),
+               (code, customer_id, total_amount, notes, created_by, warehouse_id)
+               VALUES (?, ?, ?, ?, ?, ?)""",
+            (code, customer_id, total_amount, notes, user_id, warehouse_id),
         )
         export_id = cursor.lastrowid
 
@@ -193,12 +245,18 @@ def create_export_transaction(db_conn, user_id, payload, automation_engine=None)
             unit_price = float(item["unit_price"])
             total_price = quantity * unit_price
 
-            cursor.execute("SELECT stock_quantity FROM products WHERE id = ?", (product_id,))
-            stock_row = cursor.fetchone()
-            if not stock_row:
-                raise ServiceValidationError(f"Product not found for product ID {product_id}")
+            if warehouse_id:
+                current_stock = get_warehouse_stock(cursor, warehouse_id, product_id)
+                cursor.execute("SELECT id FROM products WHERE id = ?", (product_id,))
+                if not cursor.fetchone():
+                    raise ServiceValidationError(f"Product not found for product ID {product_id}")
+            else:
+                cursor.execute("SELECT stock_quantity FROM products WHERE id = ?", (product_id,))
+                stock_row = cursor.fetchone()
+                if not stock_row:
+                    raise ServiceValidationError(f"Product not found for product ID {product_id}")
+                current_stock = stock_row['stock_quantity']
 
-            current_stock = stock_row['stock_quantity']
             if current_stock < quantity:
                 raise ServiceValidationError(f"Insufficient stock for product ID {product_id}")
 
@@ -209,11 +267,15 @@ def create_export_transaction(db_conn, user_id, payload, automation_engine=None)
                 (export_id, product_id, quantity, unit_price, total_price),
             )
 
-            new_stock = current_stock - quantity
-            cursor.execute(
-                "UPDATE products SET stock_quantity = ? WHERE id = ?",
-                (new_stock, product_id),
-            )
+            if warehouse_id:
+                new_stock = _adjust_warehouse_stock(cursor, warehouse_id, product_id, -quantity)
+                _sync_product_total_stock(cursor, product_id)
+            else:
+                new_stock = current_stock - quantity
+                cursor.execute(
+                    "UPDATE products SET stock_quantity = ? WHERE id = ?",
+                    (new_stock, product_id),
+                )
             updated_products.append((product_id, new_stock))
 
         db_conn.commit()
