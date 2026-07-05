@@ -89,6 +89,8 @@ Progress: [##########] 100% (5/5 phases complete)
 | 2026-07-05 | Phase 31 Execution | Google OAuth hashing/repository cleanup, webhook SSRF block, CSRF cleanup, and upload validation completed. |
 | 2026-07-05 | Phase 32 Execution | Safe API error responses and database access cleanup completed. |
 | 2026-07-05 | Phase 33 Execution | RQ worker guard/docs and security regression tests added; full pytest suite passed. |
+| 2026-07-05 | Phase 33 UAT Verification | Live curl + pytest pass across all 5 v1.2 phases. Found and fixed a real bug: missing FLASK_ENV forced HTTPS on the local dev server (no TLS) — added a startup warning for missing FLASK_ENV/APP_ENV so it can't silently recur. |
+| 2026-07-05 | scheduled_reports Column Type Fix | Live authenticated curl sweep found `/api/reports/scheduled` and `/api/reports/stats` 500ing on Postgres (`created_by` was `text`, not `bigint` like sibling tables). Fixed via `ALTER TABLE` on the live DB; pytest suite (SQLite-only) never caught it. See `.planning/quick/20260705-scheduled-reports-created-by-type-fix/`. |
 
 ## Session Continuity
 
