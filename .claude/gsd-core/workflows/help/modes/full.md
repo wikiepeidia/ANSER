@@ -256,11 +256,15 @@ Check project status and intelligently route to next action.
 Modes:
 - **default** — progress report + intelligent routing
 - **`--next`** — auto-advance to the next logical step (use `--next --force` to bypass safety gates)
+- **`--next --auto`** — like `--next`, but chains steps automatically until milestone completion or a blocking decision
+- **`--next --converge`** — when the next action is planning, route it through `/gsd-plan-review-convergence` instead of `/gsd-plan-phase`; requires `workflow.plan_review_convergence=true`. `--cross-ai` is an alias. Reviewer flags (`--codex`, `--gemini`, `--claude`, `--opencode`, `--ollama`, `--lm-studio`, `--llama-cpp`, `--all`) and `--max-cycles N` forward to the convergence loop.
 - **`--forensic`** — append a 6-check integrity audit after the progress report
 - **`--do "<text>"`** — smart router: dispatch freeform intent to the matching `/gsd-*` command (see *Smart Router* above)
 
 Usage: `/gsd-progress`
 Usage: `/gsd-progress --next`
+Usage: `/gsd-progress --next --auto`
+Usage: `/gsd-progress --next --auto --converge`
 Usage: `/gsd-progress --forensic`
 
 ### Session Management
@@ -389,6 +393,16 @@ List pending todos and select one to work on.
 
 Usage: `/gsd-capture --list`
 Usage: `/gsd-capture --list api`
+
+**`/gsd-capture --list-seeds [status]`**
+List and audit captured seeds (read-only).
+
+- Lists all seeds with ID, status, scope, trigger, and title
+- Optional status filter (e.g., `/gsd-capture --list-seeds dormant`)
+- Does not modify any seed — enrich with `/gsd-capture --seed --enrich SEED-NNN`
+
+Usage: `/gsd-capture --list-seeds`
+Usage: `/gsd-capture --list-seeds dormant`
 
 ### User Acceptance Testing
 
@@ -583,7 +597,7 @@ The commands above cover the most common day-to-day flows. Every command listed 
 - **`/gsd-mvp-phase <phase-number>`** — Plan a phase as a vertical MVP slice (user story + SPIDR splitting) before handing off to plan-phase. Same end-state as `/gsd-plan-phase --mvp`, with a guided MVP-shaping intro.
 - **`/gsd-ultraplan-phase [phase]`** — [BETA] Offload plan phase to Claude Code's ultraplan cloud; review in browser and import back.
 - **`/gsd-plan-review-convergence <phase> [--codex] [--gemini] [--claude] [--opencode] [--ollama] [--lm-studio] [--llama-cpp] [--all] [--text] [--ws <name>] [--max-cycles N]`** — Cross-AI plan convergence loop — replan with review feedback until no HIGH concerns remain. Supports both cloud reviewers (Codex/Gemini/Claude/OpenCode) and local model runtimes (Ollama, LM Studio, llama.cpp).
-- **`/gsd-autonomous [--from N] [--to N] [--only N] [--interactive]`** — Run all remaining phases autonomously: discuss → plan → execute per phase.
+- **`/gsd-autonomous [--from N] [--to N] [--only N] [--interactive] [--converge]`** — Run all remaining phases autonomously: discuss → plan → execute per phase. `--converge` routes planning through plan-review convergence; `--cross-ai` is an alias.
 
 ### Quality, Review & Verification
 
@@ -606,6 +620,8 @@ The commands above cover the most common day-to-day flows. Every command listed 
 ### Knowledge & Context
 
 - **`/gsd-graphify [build|query <term>|status|diff]`** — Build, query, and inspect the project knowledge graph in `.planning/graphs/`.
+- **`/gsd-mempalace-recall`** — Recall prior decisions, patterns, and surprises from MemPalace before planning.
+- **`/gsd-mempalace-capture [artifact-type]`** — File a phase artifact into MemPalace and mirror decision facts into its temporal KG.
 - **`/gsd-thread [list [--open|--resolved] | close <slug> | status <slug> | name | description]`** — Manage persistent context threads for cross-session work.
 - **`/gsd-profile-user [--questionnaire] [--refresh]`** — Generate developer behavioral profile and create Claude-discoverable artifacts.
 - **`/gsd-stats`** — Display project statistics: phases, plans, requirements, git metrics, and timeline.
@@ -626,7 +642,7 @@ The commands above cover the most common day-to-day flows. Every command listed 
 
 These six skills exist primarily for the model to perform two-stage hierarchical routing across 60+ skills. You can invoke them directly when you want to browse a category interactively.
 
-- **`/gsd-context`** — Codebase intelligence routing (map, graphify, docs, learnings).
+- **`/gsd-context`** — Codebase intelligence routing (map, graphify, docs, learnings, mempalace).
 - **`/gsd-ideate`** — Exploration / capture routing (explore, sketch, spike, spec, capture).
 - **`/gsd-manage`** — Configuration and workspace routing (workstreams, thread, update, ship, inbox).
 - **`/gsd-project`** — Project-lifecycle routing (milestones, audits, summary).

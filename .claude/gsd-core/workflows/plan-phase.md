@@ -1,3 +1,10 @@
+<!-- gsd:loop-host
+step: plan
+points: plan:pre, plan:post
+agent-roles: researcher, planner, checker
+produces: PLAN.md
+consumes: CONTEXT.md
+-->
 <purpose>
 Create executable phase prompts (PLAN.md files) for a roadmap phase with integrated research and verification. Default flow: Research (if needed) -> Plan -> Verify -> Done. Orchestrates gsd-phase-researcher, gsd-planner, and gsd-plan-checker agents with a revision loop (max 3 iterations).
 </purpose>
@@ -59,7 +66,7 @@ for the plan-checker gate to be meaningful.
 Load all context in one call (paths only to minimize orchestrator context):
 
 ```bash
-_GSD_SHIM_NAME="gsd-tools.cjs"; _GSD_RUNTIME_ROOT="${RUNTIME_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"; GSD_TOOLS="${_GSD_RUNTIME_ROOT}/gsd-core/bin/${_GSD_SHIM_NAME}"; if [ -f "$GSD_TOOLS" ]; then gsd_run() { node "$GSD_TOOLS" "$@"; }; elif [ -f "${_GSD_RUNTIME_ROOT}/.claude/gsd-core/bin/${_GSD_SHIM_NAME}" ]; then GSD_TOOLS="${_GSD_RUNTIME_ROOT}/.claude/gsd-core/bin/${_GSD_SHIM_NAME}"; gsd_run() { node "$GSD_TOOLS" "$@"; }; elif command -v gsd-tools >/dev/null 2>&1; then GSD_TOOLS="$(command -v gsd-tools)"; gsd_run() { "$GSD_TOOLS" "$@"; }; elif [ -f "C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.claude/gsd-core/bin/${_GSD_SHIM_NAME}" ]; then GSD_TOOLS="C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.claude/gsd-core/bin/${_GSD_SHIM_NAME}"; gsd_run() { node "$GSD_TOOLS" "$@"; }; elif [ -f "${HERMES_HOME:-$HOME/.hermes}/gsd-core/bin/${_GSD_SHIM_NAME}" ]; then GSD_TOOLS="${HERMES_HOME:-$HOME/.hermes}/gsd-core/bin/${_GSD_SHIM_NAME}"; gsd_run() { node "$GSD_TOOLS" "$@"; }; elif [ -f "${CURSOR_CONFIG_DIR:-$HOME/.cursor}/gsd-core/bin/${_GSD_SHIM_NAME}" ]; then GSD_TOOLS="${CURSOR_CONFIG_DIR:-$HOME/.cursor}/gsd-core/bin/${_GSD_SHIM_NAME}"; gsd_run() { node "$GSD_TOOLS" "$@"; }; elif [ -f "${CODEX_HOME:-$HOME/.codex}/gsd-core/bin/${_GSD_SHIM_NAME}" ]; then GSD_TOOLS="${CODEX_HOME:-$HOME/.codex}/gsd-core/bin/${_GSD_SHIM_NAME}"; gsd_run() { node "$GSD_TOOLS" "$@"; }; elif [ -f "${GEMINI_CONFIG_DIR:-$HOME/.gemini}/gsd-core/bin/${_GSD_SHIM_NAME}" ]; then GSD_TOOLS="${GEMINI_CONFIG_DIR:-$HOME/.gemini}/gsd-core/bin/${_GSD_SHIM_NAME}"; gsd_run() { node "$GSD_TOOLS" "$@"; }; elif [ -f "${COPILOT_CONFIG_DIR:-$HOME/.copilot}/gsd-core/bin/${_GSD_SHIM_NAME}" ]; then GSD_TOOLS="${COPILOT_CONFIG_DIR:-$HOME/.copilot}/gsd-core/bin/${_GSD_SHIM_NAME}"; gsd_run() { node "$GSD_TOOLS" "$@"; }; elif [ -f "${WINDSURF_CONFIG_DIR:-$HOME/.codeium/windsurf}/gsd-core/bin/${_GSD_SHIM_NAME}" ]; then GSD_TOOLS="${WINDSURF_CONFIG_DIR:-$HOME/.codeium/windsurf}/gsd-core/bin/${_GSD_SHIM_NAME}"; gsd_run() { node "$GSD_TOOLS" "$@"; }; elif [ -f "${AUGMENT_CONFIG_DIR:-$HOME/.augment}/gsd-core/bin/${_GSD_SHIM_NAME}" ]; then GSD_TOOLS="${AUGMENT_CONFIG_DIR:-$HOME/.augment}/gsd-core/bin/${_GSD_SHIM_NAME}"; gsd_run() { node "$GSD_TOOLS" "$@"; }; elif [ -f "${TRAE_CONFIG_DIR:-$HOME/.trae}/gsd-core/bin/${_GSD_SHIM_NAME}" ]; then GSD_TOOLS="${TRAE_CONFIG_DIR:-$HOME/.trae}/gsd-core/bin/${_GSD_SHIM_NAME}"; gsd_run() { node "$GSD_TOOLS" "$@"; }; elif [ -f "${QWEN_CONFIG_DIR:-$HOME/.qwen}/gsd-core/bin/${_GSD_SHIM_NAME}" ]; then GSD_TOOLS="${QWEN_CONFIG_DIR:-$HOME/.qwen}/gsd-core/bin/${_GSD_SHIM_NAME}"; gsd_run() { node "$GSD_TOOLS" "$@"; }; elif [ -f "${CODEBUDDY_CONFIG_DIR:-$HOME/.codebuddy}/gsd-core/bin/${_GSD_SHIM_NAME}" ]; then GSD_TOOLS="${CODEBUDDY_CONFIG_DIR:-$HOME/.codebuddy}/gsd-core/bin/${_GSD_SHIM_NAME}"; gsd_run() { node "$GSD_TOOLS" "$@"; }; elif [ -f "${CLINE_CONFIG_DIR:-$HOME/.cline}/gsd-core/bin/${_GSD_SHIM_NAME}" ]; then GSD_TOOLS="${CLINE_CONFIG_DIR:-$HOME/.cline}/gsd-core/bin/${_GSD_SHIM_NAME}"; gsd_run() { node "$GSD_TOOLS" "$@"; }; elif [ -f "${GROK_AGENTS_HOME:-$HOME/.agents}/gsd-core/bin/${_GSD_SHIM_NAME}" ]; then GSD_TOOLS="${GROK_AGENTS_HOME:-$HOME/.agents}/gsd-core/bin/${_GSD_SHIM_NAME}"; gsd_run() { node "$GSD_TOOLS" "$@"; }; elif [ -f "${ANTIGRAVITY_CONFIG_DIR:-$HOME/.gemini/antigravity}/gsd-core/bin/${_GSD_SHIM_NAME}" ]; then GSD_TOOLS="${ANTIGRAVITY_CONFIG_DIR:-$HOME/.gemini/antigravity}/gsd-core/bin/${_GSD_SHIM_NAME}"; gsd_run() { node "$GSD_TOOLS" "$@"; }; elif [ -f "${OPENCODE_CONFIG_DIR:-${XDG_CONFIG_HOME:-$HOME/.config}/opencode}/gsd-core/bin/${_GSD_SHIM_NAME}" ]; then GSD_TOOLS="${OPENCODE_CONFIG_DIR:-${XDG_CONFIG_HOME:-$HOME/.config}/opencode}/gsd-core/bin/${_GSD_SHIM_NAME}"; gsd_run() { node "$GSD_TOOLS" "$@"; }; elif [ -f "${KILO_CONFIG_DIR:-${XDG_CONFIG_HOME:-$HOME/.config}/kilo}/gsd-core/bin/${_GSD_SHIM_NAME}" ]; then GSD_TOOLS="${KILO_CONFIG_DIR:-${XDG_CONFIG_HOME:-$HOME/.config}/kilo}/gsd-core/bin/${_GSD_SHIM_NAME}"; gsd_run() { node "$GSD_TOOLS" "$@"; }; else echo "ERROR: gsd-tools.cjs not found at $GSD_TOOLS and gsd-tools is not on PATH. Run: npx -y @opengsd/gsd-core@latest --claude --local" >&2; exit 1; fi
+_GSD_SHIM_NAME="gsd-tools.cjs"; _GSD_RUNTIME_ROOT="${RUNTIME_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"; GSD_TOOLS="${_GSD_RUNTIME_ROOT}/gsd-core/bin/${_GSD_SHIM_NAME}"; if [ -f "$GSD_TOOLS" ]; then gsd_run() { node "$GSD_TOOLS" "$@"; }; elif [ -f "${_GSD_RUNTIME_ROOT}/.claude/gsd-core/bin/${_GSD_SHIM_NAME}" ]; then GSD_TOOLS="${_GSD_RUNTIME_ROOT}/.claude/gsd-core/bin/${_GSD_SHIM_NAME}"; gsd_run() { node "$GSD_TOOLS" "$@"; }; elif [ -f "${_GSD_RUNTIME_ROOT}/.codex/gsd-core/bin/${_GSD_SHIM_NAME}" ]; then GSD_TOOLS="${_GSD_RUNTIME_ROOT}/.codex/gsd-core/bin/${_GSD_SHIM_NAME}"; gsd_run() { node "$GSD_TOOLS" "$@"; }; elif command -v gsd-tools >/dev/null 2>&1; then GSD_TOOLS="$(command -v gsd-tools)"; gsd_run() { "$GSD_TOOLS" "$@"; }; elif [ -f "C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.claude/gsd-core/bin/${_GSD_SHIM_NAME}" ]; then GSD_TOOLS="C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.claude/gsd-core/bin/${_GSD_SHIM_NAME}"; gsd_run() { node "$GSD_TOOLS" "$@"; }; elif [ -f "${HERMES_HOME:-$HOME/.hermes}/gsd-core/bin/${_GSD_SHIM_NAME}" ]; then GSD_TOOLS="${HERMES_HOME:-$HOME/.hermes}/gsd-core/bin/${_GSD_SHIM_NAME}"; gsd_run() { node "$GSD_TOOLS" "$@"; }; elif [ -f "${CURSOR_CONFIG_DIR:-$HOME/.cursor}/gsd-core/bin/${_GSD_SHIM_NAME}" ]; then GSD_TOOLS="${CURSOR_CONFIG_DIR:-$HOME/.cursor}/gsd-core/bin/${_GSD_SHIM_NAME}"; gsd_run() { node "$GSD_TOOLS" "$@"; }; elif [ -f "${CODEX_HOME:-$HOME/.codex}/gsd-core/bin/${_GSD_SHIM_NAME}" ]; then GSD_TOOLS="${CODEX_HOME:-$HOME/.codex}/gsd-core/bin/${_GSD_SHIM_NAME}"; gsd_run() { node "$GSD_TOOLS" "$@"; }; elif [ -f "${GEMINI_CONFIG_DIR:-$HOME/.gemini}/gsd-core/bin/${_GSD_SHIM_NAME}" ]; then GSD_TOOLS="${GEMINI_CONFIG_DIR:-$HOME/.gemini}/gsd-core/bin/${_GSD_SHIM_NAME}"; gsd_run() { node "$GSD_TOOLS" "$@"; }; elif [ -f "${COPILOT_CONFIG_DIR:-$HOME/.copilot}/gsd-core/bin/${_GSD_SHIM_NAME}" ]; then GSD_TOOLS="${COPILOT_CONFIG_DIR:-$HOME/.copilot}/gsd-core/bin/${_GSD_SHIM_NAME}"; gsd_run() { node "$GSD_TOOLS" "$@"; }; elif [ -f "${WINDSURF_CONFIG_DIR:-$HOME/.codeium/windsurf}/gsd-core/bin/${_GSD_SHIM_NAME}" ]; then GSD_TOOLS="${WINDSURF_CONFIG_DIR:-$HOME/.codeium/windsurf}/gsd-core/bin/${_GSD_SHIM_NAME}"; gsd_run() { node "$GSD_TOOLS" "$@"; }; elif [ -f "${AUGMENT_CONFIG_DIR:-$HOME/.augment}/gsd-core/bin/${_GSD_SHIM_NAME}" ]; then GSD_TOOLS="${AUGMENT_CONFIG_DIR:-$HOME/.augment}/gsd-core/bin/${_GSD_SHIM_NAME}"; gsd_run() { node "$GSD_TOOLS" "$@"; }; elif [ -f "${TRAE_CONFIG_DIR:-$HOME/.trae}/gsd-core/bin/${_GSD_SHIM_NAME}" ]; then GSD_TOOLS="${TRAE_CONFIG_DIR:-$HOME/.trae}/gsd-core/bin/${_GSD_SHIM_NAME}"; gsd_run() { node "$GSD_TOOLS" "$@"; }; elif [ -f "${QWEN_CONFIG_DIR:-$HOME/.qwen}/gsd-core/bin/${_GSD_SHIM_NAME}" ]; then GSD_TOOLS="${QWEN_CONFIG_DIR:-$HOME/.qwen}/gsd-core/bin/${_GSD_SHIM_NAME}"; gsd_run() { node "$GSD_TOOLS" "$@"; }; elif [ -f "${CODEBUDDY_CONFIG_DIR:-$HOME/.codebuddy}/gsd-core/bin/${_GSD_SHIM_NAME}" ]; then GSD_TOOLS="${CODEBUDDY_CONFIG_DIR:-$HOME/.codebuddy}/gsd-core/bin/${_GSD_SHIM_NAME}"; gsd_run() { node "$GSD_TOOLS" "$@"; }; elif [ -f "${CLINE_CONFIG_DIR:-$HOME/.cline}/gsd-core/bin/${_GSD_SHIM_NAME}" ]; then GSD_TOOLS="${CLINE_CONFIG_DIR:-$HOME/.cline}/gsd-core/bin/${_GSD_SHIM_NAME}"; gsd_run() { node "$GSD_TOOLS" "$@"; }; elif [ -f "${GROK_AGENTS_HOME:-$HOME/.agents}/gsd-core/bin/${_GSD_SHIM_NAME}" ]; then GSD_TOOLS="${GROK_AGENTS_HOME:-$HOME/.agents}/gsd-core/bin/${_GSD_SHIM_NAME}"; gsd_run() { node "$GSD_TOOLS" "$@"; }; elif [ -f "${ANTIGRAVITY_CONFIG_DIR:-$HOME/.gemini/antigravity}/gsd-core/bin/${_GSD_SHIM_NAME}" ]; then GSD_TOOLS="${ANTIGRAVITY_CONFIG_DIR:-$HOME/.gemini/antigravity}/gsd-core/bin/${_GSD_SHIM_NAME}"; gsd_run() { node "$GSD_TOOLS" "$@"; }; elif [ -f "${OPENCODE_CONFIG_DIR:-${XDG_CONFIG_HOME:-$HOME/.config}/opencode}/gsd-core/bin/${_GSD_SHIM_NAME}" ]; then GSD_TOOLS="${OPENCODE_CONFIG_DIR:-${XDG_CONFIG_HOME:-$HOME/.config}/opencode}/gsd-core/bin/${_GSD_SHIM_NAME}"; gsd_run() { node "$GSD_TOOLS" "$@"; }; elif [ -f "${KILO_CONFIG_DIR:-${XDG_CONFIG_HOME:-$HOME/.config}/kilo}/gsd-core/bin/${_GSD_SHIM_NAME}" ]; then GSD_TOOLS="${KILO_CONFIG_DIR:-${XDG_CONFIG_HOME:-$HOME/.config}/kilo}/gsd-core/bin/${_GSD_SHIM_NAME}"; gsd_run() { node "$GSD_TOOLS" "$@"; }; else echo "ERROR: gsd-tools.cjs not found at $GSD_TOOLS and gsd-tools is not on PATH. Run: npx -y @opengsd/gsd-core@latest --claude --local" >&2; exit 1; fi; if [ -n "${CLAUDE_ENV_FILE:-}" ] && [ -n "${GSD_TOOLS:-}" ]; then printf "export PATH='%s':\"\$PATH\"\n" "${GSD_TOOLS%/*}" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true; fi
 GRAN_PARAM=""; if [[ "$ARGUMENTS" =~ (^|[[:space:]])--granularity[[:space:]]+([^[:space:]-][^[:space:]]*) ]]; then GRAN_PARAM="--granularity ${BASH_REMATCH[2]}"; fi
 INIT=$(gsd_run query init.plan-phase "$PHASE" $GRAN_PARAM)
 if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
@@ -67,11 +74,10 @@ AGENT_SKILLS_RESEARCHER=$(gsd_run query agent-skills gsd-phase-researcher)
 AGENT_SKILLS_PLANNER=$(gsd_run query agent-skills gsd-planner)
 AGENT_SKILLS_CHECKER=$(gsd_run query agent-skills gsd-plan-checker)
 CONTEXT_WINDOW=$(gsd_run query config-get context_window 2>/dev/null || echo "200000")
-TDD_MODE=$(gsd_run query config-get workflow.tdd_mode 2>/dev/null || echo "false")
 MVP_MODE_CFG=$(gsd_run query config-get workflow.mvp_mode 2>/dev/null || echo "false")
 ```
 
-When `TDD_MODE` is `true`, the planner agent is instructed to apply `type: tdd` to eligible tasks using heuristics from `references/tdd.md`. The planner's `<required_reading>` is extended to include `@C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.claude/gsd-core/references/tdd.md` so gate enforcement rules are available during planning.
+When the tdd capability's `workflow.tdd_mode` is active (resolved via the plan:pre render-hooks), the planner agent is instructed to apply `type: tdd` to eligible tasks using heuristics from `references/tdd.md`. The TDD guidance is injected via the tdd capability's contribution hook at §5.6; no inline config-get is needed.
 
 When `CONTEXT_WINDOW >= 500000`, the planner prompt includes the 3 most recent prior phase CONTEXT.md and SUMMARY.md files PLUS any phases explicitly listed in the current phase's `Depends on:` field in ROADMAP.md. Explicit dependencies always load regardless of recency (e.g., Phase 7 declaring `Depends on: Phase 2` always sees Phase 2's context). Bounded recency keeps the planner's context budget focused on recent work.
 
@@ -158,7 +164,9 @@ Set `TEXT_MODE=true` if `--text` is present in $ARGUMENTS OR `text_mode` from in
 ```bash
 MVP_FLAG_ARG=""
 if [[ "$ARGUMENTS" =~ (^|[[:space:]])--mvp([[:space:]]|$) ]]; then MVP_FLAG_ARG="--cli-flag"; fi
-if [[ "$ARGUMENTS" =~ (^|[[:space:]])--tdd([[:space:]]|$) ]]; then TDD_MODE=true; fi
+if [[ "$ARGUMENTS" =~ (^|[[:space:]])--tdd([[:space:]]|$) ]]; then
+  gsd_run query config-set workflow.tdd_mode true 2>/dev/null || true
+fi
 ```
 
 Defer the `phase.mvp-mode` query until `PHASE` is finalized (after explicit argument parsing/fallback phase detection + validation). The verb returns `true|false`; full result also exposes `source` (`cli_flag` | `roadmap` | `config` | `none`) for diagnostics. Mode is **all-or-nothing per phase** (PRD decision Q1).
@@ -404,45 +412,20 @@ If "Run discuss-phase first":
   ```
   **Exit the plan-phase workflow. Do not continue.**
 
-## 4.5. Check AI-SPEC
+## 4.5. Resolve AI-SPEC Artifact
 
-**Skip if:** `ai_integration_phase_enabled` from config is false, or `--skip-ai-spec` flag provided.
+AI integration activation is owned by the `ai-integration` capability's `plan:pre` step hook. The plan-phase host only discovers existing artifacts here so the planner can consume them; it must not read the capability's config key directly.
 
 ```bash
 AI_SPEC_FILE=$(ls "${PHASE_DIR}"/*-AI-SPEC.md 2>/dev/null | head -1)
-AI_PHASE_CFG=$(gsd_run query config-get workflow.ai_integration_phase 2>/dev/null || echo "true")
+AI_SPEC_PATH="${AI_SPEC_FILE}"
+FRAMEWORK_LINE=""
+if [ -n "$AI_SPEC_FILE" ]; then
+  FRAMEWORK_LINE=$(grep "Selected Framework:" "${AI_SPEC_FILE}" | head -1)
+fi
 ```
 
-**Skip if `AI_PHASE_CFG` is `false`.**
-
-**If `AI_SPEC_FILE` is empty:** Check phase goal for AI keywords:
-```bash
-echo "${phase_goal}" | grep -qi "agent\|llm\|rag\|chatbot\|embedding\|langchain\|llamaindex\|crewai\|langgraph\|openai\|anthropic\|vector\|eval\|ai system"
-```
-
-**If AI keywords detected AND no AI-SPEC.md:**
-```
-◆ Note: This phase appears to involve AI system development.
-  Consider running /gsd-ai-integration-phase {N} before planning to:
-  - Select the right framework for your use case
-  - Research its docs and best practices
-  - Design an evaluation strategy
-
-  Continue planning without AI-SPEC? (non-blocking — /gsd-ai-integration-phase can be run after)
-```
-
-Use AskUserQuestion with options:
-- "Continue — plan without AI-SPEC"
-- "Stop — I'll run /gsd-ai-integration-phase {N} first"
-
-If "Stop": Exit with `/gsd-ai-integration-phase {N}` reminder.
-If "Continue": Proceed. (Non-blocking — planner will note AI-SPEC is absent.)
-
-**If `AI_SPEC_FILE` is non-empty:** Extract framework for planner context:
-```bash
-FRAMEWORK_LINE=$(grep "Selected Framework:" "${AI_SPEC_FILE}" | head -1)
-```
-Pass `ai_spec_path` and `framework_line` to planner in step 7 so it can reference the AI design contract.
+If `AI_SPEC_FILE` is non-empty, pass `AI_SPEC_PATH` and `FRAMEWORK_LINE` to the planner in step 8 so it can reference the AI design contract. If it is empty, the active `ai-integration` capability hook in step 5.6 handles any AI-system nudge or `/gsd-ai-integration-phase` dispatch.
 
 ## 5. Handle Research
 
@@ -517,42 +500,28 @@ Display banner:
 ### Spawn gsd-phase-researcher
 
 ```bash
-PHASE_DESC=$(gsd_run query roadmap.get-phase "${PHASE}" --pick section)
+if gsd_run query teams-status --active >/dev/null 2>&1; then
+  echo "⚠️  CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS detected. GSD's multi-agent orchestration is not validated under claude-code agent-teams and may stall (a subagent's completion can fail to route to the orchestrator). Recommend disabling agent-teams for GSD workflows. See https://github.com/open-gsd/gsd-core/issues/1355" >&2
+fi
 ```
 
-Research prompt:
+```bash
+PHASE_DESC=$(gsd_run query roadmap.get-phase "${PHASE}" --pick section)
+if [ -z "${PLAN_PRE_HOOKS_JSON:-}" ]; then
+  PLAN_PRE_HOOKS_JSON=$(gsd_run loop render-hooks plan:pre --raw)
+fi
+```
+
+Find the active `research` step hook in `PLAN_PRE_HOOKS_JSON`. Use the hook's `fragment.inline` as the prompt template and substitute the phase fields below before spawning its declared `ref.agent`.
 
 ```markdown
-<objective>
-Research how to implement Phase {phase_number}: {phase_name}
-Answer: "What do I need to know to PLAN this phase well?"
-</objective>
-
-<files_to_read>
-- {context_path} (USER DECISIONS from /gsd-discuss-phase)
-- {requirements_path} (Project requirements)
-- {state_path} (Project decisions and history)
-</files_to_read>
-
-${AGENT_SKILLS_RESEARCHER}
-
-<additional_context>
-**Phase description:** {phase_description}
-**Phase requirement IDs (MUST address):** {phase_req_ids}
-
-**Project instructions:** Read ./CLAUDE.md if exists — follow project-specific guidelines
-**Project skills:** Check .claude/skills/ or .agents/skills/ directory (if either exists) — read SKILL.md files, research should account for project skill patterns
-</additional_context>
-
-<output>
-Write to: {phase_dir}/{phase_num}-RESEARCH.md
-</output>
+{research_hook.fragment.inline}
 ```
 
 ```
 Agent(
-  prompt=research_prompt,
-  subagent_type="gsd-phase-researcher",
+  prompt=filled_research_hook_fragment,
+  subagent_type=research_hook.ref.agent,
   model="{researcher_model}",
   description="Research Phase {phase}"
 )
@@ -615,17 +584,19 @@ test -f "${PHASE_DIR}/${PADDED_PHASE}-VALIDATION.md" && echo "VALIDATION_CREATED
 
 ## 5.55. Security Threat Model Gate
 
-> Skip if `workflow.security_enforcement` is explicitly `false`. Absent = enabled.
+> Capability-driven dispatch. Resolves active `plan:pre` hooks via the capability registry; the security hook's `when` condition is evaluated by the registry.
 
 ```bash
-SECURITY_CFG=$(gsd_run query config-get workflow.security_enforcement --raw 2>/dev/null || echo "true")
-SECURITY_ASVS=$(gsd_run query config-get workflow.security_asvs_level --raw 2>/dev/null || echo "1")
-SECURITY_BLOCK=$(gsd_run query config-get workflow.security_block_on --raw 2>/dev/null || echo "high")
+PLAN_PRE_HOOKS_JSON=$(gsd_run loop render-hooks plan:pre --raw)
 ```
 
-**If `SECURITY_CFG` is `false`:** Skip to step 5.6.
+Resolve active contribution hooks from `PLAN_PRE_HOOKS_JSON` where `kind == "contribution"` and `capId == "security"`.
 
-**If `SECURITY_CFG` is `true`:** Display banner:
+**If no active security contribution hook exists:** Skip to step 5.6.
+
+**If an active security contribution hook exists:** Read `SECURITY_ASVS` from the active hook's `configValues.security_asvs_level` (default: `1`) and `SECURITY_BLOCK` from `configValues.security_block_on` (default: `"high"`). These values are resolved by the capability registry from user config using the same four-level precedence as hook activation — no inline `config-get` is needed.
+
+Display banner:
 
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -639,62 +610,75 @@ Opt out: set security_enforcement: false in .planning/config.json
 
 Continue to step 5.6. Security config is passed to the planner in step 8.
 
-## 5.6. UI Design Contract Gate
+## 5.6. Plan:Pre Capability Dispatch and UI Design Contract Gate
 
-> Skip if `workflow.ui_phase` is explicitly `false` AND `workflow.ui_safety_gate` is explicitly `false` in `.planning/config.json`. If keys are absent, treat as enabled.
-
-```bash
-UI_PHASE_CFG=$(gsd_run query config-get workflow.ui_phase 2>/dev/null || echo "true")
-UI_GATE_CFG=$(gsd_run query config-get workflow.ui_safety_gate 2>/dev/null || echo "true")
-```
-
-**If both are `false`:** Skip to step 6.
-
-Check if phase has frontend indicators:
+> Capability-driven dispatch. Resolves active `plan:pre` hooks via the capability registry; each hook's `when` condition is evaluated by the registry — no inline config-get needed. This section handles skill-based planning preflights such as `ai-integration`, agent-backed hooks through `ref.agent`, and the UI gate whose deterministic check comes from `check.query`.
+>
+> **Config semantics (cutover fix):** `workflow.ui_phase` gates UI-SPEC *generation* (step); `workflow.ui_safety_gate` gates the *planning block* (gate). Both-on = identical to OLD §5.6. Intended change: `{ui_phase:true, ui_safety_gate:false}` now auto-generates in pipelines but does NOT block manual planning (each key controls exactly what its description says).
 
 ```bash
-PHASE_SECTION=$(gsd_run query roadmap.get-phase "${PHASE}" 2>/dev/null)
-# Shell-free word-boundary gate (#3718): Node.js helper — no locale env-var dependency.
-# Reads via stdin to avoid OS ARG_MAX limits on large phase text.
-# Resolve the helper against the GSD install dir via RUNTIME_DIR (#448) — NOT the consuming
-# project's git root — falling back to git toplevel / $HOME/.claude. Exit codes mirror grep (0=UI,1=none).
-_GSD_RT="${RUNTIME_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"
-UI_GATE_JS=$(for _c in "$_GSD_RT/gsd-core/bin/lib/ui-safety-gate.cjs" "$_GSD_RT/bin/lib/ui-safety-gate.cjs" "$_GSD_RT/.claude/bin/lib/ui-safety-gate.cjs" "C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.claude/gsd-core/bin/lib/ui-safety-gate.cjs" "C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.claude/bin/lib/ui-safety-gate.cjs"; do [ -f "$_c" ] && { echo "$_c"; break; }; done)
-if [ -n "$UI_GATE_JS" ]; then printf '%s' "$PHASE_SECTION" | node "$UI_GATE_JS" >/dev/null 2>&1; HAS_UI=$?; else echo "WARN: ui-safety-gate.cjs not found via RUNTIME_DIR/\$HOME (#448) — assuming UI present" >&2; HAS_UI=0; fi
+PLAN_PRE_HOOKS_JSON=${PLAN_PRE_HOOKS_JSON:-$(gsd_run loop render-hooks plan:pre --raw)}
+HOOKS_JSON="$PLAN_PRE_HOOKS_JSON"
 ```
 
-**If `HAS_UI` is 0 (frontend indicators found):**
+Read the `activeHooks` array directly from `PLAN_PRE_HOOKS_JSON` / `HOOKS_JSON` (in-context — do NOT invoke a shell pipeline).
 
-Check for existing UI-SPEC:
+**Branch 1 — all plan:pre hooks inactive (`activeHooks` is empty or absent):** Skip to step 6.
+
+**Generic step hook dispatch contract:** For each active entry where `kind == "step"`:
+- If `ref.skill` is set, dispatch with `Skill(skill="gsd-${ref.skill}", args="${PHASE} --auto ${GSD_WS}")` when pipeline mode allows auto-chaining. Prepend `gsd-` to `ref.skill` — `ui-phase` → `gsd-ui-phase`.
+- If `ref.agent` is set, dispatch with `Agent(prompt=filled_hook_fragment, subagent_type=ref.agent, model="{researcher_model}")`. Use the hook's `fragment.inline` as the prompt body and fill phase fields before spawning.
+- The `research` hook is handled by §5.1's research decision. The `pattern-mapper` hook is handled by §7.8 after `RESEARCH_PATH` is known. Future plan:pre agent hooks use the same `ref.agent` fragment contract.
+
+**AI integration capability:** If the active `ai-integration` step hook is present, `AI_SPEC_PATH` is empty, and the phase goal contains AI keywords (`agent`, `llm`, `rag`, `chatbot`, `embedding`, `langchain`, `llamaindex`, `crewai`, `langgraph`, `openai`, `anthropic`, `vector`, `eval`, `ai system`), then:
+- In pipeline / `--auto` mode, invoke the hook's `ref.skill` via `Skill(skill="gsd-${ref.skill}", args="${PHASE} --auto ${GSD_WS}")`.
+- In manual mode, display the existing non-blocking `/gsd-ai-integration-phase {N}` recommendation and let the user continue planning without AI-SPEC or stop to run the capability workflow first.
+
+Run the UI deterministic gate whenever **any** `plan:pre` UI hook is active — including the step-only case (`workflow.ui_safety_gate` off). (`check.query` = `"ui.plan-gate"`; router normalizes dots→hyphens.)
+
 ```bash
-UI_SPEC_FILE=$(ls "${PHASE_DIR}"/*-UI-SPEC.md 2>/dev/null | head -1)
+GATE=$(gsd_run check ui-plan-gate "${PHASE}" --raw)
 ```
 
-**If UI-SPEC.md found:** Set `UI_SPEC_PATH=$UI_SPEC_FILE`. Display: `Using UI design contract: ${UI_SPEC_PATH}`
+Read `frontend`, `hasUiSpec`, and `block` from `GATE`.
 
-**If UI-SPEC.md missing AND `--skip-ui` flag is present in $ARGUMENTS:** Skip silently to step 6.
+**Branch 2 — no frontend indicators (`frontend` is `false`):** Skip silently to step 6.
 
-**If UI-SPEC.md missing AND `UI_GATE_CFG` is `true`:**
+**Branch 3 — UI-SPEC already exists (`hasUiSpec` is `true`):**
 
-Read ephemeral chain flag (same field as `check.auto-mode` → `auto_chain_active`):
-```bash
-AUTO_CHAIN=$(gsd_run query check auto-mode --pick auto_chain_active 2>/dev/null || echo "false")
-```
-
-**If `AUTO_CHAIN` is `true` (running inside a `--chain` or `--auto` pipeline):**
-
-Auto-generate UI-SPEC without prompting:
-```
-Skill(skill="gsd-ui-phase", args="${PHASE} --auto ${GSD_WS}")
-```
-After `gsd-ui-phase` returns, re-read:
 ```bash
 UI_SPEC_FILE=$(ls "${PHASE_DIR}"/*-UI-SPEC.md 2>/dev/null | head -1)
 UI_SPEC_PATH="${UI_SPEC_FILE}"
 ```
+
+Display: `Using UI design contract: ${UI_SPEC_PATH}`. Continue to step 6.
+
+**Branch 4 — `--skip-ui` in `$ARGUMENTS`:** Skip silently to step 6.
+
+**Branches 5 & 6 — frontend detected, UI-SPEC missing, no `--skip-ui`.**
+
+Read the ephemeral auto-chain flag:
+
+```bash
+AUTO_CHAIN=$(gsd_run query check auto-mode --pick auto_chain_active 2>/dev/null || echo "false")
+```
+
+**Branch 5 — `AUTO_CHAIN` is `true` (pipeline / `--auto`):** Fire each active UI **step** hook — runs independently of whether a gate is active (covers `{ui_phase:true,ui_safety_gate:false}`). For each entry in `activeHooks` (in array order) where `kind == "step"` and `ref.skill` is set:
+
+```
+Skill(skill="gsd-${ref.skill}", args="${PHASE} --auto ${GSD_WS}")
+```
+
+After all UI step hooks return, re-read:
+
+```bash
+UI_SPEC_FILE=$(ls "${PHASE_DIR}"/*-UI-SPEC.md 2>/dev/null | head -1)
+UI_SPEC_PATH="${UI_SPEC_FILE}"
+```
+
 Continue to step 6.
 
-**If `AUTO_CHAIN` is `false` (manual invocation):**
+**Branch 6 — `AUTO_CHAIN` is `false` (manual): generic gate handling.** For each entry in `activeHooks` where `kind == "gate"` and `blocking` is `true`: if `block:true` (from `GATE`), output the block below and **EXIT the plan-phase workflow**. If no active blocking gate (e.g. `workflow.ui_safety_gate` is off), continue to step 6 — no block.
 
 Output this markdown directly (not as a code block):
 
@@ -709,69 +693,20 @@ Also available:
 
 **Exit the plan-phase workflow. Do not continue.**
 
-**If `HAS_UI` is 1 (no frontend indicators):** Skip silently to step 5.7.
+## 5.65. Codebase Map Freshness Pre-Check (drift plan:pre gate)
 
-## 5.7. Schema Push Detection Gate
-
-> Detects schema-relevant files in the phase scope and injects a mandatory `[BLOCKING]` schema push task into the plan. Prevents false-positive verification where build/types pass because TypeScript types come from config, not the live database.
-
-Check if any files in the phase scope match schema patterns:
+If `activeHooks` (from `PLAN_PRE_HOOKS_JSON`, §5.6) has a `kind == "gate"`, `capId == "drift"`,
+`check.query == "verify.codebase-drift"` entry (`workflow.plan_drift_precheck` on), run the same check the
+execute gate uses; otherwise skip to step 6:
 
 ```bash
-PHASE_SECTION=$(gsd_run query roadmap.get-phase "${PHASE}" --pick section 2>/dev/null)
+DRIFT=$(gsd_run verify codebase-drift 2>/dev/null || echo '{"skipped":true}')
 ```
 
-Scan `PHASE_SECTION`, `CONTEXT.md` (if loaded), and `RESEARCH.md` (if exists) for file paths matching these ORM patterns:
-
-| ORM | File Patterns |
-|-----|--------------|
-| Payload CMS | `src/collections/**/*.ts`, `src/globals/**/*.ts` |
-| Prisma | `prisma/schema.prisma`, `prisma/schema/*.prisma` |
-| Drizzle | `drizzle/schema.ts`, `src/db/schema.ts`, `drizzle/*.ts` |
-| Supabase | `supabase/migrations/*.sql` |
-| TypeORM | `src/entities/**/*.ts`, `src/migrations/**/*.ts` |
-
-Also check if any existing PLAN.md files for this phase already reference these file patterns in `files_modified`.
-
-**If schema-relevant files detected:**
-
-Set `SCHEMA_PUSH_REQUIRED=true` and `SCHEMA_ORM={detected_orm}`.
-
-Determine the push command for the detected ORM:
-
-| ORM | Push Command | Non-TTY Workaround |
-|-----|-------------|-------------------|
-| Payload CMS | `npx payload migrate` | `CI=true PAYLOAD_MIGRATING=true npx payload migrate` |
-| Prisma | `npx prisma db push` | `npx prisma db push --accept-data-loss` (if destructive) |
-| Drizzle | `npx drizzle-kit push` | `npx drizzle-kit push` |
-| Supabase | `supabase db push` | Set `SUPABASE_ACCESS_TOKEN` env var |
-| TypeORM | `npx typeorm migration:run` | `npx typeorm migration:run -d src/data-source.ts` |
-
-Inject the following into the planner prompt (step 8) as an additional constraint:
-
-```markdown
-<schema_push_requirement>
-**[BLOCKING] Schema Push Required**
-
-This phase modifies schema-relevant files ({detected_files}). The planner MUST include
-a `[BLOCKING]` task that runs the database schema push command AFTER all schema file
-modifications are complete but BEFORE verification.
-
-- ORM detected: {SCHEMA_ORM}
-- Push command: {push_command}
-- Non-TTY workaround: {env_hint}
-- If push requires interactive prompts that cannot be suppressed, flag the task for
-  manual intervention with `autonomous: false`
-
-This task is mandatory — the phase CANNOT pass verification without it. Build and
-type checks will pass without the push (types come from config, not the live database),
-creating a false-positive verification state.
-</schema_push_requirement>
-```
-
-Display: `Schema files detected ({SCHEMA_ORM}) — [BLOCKING] push task will be injected into plans`
-
-**If no schema-relevant files detected:** Skip silently to step 6.
+This gate is **non-blocking** and **never blocks, never spawns** the mapper at plan time. If `skipped` or
+`action_required` is false, continue silently to step 6. If `action_required` is true, print `message`
+verbatim (it ends with a `/gsd-map-codebase` pointer) and continue — planning proceeds whether or not the
+map is refreshed first. (`drift_action: auto-remap` stays at `execute:wave:post`.)
 
 ## 6. Check Existing Plans
 
@@ -802,6 +737,14 @@ PATTERNS_PATH=$(_gsd_field "$INIT" patterns_path)
 # Detect spike/sketch findings skills (project-local)
 SPIKE_FINDINGS_PATH=$(ls ./.claude/skills/spike-findings-*/SKILL.md 2>/dev/null | head -1 || true)
 SKETCH_FINDINGS_PATH=$(ls ./.claude/skills/sketch-findings-*/SKILL.md 2>/dev/null | head -1 || true)
+
+# Resolve the phase SPEC (carries the ## Edge Coverage section the planner lifts covered/
+# backstop edges from). UNCONDITIONAL — must NOT live in §4.5 Check AI-SPEC, which is skipped
+# on non-AI phases; gating it there silently starves the planner of the SPEC (#550 review).
+# Glob the plain phase SPEC, excluding the -AI-SPEC.md / -UI-SPEC.md variants.
+PHASE_DIR_FOR_SPEC=$(_gsd_field "$INIT" phase_dir)
+SPEC_FILE=$(ls "${PHASE_DIR_FOR_SPEC}"/*-SPEC.md 2>/dev/null | grep -Ev -- '-(AI|UI)-SPEC\.md$' | head -1)
+SPEC_PATH="${SPEC_FILE}"
 ```
 
 ## 7.5. Verify Nyquist Artifacts
@@ -829,14 +772,7 @@ Proceed to Step 7.8 (or Step 8 if pattern mapper is disabled) only if user selec
 
 ## 7.8. Spawn gsd-pattern-mapper Agent (Optional)
 
-**Skip if** `workflow.pattern_mapper` is explicitly set to `false` in config.json (absent key = enabled). Also skip if no CONTEXT.md and no RESEARCH.md exist for this phase (nothing to extract file lists from).
-
-Check config:
-```bash
-PATTERN_MAPPER_CFG=$(gsd_run query config-get workflow.pattern_mapper 2>/dev/null || echo "true")
-```
-
-**If `PATTERN_MAPPER_CFG` is `false`:** Skip to step 8.
+Pattern mapper activation is owned by the `pattern-mapper` capability's `plan:pre` step hook. Read `PLAN_PRE_HOOKS_JSON` and skip if no active step hook has `capId == "pattern-mapper"` and `ref.agent == "gsd-pattern-mapper"`. Also skip if no CONTEXT.md and no RESEARCH.md exist for this phase (nothing to extract file lists from).
 
 **If PATTERNS.md already exists** (`PATTERNS_PATH` is non-empty from step 7): Skip to step 8 (use existing).
 
@@ -849,30 +785,17 @@ Display banner:
 ◆ Spawning pattern mapper... (runs in a subagent — no output until it returns, ~1–5 min; expected, not a freeze)
 ```
 
-Pattern mapper prompt:
+Use the active `pattern-mapper` hook's `fragment.inline` as the prompt template and substitute the phase fields below before spawning its declared `ref.agent`.
 
 ```markdown
-<pattern_mapping_context>
-**Phase:** {phase_number} - {phase_name}
-**Phase directory:** {phase_dir}
-**Padded phase:** {padded_phase}
-
-<files_to_read>
-- {context_path} (USER DECISIONS from /gsd-discuss-phase)
-- {research_path} (Technical Research)
-</files_to_read>
-
-**Output file:** {phase_dir}/{padded_phase}-PATTERNS.md
-
-Extract the list of files to be created/modified from CONTEXT.md and RESEARCH.md. For each file, classify by role and data flow, find the closest existing analog in the codebase, extract concrete code excerpts, and produce PATTERNS.md.
-</pattern_mapping_context>
+{pattern_mapper_hook.fragment.inline}
 ```
 
 Spawn with:
 ```
 Agent(
-  prompt="{above}",
-  subagent_type="gsd-pattern-mapper",
+  prompt=filled_pattern_mapper_hook_fragment,
+  subagent_type=pattern_mapper_hook.ref.agent,
   model="{researcher_model}",
 )
 ```
@@ -890,15 +813,20 @@ PATTERNS_PATH="${PHASE_DIR}/${PADDED_PHASE}-PATTERNS.md"
 
 ## 7.9. Regenerate API-SURFACE.md (intel gate)
 
+> Capability-driven dispatch. Resolves active `plan:pre` step hooks via the capability registry; the intel hook's `when: intel.enabled` condition is evaluated by the registry — no inline config-get needed.
+
+Read the active intel step hook from `PLAN_PRE_HOOKS_JSON` where `kind == "step"` and `capId == "intel"`.
+
+**If no active intel step hook exists:** `API_SURFACE_PATH` stays empty; skip to step 8. The step-8 planner entry for API Surface is omitted when `API_SURFACE_PATH` is empty.
+
+**If an active intel step hook exists:**
 ```bash
-INTEL_CFG=$(gsd_run query config-get intel.enabled 2>/dev/null || echo "false")
-# false (absent = false) → API_SURFACE_PATH stays empty; step-8 planner entry omitted
-if [ "$INTEL_CFG" = "true" ]; then
-  gsd_run intel api-surface
-  API_SURFACE_PATH=".planning/intel/API-SURFACE.md"
-  echo "✓ API surface regenerated: ${API_SURFACE_PATH}"  # injected into step 8 as HINT
-fi
+gsd_run intel api-surface
+API_SURFACE_PATH=".planning/intel/API-SURFACE.md"
+echo "✓ API surface regenerated: ${API_SURFACE_PATH}"  # injected into step 8 as HINT
 ```
+
+Continue to step 8.
 
 ## 8. Spawn gsd-planner Agent
 
@@ -927,11 +855,13 @@ Planner prompt:
 - {PATTERNS_PATH} (Pattern Map — analog files and code excerpts, if exists)
 - {verification_path} (Verification Gaps - if --gaps)
 - {uat_path} (UAT Gaps - if --gaps)
-- {reviews_path} (Cross-AI Review Feedback - if --reviews)
+- {reviews_path} (Cross-AI Review Feedback - if --reviews; actionable findings must be incorporated or explicitly deferred/rejected in PLAN.md)
+- {AI_SPEC_PATH} (AI Design Contract — framework and evaluation strategy, if exists)
 - {UI_SPEC_PATH} (UI Design Contract — visual/interaction specs, if exists)
+- {SPEC_PATH} (Phase SPEC — carries the ## Edge Coverage section to lift covered/backstop edges from, if exists)
 - {SPIKE_FINDINGS_PATH} (Spike Findings — validated patterns, constraints, landmines from experiments, if exists)
 - {SKETCH_FINDINGS_PATH} (Sketch Findings — validated design decisions, CSS patterns, visual direction, if exists)
-- {API_SURFACE_PATH} (API Surface — HINT ONLY, if intel.enabled; see <intel_surface_hint> below)
+- {API_SURFACE_PATH} (API Surface — HINT ONLY, when intel capability is active; see <intel_surface_hint> below)
 ${CONTEXT_WINDOW >= 500000 ? `
 **Cross-phase context (1M model enrichment):**
 - CONTEXT.md files from the 3 most recent completed phases (locked decisions — maintain consistency)
@@ -948,21 +878,22 @@ ${API_SURFACE_PATH ? `
 ` : ''}
 ${AGENT_SKILLS_PLANNER}
 
+<review_incorporation_contract>
+**If Mode is reviews:** REVIEWS.md is feedback input, not a hidden execution contract. /gsd-execute-phase primarily consumes PLAN.md plus the normal phase context, so every current actionable review finding must become visible in the relevant PLAN.md before planning can pass.
+
+For each current actionable finding in REVIEWS.md, the planner MUST either:
+- incorporate it into a PLAN.md task, `<action>`, `<acceptance_criteria>`, `<verify>`, `must_haves`, threat model, or artifact list; or
+- explicitly document a deferral/rejection rationale in the relevant PLAN.md so the executor and reviewer can see the decision.
+
+Historical findings already incorporated, explicitly deferred/rejected in PLAN.md, or marked fully resolved do not require new plan changes.
+</review_incorporation_contract>
+
 **Phase requirement IDs (every ID MUST appear in a plan's `requirements` field):** {phase_req_ids}
 
-**Project instructions:** Read ./CLAUDE.md if exists — follow project-specific guidelines
+**Project instructions:** Read ./CLAUDE.md or ./.claude/CLAUDE.md if either exists — follow project-specific guidelines
 **Project skills:** Check .claude/skills/ or .agents/skills/ directory (if either exists) — read SKILL.md files, plans should account for project skill rules
 
-${TDD_MODE === 'true' ? `
-<tdd_mode_active>
-**TDD Mode is ENABLED.** Apply TDD heuristics from @C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.claude/gsd-core/references/tdd.md to all eligible tasks:
-- Business logic with defined I/O → type: tdd
-- API endpoints with request/response contracts → type: tdd
-- Data transformations, validation, algorithms → type: tdd
-- UI, config, glue code, CRUD → standard plan (type: execute)
-Each TDD plan gets one feature with RED/GREEN/REFACTOR gate sequence.
-</tdd_mode_active>
-` : ''}
+{For each active entry in `PLAN_PRE_HOOKS_JSON` where `kind == "contribution"` and `into == "planner"` (in array order): inject the entry's `fragment.inline` verbatim here. This delivers all planner-targeted contributions — including tdd's `<tdd_mode_active>` block (type:tdd heuristics), schema-gate's schema-push detection guidance (if active at plan:pre), and security's threat-model guidance. For the security contribution, also surface the resolved `configValues`: `security_asvs_level` (ASVS enforcement level) and `security_block_on` (severity threshold) so the planner uses the configured values when generating `<threat_model>` blocks. If no active planner contributions exist, omit this block entirely.}
 
 **MVP_MODE:** ${MVP_MODE} (when true, follow vertical-slice rules from `C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.claude/gsd-core/references/planner-mvp-mode.md`; when false, ignore MVP guidance entirely.)
 **WALKING_SKELETON:** ${WALKING_SKELETON} (when true, the first deliverable must be a Walking Skeleton — Read the template at `C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.claude/gsd-core/references/skeleton-template.md` and produce SKELETON.md alongside PLAN.md.)
@@ -981,6 +912,8 @@ Output consumed by /gsd-execute-phase. Plans need:
 - Tasks in XML format with read_first and acceptance_criteria fields (MANDATORY on every task)
 - Verification criteria
 - must_haves for goal-backward verification
+- If the SPEC has an `## Edge Coverage` section, lift every `covered` edge's acceptance criterion into `must_haves.truths`, and every `backstop` edge into `must_haves.truths` as a non-inferable check (note it needs a held-out/property-based test). `unresolved` edges are explicit assumptions — surface them in the plan, do not silently drop them.
+- If the SPEC has a `## Prohibitions` section, lift every resolved prohibition into the `must_haves.prohibitions:` sibling block (NOT `truths` — ADR-550 D3) carrying `statement` + `status` + `verification`; unresolved prohibitions are explicit assumptions — surface them in the plan, do not silently drop them. A prohibition is a must-NOT (negative) check that belongs in its own `must_haves.prohibitions` block. Never place a must-NOT under `must_haves.truths` — that block keeps positive-observable semantics only.
 - **"Artifacts this phase produces" section (MANDATORY)** — list every symbol this phase creates: decorators, classes, functions, CLI flags, struct/dataclass fields, new file paths. The plan-review-convergence source-grounding pass reads this section to exclude newly-created symbols from drift verification; omitting it causes new symbols to be flagged for acknowledgement.
 </downstream_consumer>
 
@@ -1026,6 +959,8 @@ Every task MUST include these fields — they are NOT optional:
 - [ ] Waves assigned for parallel execution
 - [ ] must_haves derived from phase goal
 - [ ] Every PLAN.md includes an "Artifacts this phase produces" section listing symbols created by this phase (decorators, classes, functions, CLI flags, struct/dataclass fields, new file paths)
+- [ ] Every SPEC ## Edge Coverage covered/backstop edge is represented in a plan's must_haves (no silent drops)
+- [ ] Every SPEC ## Prohibitions resolved item is represented in a plan's must_haves.prohibitions (no silent drops)
 </quality_gate>
 ```
 
@@ -1266,6 +1201,7 @@ Checker prompt:
 <verification_context>
 **Phase:** {phase_number}
 **Phase Goal:** {goal from ROADMAP}
+**Mode:** {standard | gap_closure | reviews}
 
 <files_to_read>
 - {PHASE_DIR}/*-PLAN.md (Plans to verify)
@@ -1273,13 +1209,20 @@ Checker prompt:
 - {requirements_path} (Requirements)
 - {context_path} (USER DECISIONS from /gsd-discuss-phase)
 - {research_path} (Technical Research — includes Validation Architecture)
+- {reviews_path} (Cross-AI Review Feedback - if --reviews; verify actionable findings are represented in PLAN.md)
 </files_to_read>
 
 ${AGENT_SKILLS_CHECKER}
 
+<review_incorporation_verification>
+**If Mode is reviews:** Read REVIEWS.md and verify each current actionable review finding is visible in executable PLAN.md content or explicitly deferred/rejected in the relevant PLAN.md. A finding remains actionable if it requires a concrete plan task, `<action>`, `<acceptance_criteria>`, `<verify>`, `must_haves`, threat-model item, stale-path correction, or execution contract change before /gsd-execute-phase runs.
+
+If an actionable finding remains only in REVIEWS.md and would be invisible to /gsd-execute-phase, return `## ISSUES FOUND`. Use WARNING by default; use BLOCKER when the missing incorporation can prevent the phase goal, create unsafe execution, or invalidate verification.
+</review_incorporation_verification>
+
 **Phase requirement IDs (MUST ALL be covered):** {phase_req_ids}
 
-**Project instructions:** Read ./CLAUDE.md if exists — verify plans honor project guidelines
+**Project instructions:** Read ./CLAUDE.md or ./.claude/CLAUDE.md if either exists — verify plans honor project guidelines
 **Project skills:** Check .claude/skills/ or .agents/skills/ directory (if either exists) — verify plans account for project skill rules
 </verification_context>
 
@@ -1645,53 +1588,38 @@ gsd_run query commit "docs(${PADDED_PHASE}): create phase plan" --files "${PHASE
 
 This commits all PLAN.md files for the phase plus the updated STATE.md and ROADMAP.md to version-control the planning artifacts. Skip this step if `commit_docs` is false.
 
-## 13e. Post-Planning Gap Analysis
+## 13e. Post-Planning Gap Analysis (plan:post capability gate dispatch)
 
-After all plans are generated, committed, and the Requirements Coverage Gate (§13)
-has run, emit a single unified gap report covering both REQUIREMENTS.md and the
-CONTEXT.md `<decisions>` section. This is a **proactive, post-hoc report** — it
-does not block phase advancement and does not re-plan. It exists so that any
-requirement or decision that slipped through the per-plan checks is surfaced in
-one place before execution begins.
-
-**Skip if:** `workflow.post_planning_gaps` is `false`. Default is `true`.
+Proactive, non-blocking coverage report gated on `workflow.post_planning_gaps`
+(default `true`). Dispatched via the `plan:post` capability gate owned by the
+`gap-analysis` capability (ADR-857 §53). Reads REQUIREMENTS.md and CONTEXT.md
+`<decisions>` and cross-references each REQ-ID / D-ID against `${PHASE_DIR}/*-PLAN.md`.
 
 ```bash
-POST_PLANNING_GAPS=$(gsd_run query config-get workflow.post_planning_gaps --default true 2>/dev/null || echo true)
-if [ "$POST_PLANNING_GAPS" = "true" ]; then
-  # Scope to this phase's mapped REQ-IDs (#447); null/TBD skips the requirements comparison (CONTEXT.md decisions still reported), mirroring §13.
-  gsd_run gap-analysis --phase-dir "${PHASE_DIR}" --phase-req-ids "$(gsd_run query init.plan-phase "$PHASE" --pick phase_req_ids 2>/dev/null || echo TBD)"
-fi
+PLAN_POST_HOOKS_JSON=$(gsd_run loop render-hooks plan:post --raw)
+PHASE_REQ_IDS=$(gsd_run query init.plan-phase "$PHASE" --pick phase_req_ids 2>/dev/null || echo TBD)
 ```
 
-(`gsd-tools.cjs gap-analysis` reads `.planning/REQUIREMENTS.md`, `${PHASE_DIR}/CONTEXT.md`,
-and `${PHASE_DIR}/*-PLAN.md`, then prints a markdown table with one row per
-REQ-ID and D-ID. Word-boundary matching prevents `REQ-1` from being mistaken for
-`REQ-10`.)
+Read the `activeHooks` array from `PLAN_POST_HOOKS_JSON` in-context. If the
+`gap-analysis` gate hook is absent (capability inactive), skip this step.
 
-**Output format (deterministic; sorted REQUIREMENTS.md → CONTEXT.md, then natural
-sort within source):**
+**For each active entry where `kind == "gate"`** (process in array order):
 
-```
-## Post-Planning Gap Analysis
-
-| Source | Item | Status |
-|--------|------|--------|
-| REQUIREMENTS.md | REQ-01 | ✓ Covered |
-| REQUIREMENTS.md | REQ-02 | ✗ Not covered |
-| CONTEXT.md | D-01 | ✓ Covered |
-| CONTEXT.md | D-02 | ✗ Not covered |
-
-⚠ N items not covered by any plan
+```bash
+GATE_RESULT=$(gsd_run check ${hook.check.query} "${PHASE_DIR}" "${PHASE_REQ_IDS}" --raw)
+CHECK_EXIT=$?
 ```
 
-**Skip-gracefully behavior:**
-- REQUIREMENTS.md missing → CONTEXT-only report.
-- CONTEXT.md missing → REQUIREMENTS-only report.
-- Both missing or `<decisions>` block missing → "No requirements or decisions to check" line, no error.
+**Step 1 — did the CHECK COMMAND itself succeed?**
+If the check command failed (non-zero `CHECK_EXIT`, empty output, or unparseable JSON):
+- `onError == "halt"` → halt and surface command error.
+- `onError == "skip"` → log a warning and continue to the next hook.
 
-This step is non-blocking. If items are reported as not covered, the user may
-re-run `/gsd-plan-phase --gaps` to add plans, or proceed to execute-phase as-is.
+**Step 2 — read `GATE_RESULT.block` (boolean).** Only reached when command succeeded.
+
+- If `hook.blocking == true` and `GATE_RESULT.block == true`: halt. (gap-analysis is always `blocking: false` so this branch is informational only.)
+- If `hook.blocking == false` (advisory): if `GATE_RESULT.block == true` or non-empty `table`/`summary`, output the gap table and continue. Advisory gates never block phase completion.
+- If `hook.blocking == true` and `GATE_RESULT.block == false`: continue silently.
 
 ## 14. Present Final Status
 

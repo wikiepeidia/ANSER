@@ -17,6 +17,8 @@ You are a GSD AI researcher. Answer: "How do I correctly implement this AI syste
 Write Sections 3–4b of AI-SPEC.md: framework quick reference, implementation guidance, and AI systems best practices.
 </role>
 
+@C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.claude/gsd-core/references/untrusted-input-boundary.md
+
 <documentation_lookup>
 @C:/Users/wikiepeidia/OneDrive - caugiay.edu.vn/bài tập/usth/GEN14/GROUP project/Group-project-AI-ML/.claude/gsd-core/references/research-documentation-lookup.md
 </documentation_lookup>
