@@ -2,7 +2,7 @@
 from flask import Blueprint, jsonify, request
 from flask_login import current_user, login_required
 
-from core.extensions import csrf, db_manager
+from core.extensions import db_manager
 from core.services.user_service import (
     admin_delete_user, delete_user, get_all_users,
     get_users_for_manager, reset_password, set_user_role,
@@ -87,7 +87,6 @@ def create_user():
 
 @admin_user_bp.route('/api/users', methods=['GET'])
 @login_required
-@csrf.exempt
 def get_users():
     if not hasattr(current_user, 'role') or current_user.role not in ['admin', 'manager']:
         return jsonify({'success': False, 'message': 'Không có quyền truy cập'}), 403

@@ -5,6 +5,17 @@ from datetime import datetime
 from core.extensions import db_manager
 
 
+def _can_access_all(role):
+    return role == 'admin'
+
+
+def _owner_clause(user_id, role, prefix=''):
+    if user_id is None or _can_access_all(role):
+        return '', []
+    column = f'{prefix}.created_by' if prefix else 'created_by'
+    return f' AND {column} = ?', [user_id]
+
+
 def get_dashboard_stats(user_id, warehouse_id=None):
     """Dashboard glance numbers. Scoped to a single warehouse/store when
     warehouse_id is given, so a retail chain owner sees that store's own
@@ -34,17 +45,31 @@ def get_dashboard_stats(user_id, warehouse_id=None):
         conn.close()
 
 
-def get_report_stats():
+def get_report_stats(user_id=None, warehouse_id=None, role='user'):
     conn = db_manager.get_connection()
     c = conn.cursor()
     try:
         today = datetime.now()
         start_of_month = today.replace(day=1, hour=0, minute=0, second=0, microsecond=0).strftime('%Y-%m-%d %H:%M:%S')
-        c.execute('SELECT SUM(total_amount) AS total FROM export_transactions WHERE created_at >= ?', (start_of_month,))
+        owner_sql, owner_params = _owner_clause(user_id, role)
+        warehouse_sql = ' AND warehouse_id = ?' if warehouse_id else ''
+        warehouse_params = [warehouse_id] if warehouse_id else []
+        c.execute(
+            'SELECT SUM(total_amount) AS total FROM export_transactions WHERE created_at >= ?'
+            + warehouse_sql + owner_sql,
+            tuple([start_of_month] + warehouse_params + owner_params),
+        )
         revenue = c.fetchone()['total'] or 0
-        c.execute('SELECT SUM(total_amount) AS total FROM import_transactions WHERE created_at >= ?', (start_of_month,))
+        c.execute(
+            'SELECT SUM(total_amount) AS total FROM import_transactions WHERE created_at >= ?'
+            + warehouse_sql + owner_sql,
+            tuple([start_of_month] + warehouse_params + owner_params),
+        )
         expense = c.fetchone()['total'] or 0
-        c.execute('SELECT COUNT(*) AS cnt FROM scheduled_reports WHERE last_sent_at >= ?', (start_of_month,))
+        c.execute(
+            'SELECT COUNT(*) AS cnt FROM scheduled_reports WHERE last_sent_at >= ?' + owner_sql,
+            tuple([start_of_month] + owner_params),
+        )
         reports_sent = c.fetchone()['cnt'] or 0
         return {'revenue': revenue, 'expense': expense,
                 'profit': revenue - expense, 'reports_sent': reports_sent}
@@ -52,14 +77,20 @@ def get_report_stats():
         conn.close()
 
 
-def get_scheduled_reports():
+def get_scheduled_reports(user_id=None, role='user'):
     conn = db_manager.get_connection()
     c = conn.cursor()
     try:
+        where = ''
+        params = []
+        if user_id is not None and not _can_access_all(role):
+            where = ' WHERE created_by = ?'
+            params.append(user_id)
         c.execute(
             'SELECT id, name, report_type, frequency, channel, recipients,'
             ' status, last_sent_at, created_by, created_at'
-            ' FROM scheduled_reports ORDER BY created_at DESC'
+            ' FROM scheduled_reports' + where + ' ORDER BY created_at DESC',
+            tuple(params),
         )
         return [
             {'id': r['id'], 'name': r['name'], 'report_type': r['report_type'],
@@ -89,23 +120,39 @@ def create_scheduled_report(name, report_type, frequency, channel, recipients, c
         conn.close()
 
 
-def delete_scheduled_report(report_id):
+def delete_scheduled_report(report_id, user_id=None, role='user'):
     conn = db_manager.get_connection()
     c = conn.cursor()
     try:
-        c.execute('DELETE FROM scheduled_reports WHERE id = ?', (report_id,))
+        query = 'DELETE FROM scheduled_reports WHERE id = ?'
+        params = [report_id]
+        if user_id is not None and not _can_access_all(role):
+            query += ' AND created_by = ?'
+            params.append(user_id)
+        c.execute(query, tuple(params))
+        if c.rowcount == 0:
+            raise LookupError('Scheduled report not found')
         conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
     finally:
         conn.close()
 
 
-def get_automations():
+def get_automations(user_id=None, role='user'):
     conn = db_manager.get_connection()
     c = conn.cursor()
     try:
+        where = ''
+        params = []
+        if user_id is not None and not _can_access_all(role):
+            where = ' WHERE created_by = ?'
+            params.append(user_id)
         c.execute(
             'SELECT id, name, type, config, enabled, last_run, created_by, created_at'
-            ' FROM se_automations ORDER BY created_at DESC'
+            ' FROM se_automations' + where + ' ORDER BY created_at DESC',
+            tuple(params),
         )
         return [
             {'id': r['id'], 'name': r['name'], 'type': r['type'],
@@ -135,11 +182,16 @@ def create_automation(name, auto_type, config, created_by):
         conn.close()
 
 
-def update_automation(automation_id, data):
+def update_automation(automation_id, data, user_id=None, role='user'):
     conn = db_manager.get_connection()
     c = conn.cursor()
     try:
-        c.execute('SELECT id FROM se_automations WHERE id = ?', (automation_id,))
+        query = 'SELECT id FROM se_automations WHERE id = ?'
+        params = [automation_id]
+        if user_id is not None and not _can_access_all(role):
+            query += ' AND created_by = ?'
+            params.append(user_id)
+        c.execute(query, tuple(params))
         if not c.fetchone():
             raise LookupError('Automation not found')
         if 'status' in data:
@@ -159,11 +211,21 @@ def update_automation(automation_id, data):
         conn.close()
 
 
-def delete_automation(automation_id):
+def delete_automation(automation_id, user_id=None, role='user'):
     conn = db_manager.get_connection()
     c = conn.cursor()
     try:
-        c.execute('DELETE FROM se_automations WHERE id = ?', (automation_id,))
+        query = 'DELETE FROM se_automations WHERE id = ?'
+        params = [automation_id]
+        if user_id is not None and not _can_access_all(role):
+            query += ' AND created_by = ?'
+            params.append(user_id)
+        c.execute(query, tuple(params))
+        if c.rowcount == 0:
+            raise LookupError('Automation not found')
         conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
     finally:
         conn.close()

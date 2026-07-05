@@ -4,7 +4,7 @@ import sqlite3
 from flask import Blueprint, jsonify, render_template, request
 from flask_login import current_user, login_required
 
-from core.extensions import csrf, db_manager
+from core.extensions import db_manager
 from core.services.wallet_service import (
     create_topup_request, create_withdrawal, get_pending_transactions,
     get_wallet_data, process_transaction, toggle_auto_renew, upgrade_subscription,
@@ -108,7 +108,6 @@ def api_topup_wallet():
 
 @wallet_bp.route('/api/admin/wallet/withdraw', methods=['POST'])
 @login_required
-@csrf.exempt
 def api_admin_withdraw():
     if not hasattr(current_user, 'role') or current_user.role != 'admin':
         return jsonify({'success': False, 'message': 'Không có quyền truy cập'}), 403

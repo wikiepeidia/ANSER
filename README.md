@@ -52,6 +52,7 @@ Mở `.env` và điền giá trị thật:
 | `GOOGLE_CLIENT_SECRET` | Chỉ cần Google Login | Google Cloud Console |
 | `HF_BASE_URL` | Chỉ cần AI chat | URL ngrok hoặc HuggingFace Space |
 | `HF_TOKEN` | Chỉ cần AI chat | HuggingFace → Settings → Tokens |
+| `REDIS_URL` | Chỉ cần AI chat async | Redis cho RQ queue |
 | `GA_PROPERTY_ID` | Chỉ cần Analytics | Google Analytics |
 
 > Chỉ cần `SECRET_KEY` + `POSTGRES_URL` là app lên được. Các tính năng Google OAuth, AI chat, Analytics cần thêm biến tương ứng.
@@ -73,7 +74,10 @@ Mở `.env` và điền giá trị thật:
 python app.py                        # App chính (Flask, cổng 5000)
 python dl_service/model_app.py       # Deep learning service (OCR, LSTM, cổng 5001)
 python ai_agent_service/main.py      # AI agent server (Qwen + Vision)
+python worker.py                     # RQ worker xử lý AI chat job trong Redis
 ```
+
+AI chat chỉ trả `job_id` cho request dài khi có RQ worker đang chạy. Nếu thiếu worker, API trả `503 AI worker unavailable` để tránh job treo vô thời hạn. Khi chạy local có chủ đích không bật worker, đặt `ALLOW_AI_QUEUE_WITHOUT_WORKER=true`.
 
 ---
 

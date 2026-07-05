@@ -83,9 +83,12 @@ def api_create_import():
     conn = current_app.extensions['database'].get_connection()
 
     try:
-        result = inventory_tx_service.create_import_transaction(
-            conn, current_user.id, data, session.get('active_warehouse_id'))
-        _notify_n8n_order('import', data, current_user.email)
+        warehouse_id = session.get('active_warehouse_id')
+        if warehouse_id:
+            result = inventory_tx_service.create_import_transaction(conn, current_user.id, data, warehouse_id)
+        else:
+            result = inventory_tx_service.create_import_transaction(conn, current_user.id, data)
+        _notify_n8n_order('import', data, getattr(current_user, 'email', ''))
         return jsonify({
             'success': True,
             'message': result['message'],
@@ -231,14 +234,23 @@ def api_create_export():
     conn = current_app.extensions['database'].get_connection()
 
     try:
-        result = inventory_tx_service.create_export_transaction(
-            conn,
-            current_user.id,
-            data,
-            current_app.extensions['automation_engine'],
-            session.get('active_warehouse_id'),
-        )
-        _notify_n8n_order('export', data, current_user.email)
+        warehouse_id = session.get('active_warehouse_id')
+        if warehouse_id:
+            result = inventory_tx_service.create_export_transaction(
+                conn,
+                current_user.id,
+                data,
+                current_app.extensions['automation_engine'],
+                warehouse_id,
+            )
+        else:
+            result = inventory_tx_service.create_export_transaction(
+                conn,
+                current_user.id,
+                data,
+                current_app.extensions['automation_engine'],
+            )
+        _notify_n8n_order('export', data, getattr(current_user, 'email', ''))
         return jsonify({'success': True, 'message': result['message'], 'id': result['id']})
     except ServiceValidationError as e:
         return jsonify({'success': False, 'message': str(e)}), 400

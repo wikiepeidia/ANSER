@@ -23,6 +23,14 @@ def _require_items(payload, label):
     return items
 
 
+def _has_column(cursor, table, column):
+    try:
+        cursor.execute(f"PRAGMA table_info({table})")
+        return any(row["name"] == column for row in cursor.fetchall())
+    except Exception:
+        return True
+
+
 def get_warehouse_stock(cursor, warehouse_id, product_id):
     """Tồn kho của 1 sản phẩm tại 1 kho cụ thể (0 nếu chưa có dòng nào)."""
     if not warehouse_id:
@@ -80,13 +88,22 @@ def create_import_transaction(db_conn, user_id, payload, warehouse_id=None):
     try:
         code = f"IMP-{datetime.now().strftime('%Y%m%d%H%M%S')}"
         total_amount = sum(float(item["quantity"]) * float(item["unit_price"]) for item in items)
+        has_warehouse_column = _has_column(cursor, "import_transactions", "warehouse_id")
 
-        cursor.execute(
-            """INSERT INTO import_transactions
-               (code, supplier_name, total_amount, notes, created_by, warehouse_id)
-               VALUES (?, ?, ?, ?, ?, ?)""",
-            (code, supplier_name, total_amount, notes, user_id, warehouse_id),
-        )
+        if has_warehouse_column:
+            cursor.execute(
+                """INSERT INTO import_transactions
+                   (code, supplier_name, total_amount, notes, created_by, warehouse_id)
+                   VALUES (?, ?, ?, ?, ?, ?)""",
+                (code, supplier_name, total_amount, notes, user_id, warehouse_id),
+            )
+        else:
+            cursor.execute(
+                """INSERT INTO import_transactions
+                   (code, supplier_name, total_amount, notes, created_by)
+                   VALUES (?, ?, ?, ?, ?)""",
+                (code, supplier_name, total_amount, notes, user_id),
+            )
         import_id = cursor.lastrowid
 
         products_updated = 0
@@ -230,13 +247,22 @@ def create_export_transaction(db_conn, user_id, payload, automation_engine=None,
     try:
         code = f"EXP-{datetime.now().strftime('%Y%m%d%H%M%S')}"
         total_amount = sum(float(item["quantity"]) * float(item["unit_price"]) for item in items)
+        has_warehouse_column = _has_column(cursor, "export_transactions", "warehouse_id")
 
-        cursor.execute(
-            """INSERT INTO export_transactions
-               (code, customer_id, total_amount, notes, created_by, warehouse_id)
-               VALUES (?, ?, ?, ?, ?, ?)""",
-            (code, customer_id, total_amount, notes, user_id, warehouse_id),
-        )
+        if has_warehouse_column:
+            cursor.execute(
+                """INSERT INTO export_transactions
+                   (code, customer_id, total_amount, notes, created_by, warehouse_id)
+                   VALUES (?, ?, ?, ?, ?, ?)""",
+                (code, customer_id, total_amount, notes, user_id, warehouse_id),
+            )
+        else:
+            cursor.execute(
+                """INSERT INTO export_transactions
+                   (code, customer_id, total_amount, notes, created_by)
+                   VALUES (?, ?, ?, ?, ?)""",
+                (code, customer_id, total_amount, notes, user_id),
+            )
         export_id = cursor.lastrowid
 
         for item in items:

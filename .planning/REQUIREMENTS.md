@@ -130,3 +130,82 @@ This document tracks the functional and non-functional requirements for ANSER, d
 ---
 
 Last updated: 2026-06-14 (Phase 28 complete — v1.1 milestone done)
+
+---
+
+## Milestone v1.2 Requirements — Security & Ownership Hardening
+
+### Environment & Transport Security
+
+- [x] **SEC-01**: Production and staging-like environments enable secure session cookies, rate limiting, HTTPS enforcement, and strict transport security by default, while `dev`/`test` remain explicitly opt-out for local workflows
+
+### Ownership & Tenant Scoping
+
+- [x] **OWN-01**: User can delete a sale only when the sale belongs to that user
+- [x] **OWN-02**: User can list, update, and delete products only within their ownership or authorized role scope
+- [x] **OWN-03**: User can list, update, and delete customers only within their ownership or authorized role scope
+- [x] **OWN-04**: Reports and scheduled report generation only include data owned by the current user or workspace
+- [x] **OWN-05**: Automation rules execute only against data and resources owned by the current user or workspace
+
+### Authentication & Integration Security
+
+- [x] **AUTH-06**: Google-created accounts store passwords using `AuthManager.hash_password` so subsequent password setup and password login use the same bcrypt flow
+- [x] **SEC-02**: User-configured webhooks reject destinations that resolve to private, loopback, or link-local IP ranges before any outbound request is made
+- [x] **SEC-03**: Authenticated state-changing routes use CSRF protection unless they are verified third-party webhook endpoints
+
+### Error Handling & Upload Validation
+
+- [x] **SEC-04**: Global and route-level error handlers return safe client responses without raw exception strings and include a correlation identifier for server-side diagnostics
+- [x] **SEC-05**: Upload endpoints reject files that exceed configured size limits or unsupported MIME/extension allowlists with clear validation responses
+
+### Data Access & Runtime Consistency
+
+- [x] **PLAT-01**: Remaining route modules stop using imported database globals and instead resolve the database manager from `current_app.extensions`
+- [x] **PLAT-02**: Google OAuth persistence logic uses repository methods instead of route-level raw SQL for user and workspace writes
+- [x] **PLAT-03**: Deployment/runtime documentation and checks confirm the RQ worker process is present for queued AI chat jobs
+
+### Non-Functional
+
+- [x] **NFR-SEC-04**: Every ownership or security fix includes regression coverage proving unauthorized access, unsafe webhook targets, or invalid uploads are rejected
+- [x] **NFR-OPS-01**: Worker/runtime verification leaves operators with a concrete way to detect and prevent stuck queued AI jobs
+
+## v2 / Deferred from TODO.MD
+
+None currently. All items in `TODO.MD` were pulled into milestone v1.2.
+
+## Out of Scope for v1.2
+
+| Feature | Reason |
+|---------|--------|
+| New end-user feature development | This milestone is reserved for backend hardening and platform safety work from `TODO.MD` |
+| UI redesign or product expansion | No related backlog items exist in `TODO.MD`; keep scope on correctness and security |
+
+## Traceability
+
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| SEC-01 | Phase 29 | Complete |
+| OWN-01 | Phase 30 | Complete |
+| OWN-02 | Phase 30 | Complete |
+| OWN-03 | Phase 30 | Complete |
+| OWN-04 | Phase 30 | Complete |
+| OWN-05 | Phase 30 | Complete |
+| AUTH-06 | Phase 31 | Complete |
+| SEC-02 | Phase 31 | Complete |
+| SEC-03 | Phase 31 | Complete |
+| SEC-05 | Phase 31 | Complete |
+| SEC-04 | Phase 32 | Complete |
+| PLAT-01 | Phase 32 | Complete |
+| PLAT-02 | Phase 32 | Complete |
+| PLAT-03 | Phase 33 | Complete |
+| NFR-SEC-04 | Phase 33 | Complete |
+| NFR-OPS-01 | Phase 33 | Complete |
+
+**Coverage:**
+- v1.2 requirements: 16 total
+- Mapped to phases: 16
+- Unmapped: 0 ✓
+
+---
+
+Last updated: 2026-07-05 (milestone v1.2 implemented and verified)

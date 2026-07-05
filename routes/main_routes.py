@@ -6,7 +6,9 @@ import uuid
 
 from flask import Blueprint, flash, jsonify, redirect, request, session, url_for
 from flask_login import current_user, login_required, logout_user
-from core.extensions import csrf, db_manager
+from core.extensions import db_manager
+from core.logger import get_logger
+from core.security import safe_api_error, validate_upload
 
 from core.services.customer_service import (
     create_customer, delete_customer, get_all_customers, update_customer,
@@ -17,9 +19,16 @@ from core.services.product_service import (
 )
 
 main_bp = Blueprint('main', __name__)
+logger = get_logger(__name__)
 
 # Temp file cache: {uuid: path} — file lưu sau preview, dùng lại khi import
 _import_temp_files: dict = {}
+
+EXCEL_EXTENSIONS = {'xlsx', 'xls'}
+EXCEL_MIMETYPES = {
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'application/vnd.ms-excel',
+}
 
 
 @main_bp.route('/logout')
@@ -37,7 +46,8 @@ def logout():
 def api_get_customers():
     conn = db_manager.get_connection()
     try:
-        return jsonify({'success': True, 'customers': get_all_customers(conn)})
+        customers = get_all_customers(conn, current_user.id, getattr(current_user, 'role', 'user'))
+        return jsonify({'success': True, 'customers': customers})
     finally:
         conn.close()
 
@@ -69,9 +79,12 @@ def api_update_customer(customer_id):
     try:
         update_customer(
             conn, customer_id, data['name'], data.get('phone', ''), data.get('email', ''),
-            data.get('address', ''), data.get('notes', ''),
+            data.get('address', ''), data.get('notes', ''), current_user.id,
+            getattr(current_user, 'role', 'user'),
         )
         return jsonify({'success': True, 'message': 'Cập nhật khách hàng thành công'})
+    except LookupError as e:
+        return jsonify({'success': False, 'message': str(e)}), 404
     finally:
         conn.close()
 
@@ -81,8 +94,10 @@ def api_update_customer(customer_id):
 def api_delete_customer(customer_id):
     conn = db_manager.get_connection()
     try:
-        delete_customer(conn, customer_id)
+        delete_customer(conn, customer_id, current_user.id, getattr(current_user, 'role', 'user'))
         return jsonify({'success': True, 'message': 'Xóa khách hàng thành công'})
+    except LookupError as e:
+        return jsonify({'success': False, 'message': str(e)}), 404
     finally:
         conn.close()
 
@@ -94,7 +109,10 @@ def api_delete_customer(customer_id):
 def api_get_products():
     conn = db_manager.get_connection()
     try:
-        products = get_all_products(conn, session.get('active_warehouse_id'))
+        products = get_all_products(
+            conn, session.get('active_warehouse_id'), current_user.id,
+            getattr(current_user, 'role', 'user'),
+        )
         return jsonify({'success': True, 'products': products})
     finally:
         conn.close()
@@ -129,9 +147,11 @@ def api_update_product(product_id):
         update_product(
             conn, product_id, data['name'], data.get('category', ''), data.get('unit', 'cái'),
             data.get('price', 0), data.get('stock_quantity', 0), data.get('description', ''),
-            data.get('image_url', ''),
+            data.get('image_url', ''), current_user.id, getattr(current_user, 'role', 'user'),
         )
         return jsonify({'success': True, 'message': 'Cập nhật sản phẩm thành công'})
+    except LookupError as e:
+        return jsonify({'success': False, 'message': str(e)}), 404
     finally:
         conn.close()
 
@@ -141,14 +161,15 @@ def api_update_product(product_id):
 def api_delete_product(product_id):
     conn = db_manager.get_connection()
     try:
-        delete_product(conn, product_id)
+        delete_product(conn, product_id, current_user.id, getattr(current_user, 'role', 'user'))
         return jsonify({'success': True, 'message': 'Xóa sản phẩm thành công'})
+    except LookupError as e:
+        return jsonify({'success': False, 'message': str(e)}), 404
     finally:
         conn.close()
 
 
 @main_bp.route('/api/products/import-excel/preview', methods=['POST'])
-@csrf.exempt
 @login_required
 def api_import_products_excel_preview():
     """Đọc header, lưu file vào temp, trả về mapping + file_id.
@@ -158,8 +179,10 @@ def api_import_products_excel_preview():
     if 'file' not in request.files:
         return jsonify({'success': False, 'message': 'Không có file'}), 400
     file = request.files['file']
-    if not file.filename.lower().endswith(('.xlsx', '.xls')):
-        return jsonify({'success': False, 'message': 'Chỉ chấp nhận .xlsx hoặc .xls'}), 400
+    try:
+        validate_upload(file, EXCEL_EXTENSIONS, EXCEL_MIMETYPES)
+    except ValueError as e:
+        return jsonify({'success': False, 'message': str(e)}), 400
     try:
         from io import BytesIO
         from openpyxl import load_workbook
@@ -207,11 +230,10 @@ def api_import_products_excel_preview():
             'file_id': file_id,
         })
     except Exception as e:
-        return jsonify({'success': False, 'message': str(e)}), 400
+        return safe_api_error(logger, message='Không thể đọc file Excel', status=400, exc=e)
 
 
 @main_bp.route('/api/products/import-excel', methods=['POST'])
-@csrf.exempt
 @login_required
 def api_import_products_excel():
     column_map = None
@@ -242,8 +264,10 @@ def api_import_products_excel():
         if 'file' not in request.files or not request.files['file'].filename:
             return jsonify({'success': False, 'message': 'Không có file'}), 400
         f = request.files['file']
-        if not f.filename.lower().endswith(('.xlsx', '.xls')):
-            return jsonify({'success': False, 'message': 'Chỉ chấp nhận .xlsx hoặc .xls'}), 400
+        try:
+            validate_upload(f, EXCEL_EXTENSIONS, EXCEL_MIMETYPES)
+        except ValueError as e:
+            return jsonify({'success': False, 'message': str(e)}), 400
         file_source = f
 
     conn = db_manager.get_connection()
@@ -257,7 +281,7 @@ def api_import_products_excel():
     except ValueError as e:
         return jsonify({'success': False, 'message': str(e)}), 400
     except Exception as e:
-        return jsonify({'success': False, 'message': f'Lỗi server: {e}'}), 500
+        return safe_api_error(logger, exc=e)
     finally:
         conn.close()
         if hasattr(file_source, 'close'):

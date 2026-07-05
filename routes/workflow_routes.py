@@ -9,9 +9,26 @@ from flask import Blueprint, current_app, jsonify, request
 from flask_login import current_user, login_required
 
 from core.config import Config
-from core.extensions import csrf
+from core.logger import get_logger
+from core.security import safe_api_error, validate_upload
 
 workflow_bp = Blueprint("workflow", __name__)
+logger = get_logger(__name__)
+
+WORKFLOW_UPLOAD_EXTENSIONS = {'pdf', 'txt', 'csv', 'json', 'xlsx', 'xls', 'doc', 'docx', 'png', 'jpg', 'jpeg', 'webp'}
+WORKFLOW_UPLOAD_MIMETYPES = {
+    'application/pdf',
+    'text/plain',
+    'text/csv',
+    'application/json',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'application/vnd.ms-excel',
+    'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'image/png',
+    'image/jpeg',
+    'image/webp',
+}
 
 
 @workflow_bp.route('/api/workflows', methods=['GET'])
@@ -79,14 +96,13 @@ def get_single_workflow(workflow_id):
 
 @workflow_bp.route('/api/workflow/execute', methods=['POST'])
 @login_required
-@csrf.exempt
 def run_workflow():
     try:
         workflow_data = request.get_json(silent=True) or {}
         result = current_app.extensions['workflow_service'].execute_user_workflow(workflow_data, current_user.google_token)
         return jsonify(result)
     except Exception as e:
-        return jsonify({'status': 'error', 'message': str(e)}), 500
+        return safe_api_error(logger, exc=e)
 
 
 @workflow_bp.route('/api/workflow/upload_file', methods=['POST'])
@@ -99,6 +115,10 @@ def api_workflow_upload_file():
     file = request.files['file']
     if file.filename == '':
         return jsonify({'success': False, 'error': 'No file selected'}), 400
+    try:
+        validate_upload(file, WORKFLOW_UPLOAD_EXTENSIONS, WORKFLOW_UPLOAD_MIMETYPES)
+    except ValueError as e:
+        return jsonify({'success': False, 'error': str(e)}), 400
 
     try:
         upload_dir = os.path.join(current_app.root_path, 'uploads')
@@ -122,7 +142,7 @@ def api_workflow_upload_file():
             }
         )
     except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
+        return safe_api_error(logger, exc=e)
 
 
 def _get_iot_conn():

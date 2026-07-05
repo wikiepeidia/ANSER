@@ -2,7 +2,6 @@
 from flask import Blueprint, jsonify, request
 from flask_login import current_user, login_required
 
-from core.extensions import csrf
 from core.services.subscription_service import (
     check_expired_subscriptions, extend_subscription, get_all_subscriptions,
     get_subscription_history, set_auto_renew,
@@ -21,7 +20,6 @@ def api_get_subscriptions():
 
 @admin_sub_bp.route('/api/admin/subscription/auto-renew', methods=['POST'])
 @login_required
-@csrf.exempt
 def api_toggle_auto_renew():
     if not hasattr(current_user, 'role') or current_user.role != 'admin':
         return jsonify({'success': False, 'message': 'Không có quyền truy cập'}), 403
@@ -39,7 +37,6 @@ def api_toggle_auto_renew():
 
 @admin_sub_bp.route('/api/admin/subscription/extend', methods=['POST'])
 @login_required
-@csrf.exempt
 def api_extend_subscription():
     if not hasattr(current_user, 'role') or current_user.role != 'admin':
         return jsonify({'success': False, 'message': 'Không có quyền truy cập'}), 403

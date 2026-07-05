@@ -1,8 +1,7 @@
 import requests
-import time
-import json
 
 from core.logger import get_logger
+from core.security import validate_public_webhook_url
 
 logger = get_logger(__name__)
 
@@ -15,10 +14,11 @@ def trigger_webhook(url, method="POST", payload=None):
     logger.info("Payload HTTP: %s", payload)
 
     try:
+        validate_public_webhook_url(url)
         if method.upper() == "POST":
-            response = requests.post(url, json=payload, timeout=5)
+            response = requests.post(url, json=payload, timeout=5, allow_redirects=False)
         elif method.upper() == "GET":
-            response = requests.get(url, params=payload, timeout=5)
+            response = requests.get(url, params=payload, timeout=5, allow_redirects=False)
         else:
             return {"status": "error", "message": f"Phương thức không được hỗ trợ: {method}"}
 
@@ -34,6 +34,9 @@ def trigger_webhook(url, method="POST", payload=None):
             "response": data
         }
 
+    except ValueError as e:
+        logger.warning("Blocked webhook destination %s: %s", url, e)
+        return {"status": "error", "message": str(e)}
     except requests.RequestException as e:
         logger.error("Lỗi yêu cầu HTTP cho %s %s: %s", method, url, e, exc_info=True)
         return {"status": "error", "message": str(e)}

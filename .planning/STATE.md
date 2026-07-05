@@ -1,10 +1,10 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.1
-milestone_name: Tech Debt Completion
+milestone: v1.2
+milestone_name: Security & Ownership Hardening
 status: complete
-last_updated: "2026-07-02T12:00:00Z"
-last_activity: 2026-07-02
+last_updated: "2026-07-05T00:00:00Z"
+last_activity: 2026-07-05
 progress:
   total_phases: 5
   completed_phases: 5
@@ -17,24 +17,24 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-06-13)
+See: .planning/PROJECT.md (updated 2026-07-05)
 
 **Core value:** Unified, intelligent retail automation through modular and extensible architecture.
-**Current focus:** v1.1 Tech Debt Completion — DONE. All five phases (18, 25-28) complete.
+**Current focus:** v1.2 Security & Ownership Hardening — DONE. All five phases (29-33) complete and verified.
 
 ## Current Position
 
-Phase: 18 — Focused Regression Hardening
-Plan: 18-01-PLAN.md
-Status: Complete — Phase 18 done; v1.1 + all pre-milestone phases complete
-Last activity: 2026-06-14 — Phase 18 executed: 33 failing tests fixed, 171/171 passing
+Phase: 33 — Queue Runtime Verification & Regression Coverage
+Plan: 33-01-PLAN.md
+Status: Complete — v1.2 TODO.MD hardening backlog implemented and verified
+Last activity: 2026-07-05 — Full test suite passed after Phase 33
 
-Progress: [##########] 100% (4/4 phases complete)
+Progress: [##########] 100% (5/5 phases complete)
 
 ## Immediate Priorities
 
-1. Reconcile TODO.md after v1.1 + Phase 18 completion.
-2. Decide next milestone — candidates: new v1.2 features or jury prep.
+1. Review final diff and commit v1.2 hardening work.
+2. Decide whether to run `$gsd-complete-milestone v1.2` archive/cleanup flow.
 
 ## Accumulated Context
 
@@ -51,14 +51,20 @@ Progress: [##########] 100% (4/4 phases complete)
 - Phase 26 Plan 01: automation_engine.py now uses products.price and import_transactions.supplier_name; smoke tests cover low-stock and scheduled import paths.
 - Phase 27 Plan 01: DL runtime prints converted to logger calls; OCR detect and OCR-to-forecast contracts verified with dependency-stubbed tests; DL launcher stays separate from main Flask app.
 - Phase 28 Plan 01: analytics_service reads GA_PROPERTY_ID from Config; Drive list_files escapes single quotes via _escape_drive_query_value; format_workspace_tree uses _workspace_mapping for named-field access.
+- v1.2 milestone started 2026-07-05 from TODO.MD backlog with emphasis on security hardening, data ownership enforcement, and deployment consistency.
+- Phase 29: Production-like runtime now defaults to secure cookies, HTTPS/HSTS, rate limiting, and upload size caps outside local/test.
+- Phase 30: Sales, product/customer, reports, scheduled reports, and automations now enforce owner or admin scope; automation-created imports use the rule owner.
+- Phase 31: Google OAuth persistence moved into UserRepo; Google-created passwords use AuthManager bcrypt; webhooks block private/link-local targets; authenticated CSRF exemptions removed except n8n.
+- Phase 32: API 500s now use correlation IDs; sales routes resolve database access via current_app extensions; Google OAuth route no longer owns raw user/workspace SQL.
+- Phase 33: AI chat enqueue checks for an active RQ worker; README and .env.example document worker startup/override; regression tests cover the hardening work.
 
 ### Pending Todos
 
-- [x] Finalize Phase 18: Focused Regression Hardening (complete 2026-06-14 — 171/171 tests)
-- [x] Plan and execute Phase 25: Circular Import & Module Decoupling
-- [x] Plan and execute Phase 26: Automation Engine Schema Fix
-- [x] Plan and execute Phase 27: DL Service Logging & OCR Validation
-- [x] Plan and execute Phase 28: Code Hygiene
+- [x] Phase 29: Production Security Defaults
+- [x] Phase 30: Ownership Enforcement Across Operations
+- [x] Phase 31: Integration Security Hardening
+- [x] Phase 32: Error Handling & Data Access Cleanup
+- [x] Phase 33: Queue Runtime Verification & Regression Coverage
 
 ### Quick Tasks Completed
 
@@ -77,9 +83,15 @@ Progress: [##########] 100% (4/4 phases complete)
 | 2026-06-14 | Phase 18 Execution | Fixed 33 failing tests: sqlite3.Row bug, stale app factory refs, PGShim arg, async job migration. 171/171 passing. NFR-STAB-03 satisfied. |
 | 2026-07-02 | SECURITY.md Refresh | Replaced placeholder SECURITY.MD with an ANSER-specific policy (reporting flow, supported versions, in-/out-of-scope, operator hardening notes). |
 | 2026-07-02 | SECURITY.md Vietnamese | Translated SECURITY.MD to Vietnamese at user request; technical content unchanged. |
+| 2026-07-05 | v1.2 Milestone Start | Converted TODO.MD backlog into Security & Ownership Hardening requirements and roadmap phases. |
+| 2026-07-05 | Phase 29 Execution | Production security defaults gated by environment; limiter remains active outside test/local. |
+| 2026-07-05 | Phase 30 Execution | Ownership scoping enforced across sales, catalog, reports, scheduled reports, and automation imports. |
+| 2026-07-05 | Phase 31 Execution | Google OAuth hashing/repository cleanup, webhook SSRF block, CSRF cleanup, and upload validation completed. |
+| 2026-07-05 | Phase 32 Execution | Safe API error responses and database access cleanup completed. |
+| 2026-07-05 | Phase 33 Execution | RQ worker guard/docs and security regression tests added; full pytest suite passed. |
 
 ## Session Continuity
 
 - Previous state: v1.1 milestone (Phases 25-28) complete.
-- Current state: Phase 18 regression hardening complete; SECURITY.md refreshed for GitHub. 171/171 tests passing.
-- Next: Choose next milestone (v1.2 features or jury prep).
+- Current state: v1.2 milestone complete; TODO.MD backend hardening backlog implemented and verified.
+- Next: Review diff, commit, then optionally archive milestone with `$gsd-complete-milestone v1.2`.

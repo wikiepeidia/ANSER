@@ -190,3 +190,114 @@ Plans:
 ---
 
 Last updated: 2026-06-14 (v1.1 milestone complete — all Phases 25-28 done)
+
+---
+
+### Milestone v1.2: Security & Ownership Hardening
+
+- [x] **Phase 29: Production Security Defaults** - Gate production-only security config by environment and prove rate limiting/login hardening works in practice. (completed 2026-07-05)
+- [x] **Phase 30: Ownership Enforcement Across Operations** - Apply owner/workspace scoping to sales, products, customers, reports, and automation data flows. (completed 2026-07-05)
+- [x] **Phase 31: Integration Security Hardening** - Fix Google-account password hashing, webhook SSRF protection, CSRF exemptions, and upload validation gaps. (completed 2026-07-05)
+- [x] **Phase 32: Error Handling & Data Access Cleanup** - Stop leaking exceptions to clients and finish route/repository consistency cleanup. (completed 2026-07-05)
+- [x] **Phase 33: Queue Runtime Verification & Regression Coverage** - Verify AI queue worker operations and lock in regression tests for the new hardening work. (completed 2026-07-05)
+
+## Phase Details
+
+### Phase 29: Production Security Defaults
+
+**Goal**: Make the default runtime safe outside `dev`/`test` by enforcing secure transport/session settings and validating that brute-force protection is actually active on login.
+**Depends on**: Phase 28
+**Requirements**: SEC-01
+**Success Criteria**:
+
+1. Production-like config enables `SESSION_COOKIE_SECURE`, rate limiting, HTTPS redirect behavior, and HSTS by default without breaking `dev`/`test`.
+2. Login abuse testing proves the limiter on the authentication route returns `429` after repeated attempts.
+3. Configuration behavior is documented clearly enough for deployers to understand which environment flags change security posture.
+
+**Plans**: 1 plan
+
+Plans:
+
+- [x] 29-01-PLAN.md - Secure runtime defaults and verify limiter wiring
+
+### Phase 30: Ownership Enforcement Across Operations
+
+**Goal**: Close cross-tenant data access gaps by ensuring sales, products, customers, reports, and automation behavior all honor user/workspace ownership.
+**Depends on**: Phase 29
+**Requirements**: OWN-01, OWN-02, OWN-03, OWN-04, OWN-05
+**Success Criteria**:
+
+1. A user cannot delete another user's sale.
+2. Product and customer CRUD paths reject unauthorized list/update/delete access.
+3. Reporting and automation flows do not read or act on data outside the current user's or workspace's scope.
+
+**Plans**: 1 plan
+
+Plans:
+
+- [x] 30-01-PLAN.md - Owner-scope sales, catalog, reports, and automations
+
+### Phase 31: Integration Security Hardening
+
+**Goal**: Remove remaining security inconsistencies across external integrations, request validation, and upload entry points.
+**Depends on**: Phase 30
+**Requirements**: AUTH-06, SEC-02, SEC-03, SEC-05
+**Success Criteria**:
+
+1. Google-created accounts can set and use passwords through the same bcrypt-based flow as regular accounts.
+2. Webhook destinations resolving to private, loopback, or link-local addresses are blocked before network access.
+3. Only true third-party webhook endpoints remain CSRF-exempt, and upload endpoints enforce clear size/type validation.
+
+**Plans**: 1 plan
+
+Plans:
+
+- [x] 31-01-PLAN.md - Harden Google OAuth, webhooks, CSRF, and uploads
+
+### Phase 32: Error Handling & Data Access Cleanup
+
+**Goal**: Standardize safe error responses and remove the remaining route-level data access shortcuts that bypass project conventions.
+**Depends on**: Phase 31
+**Requirements**: SEC-04, PLAT-01, PLAT-02
+**Success Criteria**:
+
+1. Clients no longer receive raw exception text from global handlers or the specifically noted routes.
+2. Remaining route modules resolve shared database access through `current_app.extensions` instead of imported globals.
+3. Google OAuth user/workspace persistence logic lives in repository abstractions rather than route-level raw SQL.
+
+**Plans**: 1 plan
+
+Plans:
+
+- [x] 32-01-PLAN.md - Safe API errors and route/repository cleanup
+
+### Phase 33: Queue Runtime Verification & Regression Coverage
+
+**Goal**: Ensure queued AI work cannot silently stall in deployment and preserve the hardening work with targeted automated coverage.
+**Depends on**: Phase 32
+**Requirements**: PLAT-03, NFR-SEC-04, NFR-OPS-01
+**Success Criteria**:
+
+1. Operators have a concrete documented check for whether the RQ worker process is running for queued AI jobs.
+2. Regression tests cover unauthorized access rejection, unsafe webhook blocking, and upload validation behavior introduced in v1.2.
+3. Deployment/runtime notes make the failure mode for missing workers visible before jobs accumulate indefinitely.
+
+**Plans**: 1 plan
+
+Plans:
+
+- [x] 33-01-PLAN.md - Queue worker guard and regression coverage
+
+## Progress Table
+
+| Phase | Plans Complete | Status | Completed |
+|-------|----------------|--------|-----------|
+| 29 | 1/1 | Complete | 2026-07-05 |
+| 30 | 1/1 | Complete | 2026-07-05 |
+| 31 | 1/1 | Complete | 2026-07-05 |
+| 32 | 1/1 | Complete | 2026-07-05 |
+| 33 | 1/1 | Complete | 2026-07-05 |
+
+---
+
+Last updated: 2026-07-05 (v1.2 milestone implemented and verified)

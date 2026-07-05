@@ -14,6 +14,11 @@ class AutomationEngine:
         self.running = False
         self.thread = None
 
+    def _automation_owner(self, cursor, auto_id):
+        cursor.execute("SELECT created_by FROM se_automations WHERE id = ?", (auto_id,))
+        row = cursor.fetchone()
+        return row['created_by'] if row else None
+
     def start(self):
         if self.running:
             return
@@ -35,7 +40,7 @@ class AutomationEngine:
         c = conn.cursor()
         try:
             # Get active scheduled automations
-            c.execute("SELECT id, config, last_run FROM se_automations WHERE type = 'scheduled' AND enabled = 1")
+            c.execute("SELECT id, config, last_run, created_by FROM se_automations WHERE type = 'scheduled' AND enabled = 1")
             rows = c.fetchall()
 
             now = datetime.now()
@@ -96,8 +101,20 @@ class AutomationEngine:
         conn = self.db_manager.get_connection()
         c = conn.cursor()
         try:
-            # Get active low_stock automations
-            c.execute("SELECT id, config FROM se_automations WHERE type = 'low_stock' AND enabled = 1")
+            c.execute("SELECT created_by FROM products WHERE id = ?", (product_id,))
+            product = c.fetchone()
+            if not product:
+                return
+
+            product_owner = product['created_by']
+            if product_owner is None:
+                c.execute("SELECT id, config, created_by FROM se_automations WHERE type = 'low_stock' AND enabled = 1")
+            else:
+                c.execute(
+                    "SELECT id, config, created_by FROM se_automations"
+                    " WHERE type = 'low_stock' AND enabled = 1 AND created_by = ?",
+                    (product_owner,),
+                )
             rows = c.fetchall()
 
             for row in rows:
@@ -141,9 +158,19 @@ class AutomationEngine:
 
             code = f"IMP-AUTO-{auto_id}-{int(time.time())}"
 
+            owner_id = self._automation_owner(c, auto_id)
+
             # Get product price to estimate cost (or 0)
-            c.execute("SELECT name, price FROM products WHERE id = ?", (product_id,))
+            if owner_id is None:
+                c.execute("SELECT name, price, created_by FROM products WHERE id = ?", (product_id,))
+            else:
+                c.execute("SELECT name, price, created_by FROM products WHERE id = ? AND created_by = ?",
+                          (product_id, owner_id))
             prod = c.fetchone()
+            if not prod:
+                logger.warning("Automation %s cannot access product %s", auto_id, product_id)
+                return
+            created_by = owner_id or prod['created_by'] or 1
             unit_price = prod['price'] if prod and prod['price'] else 0
             total_price = unit_price * reorder_qty
 
@@ -152,7 +179,8 @@ class AutomationEngine:
             c.execute('''INSERT INTO import_transactions
                             (code, supplier_name, total_amount, status, notes, created_by)
                             VALUES (?, ?, ?, ?, ?, ?)''',
-                        (code, supplier_name, total_price, 'pending', f'Tự sinh bởi quy tắc tự động #{auto_id}', 1))
+                        (code, supplier_name, total_price, 'pending',
+                         f'Tự sinh bởi quy tắc tự động #{auto_id}', created_by))
             import_id = c.lastrowid
 
             c.execute('''INSERT INTO import_details
@@ -179,7 +207,14 @@ class AutomationEngine:
             threshold = 20 # Default threshold for scheduled check
             reorder_qty = 50
 
-            c.execute("SELECT id, stock_quantity, price FROM products WHERE stock_quantity < ?", (threshold,))
+            owner_id = self._automation_owner(c, auto_id)
+            if owner_id is None:
+                c.execute("SELECT id, stock_quantity, price FROM products WHERE stock_quantity < ?", (threshold,))
+            else:
+                c.execute(
+                    "SELECT id, stock_quantity, price FROM products WHERE stock_quantity < ? AND created_by = ?",
+                    (threshold, owner_id),
+                )
             low_stock_products = c.fetchall()
 
             if not low_stock_products:
@@ -201,7 +236,8 @@ class AutomationEngine:
             c.execute('''INSERT INTO import_transactions
                             (code, supplier_name, total_amount, status, notes, created_by)
                             VALUES (?, ?, ?, ?, ?, ?)''',
-                        (code, supplier_name, total_amount, 'pending', f'Nhập hàng theo lịch #{auto_id}', 1))
+                        (code, supplier_name, total_amount, 'pending',
+                         f'Nhập hàng theo lịch #{auto_id}', owner_id or 1))
             import_id = c.lastrowid
 
             for item in items:

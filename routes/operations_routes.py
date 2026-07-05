@@ -64,7 +64,10 @@ def api_get_dashboard_stats():
 @login_required
 def api_get_report_stats():
     try:
-        stats = get_report_stats()
+        stats = get_report_stats(
+            current_user.id, session.get('active_warehouse_id'),
+            getattr(current_user, 'role', 'user'),
+        )
         return jsonify({'success': True, **stats})
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
@@ -74,7 +77,7 @@ def api_get_report_stats():
 @login_required
 def api_get_scheduled_reports():
     try:
-        reports = get_scheduled_reports()
+        reports = get_scheduled_reports(current_user.id, getattr(current_user, 'role', 'user'))
         return jsonify({'success': True, 'reports': reports})
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
@@ -98,8 +101,10 @@ def api_create_scheduled_report():
 @login_required
 def api_delete_scheduled_report(report_id):
     try:
-        delete_scheduled_report(report_id)
+        delete_scheduled_report(report_id, current_user.id, getattr(current_user, 'role', 'user'))
         return jsonify({'success': True, 'message': 'Xóa báo cáo thành công'})
+    except LookupError as e:
+        return jsonify({'success': False, 'message': str(e)}), 404
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
 
@@ -108,7 +113,8 @@ def api_delete_scheduled_report(report_id):
 @login_required
 def api_get_automations():
     try:
-        return jsonify({'success': True, 'automations': get_automations()})
+        automations = get_automations(current_user.id, getattr(current_user, 'role', 'user'))
+        return jsonify({'success': True, 'automations': automations})
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
 
@@ -128,7 +134,10 @@ def api_create_automation():
 @login_required
 def api_update_automation(automation_id):
     try:
-        update_automation(automation_id, request.get_json())
+        update_automation(
+            automation_id, request.get_json() or {}, current_user.id,
+            getattr(current_user, 'role', 'user'),
+        )
         return jsonify({'success': True, 'message': 'Cập nhật tự động hóa thành công'})
     except LookupError as e:
         return jsonify({'success': False, 'message': str(e)}), 404
@@ -140,7 +149,9 @@ def api_update_automation(automation_id):
 @login_required
 def api_delete_automation(automation_id):
     try:
-        delete_automation(automation_id)
+        delete_automation(automation_id, current_user.id, getattr(current_user, 'role', 'user'))
         return jsonify({'success': True, 'message': 'Xóa tự động hóa thành công'})
+    except LookupError as e:
+        return jsonify({'success': False, 'message': str(e)}), 404
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500

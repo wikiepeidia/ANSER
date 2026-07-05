@@ -32,6 +32,10 @@ FIELD_LABELS = {
 }
 
 
+def _can_access_all(role):
+    return role == 'admin'
+
+
 def _normalize_col(col):
     """Chuẩn hóa 1 tên cột: lower → bỏ * → bỏ prefix store-code."""
     c = str(col).lower().strip().rstrip('*').strip()
@@ -85,26 +89,37 @@ def detect_column_mapping(raw_columns):
     return result
 
 
-def get_all_products(conn, warehouse_id=None):
+def get_all_products(conn, warehouse_id=None, user_id=None, role='user'):
     """List products. If warehouse_id given, stock_quantity reflects that
     warehouse's own stock (from warehouse_stock) instead of the system-wide
     total — 0 if the product has no stock recorded at that warehouse yet."""
     c = conn.cursor()
+    scoped = user_id is not None and not _can_access_all(role)
     if warehouse_id:
-        c.execute(
+        query = (
             'SELECT p.id, p.code, p.name, p.category, p.unit, p.price,'
             ' COALESCE(ws.stock_quantity, 0) AS stock_quantity,'
             ' p.description, p.created_at, p.image_url'
             ' FROM products p'
             ' LEFT JOIN warehouse_stock ws ON ws.product_id = p.id AND ws.warehouse_id = ?'
-            ' ORDER BY p.created_at DESC',
-            (warehouse_id,),
         )
+        params = [warehouse_id]
+        if scoped:
+            query += ' WHERE p.created_by = ?'
+            params.append(user_id)
+        query += ' ORDER BY p.created_at DESC'
+        c.execute(query, tuple(params))
     else:
-        c.execute(
+        query = (
             'SELECT id, code, name, category, unit, price, stock_quantity, description, created_at, image_url'
-            ' FROM products ORDER BY created_at DESC'
+            ' FROM products'
         )
+        params = []
+        if scoped:
+            query += ' WHERE created_by = ?'
+            params.append(user_id)
+        query += ' ORDER BY created_at DESC'
+        c.execute(query, tuple(params))
     rows = c.fetchall()
     return [
         {'id': r['id'], 'code': r['code'], 'name': r['name'], 'category': r['category'],
@@ -131,24 +146,36 @@ def create_product(conn, code, name, category, unit, price, stock_quantity, desc
         raise
 
 
-def update_product(conn, product_id, name, category, unit, price, stock_quantity, description, image_url=''):
+def update_product(conn, product_id, name, category, unit, price, stock_quantity,
+                   description, image_url='', user_id=None, role='user'):
     c = conn.cursor()
     try:
-        c.execute(
-            '''UPDATE products SET name=?, category=?, unit=?, price=?, stock_quantity=?,
-               description=?, image_url=?, updated_at=CURRENT_TIMESTAMP WHERE id=?''',
-            (name, category, unit, price, stock_quantity, description, image_url or None, product_id),
-        )
+        query = '''UPDATE products SET name=?, category=?, unit=?, price=?, stock_quantity=?,
+               description=?, image_url=?, updated_at=CURRENT_TIMESTAMP WHERE id=?'''
+        params = [name, category, unit, price, stock_quantity, description, image_url or None, product_id]
+        if user_id is not None and not _can_access_all(role):
+            query += ' AND created_by=?'
+            params.append(user_id)
+        c.execute(query, tuple(params))
+        if c.rowcount == 0:
+            raise LookupError('Product not found')
         conn.commit()
     except Exception:
         conn.rollback()
         raise
 
 
-def delete_product(conn, product_id):
+def delete_product(conn, product_id, user_id=None, role='user'):
     c = conn.cursor()
     try:
-        c.execute('DELETE FROM products WHERE id=?', (product_id,))
+        query = 'DELETE FROM products WHERE id=?'
+        params = [product_id]
+        if user_id is not None and not _can_access_all(role):
+            query += ' AND created_by=?'
+            params.append(user_id)
+        c.execute(query, tuple(params))
+        if c.rowcount == 0:
+            raise LookupError('Product not found')
         conn.commit()
     except Exception:
         conn.rollback()
@@ -208,7 +235,7 @@ def import_products_from_excel(conn, file_storage, created_by, column_map=None):
     c = conn.cursor()
     try:
         # ── Bước 1: Load toàn bộ sản phẩm hiện có vào memory (1 query) ──────
-        c.execute('SELECT id, code, name FROM products')
+        c.execute('SELECT id, code, name FROM products WHERE created_by = ?', (created_by,))
         existing_by_code = {}
         existing_by_name = {}
         for pid, pcode, pname in c.fetchall():

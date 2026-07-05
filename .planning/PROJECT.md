@@ -23,33 +23,36 @@ To provide a unified, intelligent platform that automates repetitive retail task
 - **Stability**: <1% error rate in scheduled workflow executions.
 - **Developer Velocity**: New features can be added via isolated service/route modules without impacting the core monolith.
 
-## Current Milestone: v1.1 Tech Debt Completion
+## Current Milestone: v1.2 Security & Ownership Hardening
 
-**Goal:** Finish all outstanding TODO items — clear remaining circular import issues, fix the automation engine schema bug, clean up DL service logging, and polish code hygiene.
+**Goal:** Execute the remaining `TODO.MD` backlog that closes backend security gaps, enforces tenant ownership boundaries, and finishes deployment/runtime consistency work before the next feature push.
 
 **Target features:**
-- Fix `app.py` module-level `create_app()`, create `wsgi.py`, remove `dl_client` sys.path hack and set `use_local=False`
-- Fix `automation_engine.py` schema mismatch (missing `suppliers` table and `import_price` column in SQLite)
-- Replace `print()` with `get_logger()` in `dl_client` and DL service; validate OCR end-to-end
-- Code hygiene: `analytics_service` logger/Config.GA_PROPERTY_ID, `google_integration` escape fix, `utils.py` tuple→named column
+- Harden production-sensitive config, webhook/network validation, CSRF coverage, upload constraints, and client-facing error responses
+- Enforce per-owner or per-workspace data scoping across sales, products, customers, reports, and automation rules
+- Align Google-auth password hashing, remaining database access patterns, repository usage, and worker deployment checks
 
 ### Completed Milestones
 
 #### Deadline Rush: Backend Cleanup (June 2026)
 Successfully resolved critical technical debt including circular imports, logic duplication in authentication, environment isolation, and implemented async task infrastructure (Redis/RQ) for performance.
 
+#### v1.1: Tech Debt Completion (June 2026)
+Resolved circular import cleanup, automation schema drift, DL runtime logging/OCR validation, and deferred code hygiene bugs across the backend.
+
 ## Active Requirements
-- CIRC-01: Remove module-level `app = create_app()` from `app.py`
-- CIRC-02: Create `wsgi.py` entry point for gunicorn
-- CIRC-03: Remove `sys.path.insert` from `core/services/dl_client.py`; set `use_local=False` default
-- AUTO-01: Fix `automation_engine.py` to not reference non-existent `suppliers` table or `import_price` column
-- AUTO-02: Align SQLite schema (or automation logic) so low-stock and scheduled import run without exception
-- DL-01: Replace all `print()` in `dl_client.py` and `dl_service/` with `get_logger()`
-- DL-02: Validate OCR end-to-end (upload → detect → invoice_data JSON)
-- DL-03: Confirm `dl_service` starts independently via `python run_dl_service.py`
-- HYG-01: Fix `analytics_service.py` — logger, remove duplicate except, read `GA_PROPERTY_ID` from `Config`
-- HYG-02: Fix `google_integration.py` list_files single-quote escape
-- HYG-03: Fix `utils.py` `format_workspace_tree` — named column access instead of tuple index
+- SEC-01: Production-sensitive cookie, rate-limit, HTTPS, and HSTS flags are enabled by default outside `dev`/`test`, while local development remains unblocked
+- OWN-01: Users cannot delete sales they do not own
+- OWN-02: Product and customer list/update/delete operations enforce creator/role ownership boundaries
+- OWN-03: Reports, scheduled reports, and automation rules are scoped to the owning user or workspace
+- AUTH-06: Google-created accounts use `AuthManager.hash_password`/bcrypt so password setup and password login remain consistent
+- SEC-02: User-configured webhooks reject destinations resolving to private or link-local IP ranges
+- SEC-03: Authenticated state-changing routes keep CSRF protection unless they are true third-party webhooks
+- SEC-04: Global and route-level error handlers stop exposing raw exception details to clients and return traceable error identifiers instead
+- SEC-05: File upload endpoints enforce size and type restrictions with clear validation errors
+- PLAT-01: Remaining routes stop importing module-level database globals and use `current_app.extensions['database']`
+- PLAT-02: Google OAuth persistence paths use repository abstractions instead of route-level raw SQL
+- PLAT-03: Deployment/runtime documentation and checks confirm an RQ worker is present for queued AI jobs
 
 ## Evolution
 
@@ -69,4 +72,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-06-13 (v1.1 Tech Debt Completion milestone started)*
+*Last updated: 2026-07-05 (v1.2 Security & Ownership Hardening milestone started from TODO.MD backlog)*

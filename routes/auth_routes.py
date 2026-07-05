@@ -11,8 +11,18 @@ logger = get_logger(__name__)
 
 auth_bp = Blueprint('auth', __name__)
 
+
+def _skip_limiter_in_tests():
+    return current_app.config.get('TESTING', False)
+
+
 @auth_bp.route('/signin', methods=['GET', 'POST'])
-@limiter.limit("5 per minute", methods=['POST'], error_message="Quá nhiều lần thử đăng nhập. Vui lòng thử lại sau.")
+@limiter.limit(
+    "5 per minute",
+    methods=['POST'],
+    error_message="Quá nhiều lần thử đăng nhập. Vui lòng thử lại sau.",
+    exempt_when=_skip_limiter_in_tests,
+)
 def signin():
     auth_manager = current_app.extensions['auth_manager']
     if request.method == 'POST':
@@ -47,7 +57,12 @@ def signin():
     return render_template('signin.html')
 
 @auth_bp.route('/signup', methods=['GET', 'POST'])
-@limiter.limit("10 per hour", methods=['POST'], error_message="Quá nhiều lần đăng ký từ địa chỉ này. Vui lòng thử lại sau.")
+@limiter.limit(
+    "10 per hour",
+    methods=['POST'],
+    error_message="Quá nhiều lần đăng ký từ địa chỉ này. Vui lòng thử lại sau.",
+    exempt_when=_skip_limiter_in_tests,
+)
 def signup():
     auth_manager = current_app.extensions['auth_manager']
     if request.method == 'POST':
