@@ -80,6 +80,12 @@ def create_app(config_object=None):
     flask_app.config['WTF_CSRF_ENABLED'] = True
     flask_app.secret_key = flask_app.config['SECRET_KEY']
     local_runtime = is_local_environment(cfg)
+    if not os.environ.get('FLASK_ENV') and not os.environ.get('APP_ENV') and not getattr(cfg, 'TESTING', False):
+        logger.warning(
+            "FLASK_ENV/APP_ENV not set — defaulting to production-safe mode "
+            "(secure cookies, rate limiting, forced HTTPS). If this is local "
+            "development, set FLASK_ENV=development in .env."
+        )
     secure_runtime = not local_runtime
     session_cookie_secure = env_flag('SESSION_COOKIE_SECURE', secure_runtime)
     ratelimit_enabled = env_flag('RATELIMIT_ENABLED', secure_runtime)
