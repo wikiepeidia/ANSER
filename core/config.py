@@ -22,6 +22,11 @@ class Config:
     # Site domain and base URL (override with env vars)
     SITE_DOMAIN = os.environ.get('SITE_DOMAIN', 'auto-flowai.com')
     BASE_URL = os.environ.get('BASE_URL', f"https://{SITE_DOMAIN}")
+
+    # n8n host port — override with N8N_PORT env var if 5680 collides with
+    # another local project's docker-compose (e.g. a separate n8n stack).
+    N8N_PORT = os.environ.get('N8N_PORT', '5680')
+    N8N_ORIGIN = f"http://localhost:{N8N_PORT}"
     
     # UI Themes
     THEMES = {

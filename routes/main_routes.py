@@ -4,7 +4,7 @@ import os
 import tempfile
 import uuid
 
-from flask import Blueprint, flash, jsonify, redirect, request, url_for
+from flask import Blueprint, flash, jsonify, redirect, request, session, url_for
 from flask_login import current_user, login_required, logout_user
 from core.extensions import csrf, db_manager
 
@@ -94,7 +94,8 @@ def api_delete_customer(customer_id):
 def api_get_products():
     conn = db_manager.get_connection()
     try:
-        return jsonify({'success': True, 'products': get_all_products(conn)})
+        products = get_all_products(conn, session.get('active_warehouse_id'))
+        return jsonify({'success': True, 'products': products})
     finally:
         conn.close()
 
@@ -261,3 +262,36 @@ def api_import_products_excel():
         conn.close()
         if hasattr(file_source, 'close'):
             file_source.close()
+
+
+# ── Active warehouse selection (cửa hàng đang thao tác) ─────────────────────
+# Bất kỳ role nào cũng cần chọn được (nhân viên đứng ở cửa hàng nào thì thao
+# tác cho cửa hàng đó) — khác với /api/admin/warehouses (CRUD, admin-only).
+
+@main_bp.route('/api/warehouses', methods=['GET'])
+@login_required
+def api_list_warehouses_for_switcher():
+    conn = db_manager.get_connection()
+    try:
+        c = conn.cursor()
+        c.execute('SELECT id, name FROM warehouses WHERE is_active = 1 ORDER BY name')
+        warehouses = [{'id': r['id'], 'name': r['name']} for r in c.fetchall()]
+        return jsonify({
+            'success': True,
+            'warehouses': warehouses,
+            'active_warehouse_id': session.get('active_warehouse_id'),
+        })
+    finally:
+        conn.close()
+
+
+@main_bp.route('/api/session/active-warehouse', methods=['POST'])
+@login_required
+def api_set_active_warehouse():
+    data = request.get_json(silent=True) or {}
+    warehouse_id = data.get('warehouse_id')
+    if warehouse_id in (None, '', 'null'):
+        session.pop('active_warehouse_id', None)
+        return jsonify({'success': True, 'active_warehouse_id': None})
+    session['active_warehouse_id'] = int(warehouse_id)
+    return jsonify({'success': True, 'active_warehouse_id': session['active_warehouse_id']})

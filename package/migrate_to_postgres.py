@@ -82,6 +82,8 @@ TABLE_ORDER = [
     "items",
     "customers",
     "products",
+    "warehouses",
+    "warehouse_stock",
     "import_transactions",
     "import_details",
     "export_transactions",
@@ -186,6 +188,27 @@ PG_DDL: dict[str, str] = {
             updated_at TIMESTAMPTZ DEFAULT NOW()
         )""",
 
+    "warehouses": """
+        CREATE TABLE IF NOT EXISTS warehouses (
+            id SERIAL PRIMARY KEY,
+            name TEXT NOT NULL,
+            low_stock_threshold INTEGER DEFAULT 10,
+            discord_webhook_url TEXT,
+            is_active INTEGER DEFAULT 1,
+            created_by INTEGER,
+            created_at TIMESTAMPTZ DEFAULT NOW()
+        )""",
+
+    "warehouse_stock": """
+        CREATE TABLE IF NOT EXISTS warehouse_stock (
+            id SERIAL PRIMARY KEY,
+            warehouse_id INTEGER NOT NULL,
+            product_id INTEGER NOT NULL,
+            stock_quantity INTEGER DEFAULT 0,
+            updated_at TIMESTAMPTZ DEFAULT NOW(),
+            UNIQUE(warehouse_id, product_id)
+        )""",
+
     "import_transactions": """
         CREATE TABLE IF NOT EXISTS import_transactions (
             id SERIAL PRIMARY KEY,
@@ -195,6 +218,7 @@ PG_DDL: dict[str, str] = {
             notes TEXT,
             status TEXT DEFAULT 'completed',
             created_by INTEGER,
+            warehouse_id INTEGER,
             created_at TIMESTAMPTZ DEFAULT NOW()
         )""",
 
@@ -217,6 +241,7 @@ PG_DDL: dict[str, str] = {
             notes TEXT,
             status TEXT DEFAULT 'completed',
             created_by INTEGER,
+            warehouse_id INTEGER,
             created_at TIMESTAMPTZ DEFAULT NOW()
         )""",
 
@@ -241,6 +266,7 @@ PG_DDL: dict[str, str] = {
             payment_method TEXT DEFAULT 'cash',
             workspace_id INTEGER,
             category TEXT DEFAULT 'Retail',
+            warehouse_id INTEGER,
             created_at TIMESTAMPTZ DEFAULT NOW()
         )""",
 

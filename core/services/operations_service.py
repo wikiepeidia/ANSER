@@ -5,16 +5,27 @@ from datetime import datetime
 from core.extensions import db_manager
 
 
-def get_dashboard_stats(user_id):
+def get_dashboard_stats(user_id, warehouse_id=None):
+    """Dashboard glance numbers. Scoped to a single warehouse/store when
+    warehouse_id is given, so a retail chain owner sees that store's own
+    revenue instead of the whole chain's combined total."""
     conn = db_manager.get_connection()
     c = conn.cursor()
     try:
         today = datetime.now()
         start_of_month = today.replace(day=1, hour=0, minute=0, second=0, microsecond=0).strftime('%Y-%m-%d %H:%M:%S')
-        c.execute('SELECT SUM(total_amount) AS total FROM export_transactions WHERE created_at >= ?', (start_of_month,))
+        if warehouse_id:
+            c.execute('SELECT SUM(total_amount) AS total FROM export_transactions '
+                      'WHERE created_at >= ? AND warehouse_id = ?', (start_of_month, warehouse_id))
+        else:
+            c.execute('SELECT SUM(total_amount) AS total FROM export_transactions WHERE created_at >= ?', (start_of_month,))
         revenue = c.fetchone()['total'] or 0
         start_of_day = today.replace(hour=0, minute=0, second=0, microsecond=0).strftime('%Y-%m-%d %H:%M:%S')
-        c.execute('SELECT COUNT(*) AS cnt FROM export_transactions WHERE created_at >= ?', (start_of_day,))
+        if warehouse_id:
+            c.execute('SELECT COUNT(*) AS cnt FROM export_transactions '
+                      'WHERE created_at >= ? AND warehouse_id = ?', (start_of_day, warehouse_id))
+        else:
+            c.execute('SELECT COUNT(*) AS cnt FROM export_transactions WHERE created_at >= ?', (start_of_day,))
         new_orders = c.fetchone()['cnt'] or 0
         c.execute('SELECT COUNT(*) AS cnt FROM workflows WHERE user_id = ?', (user_id,))
         active_projects = c.fetchone()['cnt'] or 0

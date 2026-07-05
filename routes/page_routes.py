@@ -114,6 +114,15 @@ def admin_managers():
     return render_template('admin_managers.html', user=current_user)
 
 
+@page_bp.route('/admin/warehouses')
+@login_required
+def admin_warehouses():
+    if not hasattr(current_user, 'role') or current_user.role != 'admin':
+        flash('You do not have permission to access this page', 'error')
+        return redirect(url_for('pages.workspace'))
+    return render_template('admin_warehouses.html', user=current_user)
+
+
 @page_bp.route('/admin/roles')
 @login_required
 def admin_roles():

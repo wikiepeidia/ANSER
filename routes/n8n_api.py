@@ -9,13 +9,14 @@ import requests as _req
 from flask import Blueprint, jsonify, request
 from flask_login import login_required
 
+from core.config import Config
 from core.logger import get_logger
 
 logger = get_logger(__name__)
 
 n8n_api_bp = Blueprint('n8n_api', __name__)
 
-_N8N_ORIGIN = 'http://localhost:5678'
+_N8N_ORIGIN = Config.N8N_ORIGIN
 _CREDS_FILE = os.path.join(os.path.dirname(__file__), '..', '.n8n_creds.json')
 _TEMPLATES  = os.path.join(os.path.dirname(__file__), '..', 'workflow_templates')
 _auth_token = None
@@ -69,11 +70,15 @@ def _needs_setup():
 
 
 def _auto_setup():
+    # _needs_setup() already confirmed this n8n instance has no owner yet —
+    # always run setup here. Reuse a cached email/password if one exists
+    # (e.g. from a prior volume) so the credential stays stable across
+    # restarts, but never skip the actual /rest/owner/setup call: skipping
+    # it left stale creds pointing at an instance that was never set up,
+    # breaking every subsequent n8n API call with a silent 401 loop.
     saved = _load_creds()
-    if saved:
-        return saved['email'], saved['password']
-    email    = 'admin@anser.local'
-    password = secrets.token_urlsafe(16)
+    email    = saved['email'] if saved else 'admin@anser.local'
+    password = saved['password'] if saved else secrets.token_urlsafe(16)
     try:
         r = _req.post(f'{_N8N_ORIGIN}/rest/owner/setup', json={
             'email': email, 'password': password,
@@ -330,6 +335,70 @@ def internal_iot_events():
         return jsonify({'success': True, 'events': events, 'total': len(events)})
     except Exception as exc:
         return jsonify({'success': False, 'error': str(exc), 'events': []})
+
+
+@n8n_api_bp.route('/api/n8n/internal/warehouses', methods=['GET'])
+def internal_warehouses():
+    """Internal endpoint for n8n workflows — no auth required.
+
+    Returns active warehouse alert profiles (threshold + Discord webhook)
+    for the low_stock_alert workflow to loop over.
+    """
+    from flask import current_app
+    db = current_app.extensions.get('database')
+    if not db:
+        return jsonify({'success': False, 'error': 'DB not available', 'warehouses': []})
+    try:
+        conn = db.get_connection()
+        cursor = conn.cursor()
+        cursor.execute(
+            'SELECT id, name, low_stock_threshold, discord_webhook_url '
+            'FROM warehouses WHERE is_active = 1 ORDER BY name'
+        )
+        rows = cursor.fetchall()
+        warehouses = [
+            dict(r) if hasattr(r, 'keys') else dict(zip([d[0] for d in cursor.description], r))
+            for r in rows
+        ]
+        conn.close()
+        return jsonify({'success': True, 'warehouses': warehouses})
+    except Exception as exc:
+        return jsonify({'success': False, 'error': str(exc), 'warehouses': []})
+
+
+@n8n_api_bp.route('/api/n8n/internal/low-stock', methods=['GET'])
+def internal_low_stock():
+    """Internal endpoint for n8n workflows — no auth required.
+
+    Replaces the old rag-service call (that service no longer exists).
+    """
+    from flask import current_app
+    db = current_app.extensions.get('database')
+    if not db:
+        return jsonify({'success': False, 'error': 'DB not available', 'items': []})
+    threshold = request.args.get('threshold', 10, type=int)
+    try:
+        conn = db.get_connection()
+        cursor = conn.cursor()
+        if db.use_postgres:
+            cursor.execute(
+                'SELECT name, code, stock_quantity, price FROM products '
+                'WHERE stock_quantity < %s ORDER BY stock_quantity ASC', (threshold,)
+            )
+        else:
+            cursor.execute(
+                'SELECT name, code, stock_quantity, price FROM products '
+                'WHERE stock_quantity < ? ORDER BY stock_quantity ASC', (threshold,)
+            )
+        rows = cursor.fetchall()
+        items = [
+            dict(r) if hasattr(r, 'keys') else dict(zip([d[0] for d in cursor.description], r))
+            for r in rows
+        ]
+        conn.close()
+        return jsonify({'success': True, 'threshold': threshold, 'count': len(items), 'items': items})
+    except Exception as exc:
+        return jsonify({'success': False, 'error': str(exc), 'items': []})
 
 
 def _detect_trigger(nodes):

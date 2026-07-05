@@ -14,7 +14,31 @@
     {
       "parameters": {
         "method": "GET",
-        "url": "http://rag-service:8001/low-stock?threshold=10",
+        "url": "http://host.docker.internal:5000/api/n8n/internal/warehouses",
+        "authentication": "none",
+        "options": {}
+      },
+      "id": "ls-warehouses",
+      "name": "Lấy danh sách kho",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [420, 300]
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "warehouses",
+        "options": {}
+      },
+      "id": "ls-split",
+      "name": "Tách từng kho",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [660, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ 'http://host.docker.internal:5000/api/n8n/internal/low-stock?threshold=' + $json.low_stock_threshold }}",
         "authentication": "none",
         "options": {}
       },
@@ -22,7 +46,7 @@
       "name": "Kiểm tra tồn kho",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
-      "position": [420, 300]
+      "position": [900, 300]
     },
     {
       "parameters": {
@@ -34,22 +58,22 @@
       "name": "Có SP cần nhập?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
-      "position": [660, 300]
+      "position": [1140, 300]
     },
     {
       "parameters": {
-        "jsCode": "const data = $input.first().json;\nconst items = data.items || [];\nconst list = items.map(p => `⚠️ **${p.name}** (${p.code}) — còn **${p.stock_quantity}** | giá ${new Intl.NumberFormat('vi-VN').format(p.price)} đ`).join('\\n');\nconst body = {\n  embeds: [{\n    title: '🚨 Cảnh báo tồn kho thấp',\n    color: 16744448,\n    description: `Có **${items.length}** sản phẩm dưới ngưỡng ${data.threshold}:\\n\\n${list}`,\n    footer: { text: 'ANSER Stock Alert • NeonDB' },\n    timestamp: new Date().toISOString()\n  }]\n};\nreturn [{ json: { discord_body: JSON.stringify(body) } }];"
+        "jsCode": "const data = $input.first().json;\nconst warehouse = $('Tách từng kho').item.json;\nconst items = data.items || [];\nconst list = items.map(p => `⚠️ **${p.name}** (${p.code}) — còn **${p.stock_quantity}** | giá ${new Intl.NumberFormat('vi-VN').format(p.price)} đ`).join('\\n');\nconst body = {\n  embeds: [{\n    title: `🚨 Cảnh báo tồn kho thấp — ${warehouse.name}`,\n    color: 16744448,\n    description: `Có **${items.length}** sản phẩm dưới ngưỡng ${data.threshold}:\\n\\n${list}`,\n    footer: { text: 'ANSER Stock Alert' },\n    timestamp: new Date().toISOString()\n  }]\n};\nreturn [{ json: { discord_body: JSON.stringify(body), discord_webhook_url: warehouse.discord_webhook_url } }];"
       },
       "id": "ls-format",
       "name": "Tạo cảnh báo",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [900, 180]
+      "position": [1380, 180]
     },
     {
       "parameters": {
         "method": "POST",
-        "url": "https://discord.com/api/webhooks/1515444369480745063/ZlYUlYstgHrc5-P7lZTrcZcsGVGrqo2rvxq_IAPPREB_YP4ci1EZVe0oVC7SZX1Da89R",
+        "url": "={{ $json.discord_webhook_url }}",
         "authentication": "none",
         "sendBody": true,
         "contentType": "raw",
@@ -61,19 +85,21 @@
       "name": "Gửi Discord",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
-      "position": [1140, 180]
+      "position": [1620, 180]
     }
   ],
   "connections": {
-    "Mỗi 6 giờ":       { "main": [[{ "node": "Kiểm tra tồn kho", "type": "main", "index": 0 }]] },
-    "Kiểm tra tồn kho": { "main": [[{ "node": "Có SP cần nhập?",  "type": "main", "index": 0 }]] },
+    "Mỗi 6 giờ":         { "main": [[{ "node": "Lấy danh sách kho", "type": "main", "index": 0 }]] },
+    "Lấy danh sách kho": { "main": [[{ "node": "Tách từng kho",     "type": "main", "index": 0 }]] },
+    "Tách từng kho":     { "main": [[{ "node": "Kiểm tra tồn kho",  "type": "main", "index": 0 }]] },
+    "Kiểm tra tồn kho":  { "main": [[{ "node": "Có SP cần nhập?",   "type": "main", "index": 0 }]] },
     "Có SP cần nhập?": {
       "main": [
         [{ "node": "Tạo cảnh báo", "type": "main", "index": 0 }],
         []
       ]
     },
-    "Tạo cảnh báo":    { "main": [[{ "node": "Gửi Discord",       "type": "main", "index": 0 }]] }
+    "Tạo cảnh báo":      { "main": [[{ "node": "Gửi Discord", "type": "main", "index": 0 }]] }
   },
   "active": false,
   "settings": { "executionOrder": "v1" }
