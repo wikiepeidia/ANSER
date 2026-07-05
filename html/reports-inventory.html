@@ -1,0 +1,102 @@
+<!-- reports-inventory.html — Báo cáo tồn kho -->
+<div class="content__header">
+  <h1 class="content__title">Báo cáo tồn kho</h1>
+  <p class="content__subtitle">Phân tích giá trị tồn kho, vòng quay và cảnh báo sắp hết hàng</p>
+</div>
+
+<div class="report-toolbar">
+  <div class="chart-card__actions">
+    <button class="chart-btn active">Hiện tại</button>
+    <button class="chart-btn">7 ngày</button>
+    <button class="chart-btn">30 ngày</button>
+  </div>
+  <div class="report-toolbar__right">
+    <button class="btn btn--outline"><i class="fa-solid fa-print"></i> In</button>
+    <button class="btn btn--primary" onclick="showToast('Đã xuất báo cáo tồn kho!')"><i class="fa-solid fa-file-export"></i> Xuất CSV</button>
+  </div>
+</div>
+
+<div class="stats-grid stats-grid--4">
+  <div class="stat-card"><div class="stat-card__icon stat-card__icon--blue"><i class="fa-solid fa-cubes"></i></div><div class="stat-card__info"><span class="stat-card__label">Tổng tồn kho</span><span class="stat-card__value" id="totalStockVal">0 <span class="stat-card__unit">sp</span></span><span class="stat-card__change stat-card__change--up"><i class="fa-solid fa-arrow-up"></i> 2.4%</span></div></div>
+  <div class="stat-card"><div class="stat-card__icon stat-card__icon--green"><i class="fa-solid fa-coins"></i></div><div class="stat-card__info"><span class="stat-card__label">Giá trị tồn</span><span class="stat-card__value" id="totalValueVal">0 <span class="stat-card__unit">₫</span></span><span class="stat-card__change stat-card__change--up"><i class="fa-solid fa-arrow-up"></i> 8.1%</span></div></div>
+  <div class="stat-card"><div class="stat-card__icon stat-card__icon--orange"><i class="fa-solid fa-clock-rotate-left"></i></div><div class="stat-card__info"><span class="stat-card__label">Vòng quay TB</span><span class="stat-card__value">4.2 <span class="stat-card__unit">lần/tháng</span></span><span class="stat-card__change stat-card__change--up"><i class="fa-solid fa-arrow-up"></i> 0.3 lần</span></div></div>
+  <div class="stat-card"><div class="stat-card__icon stat-card__icon--red"><i class="fa-solid fa-triangle-exclamation"></i></div><div class="stat-card__info"><span class="stat-card__label">Sắp hết</span><span class="stat-card__value" id="lowStockVal">0 <span class="stat-card__unit">sp</span></span><span class="stat-card__change stat-card__change--alert"><i class="fa-solid fa-circle-exclamation"></i> Cần nhập</span></div></div>
+</div>
+
+<div class="charts-row charts-row--2x2" style="margin-bottom: 20px">
+  <div class="chart-card">
+    <div class="chart-card__header"><h3>Giá trị tồn kho theo danh mục</h3></div>
+    <div class="chart-card__body">
+      <div class="horizontal-bar-chart" id="inventoryByCategory"></div>
+    </div>
+  </div>
+  <div class="chart-card">
+    <div class="chart-card__header"><h3>Sản phẩm sắp hết</h3></div>
+    <div class="chart-card__body">
+      <table class="data-table">
+        <thead><tr><th>Sản phẩm</th><th class="num">Tồn</th><th class="num">Ngưỡng</th><th>Mức</th></tr></thead>
+        <tbody id="lowStockTable"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="table-card">
+  <div class="table-card__header"><h3>Tồn kho chi tiết theo sản phẩm</h3></div>
+  <div class="table-card__body">
+    <table class="data-table">
+      <thead><tr><th>Mã SP</th><th>Tên sản phẩm</th><th>Danh mục</th><th class="num">Tồn kho</th><th class="num">Giá trị</th><th class="num">Vòng quay</th></tr></thead>
+      <tbody id="inventoryDetailBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+(function() {
+  const totalStock = Store.products.reduce((s, p) => s + p.stock, 0);
+  const totalValue = Store.products.reduce((s, p) => s + p.stock * p.importPrice, 0);
+  const lowStock = Store.products.filter(p => p.stock <= 10);
+  document.getElementById("totalStockVal").innerHTML = Helpers.formatNumber(totalStock) + ' <span class="stat-card__unit">sp</span>';
+  document.getElementById("totalValueVal").innerHTML = Helpers.formatVNDShort(totalValue) + ' <span class="stat-card__unit">₫</span>';
+  document.getElementById("lowStockVal").innerHTML = lowStock.length + ' <span class="stat-card__unit">sp</span>';
+
+  // By category
+  const cats = ["Điện tử", "Thời trang", "Gia dụng", "Thực phẩm"];
+  const catData = cats.map(c => {
+    const items = Store.products.filter(p => p.category === c);
+    const val = items.reduce((s, p) => s + p.stock * p.importPrice, 0);
+    return { name: c, val: val, percent: 0 };
+  });
+  const maxVal = Math.max(...catData.map(d => d.val), 1);
+  catData.forEach(d => d.percent = Math.round((d.val / maxVal) * 100));
+  document.getElementById("inventoryByCategory").innerHTML = catData.map(c => `
+    <div class="h-bar-item">
+      <div class="h-bar-item__label">${c.name}</div>
+      <div class="h-bar-item__track"><div class="h-bar-item__fill" style="--w: ${c.percent}%"></div></div>
+      <div class="h-bar-item__value">${Helpers.formatVNDShort(c.val)}</div>
+    </div>
+  `).join("");
+
+  // Low stock table
+  document.getElementById("lowStockTable").innerHTML = lowStock.slice(0, 5).map(p => `
+    <tr>
+      <td>${Helpers.tableAvatar(p.code, p.name, p.code)}</td>
+      <td class="num">${p.stock}</td>
+      <td class="num">10</td>
+      <td><span class="pill pill--${p.stock === 0 ? 'red' : 'orange'}">${p.stock === 0 ? 'Hết hàng' : 'Sắp hết'}</span></td>
+    </tr>
+  `).join("");
+
+  // Detail table
+  document.getElementById("inventoryDetailBody").innerHTML = Store.products.map(p => `
+    <tr>
+      <td><strong>${p.code}</strong></td>
+      <td>${p.name}</td>
+      <td>${p.category}</td>
+      <td class="num">${Helpers.formatNumber(p.stock)}</td>
+      <td class="num" title="${Helpers.formatVND(p.stock * p.importPrice)}">${Helpers.formatVNDShort(p.stock * p.importPrice)}</td>
+      <td class="num">${(2 + Math.random() * 5).toFixed(1)}</td>
+    </tr>
+  `).join("");
+})();
+</script>

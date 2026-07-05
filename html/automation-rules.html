@@ -1,0 +1,91 @@
+<!-- automation-rules.html — Quy tắc tự động hoá -->
+<div class="content__header">
+  <h1 class="content__title">Quy tắc tự động hoá</h1>
+  <p class="content__subtitle">Thiết lập và quản lý các quy tắc tự động cho kho hàng</p>
+</div>
+
+<div class="report-toolbar">
+  <div class="chart-card__actions">
+    <button class="chart-btn active">Đang chạy</button>
+    <button class="chart-btn">Tạm dừng</button>
+    <button class="chart-btn">Tất cả</button>
+  </div>
+  <div class="report-toolbar__right">
+    <button class="btn btn--outline" onclick="showToast('Đã lưu cấu hình!')"><i class="fa-solid fa-floppy-disk"></i> Lưu</button>
+    <button class="btn btn--primary" id="btnAddRule"><i class="fa-solid fa-plus"></i> Tạo quy tắc</button>
+  </div>
+</div>
+
+<div class="stats-grid stats-grid--4">
+  <div class="stat-card"><div class="stat-card__icon stat-card__icon--green"><i class="fa-solid fa-play"></i></div><div class="stat-card__info"><span class="stat-card__label">Đang chạy</span><span class="stat-card__value" id="activeRules">0</span><span class="stat-card__change stat-card__change--up"><i class="fa-solid fa-arrow-up"></i> Hoạt động</span></div></div>
+  <div class="stat-card"><div class="stat-card__icon stat-card__icon--orange"><i class="fa-solid fa-pause"></i></div><div class="stat-card__info"><span class="stat-card__label">Tạm dừng</span><span class="stat-card__value" id="pausedRules">0</span><span class="stat-card__change stat-card__change--down"><i class="fa-solid fa-arrow-down"></i> Không chạy</span></div></div>
+  <div class="stat-card"><div class="stat-card__icon stat-card__icon--blue"><i class="fa-solid fa-bolt"></i></div><div class="stat-card__info"><span class="stat-card__label">Tổng lượt chạy</span><span class="stat-card__value" id="totalRuns">0</span><span class="stat-card__change stat-card__change--up"><i class="fa-solid fa-arrow-up"></i> Tăng</span></div></div>
+  <div class="stat-card"><div class="stat-card__icon stat-card__icon--green"><i class="fa-solid fa-circle-check"></i></div><div class="stat-card__info"><span class="stat-card__label">Tỉ lệ thành công</span><span class="stat-card__value" id="successRate">98%</span><span class="stat-card__change stat-card__change--up"><i class="fa-solid fa-arrow-up"></i> Ổn định</span></div></div>
+</div>
+
+<div class="rule-list" id="ruleList"></div>
+
+<script>
+(function() {
+  function renderRules() {
+    const rules = Store.rules;
+    const active = rules.filter(r => r.checked).length;
+    const paused = rules.length - active;
+    const totalRuns = rules.reduce((s, r) => s + (r.total || 0), 0);
+    document.getElementById("activeRules").textContent = active;
+    document.getElementById("pausedRules").textContent = paused;
+    document.getElementById("totalRuns").textContent = Helpers.formatNumber(totalRuns);
+
+    document.getElementById("ruleList").innerHTML = rules.map(r => `
+      <div class="rule-card rule-card--${r.color}" data-id="${r.id}">
+        <div class="rule-card__icon"><i class="${r.icon}"></i></div>
+        <div class="rule-card__body">
+          <div class="rule-card__head">
+            <h3>${Helpers.escapeHtml(r.title)}</h3>
+            <span class="pill pill--${r.checked ? 'green' : 'orange'}">${r.status}</span>
+          </div>
+          <p class="rule-card__desc">${Helpers.escapeHtml(r.desc)}</p>
+          <div class="rule-card__meta">
+            <span><i class="fa-solid fa-clock"></i> ${Helpers.escapeHtml(r.freq)}</span>
+            <span><i class="fa-solid fa-bolt"></i> Lần cuối: ${Helpers.escapeHtml(r.last)}</span>
+            <span><i class="fa-solid fa-hashtag"></i> ${Helpers.formatNumber(r.total || 0)} lượt</span>
+            ${r.success ? `<span><i class="fa-solid fa-check"></i> ${Helpers.escapeHtml(r.success)}</span>` : ''}
+          </div>
+        </div>
+        <div class="rule-card__actions">
+          <label class="toggle">
+            <input type="checkbox" data-id="${r.id}" class="rule-toggle" ${r.checked ? "checked" : ""}>
+            <span class="toggle__slider"></span>
+          </label>
+          <button class="action-btn rule-edit" data-id="${r.id}" title="Sửa"><i class="fa-solid fa-pen"></i></button>
+          <button class="action-btn action-btn--danger rule-delete" data-id="${r.id}" title="Xoá"><i class="fa-solid fa-trash"></i></button>
+        </div>
+      </div>
+    `).join("");
+
+    // Wire toggle
+    document.querySelectorAll(".rule-toggle").forEach(t => {
+      t.addEventListener("change", (e) => {
+        const id = parseInt(e.target.dataset.id);
+        Store.updateRule(id, { checked: e.target.checked, status: e.target.checked ? "Đang chạy" : "Tạm dừng" });
+        renderRules();
+      });
+    });
+    // Edit/Delete
+    document.querySelectorAll(".rule-edit").forEach(b => b.addEventListener("click", e => {
+      const id = parseInt(e.currentTarget.dataset.id);
+      Router.editRule(id);
+    }));
+    document.querySelectorAll(".rule-delete").forEach(b => b.addEventListener("click", e => {
+      const id = parseInt(e.currentTarget.dataset.id);
+      if (confirm("Bạn có chắc muốn xoá quy tắc này?")) {
+        Store.deleteRule(id);
+        renderRules();
+      }
+    }));
+  }
+  renderRules();
+
+  document.getElementById("btnAddRule").addEventListener("click", () => Router.editRule(null));
+})();
+</script>

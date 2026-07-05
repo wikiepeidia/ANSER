@@ -1,0 +1,199 @@
+<!-- export.html — Phiếu xuất kho -->
+<div class="content__header">
+  <h1 class="content__title">Xuất sản phẩm</h1>
+  <p class="content__subtitle">Tạo phiếu xuất kho hàng</p>
+</div>
+
+<div class="form-card">
+  <div class="form-card__header">
+    <h3><i class="fa-solid fa-file-invoice-dollar"></i> Thông tin phiếu xuất</h3>
+  </div>
+  <div class="form-card__body">
+    <div class="form-row form-row--3">
+      <div class="form-group">
+        <label>Mã phiếu xuất</label>
+        <input type="text" value="PX-20260702-001" readonly />
+      </div>
+      <div class="form-group">
+        <label>Ngày xuất</label>
+        <input type="date" value="2026-07-02" />
+      </div>
+      <div class="form-group">
+        <label>Kho xuất</label>
+        <select>
+          <option>Kho chính</option>
+          <option>Kho phụ</option>
+          <option>Kho TP.HCM</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row form-row--2">
+      <div class="form-group">
+        <label>Khách hàng / Đơn vị nhận</label>
+        <input type="text" placeholder="Nhập tên khách hàng" />
+      </div>
+      <div class="form-group">
+        <label>Mục đích xuất</label>
+        <select>
+          <option>Bán hàng</option>
+          <option>Trả hàng nhà cung cấp</option>
+          <option>Chuyển kho</option>
+          <option>Khác</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Ghi chú</label>
+      <textarea rows="2" placeholder="Ghi chú phiếu xuất (nếu có)"></textarea>
+    </div>
+  </div>
+</div>
+
+<div class="form-card">
+  <div class="form-card__header">
+    <h3><i class="fa-solid fa-truck-fast"></i> Danh sách sản phẩm xuất</h3>
+    <button class="btn btn--outline btn--sm" id="btnAddExportItem">
+      <i class="fa-solid fa-plus"></i> Thêm sản phẩm
+    </button>
+  </div>
+  <div class="table-card__body">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Mã SP</th><th>Tên sản phẩm</th><th>Đơn vị</th>
+          <th>Tồn kho</th><th>SL xuất</th><th>Đơn giá (₫)</th><th>Thành tiền (₫)</th><th></th>
+        </tr>
+      </thead>
+      <tbody id="exportItemsBody">
+        <tr class="export-item-row">
+          <td><input type="text" class="table-input" value="SP-001" /></td>
+          <td><input type="text" class="table-input" placeholder="Tên sản phẩm" /></td>
+          <td><input type="text" class="table-input" value="Chiếc" /></td>
+          <td class="stock-val">50</td>
+          <td><input type="number" class="table-input export-qty" value="25" /></td>
+          <td><input type="number" class="table-input export-price" value="18500000" /></td>
+          <td class="item-total export-total">462,500,000 ₫</td>
+          <td><button class="action-btn action-btn--danger btn-remove-row"><i class="fa-solid fa-trash"></i></button></td>
+        </tr>
+        <tr class="export-item-row">
+          <td><input type="text" class="table-input" value="SP-004" /></td>
+          <td><input type="text" class="table-input" placeholder="Tên sản phẩm" /></td>
+          <td><input type="text" class="table-input" value="Chiếc" /></td>
+          <td class="stock-val">245</td>
+          <td><input type="number" class="table-input export-qty" value="80" /></td>
+          <td><input type="number" class="table-input export-price" value="150000" /></td>
+          <td class="item-total export-total">12,000,000 ₫</td>
+          <td><button class="action-btn action-btn--danger btn-remove-row"><i class="fa-solid fa-trash"></i></button></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="form-summary">
+    <div class="form-summary__row"><span>Tổng số sản phẩm:</span><strong id="totalExportItems">2 loại</strong></div>
+    <div class="form-summary__row"><span>Tổng số lượng xuất:</span><strong id="totalExportQty">105 chiếc</strong></div>
+    <div class="form-summary__row form-summary__row--total"><span>Tổng tiền:</span><strong id="totalExportAmount">474,500,000 ₫</strong></div>
+  </div>
+  <div class="form-card__footer">
+    <button class="btn btn--outline" onclick="showToast('Đã lưu nháp!')">
+      <i class="fa-solid fa-floppy-disk"></i> Lưu nháp
+    </button>
+    <button class="btn btn--primary" onclick="showToast('Đã xác nhận xuất kho!')">
+      <i class="fa-solid fa-check"></i> Xác nhận xuất kho
+    </button>
+  </div>
+</div>
+
+<div class="table-card">
+  <div class="table-card__header">
+    <h3>Lịch sử xuất kho gần đây</h3>
+  </div>
+  <div class="table-card__body">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Mã phiếu</th><th>Ngày</th><th>Khách hàng</th>
+          <th class="num">Số sản phẩm</th><th class="num">Tổng tiền</th><th>Trạng thái</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>${Helpers.tableAvatar("#PX-001", "#PX-001", "01/07/2026")}</td>
+          <td>01/07/2026</td>
+          <td>Cửa hàng Laptop Sài Gòn</td>
+          <td class="num">${Helpers.formatNumber(5)} <span class="muted">loại</span></td>
+          <td class="num" title="${Helpers.formatVND(320000000)}">${Helpers.formatVNDShort(320000000)}</td>
+          <td><span class="pill pill--green">Hoàn thành</span></td>
+        </tr>
+        <tr>
+          <td>${Helpers.tableAvatar("#PX-002", "#PX-002", "30/06/2026")}</td>
+          <td>30/06/2026</td>
+          <td>Công ty TechVN</td>
+          <td class="num">${Helpers.formatNumber(3)} <span class="muted">loại</span></td>
+          <td class="num" title="${Helpers.formatVND(180000000)}">${Helpers.formatVNDShort(180000000)}</td>
+          <td><span class="pill pill--green">Hoàn thành</span></td>
+        </tr>
+        <tr>
+          <td>${Helpers.tableAvatar("#PX-003", "#PX-003", "28/06/2026")}</td>
+          <td>28/06/2026</td>
+          <td>Khách lẻ</td>
+          <td class="num">${Helpers.formatNumber(2)} <span class="muted">loại</span></td>
+          <td class="num" title="${Helpers.formatVND(45000000)}">${Helpers.formatVNDShort(45000000)}</td>
+          <td><span class="pill pill--green">Hoàn thành</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+function recomputeExportTotals() {
+  const rows = document.querySelectorAll("#exportItemsBody .export-item-row");
+  let totalItems = rows.length;
+  let totalQty = 0;
+  let totalAmt = 0;
+  rows.forEach(r => {
+    const qty = parseInt(r.querySelector(".export-qty")?.value) || 0;
+    const price = parseInt(r.querySelector(".export-price")?.value) || 0;
+    const total = qty * price;
+    const totalCell = r.querySelector(".export-total");
+    if (totalCell) totalCell.textContent = Helpers.formatVND(total);
+    totalQty += qty;
+    totalAmt += total;
+  });
+  document.getElementById("totalExportItems").textContent = totalItems + " loại";
+  document.getElementById("totalExportQty").textContent = totalQty + " chiếc";
+  document.getElementById("totalExportAmount").textContent = Helpers.formatVND(totalAmt);
+}
+
+document.querySelectorAll("#exportItemsBody input").forEach(inp => {
+  inp.addEventListener("input", recomputeExportTotals);
+});
+
+document.addEventListener("click", (e) => {
+  if (e.target.closest(".btn-remove-row")) {
+    const row = e.target.closest("tr");
+    if (row) { row.remove(); recomputeExportTotals(); }
+  }
+});
+
+document.getElementById("btnAddExportItem").addEventListener("click", () => {
+  const tbody = document.getElementById("exportItemsBody");
+  const tr = document.createElement("tr");
+  tr.className = "export-item-row";
+  tr.innerHTML = `
+    <td><input type="text" class="table-input" placeholder="SP-xxx" /></td>
+    <td><input type="text" class="table-input" placeholder="Tên sản phẩm" /></td>
+    <td><input type="text" class="table-input" value="Chiếc" /></td>
+    <td class="stock-val">0</td>
+    <td><input type="number" class="table-input export-qty" value="0" /></td>
+    <td><input type="number" class="table-input export-price" value="0" /></td>
+    <td class="item-total export-total">0 ₫</td>
+    <td><button class="action-btn action-btn--danger btn-remove-row"><i class="fa-solid fa-trash"></i></button></td>
+  `;
+  tbody.appendChild(tr);
+  tr.querySelectorAll("input").forEach(inp => inp.addEventListener("input", recomputeExportTotals));
+  recomputeExportTotals();
+});
+
+recomputeExportTotals();
+</script>
