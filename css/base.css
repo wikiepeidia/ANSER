@@ -97,6 +97,111 @@ img {
     color var(--transition-normal);
 }
 
+/* Sidebar toggle button */
+.sidebar__logo-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+}
+
+.sidebar__toggle {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: none;
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--sidebar-text);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.sidebar__toggle:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.sidebar__toggle i {
+  font-size: 12px;
+  transition: transform var(--transition-normal);
+}
+
+/* Collapsed sidebar state */
+.sidebar.collapsed {
+  width: 72px !important;
+}
+
+.sidebar.collapsed .sidebar__logo-left,
+.sidebar.collapsed .sidebar__logo-text,
+.sidebar.collapsed .sidebar__item span,
+.sidebar.collapsed .sidebar__chevron,
+.sidebar.collapsed .sidebar__submenu {
+  display: none;
+}
+
+.sidebar.collapsed .sidebar__logo {
+  justify-content: center;
+  padding: 0;
+}
+
+/* Hover effect when collapsed - just highlight, no expand */
+.sidebar.collapsed .sidebar__item--has-sub:hover {
+  background: var(--sidebar-item-hover-bg);
+  border-radius: 8px;
+}
+
+/* Kích thước icon khi thu nhỏ */
+.sidebar.collapsed .sidebar__item--has-sub {
+  width: 56px;
+  height: 40px;
+  margin: 0 auto 4px;
+  padding-left: 12px;
+  padding-right: 12px;
+}
+
+/* Hover effect cho 3 icon - mở rộng nền như Trang chủ */
+.sidebar.collapsed .sidebar__item--has-sub:hover {
+  background: var(--sidebar-item-hover-bg);
+  border-radius: 8px;
+  width: calc(100% - 8px);
+  margin-left: 4px;
+  margin-right: 4px;
+  height: 48px;
+}
+
+.sidebar.collapsed .sidebar__toggle {
+  display: flex !important;
+}
+
+.sidebar.collapsed .sidebar__item {
+  justify-content: center;
+  padding: 12px 0;
+}
+
+.sidebar.collapsed .sidebar__toggle i {
+  transform: rotate(180deg);
+}
+
+.sidebar.collapsed .sidebar__nav {
+  align-items: center;
+}
+
+.sidebar.collapsed .sidebar__item {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.sidebar.collapsed .sidebar__item i:first-child {
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+
 /* Navigation */
 .sidebar__nav {
   flex: 1;
@@ -147,7 +252,10 @@ img {
 .sidebar__item::before {
   content: "";
   position: absolute;
-  inset: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: -20px; /* Kéo dài thêm 20px về phía dot */
   background-color: var(--sidebar-item-hover-bg);
   transform: translateX(-101%);
   transition: transform var(--transition-normal);
@@ -236,7 +344,7 @@ img {
 
 .sidebar__submenu-item {
   display: block;
-  padding: 8px 12px;
+  padding: 8px 12px 8px 20px;
   font-size: 13px;
   color: var(--sidebar-item-color);
   border-radius: 6px;
@@ -250,7 +358,7 @@ img {
 .sidebar__submenu-item::before {
   content: "";
   position: absolute;
-  left: 0;
+  left: 8px; /* Cách mép trong của khung hover 8px */
   top: 50%;
   transform: translateY(-50%);
   width: 4px;
@@ -279,6 +387,20 @@ img {
   flex-direction: column;
   min-height: 100vh;
   transition: margin-left var(--transition-slow);
+}
+
+/* When sidebar is collapsed */
+.main-wrapper.sidebar-collapsed {
+  margin-left: 72px;
+}
+
+/* Hide submenu when sidebar is collapsed */
+.sidebar.collapsed .sidebar__submenu {
+  display: none;
+}
+
+.sidebar.collapsed .sidebar__group.open .sidebar__submenu {
+  display: none;
 }
 
 /* ==============================

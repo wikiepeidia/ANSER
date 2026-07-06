@@ -149,12 +149,17 @@
 }
 
 /* ==============================
-   HĂ€NG 1: STATS GRID (â†’)
+   HĂ€NG 1: STATS GRID (â†')
    ============================== */
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 20px;
+}
+
+/* Report pages stats - cách chart 20px */
+.report-stats {
+  margin-bottom: 20px;
 }
 
 .stat-card {

@@ -408,6 +408,12 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 20px;
+  margin-bottom: 20px;
+}
+
+/* Hàng cuối cùng không có margin-bottom */
+#reportsPage .charts-row--2x2:last-child {
+  margin-bottom: 0;
 }
 
 /* Hover effect on bar chart items */

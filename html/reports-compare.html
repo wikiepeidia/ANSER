@@ -165,7 +165,7 @@
     <line x1="0" y1="112.5" x2="400" y2="112.5" stroke="var(--chart-bar-bg)" stroke-width="1" />
     <path class="line-chart__area" d="${Helpers.buildAreaPath(pts, 150)}" fill="url(#cmpDTAreaGrad)" stroke="none" />
     <path class="line-chart__line" d="${Helpers.buildSmoothPath(pts)}" data-points="${Helpers.pointsToAttr(pts)}" fill="none" stroke="var(--brand-primary)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
-    ${pts.map(p => `<circle class="line-chart__dot" cx="${p.x}" cy="${p.y}" r="3" fill="var(--brand-primary)" stroke="var(--bg-card)" stroke-width="1.5" />`).join("")}
+    ${pts.map(p => `<circle class="line-chart__dot" cx="${p.x}" cy="${p.y}" r="4" fill="var(--brand-primary)" stroke="var(--bg-card)" stroke-width="1" />`).join("")}
   `;
 })();
 </script>

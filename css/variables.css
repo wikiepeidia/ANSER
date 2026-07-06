@@ -58,11 +58,12 @@
   --table-row-hover: #f8fafc;
 
   /* Chart */
-  --chart-import: #003152;
-  --chart-export: #0077b6;
+  --chart-import: #ADDFF1;
+  --chart-export: #003152;
   --chart-bar-bg: #e2e8f0;
-  --chart-profit: #26C281;
-  --chart-revenue: #C9CDD3;
+  --chart-profit: #ADDFF1;
+  --chart-revenue: #003152;
+  --chart-cost: #808080;
   --chart-tooltip-bg: #0F1E2E;
   --chart-grid: #EEF1F4;
 
@@ -86,41 +87,41 @@
 
 /* ==============================
    CSS VARIABLES â€” DARK THEME
-   Black + #FDBF2D
+   #1E2025 + #1B1F2A + #FDBF2D
    ============================== */
 [data-theme="dark"] {
   /* Sidebar */
-  --sidebar-bg: #0a0a0a;
+  --sidebar-bg: #1B1F2A;
   --sidebar-width: 240px;
-  --sidebar-item-hover-bg: #1a1a1a;
-  --sidebar-item-active-bg: #2a2a2a;
+  --sidebar-item-hover-bg: #252A38;
+  --sidebar-item-active-bg: #2E3448;
   --sidebar-item-active-color: #FDBF2D;
-  --sidebar-item-color: rgba(255, 255, 255, 0.7);
-  --sidebar-icon-color: rgba(255, 255, 255, 0.4);
+  --sidebar-item-color: rgba(255, 255, 255, 0.75);
+  --sidebar-icon-color: rgba(255, 255, 255, 0.5);
   --sidebar-text: #FDBF2D;
 
   /* Header */
-  --header-bg: #0a0a0a;
-  --header-border: #2a2a2a;
-  --header-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  --header-bg: #1E2025;
+  --header-border: #2E3448;
+  --header-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 
-  /* Text â€” improved contrast with #F5F5F5 */
+  /* Text */
   --text-primary: #F5F5F5;
   --text-secondary: #b8b8b8;
   --text-muted: #808080;
 
   /* Background */
-  --bg-page: #000000;
-  --bg-card: #0a0a0a;
-  --bg-card-hover: #141414;
+  --bg-page: #1E2025;
+  --bg-card: #252A38;
+  --bg-card-hover: #2E3448;
 
   /* Brand */
   --brand-primary: #FDBF2D;
-  --brand-light: #2a2a2a;
+  --brand-light: #2E3448;
   --brand-accent: #FDBF2D;
 
   /* Stat */
-  --stat-blue-bg: #2a2a2a;
+  --stat-blue-bg: #2E3448;
   --stat-blue-icon: #FDBF2D;
   --stat-green-bg: #1a2e1a;
   --stat-green-icon: #4ade80;
@@ -136,30 +137,31 @@
   --badge-orange-color: #fbbf24;
   --badge-red-bg: #2e1a1a;
   --badge-red-color: #f87171;
-  --badge-blue-bg: #2a2a2a;
+  --badge-blue-bg: #2E3448;
   --badge-blue-color: #FDBF2D;
 
   /* Table */
-  --table-border: #2a2a2a;
-  --table-row-hover: #141414;
+  --table-border: #2E3448;
+  --table-row-hover: #2E3448;
 
   /* Chart */
   --chart-import: #FDBF2D;
-  --chart-export: #fbbf24;
-  --chart-bar-bg: #1a1a1a;
+  --chart-export: #26C281;
+  --chart-bar-bg: #2E3448;
   --chart-profit: #26C281;
-  --chart-revenue: #3F4754;
-  --chart-tooltip-bg: #0F1E2E;
-  --chart-grid: #232323;
+  --chart-revenue: #FDBF2D;
+  --chart-cost: #808080;
+  --chart-tooltip-bg: #1B1F2A;
+  --chart-grid: #2E3448;
 
   /* Button */
   --btn-primary-bg: #FDBF2D;
-  --btn-primary-color: #000000;
+  --btn-primary-color: #1B1F2A;
   --btn-outline-color: #FDBF2D;
 
   /* Scrollbar */
   --scrollbar-thumb: #3a3a3a;
 
   /* Stock bar */
-  --stock-bar-bg: #2a2a2a;
+  --stock-bar-bg: #2E3448;
 }

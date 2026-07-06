@@ -21,8 +21,8 @@
   </div>
 </div>
 
-<div id="reportsPage">
-  <div class="stats-grid stats-grid--4" id="reportsStats"></div>
+  <div id="reportsPage">
+  <div class="stats-grid stats-grid--4 report-stats" id="reportsStats"></div>
 
   <div class="charts-row charts-row--2x2">
     <!-- Chart 1: Lợi nhuận 6 tháng -->
@@ -81,16 +81,16 @@
       </div>
       <div class="chart-card__body chart-card__body--center">
         <div class="pie-chart">
-          <div class="pie-chart__ring" style="background: conic-gradient(var(--brand-primary) 0deg 252deg, var(--stat-green-icon) 252deg 360deg)">
+          <div class="pie-chart__ring" style="background: conic-gradient(var(--chart-revenue) 0deg 252deg, var(--chart-profit) 252deg 300deg, var(--chart-cost) 300deg 360deg)">
             <div class="pie-chart__center">
               <span class="pie-chart__total">2.1B</span>
               <span class="pie-chart__label">Doanh thu</span>
             </div>
           </div>
           <div class="donut-chart__legend">
-            <div class="donut-chart__legend-item"><span class="dot" style="background: var(--brand-primary)"></span> Doanh thu <strong>2.1B ₫</strong></div>
-            <div class="donut-chart__legend-item"><span class="dot" style="background: var(--stat-green-icon)"></span> Lợi nhuận <strong>650M ₫</strong></div>
-            <div class="donut-chart__legend-item"><span class="dot" style="background: var(--text-muted)"></span> Chi phí <strong>1.45B ₫</strong></div>
+            <div class="donut-chart__legend-item"><span class="dot" style="background: var(--chart-revenue)"></span> Doanh thu <strong>2.1B ₫</strong></div>
+            <div class="donut-chart__legend-item"><span class="dot" style="background: var(--chart-profit)"></span> Lợi nhuận <strong>650M ₫</strong></div>
+            <div class="donut-chart__legend-item"><span class="dot" style="background: var(--chart-cost)"></span> Chi phí <strong>1.45B ₫</strong></div>
           </div>
         </div>
       </div>
@@ -322,14 +322,14 @@
     <path class="line-chart__area" d="${Helpers.buildAreaPath(today, 150)}" fill="url(#compareAreaGrad)" stroke="none" />
     <path class="line-chart__line line-chart__line--yesterday" d="${Helpers.buildSmoothPath(yest)}" data-points="${Helpers.pointsToAttr(yest)}" fill="none" stroke="var(--text-muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="6 4" />
     <path class="line-chart__line line-chart__line--today" d="${Helpers.buildSmoothPath(today)}" data-points="${Helpers.pointsToAttr(today)}" fill="none" stroke="var(--brand-primary)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
-    ${yest.map(p => `<circle class="line-chart__dot" cx="${p.x}" cy="${p.y}" r="2.5" fill="var(--bg-card)" stroke="var(--text-muted)" stroke-width="1.5" />`).join("")}
-    ${today.map(p => `<circle class="line-chart__dot" cx="${p.x}" cy="${p.y}" r="3" fill="var(--brand-primary)" stroke="var(--bg-card)" stroke-width="1.5" />`).join("")}
+    ${yest.map(p => `<circle class="line-chart__dot" cx="${p.x}" cy="${p.y}" r="4" fill="var(--bg-card)" stroke="var(--text-muted)" stroke-width="1" />`).join("")}
+    ${today.map(p => `<circle class="line-chart__dot" cx="${p.x}" cy="${p.y}" r="4" fill="var(--brand-primary)" stroke="var(--bg-card)" stroke-width="1" />`).join("")}
   `);
 
   // Revenue line chart
   document.getElementById("revenueYAxis").innerHTML = Helpers.renderYAxis([120,140,128,165,190,178,205]);
   const revenueSvg = document.getElementById("revenueSvg");
-  const revenuePts = [[0,120],[57,90],[114,100],[171,60],[228,40],[285,55],[342,30],[400,20]].map(p=>({x:p[0],y:p[1]}));
+  const revenuePts = [[0,120],[66,90],[133,100],[200,60],[266,40],[333,55],[400,30]].map(p=>({x:p[0],y:p[1]}));
   revenueSvg.innerHTML = `
     <defs>
       <linearGradient id="doanhThuAreaGrad" x1="0" y1="0" x2="0" y2="1">
@@ -342,7 +342,7 @@
     <line x1="0" y1="112.5" x2="400" y2="112.5" stroke="var(--chart-bar-bg)" stroke-width="1" />
     <path class="line-chart__area" d="${Helpers.buildAreaPath(revenuePts, 150)}" fill="url(#doanhThuAreaGrad)" stroke="none" />
     <path class="line-chart__line" d="${Helpers.buildSmoothPath(revenuePts)}" data-points="${Helpers.pointsToAttr(revenuePts)}" fill="none" stroke="var(--brand-primary)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
-    ${revenuePts.map(p => `<circle class="line-chart__dot" cx="${p.x}" cy="${p.y}" r="3" fill="var(--brand-primary)" stroke="var(--bg-card)" stroke-width="1.5" />`).join("")}
+    ${revenuePts.map(p => `<circle class="line-chart__dot" cx="${p.x}" cy="${p.y}" r="4" fill="var(--brand-primary)" stroke="var(--bg-card)" stroke-width="1" />`).join("")}
   `;
 
   // Range buttons

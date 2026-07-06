@@ -68,12 +68,71 @@ document.addEventListener("DOMContentLoaded", () => {
 
   overlay.addEventListener("click", closeSidebar);
 
+  // ========================================
+  // 2b. SIDEBAR COLLAPSE (Desktop)
+  // ========================================
+  const sidebarToggle = document.getElementById("sidebarToggle");
+  const mainWrapper = document.querySelector(".main-wrapper");
+
+  // Load saved collapsed state
+  const isCollapsed = localStorage.getItem("sidebar-collapsed") === "true";
+  if (isCollapsed) {
+    sidebar.classList.add("collapsed");
+  }
+
+  if (sidebarToggle) {
+    sidebarToggle.addEventListener("click", () => {
+      sidebar.classList.toggle("collapsed");
+      mainWrapper.classList.toggle("sidebar-collapsed");
+      const collapsed = sidebar.classList.contains("collapsed");
+      localStorage.setItem("sidebar-collapsed", collapsed);
+    });
+  }
+
+  // Also handle collapsed state on main-wrapper
+  if (mainWrapper && isCollapsed) {
+    mainWrapper.classList.add("sidebar-collapsed");
+  }
+
   // Auto-close sidebar on mobile when any nav item is clicked
   // (router.js also handles clicks, this just closes the drawer)
   document.querySelectorAll(".sidebar__item, .sidebar__submenu-item").forEach((el) => {
     el.addEventListener("click", () => {
       if (window.innerWidth <= 768 && sidebar.classList.contains("open")) {
         closeSidebar();
+      }
+
+      // Expand sidebar when clicking submenu items in collapsed state
+      if (sidebar.classList.contains("collapsed")) {
+        // Check if this is a submenu parent item (has submenu)
+        if (el.classList.contains("sidebar__item--has-sub")) {
+          // Expand sidebar
+          sidebar.classList.remove("collapsed");
+          mainWrapper.classList.remove("sidebar-collapsed");
+          // Open the submenu
+          const subId = el.dataset.sub;
+          if (subId) {
+            const submenu = document.getElementById(subId);
+            if (submenu) {
+              const group = el.closest(".sidebar__group");
+              if (group) group.classList.add("open");
+            }
+          }
+        }
+      }
+    });
+  });
+
+  // When submenu item is clicked in collapsed state, collapse sidebar after selection
+  document.querySelectorAll(".sidebar__submenu-item").forEach((el) => {
+    el.addEventListener("click", () => {
+      if (sidebar.classList.contains("collapsed")) {
+        // Collapse after a short delay to let navigation happen
+        setTimeout(() => {
+          sidebar.classList.add("collapsed");
+          mainWrapper.classList.add("sidebar-collapsed");
+          localStorage.setItem("sidebar-collapsed", "true");
+        }, 100);
       }
     });
   });

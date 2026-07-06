@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="light">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ANSER Dashboard</title>
+  <link rel="stylesheet" href="style.css" />
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+    integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA=="
+    crossorigin="anonymous" referrerpolicy="no-referrer" />
+</head>
+
+<body>
+  <div class="app">
+    <!-- ============ SIDEBAR ============ -->
+    <aside class="sidebar" id="sidebar">
+      <!-- Logo -->
+      <div class="sidebar__logo">
+        <i class="fa-solid fa-layer-group"></i>
+        <span class="sidebar__logo-text">ANSER</span>
+      </div>
+
+      <!-- Navigation -->
+      <nav class="sidebar__nav">
+        <!-- Trang chủ -->
+        <a href="#" class="sidebar__item active" data-page="home">
+          <i class="fa-solid fa-house"></i>
+          <span>Trang chủ</span>
+        </a>
+
+        <!-- Sản phẩm (has submenu) -->
+        <div class="sidebar__group">
+          <button class="sidebar__item sidebar__item--has-sub" data-page="products" data-sub="products-sub">
+            <i class="fa-solid fa-box-open"></i>
+            <span>Sản phẩm</span>
+            <i class="fa-solid fa-chevron-down sidebar__chevron"></i>
+          </button>
+          <ul class="sidebar__submenu" id="products-sub">
+            <li><a href="#" class="sidebar__submenu-item" data-page="products">Danh sách sản phẩm</a></li>
+            <li><a href="#" class="sidebar__submenu-item" data-page="import">Nhập sản phẩm</a></li>
+            <li><a href="#" class="sidebar__submenu-item" data-page="export">Xuất sản phẩm</a></li>
+          </ul>
+        </div>
+
+        <!-- Báo cáo -->
+        <a href="#" class="sidebar__item" data-page="reports">
+          <i class="fa-solid fa-chart-line"></i>
+          <span>Báo cáo</span>
+        </a>
+
+        <!-- Tự động khác -->
+        <a href="#" class="sidebar__item" data-page="settings">
+          <i class="fa-solid fa-gear"></i>
+          <span>Tự động khác</span>
+        </a>
+      </nav>
+    </aside>
+
+    <!-- ============ MAIN CONTENT ============ -->
+    <div class="main-wrapper">
+      <!-- ============ HEADER ============ -->
+      <header class="header">
+        <div class="header__left">
+          <button class="header__menu-toggle" id="menuToggle" aria-label="Toggle menu">
+            <i class="fa-solid fa-bars"></i>
+          </button>
+          <div class="header__search">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" id="headerSearch" placeholder="Tìm kiếm..." />
+          </div>
+        </div>
+        <div class="header__right">
+          <!-- Notification -->
+          <button class="header__icon-btn" id="notificationBtn" aria-label="Thông báo">
+            <i class="fa-regular fa-bell"></i>
+            <span class="header__badge">3</span>
+          </button>
+
+          <!-- Theme Toggle -->
+          <button class="header__icon-btn" id="themeToggle" aria-label="Chuyển theme">
+            <i class="fa-solid fa-moon" id="themeIcon"></i>
+          </button>
+
+          <!-- Avatar -->
+          <div class="header__avatar">
+            <img src="https://i.pravatar.cc/36?img=12" alt="Avatar" />
+            <div class="header__avatar-info">
+              <span class="header__avatar-name">Nguyễn Văn A</span>
+              <span class="header__avatar-role">Quản trị viên</span>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- ============ DYNAMIC PAGE CONTENT ============ -->
+      <main class="content" id="pageContent">
+        <!-- Content will be rendered here by router.js -->
+      </main>
+    </div>
+  </div>
+
+  <!-- ============ MODALS (shared across pages) ============ -->
+  <!-- Product Modal -->
+  <div class="modal" id="productModal">
+    <div class="modal__overlay" id="modalOverlay"></div>
+    <div class="modal__content">
+      <div class="modal__header">
+        <h2 id="modalTitle">Thêm sản phẩm</h2>
+        <button class="modal__close" id="modalClose">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div class="modal__body">
+        <form id="productForm">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="productCode">Mã sản phẩm</label>
+              <input type="text" id="productCode" placeholder="VD: SP-001" required />
+            </div>
+            <div class="form-group">
+              <label for="productCategory">Danh mục</label>
+              <select id="productCategory" required>
+                <option value="">Chọn danh mục</option>
+                <option value="electronics">Điện tử</option>
+                <option value="fashion">Thời trang</option>
+                <option value="home">Gia dụng</option>
+                <option value="food">Thực phẩm</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="productName">Tên sản phẩm</label>
+            <input type="text" id="productName" placeholder="Nhập tên sản phẩm" required />
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="productStock">Tồn kho</label>
+              <input type="number" id="productStock" placeholder="0" min="0" required />
+            </div>
+            <div class="form-group">
+              <label for="productImportPrice">Giá nhập (₫)</label>
+              <input type="number" id="productImportPrice" placeholder="0" min="0" required />
+            </div>
+            <div class="form-group">
+              <label for="productSellPrice">Giá bán (₫)</label>
+              <input type="number" id="productSellPrice" placeholder="0" min="0" required />
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="productDesc">Mô tả</label>
+            <textarea id="productDesc" rows="3" placeholder="Nhập mô tả sản phẩm"></textarea>
+          </div>
+          <div class="modal__footer">
+            <button type="button" class="btn btn--outline" id="btnCancelModal">Huỷ</button>
+            <button type="submit" class="btn btn--primary">Lưu sản phẩm</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Confirm Modal -->
+  <div class="modal" id="deleteModal">
+    <div class="modal__overlay" id="deleteOverlay"></div>
+    <div class="modal__content modal__content--sm">
+      <div class="modal__header">
+        <h2>Xác nhận xoá</h2>
+        <button class="modal__close" id="deleteClose">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div class="modal__body">
+        <p id="deleteMessage">Bạn có chắc muốn xoá sản phẩm này?</p>
+        <div class="modal__footer">
+          <button class="btn btn--outline" id="btnCancelDelete">Huỷ</button>
+          <button class="btn btn--danger" id="btnConfirmDelete">Xoá</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div class="toast" id="toast">
+    <i class="fa-solid fa-check-circle toast__icon"></i>
+    <span class="toast__message" id="toastMessage">Thành công!</span>
+  </div>
+
+  <script src="main.js"></script>
+  <script src="router.js"></script>
+</body>
+
+</html>
