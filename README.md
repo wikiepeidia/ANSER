@@ -1,186 +1,76 @@
-# ANSER — Group Project AI/ML · USTH GEN14
+# ANSER — Project Overview
 
-> Nền tảng AI/ML tích hợp: OCR hóa đơn, dự báo LSTM, agent AI tự động, quản lý bán lẻ.
+**ANSER** (Automated Nimble Software Easing Relaxation) is an AI-powered automation platform for retail businesses. It reads invoices automatically, predicts inventory and sales trends, lets you chat with an AI agent to manage operations, and connects to your existing tools (Google Drive/Sheets/Gmail, n8n, Make.com) through drag-and-drop workflows.
 
----
-
-## Khởi động nhanh
-
-```bash
-python app.py                        # App chính (Flask, cổng 5000)
-python dl_service/model_app.py       # Deep learning service (OCR, LSTM, cổng 5001)
-python ai_agent_service/main.py      # AI agent server (Qwen + Vision)
-```
+**Status:** Stable — v1.2 (Security & Ownership Hardening) shipped 2026-07-05, fully tested.
 
 ---
 
-## Cấu trúc thư mục
+## What it does
 
-```
-app.py                  # Entry point chính — create_app() factory
-core/                   # Shared: config, auth, database, extensions, models
-  extensions.py         # Flask singletons (login_manager, csrf, limiter, db_manager)
-  models.py             # User model
-dl_service/             # REST API cho OCR và LSTM forecasting
-ai_agent_service/       # Agent tự động (Qwen chat + VisionAgent)
-ui/templates/           # Jinja2 HTML templates
-secrets/                # OAuth keys — KHÔNG đẩy lên GitHub (đã gitignore)
-DOCUMENTS/              # Báo cáo và slide thuyết trình — đọc ở đây trước
-```
+- **Invoice automation (OCR)** — upload an invoice photo/PDF, the system reads and extracts the data automatically (>90% field accuracy target).
+- **Sales & inventory forecasting (AI/LSTM)** — predicts future stock needs and sales trends from historical data.
+- **AI chat assistant** — a conversational agent that can look up data, answer questions, and trigger actions in the app.
+- **Workflow automation** — build custom automations (e.g. "new invoice → update inventory → notify on Slack") using n8n and Make.com webhook integrations, no code required.
+- **Sales, inventory, customer & reporting management** — core retail back-office: products, sales records, customers, scheduled reports, wallet/subscription billing.
+- **Google Workspace integration** — sign in with Google, sync to Drive/Sheets, send email via Gmail, pull traffic stats from Analytics.
+- **Multi-user accounts with data ownership** — every user only sees and edits their own sales, products, customers, reports, and automations (enforced as of v1.2).
 
 ---
 
-## Quy tắc bắt buộc cho cả nhóm
+## How it's built
 
-> Không tuân thủ = bị reject khi merge.
+### Frontend / UI-UX
 
-### 1. Chiến lược nhánh (Branch Strategy)
+- Server-rendered pages (Jinja2 HTML templates in `ui/templates/`) with JavaScript for interactivity (`static/js/`) and CSS styling (`static/css/`).
+- Includes a customer dashboard, admin panels (users, subscriptions, warehouses), workflow builder, and AI chat interface.
+- No separate single-page-app framework — pages are rendered by the Flask backend and enhanced with fetch-based JS.
 
-| Nhánh | Mục đích | Ai dùng |
-|-------|----------|---------|
-| `main` | Production — chỉ merge sau test nặng | Lead |
-| `dev` | Canary — tích hợp & test trước khi lên main | Lead |
-| `demo` | Bản demo jury — **đóng băng 48h trước khi thuyết trình** | Lead |
-| `backend` | Phát triển backend (app.py, services, routes) | Backend dev |
-| `frontend` | Phát triển frontend (templates, CSS, JS) | Frontend dev |
-| `mixed` | Tích hợp frontend + backend trước khi lên dev | Cả nhóm |
+### Backend
 
-**Luồng merge:**
+- **Main app** (`app.py`) — Python/Flask, organized as Routes → Services → Database layers for maintainability.
+- Handles authentication (email/password + Google OAuth), sales/inventory/customer APIs, reporting, billing/wallet, and workflow orchestration.
+- Background job queue (Redis + RQ) handles slow tasks (like AI chat responses) without blocking the app.
 
-```
-backend ──┐
-           ├──> mixed ──> dev ──> main
-frontend ──┘                └──> demo (fork từ dev, đóng băng trước jury)
-```
+### AI / Machine Learning
 
-**Tuyệt đối không code trực tiếp trên `main` hoặc `demo`.**
+- **Deep Learning service** — a separate model server for OCR (invoice reading) and LSTM-based forecasting (inventory/sales predictions).
+- **AI Agent service** — a separate multi-agent server (manager, coder, researcher, vision agents) that powers the conversational assistant, using a self-hosted LLM.
 
----
+### Database
 
-### 2. Quy tắc Commit (Conventional Commits)
+- **PostgreSQL** in production, **SQLite** for local development — same codebase supports both.
+- Schema changes tracked with Alembic migrations (`migrations/`).
 
-Format bắt buộc:
+### Integrations
 
-```
-<type>(<scope>): <mô tả ngắn>
-```
+- Google (OAuth login, Drive, Sheets, Docs, Gmail, Analytics)
+- n8n (self-hosted workflow automation, via Docker)
+- Make.com and generic outbound webhooks (with SSRF protection — blocks requests to internal/private network addresses)
 
-| Type | Khi nào dùng |
-|------|-------------|
-| `feat` | Tính năng mới |
-| `fix` | Sửa lỗi |
-| `docs` | Sửa tài liệu |
-| `refactor` | Tái cấu trúc code (không thêm tính năng, không sửa lỗi) |
-| `test` | Thêm hoặc sửa test |
-| `chore` | Việc vặt (gitignore, config, dependencies) |
-| `style` | Format code, không thay đổi logic |
+### Security (hardened in v1.2, 2026-07-05)
 
-Ví dụ đúng:
-
-```
-feat(auth): thêm đăng nhập Google OAuth
-fix(ocr): xử lý ảnh hóa đơn bị xoay
-docs(readme): cập nhật hướng dẫn khởi động
-```
+- Secure cookies, HTTPS/HSTS, and rate limiting enabled automatically outside local development.
+- Every user's data (sales, products, customers, reports, automations) is scoped to its owner — no cross-account data leaks.
+- CSRF protection on all authenticated actions (except genuine third-party webhooks).
+- File upload size/type limits; sanitized error messages (no internal details leaked to clients).
+- Verified with a full automated test suite (171+ tests passing).
 
 ---
 
-### 3. Quy tắc đặt tên (Naming Convention)
+## Where things live (for reference)
 
-**Python (Backend):**
+| Area | Location |
+| --- | --- |
+| Main web app | `app.py`, `routes/`, `core/` |
+| Frontend templates & assets | `ui/templates/`, `static/` |
+| Database access & migrations | `core/db/`, `database/`, `migrations/` |
+| AI chat agent service | `ai_agent_service/` |
+| OCR / forecasting service | `dl_service/` |
+| Automated tests | `tests/`, `dl_service/test/` |
 
-- Biến & hàm: `snake_case` → `process_invoice()`, `user_data`
-- Class: `PascalCase` → `AuthManager`, `InvoiceService`
-- Hằng số: `UPPER_CASE` → `MAX_UPLOAD_SIZE`, `PROJECT_ROOT`
-- File: `snake_case` → `invoice_service.py`, `ocr_routes.py`
-
-**HTML/CSS/JS (Frontend):**
-
-- File component: `PascalCase` hoặc `kebab-case`
-- Biến JS: `camelCase`
-- CSS class: `kebab-case`
+*Full technical documentation for developers lives in `.planning/codebase/` (architecture, stack, conventions, testing, known issues).*
 
 ---
 
-### 4. Chuẩn API Response
-
-Mọi API endpoint phải trả về JSON theo cấu trúc:
-
-```json
-{
-  "success": true,
-  "data": { ... },
-  "message": "Thông báo"
-}
-```
-
-HTTP Status Code:
-
-- `200/201` — Thành công
-- `400` — Lỗi dữ liệu đầu vào
-- `401` — Chưa đăng nhập
-- `403` — Không có quyền
-- `500` — Lỗi server
-
----
-
-### 5. Quy tắc bảo mật
-
-- **KHÔNG bao giờ** hardcode secret key, password, API key vào code
-- Tất cả secrets để trong `secrets/` (đã gitignore) hoặc biến môi trường `.env`
-- File `.env` **KHÔNG** được đẩy lên GitHub
-- `.claude/` và `.planning/` đã bị gitignore — chỉ tồn tại local để làm việc
-
----
-
-### 6. Quy tắc Code sạch
-
-- Tổ chức theo **feature/service** — mỗi service một file riêng (kiểu `ai_agent_service/src/`)
-- Không để `console.log` hay `print()` debug trong production code
-- Không commit code đã comment-out — xóa hẳn hoặc ghi vào TODO.md
-- Import theo thứ tự: stdlib → third-party → local
-
----
-
-### 7. Quy trình làm việc hàng ngày
-
-```bash
-# Buổi sáng — lấy code mới nhất
-git checkout backend          # (hoặc frontend)
-git pull origin backend
-
-# Làm việc và commit thường xuyên
-git add <files>
-git commit -m "feat(wallet): thêm lịch sử giao dịch"
-
-# Khi xong tính năng — merge lên mixed để tích hợp
-git checkout mixed
-git pull origin mixed
-git merge backend
-git push origin mixed
-```
-
----
-
-### 8. Công cụ bắt buộc cài đặt
-
-| Công cụ | Dùng cho | Cài đặt |
-|---------|----------|---------|
-| **Black** | Format Python tự động | `pip install black` |
-| **Prettier** | Format HTML/CSS/JS | VS Code extension |
-| **Python** 3.x | Runtime | python.org |
-
-```bash
-# Chạy trước khi commit Python code
-black app.py core/ dl_service/
-```
-
----
-
-## Liên hệ & Issues
-
-Dùng GitHub Forums/ Issues để báo lỗi hoặc đề xuất tính năng. Tag đúng người liên quan.
-
----
-
-*Dự án: ANSER*
+*Last updated: 2026-07-08*
