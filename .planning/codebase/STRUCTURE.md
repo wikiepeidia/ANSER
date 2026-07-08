@@ -1,391 +1,196 @@
 # Codebase Structure
 
-**Analysis Date:** 2026-06-08
+**Analysis Date:** 2026-07-08
 
 ## Directory Layout
 
-```text
+```
 Group-project-AI-ML/
-|-- app.py                         # Main Flask app factory, dependency binding, blueprint registration
-|-- run_dl_service.py              # Helper runner for `dl_service/model_app.py`
-|-- alembic.ini                    # Alembic configuration for PostgreSQL migrations
-|-- pytest.ini                     # Pytest discovery/config
-|-- README.md                      # Setup, architecture notes, team conventions
-|-- START_HERE.md                  # Onboarding/startup guidance
-|-- package.json                   # Minimal npm metadata placeholder
-|-- package-lock.json              # npm lockfile placeholder
-|-- package/                       # Python packaging/install helpers and requirements
-|-- core/                          # Main app shared backend code
-|   |-- db/                        # Database facade, PostgreSQL shim, repositories
-|   |-- services/                  # Main app business services
-|   |-- config.py                  # Main app env/config class
-|   |-- extensions.py              # Flask extension singletons
-|   |-- auth.py                    # AuthManager and auth decorators
-|   |-- workflow_engine.py         # Workflow DAG executor
-|   |-- automation_engine.py       # Background automation scheduler
-|   |-- agent_middleware.py        # AI response/action middleware
-|   |-- google_integration.py      # Google Drive/Sheets/Docs/Gmail helpers
-|   |-- make_integration.py        # Generic webhook helper
-|   |-- models.py                  # Flask-Login user model
-|   |-- logger.py                  # Main app logging setup
-|   |-- helpers.py                 # Shared formatting/business helpers
-|   |-- utils.py                   # Shared utility helpers
-|   `-- excel_parser.py            # Excel upload parser
-|-- routes/                        # Flask Blueprint route modules
-|-- ui/templates/                  # Active Jinja template root
-|   `-- components/                # Shared Jinja fragments
-|-- static/                        # CSS, JS, and image assets served by Flask
-|   |-- css/
-|   |-- js/
-|   `-- img/
-|-- templates/                     # Non-primary/legacy root templates
-|-- dl_service/                    # Separate Flask service for OCR, invoice extraction, and LSTM forecast
-|   |-- api/                       # DL API Blueprints
-|   |-- services/                  # DL service functions
-|   |-- utils/                     # DL validators, database, logging, processors
-|   |-- models/                    # DL model definitions and vendored model code
-|   |-- data/                      # DL datasets/catalogs
-|   |-- config.py                  # DL configuration
-|   `-- model_app.py               # DL Flask app entry point
-|-- ai_agent_service/              # Separate FastAPI AI agent service
-|   |-- src/
-|   |   |-- agents/                # Manager, coder, researcher, vision agents
-|   |   |-- core/                  # Engine, memory, RAG, SaaS/integration helpers
-|   |   |-- data/                  # Agent datasets, schemas, blueprints
-|   |   |-- models/                # Agent model adapters/assets
-|   |   |-- archive/               # Experimental/training utilities
-|   |   `-- server.py              # FastAPI app entry point
-|   |-- data/                      # Vector DB/runtime agent data
-|   `-- launch_demo.py             # Uvicorn/demo launcher
-|-- migrations/                    # Alembic environment and versions
-|-- tests/                         # Pytest route, contract, integration, parity, and service tests
-|-- debug/                         # Manual diagnostics and migration/debug scripts
-|-- scripts/                       # Project scripts
-|-- evaluate/                      # Evaluation scripts and result JSON
-|-- DOCUMENTS/                     # Project reports/presentation materials
-|-- images/                        # Documentation/UML assets
-|-- examples/                      # Demo/snapshot code and assets
-|-- jobs/                          # Runtime AI job JSON files
-|-- logs/                          # Runtime logs
-|-- uploads/                       # Runtime uploaded files
-|-- database/                      # Runtime/local database artifacts
-|-- secrets/                       # Secret files directory; do not read contents
-|-- .planning/                     # GSD project state, plans, and generated codebase docs
-|-- .codex/skills/                 # Project-local Codex/GSD skills
-|-- .github/                       # GitHub metadata, GSD agents, templates, skills
-|-- .agent/                        # Local GSD/agent runtime tooling
-`-- .claude/                       # Local Claude/GSD runtime tooling
+├── app.py                    # Main Flask app factory + entry point
+├── routes/                   # Flask blueprints (HTTP layer) for the main app
+├── core/                     # Shared business logic, config, integrations
+│   ├── services/              # Business logic per domain
+│   ├── db/                    # Repository/data-access layer (SQL)
+│   └── *.py                   # config, security, auth, logger, engines, integrations
+├── dl_service/                # Standalone Flask app: OCR/LSTM/forecast models
+│   ├── api/                   # DL service route blueprints
+│   ├── services/               # DL business logic (model loading, OCR, forecast)
+│   ├── models/                 # Model code + saved weight directories
+│   ├── saved_models/           # Trained model artifacts
+│   ├── database/               # DL service's own SQLite db (invoices.db)
+│   ├── utils/                  # DL-specific logging/db helpers
+│   └── test/                   # DL service test scripts
+├── ai_agent_service/          # Standalone multi-agent AI service
+│   ├── src/agents/             # manager, coder, researcher, vision agents
+│   ├── src/core/               # engine, memory, tools, prompts, integrations
+│   └── my_workflows/           # saved agent workflow definitions
+├── database/                  # Main SQLite DB file + mock data
+├── migrations/                # DB migrations (versions/)
+├── templates/, ui/templates/  # Jinja2 HTML templates (ui/templates/ is Flask's template_folder)
+├── static/                    # CSS, JS, images served by Flask
+├── tests/                     # Test suite (integration, security, contracts, parity, jobs, services)
+├── jobs/                      # Ad hoc JSON files tracking async job state (one per UUID)
+├── scripts/                   # Maintenance/dev scripts
+├── secrets/                   # Local secret material (never commit contents)
+├── uploads/                   # User-uploaded files (runtime data)
+├── logs/                      # Application log output
+├── workflow_templates/        # Predefined workflow JSON/config templates
+├── examples/                  # Demo/example code
+├── evaluate/                  # Model evaluation scripts + results
+├── DOCUMENTS/                 # Project documentation (backend, backup, bugs, model, reports)
+├── images/                    # UML diagrams, favicons, static assets for docs
+├── strix_runs/                # Security scan run outputs (Strix)
+├── .planning/                 # GSD planning artifacts (roadmap, phases, codebase docs)
+└── .claude/, .agent*, .codex/, .cursor/, .gemini/, .github/  # GSD tool installs (multi-CLI)
 ```
 
 ## Directory Purposes
 
-**Root Application Files:**
-- Purpose: Provide top-level application entry points and project metadata.
-- Contains: `app.py`, `run_dl_service.py`, `README.md`, `START_HERE.md`, `pytest.ini`, `alembic.ini`, `package.json`.
-- Key files: `app.py`, `run_dl_service.py`, `README.md`, `pytest.ini`, `alembic.ini`.
+**`routes/`:**
+- Purpose: HTTP endpoint definitions for the main Flask app, one file per domain
+- Contains: Flask `Blueprint` objects (auth, main, page, sales, workspace, wallet, google, admin_user, admin_subscription, admin_warehouse, operations, ai, inventory, workflow, dl, n8n_api)
+- Key files: `routes/n8n_api.py` (531 lines, largest — n8n webhook integration), `routes/main_routes.py` (321 lines), `routes/inventory_routes.py` (287 lines)
 
 **`core/`:**
-- Purpose: Main Flask app backend internals shared by routes and services.
-- Contains: Configuration, auth, database access, workflow execution, automation, AI middleware, Google/Make integrations, helpers, logging.
-- Key files: `core/config.py`, `core/extensions.py`, `core/auth.py`, `core/workflow_engine.py`, `core/automation_engine.py`, `core/agent_middleware.py`, `core/google_integration.py`, `core/make_integration.py`, `core/logger.py`, `core/models.py`.
-
-**`core/db/`:**
-- Purpose: Persistence facade and repository classes for main app state.
-- Contains: SQLite/PostgreSQL connection compatibility code, `Database`, `PGShimConnection`, `PGShimCursor`, and repositories.
-- Key files: `core/db/connection.py`, `core/db/user_repo.py`, `core/db/activity_repo.py`, `core/db/chat_repo.py`, `core/db/workflow_repo.py`.
+- Purpose: Shared application logic not tied to a specific HTTP route
+- Contains: config (`core/config.py`), security helpers (`core/security.py`), auth manager (`core/auth.py`), Flask extensions singleton registry (`core/extensions.py`), Flask-Login `User` model (`core/models.py`), automation/workflow engines (`core/automation_engine.py`, `core/workflow_engine.py`, 541 lines — largest core file), Google integration (`core/google_integration.py`, 515 lines), Make.com integration (`core/make_integration.py`), Excel import parsing (`core/excel_parser.py`), agent middleware bridging to `ai_agent_service` (`core/agent_middleware.py`)
+- Key files: `core/database.py` is a thin backward-compat shim re-exporting from `core/db/connection.py`
 
 **`core/services/`:**
-- Purpose: Domain business logic below Flask routes.
-- Contains: Services for customers, products, inventory transactions, sales, wallet, subscription, users, operations, workflow, AI chat, analytics, DL client, and typed service errors.
-- Key files: `core/services/product_service.py`, `core/services/customer_service.py`, `core/services/inventory_tx_service.py`, `core/services/workflow_service.py`, `core/services/ai_chat_service.py`, `core/services/dl_client.py`, `core/services/service_errors.py`.
+- Purpose: Business logic layer, one module per domain, called from `routes/`
+- Contains: `ai_chat_service.py`, `analytics_service.py`, `customer_service.py`, `dl_client.py` (HTTP client for DL service), `inventory_tx_service.py`, `operations_service.py`, `product_service.py`, `sales_service.py`, `service_errors.py`, `subscription_service.py`, `user_service.py`, `wallet_service.py`, `workflow_service.py`, `workspace_service.py`
 
-**`routes/`:**
-- Purpose: Flask Blueprint modules for HTTP pages and APIs.
-- Contains: Auth, pages, product/customer APIs, inventory APIs, workflow APIs, AI chat APIs, DL proxy APIs, admin user/subscription APIs, operations, wallet, Google OAuth, and sales endpoints.
-- Key files: `routes/auth_routes.py`, `routes/page_routes.py`, `routes/main_routes.py`, `routes/inventory_routes.py`, `routes/workflow_routes.py`, `routes/ai_routes.py`, `routes/dl_routes.py`, `routes/google_routes.py`, `routes/admin_user_routes.py`, `routes/admin_subscription_routes.py`, `routes/operations_routes.py`, `routes/wallet_routes.py`, `routes/sales_routes.py`.
-
-**`ui/templates/`:**
-- Purpose: Active Jinja template root for the main Flask app.
-- Contains: Page templates, `base.html`, and shared components.
-- Key files: `ui/templates/base.html`, `ui/templates/components/sidebar.html`, `ui/templates/components/chat_widget.html`, `ui/templates/workspace_builder.html`, `ui/templates/dashboard.html`, `ui/templates/imports.html`, `ui/templates/products.html`.
-
-**`static/`:**
-- Purpose: Static frontend assets served by Flask.
-- Contains: Per-page CSS files in `static/css/`, per-page JS files in `static/js/`, and image assets in `static/img/`.
-- Key files: `static/css/base_theme.css`, `static/css/style.css`, `static/js/base_theme.js`, `static/js/script.js`, `static/js/workspace_builder.js`, `static/js/chat.js`, `static/img/favicon.svg`.
-
-**`templates/`:**
-- Purpose: Root-level template directory that is not the active Flask template root.
-- Contains: `templates/index.html`, `templates/dashboard.html`.
-- Key files: `templates/index.html`, `templates/dashboard.html`.
+**`core/db/`:**
+- Purpose: Repository pattern for SQL access
+- Contains: `connection.py` (Database/PGShim classes supporting both SQLite and Postgres), `user_repo.py`, `activity_repo.py`, `chat_repo.py`, `workflow_repo.py`
 
 **`dl_service/`:**
-- Purpose: Separate deep-learning Flask service for invoice OCR/extraction and import forecasting.
-- Contains: Service app, API routes, OCR/forecast/model services, model definitions, validators, SQLite invoice database helpers, datasets, training scripts.
-- Key files: `dl_service/model_app.py`, `dl_service/config.py`, `dl_service/api/model1_routes.py`, `dl_service/api/model2_routes.py`, `dl_service/api/ocr_routes.py`, `dl_service/api/history_routes.py`, `dl_service/services/invoice_service.py`, `dl_service/services/ocr_service.py`, `dl_service/services/model_loader.py`, `dl_service/services/forecast_service.py`, `dl_service/utils/database.py`.
-
-**`dl_service/models/`:**
-- Purpose: DL model code and vendored OCR/model implementations.
-- Contains: LSTM model code, OCR model code, CTPN/localization/extraction/recognition code, and vendored VietOCR code.
-- Key files: `dl_service/models/lstm_model.py`, `dl_service/models/OCR.py`, `dl_service/models/cpt_vision_localization/_model.py`, `dl_service/models/cpt_vision_recognition/_model.py`, `dl_service/models/vietocr/vietocr/tool/predictor.py`.
+- Purpose: Standalone Flask microservice for deep-learning inference (OCR, LSTM forecasting, invoice extraction)
+- Contains: `api/` (route blueprints: `model1_routes.py`, `model2_routes.py`, `history_routes.py`, `ocr_routes.py`), `services/` (`cpt_ocr.py`, `forecast_service.py`, `invoice_service.py`, `layout_service.py`, `model_loader.py`, `ocr_service.py`), `models/` (`OCR.py`, `lstm_model.py`, plus `cpt_vision_*` and `vietocr` subdirs), `saved_models/` (trained weight artifacts), `database/invoices.db` (own SQLite DB), `train_cnn_models.py`, `train_lstm_model.py` (training scripts at package root), `test/` (test scripts)
+- Key files: `dl_service/model_app.py` is the Flask entry point (imports `config.py` and `services/model_loader.py` for model init)
 
 **`ai_agent_service/`:**
-- Purpose: Separate FastAPI service for AI chat, image upload analysis, OCR, RAG, and multi-agent reasoning.
-- Contains: FastAPI server, model engine, memory, RAG, agents, datasets, vector DB data, launch helper, training/archive utilities.
-- Key files: `ai_agent_service/src/server.py`, `ai_agent_service/src/core/engine.py`, `ai_agent_service/src/core/memory.py`, `ai_agent_service/src/core/knowledge.py`, `ai_agent_service/src/core/config.py`, `ai_agent_service/src/agents/manager.py`, `ai_agent_service/src/agents/coder.py`, `ai_agent_service/src/agents/vision.py`, `ai_agent_service/launch_demo.py`.
+- Purpose: Standalone multi-agent orchestration service, separate from the Flask request/response cycle
+- Contains: `src/agents/` (`base.py`, `coder.py`, `manager.py`, `researcher.py`, `vision.py`), `src/core/` (`engine.py`, `memory.py`, `tools.py`, `prompts.py`, `context.py`, `knowledge.py`, `integrations.py`, `saas_api.py`, `config.py`, `agent_middleware.py`), `src/server.py` (service entry), `src/data/*.jsonl` (training/reasoning datasets), `src/archive/` (older training/verification scripts), `my_workflows/` (saved workflow definitions)
+
+**`database/`:**
+- Purpose: Main application database file and mock/seed data
+- Contains: `group_project_ai_ml.db` (SQLite dev DB), `mock/` (seed data), `progres.py` (Postgres-related helper)
 
 **`migrations/`:**
-- Purpose: Alembic migration environment for PostgreSQL schema.
-- Contains: Alembic `env.py`, migration template, and version scripts.
-- Key files: `migrations/env.py`, `migrations/script.py.mako`, `migrations/versions/001_initial_schema.py`, `migrations/001_add_password_version.py`.
+- Purpose: Database schema migrations
+- Contains: `versions/` (migration scripts)
+
+**`templates/` and `ui/templates/`:**
+- Purpose: Jinja2 HTML templates
+- Note: `app.py` sets `template_folder='ui/templates'` — that is the active template root for the main Flask app; `templates/` at repo root may be legacy/unused or used by a different service — verify before assuming it's live
+
+**`static/`:**
+- Purpose: Static assets served by Flask
+- Contains: `css/`, `js/`, `img/`
 
 **`tests/`:**
-- Purpose: Automated regression tests for app, route, contract, integration, parity, and service behavior.
-- Contains: Top-level pytest tests, service unit tests, contract tests, integration tests, parity tests, shared fixtures.
-- Key files: `tests/conftest.py`, `tests/services/conftest.py`, `tests/services/test_inventory_tx_service.py`, `tests/services/test_workflow_service.py`, `tests/services/test_ai_chat_service.py`, `tests/contracts/test_contract_routes.py`, `tests/integration/test_catalog_crud_smoke.py`, `tests/parity/test_endpoint_middleware_parity.py`.
+- Purpose: Test suite for the main app
+- Contains: `contracts/`, `integration/`, `jobs/`, `parity/`, `security/`, `services/` subdirectories
 
-**`debug/`:**
-- Purpose: Manual diagnostic, migration, route snapshot, and coverage helper scripts.
-- Contains: Debug scripts for login, schema checks, route guardrails, password-version fixes, coverage gates.
-- Key files: `debug/phase11_route_snapshot.py`, `debug/phase11_guardrail_check.py`, `debug/phase14_backend_coverage_gate.py`, `debug/check_neon_schema.py`, `debug/test_login.py`.
+**`jobs/`:**
+- Purpose: Ad hoc async job state persisted as individual JSON files (UUID filename per job)
+- Generated: Yes (runtime-created)
+- Committed: Appears to be committed to the repo currently — verify whether this should be gitignored
 
-**`package/`:**
-- Purpose: Install/package helpers and main Python dependency list.
-- Contains: `package/requirements.txt`, installer script, PostgreSQL migration helper.
-- Key files: `package/requirements.txt`, `package/installer.py`, `package/migrate_to_postgres.py`.
+**`.planning/`:**
+- Purpose: GSD workflow artifacts — roadmap, phase plans, requirements, codebase docs (this document lives here)
+- Contains: `codebase/` (this doc + siblings), `phases/`, `quick/`, `research/`
 
-**`evaluate/`:**
-- Purpose: Evaluation scripts and stored evaluation results.
-- Contains: Routing/evaluation scripts and JSON result artifacts.
-- Key files: `evaluate/run_eval.py`, `evaluate/full_eval.py`, `evaluate/eval_real_images.py`, `evaluate/results/`.
-
-**`DOCUMENTS/` and `images/`:**
-- Purpose: Project reports, presentation materials, and diagram/image assets.
-- Contains: Documentation artifacts and UML SVGs.
-- Key files: `images/UML/Backend.svg`, `images/UML/Frontend.svg`.
-
-**`examples/`:**
-- Purpose: Demo/snapshot reference material.
-- Contains: Example app snapshot under `examples/demo/Group-project-AI-ML-main/`.
-- Key files: `examples/demo/Group-project-AI-ML-main/app.py`, `examples/demo/Group-project-AI-ML-main/ui/templates/workspace_builder.html`.
-
-**Runtime Data Directories:**
-- Purpose: Hold local runtime output outside source ownership.
-- Contains: `jobs/`, `logs/`, `uploads/`, `database/`, `.pytest_cache/`, `__pycache__/`, `.coverage`.
-- Key files: Not applicable for source changes.
-
-**Planning And Agent Tooling:**
-- Purpose: GSD planning state, local workflow skills, and agent metadata.
-- Contains: `.planning/`, `.codex/skills/`, `.github/skills/`, `.github/agents/`, `.agent/`, `.claude/`.
-- Key files: `.planning/STATE.md`, `.planning/PROJECT.md`, `.codex/skills/gsd-map-codebase/SKILL.md`, `.github/agents/gsd-codebase-mapper.agent.md`.
+**Multi-CLI GSD installs (`.claude/`, `.agent/`, `.agents/`, `.codex/`, `.cursor/`, `.gemini/`, `.github/skills`):**
+- Purpose: Parallel installs of the GSD workflow/skills system for different AI CLI tools (Claude Code, Codex, Cursor, Gemini, GitHub Copilot)
+- Not application code — safe to ignore when navigating business logic
 
 ## Key File Locations
 
 **Entry Points:**
-- `app.py`: Main Flask app factory and `app = create_app()` export.
-- `run_dl_service.py`: Root-level runner for the DL service.
-- `dl_service/model_app.py`: DL Flask app entry point and model/database startup.
-- `ai_agent_service/src/server.py`: AI agent FastAPI app entry point.
-- `ai_agent_service/launch_demo.py`: Helper launcher for the agent service.
-- `migrations/env.py`: Alembic migration runtime.
-- `pytest.ini`: Pytest root configuration.
+- `app.py`: Main Flask app factory (`create_app()`) and `if __name__ == '__main__'` runner
+- `dl_service/model_app.py`: DL service Flask app (also runnable via `run_dl_service.py` at repo root)
+- `ai_agent_service/main.py` (invokes `ai_agent_service/src/server.py`): AI agent service entry
 
 **Configuration:**
-- `core/config.py`: Main app configuration and environment-variable names.
-- `dl_service/config.py`: DL service paths, model settings, Flask host/port, and data/model directories.
-- `ai_agent_service/src/core/config.py`: AI agent model, data, and database configuration.
-- `alembic.ini`: Alembic configuration file.
-- `pytest.ini`: Test discovery settings.
-- `.env`: Local environment file present; do not read contents.
-- `.env.example`: Example environment file present.
-- `secrets/`: Secret directory present; do not read contents.
+- `core/config.py`: Main app config (`Config` class)
+- `dl_service/config.py`: DL service config (template/static dirs, Flask host/port)
+- `.env` (not read by this mapper — env var driven config, see `core/security.py:env_flag`)
 
 **Core Logic:**
-- `app.py`: Composition root, security/session setup, error handlers, blueprint registration.
-- `core/extensions.py`: Shared Flask extension singletons.
-- `core/db/connection.py`: Database facade, SQLite schema, PostgreSQL shim.
-- `core/services/*.py`: Domain service functions.
-- `routes/*.py`: HTTP API and page handlers.
-- `core/workflow_engine.py`: Workflow DAG execution and integration node handlers.
-- `core/agent_middleware.py`: AI context and action processing.
-- `core/services/dl_client.py`: Main-app boundary for DL calls.
-- `dl_service/services/invoice_service.py`: Invoice detection service flow.
-- `dl_service/services/ocr_service.py`: OCR fallback chain.
-- `dl_service/services/model_loader.py`: DL model startup/cache.
-- `ai_agent_service/src/server.py`: AI agent API surface.
-- `ai_agent_service/src/core/engine.py`: Heavy model engine singleton.
-
-**Frontend:**
-- `ui/templates/base.html`: Shared layout, CSS/JS includes, CSRF token, theme bootstrap, chat widget include.
-- `ui/templates/components/sidebar.html`: Shared navigation and role-aware menu.
-- `ui/templates/components/chat_widget.html`: Chat widget template.
-- `ui/templates/<page>.html`: Page template for a route in `routes/page_routes.py`.
-- `static/css/<page>.css`: Page-specific CSS.
-- `static/js/<page>.js`: Page-specific browser logic and fetch calls.
+- `core/services/*.py`: Business logic
+- `core/db/*.py`: Data access
+- `core/automation_engine.py`, `core/workflow_engine.py`: Automation/workflow orchestration
 
 **Testing:**
-- `tests/conftest.py`: Flask app/client and temp SQLite fixtures.
-- `tests/services/conftest.py`: In-memory SQLite service fixtures.
-- `tests/services/`: Service-level unit tests.
-- `tests/contracts/`: Route and smoke contract tests.
-- `tests/integration/`: Integration smoke tests.
-- `tests/parity/`: Middleware and async/data parity tests.
-- `debug/phase14_backend_coverage_gate.py`: Manual coverage gate helper.
+- `tests/`: pytest-based suite (`tests/integration`, `tests/security`, `tests/contracts`, `tests/parity`, `tests/services`, `tests/jobs`)
+- `dl_service/test/`: DL service-specific tests
+- `dl_service/test_ocr_pipeline.py`, `test_vietocr.py`, `test_vietocr2.py`: standalone DL test scripts at package root
 
 ## Naming Conventions
 
 **Files:**
-- Python modules use `snake_case.py`: `core/workflow_engine.py`, `core/services/product_service.py`, `routes/admin_user_routes.py`.
-- Route modules use `<domain>_routes.py`: `routes/auth_routes.py`, `routes/inventory_routes.py`, `routes/workflow_routes.py`, `routes/dl_routes.py`.
-- Service modules use `<domain>_service.py` or `<domain>_tx_service.py`: `core/services/user_service.py`, `core/services/inventory_tx_service.py`.
-- Repository modules use `<domain>_repo.py`: `core/db/user_repo.py`, `core/db/chat_repo.py`.
-- Pytest files use `test_*.py`: `tests/test_inventory.py`, `tests/services/test_workflow_service.py`.
-- Jinja pages use lowercase route/domain names: `ui/templates/workspace_builder.html`, `ui/templates/admin_dashboard.html`.
-- Static page assets mirror page/domain names: `static/css/admin_dashboard.css`, `static/js/admin_dashboard.js`.
-- Shared Jinja components live in `ui/templates/components/*.html`.
+- Route blueprints: `<domain>_routes.py` (e.g. `sales_routes.py`, `admin_user_routes.py`)
+- Services: `<domain>_service.py` (e.g. `wallet_service.py`, `product_service.py`)
+- Repositories: `<domain>_repo.py` (e.g. `user_repo.py`, `workflow_repo.py`)
+- Python files use `snake_case.py` throughout
 
 **Directories:**
-- Main app backend code belongs under `core/` and `routes/`.
-- Main app business services belong under `core/services/`.
-- Main app repositories belong under `core/db/`.
-- Active UI templates belong under `ui/templates/`.
-- Static browser assets belong under `static/css/`, `static/js/`, and `static/img/`.
-- DL service code belongs under `dl_service/api/`, `dl_service/services/`, `dl_service/utils/`, and `dl_service/models/`.
-- AI agent code belongs under `ai_agent_service/src/agents/` and `ai_agent_service/src/core/`.
-- Tests belong under `tests/`, with service-specific tests in `tests/services/`.
-- GSD planning/codebase maps belong under `.planning/codebase/`.
+- Domain-plural or role-based lowercase names (`routes/`, `services/`, `agents/`), no nested feature-first grouping — layering is by technical role (routes vs services vs db), not by business feature
 
 ## Where to Add New Code
 
-**New Main App Feature:**
-- Primary route code: `routes/<domain>_routes.py`
-- Business logic: `core/services/<domain>_service.py`
-- Database facade/repository code: `core/db/connection.py` and `core/db/<domain>_repo.py` when shared facade methods are needed.
-- Registration: import and `register_blueprint(...)` in `app.py`.
-- Tests: `tests/services/test_<domain>_service.py` for service logic and `tests/test_<domain>.py` or `tests/contracts/` for route behavior.
+**New Feature (main app):**
+- Route: add `routes/<feature>_routes.py`, define a `Blueprint`, register it in `app.py` inside `create_app()`'s blueprint registration block
+- Business logic: add `core/services/<feature>_service.py`
+- Data access: add `core/db/<feature>_repo.py` if new SQL entities are needed
+- Tests: add to `tests/integration/` or `tests/services/` matching the layer touched
 
-**New API Endpoint:**
-- Implementation: add to an existing `routes/*_routes.py` domain module when the domain exists.
-- New domain: create `routes/<domain>_routes.py`, expose `<domain>_bp`, and register it in `app.py`.
-- Request parsing and HTTP status mapping stay in `routes/`; validation/business operations go in `core/services/`.
+**New DL model endpoint:**
+- Route: add to `dl_service/api/<name>_routes.py`
+- Logic: add to `dl_service/services/<name>_service.py`
+- Model code: `dl_service/models/`, weights in `dl_service/saved_models/`
 
-**New Jinja Page:**
-- Template: `ui/templates/<page>.html`
-- Page route: `routes/page_routes.py`
-- CSS: `static/css/<page>.css`
-- JavaScript: `static/js/<page>.js`
-- Navigation: `ui/templates/components/sidebar.html` if the page should appear in the sidebar.
-- Shared layout: extend `ui/templates/base.html`.
-
-**New Database Table Or Column:**
-- PostgreSQL migration: `migrations/versions/<revision>_<description>.py`
-- Local SQLite compatibility: update schema bootstrap in `core/db/connection.py`.
-- Access logic: add service functions in `core/services/`; add repository methods in `core/db/<domain>_repo.py` if the domain is repository-backed.
-- Tests: add fixture schema updates in `tests/services/conftest.py` when service tests use in-memory SQLite.
-
-**New Workflow Node Type:**
-- Execution handler: `core/workflow_engine.py`
-- Workflow service validation/persistence: `core/services/workflow_service.py` when payload rules change.
-- Builder UI: `ui/templates/workspace_builder.html` and `static/js/workspace_builder.js`
-- Tests: `tests/services/test_workflow_service.py` and route/contract tests under `tests/`.
-
-**New DL Endpoint Or Model Feature:**
-- DL route: `dl_service/api/<feature>_routes.py`
-- DL service logic: `dl_service/services/<feature>_service.py`
-- DL utilities: `dl_service/utils/`
-- Main app proxy/client: `core/services/dl_client.py` and `routes/dl_routes.py` if the feature is exposed through the main app.
-- Config/model paths: `dl_service/config.py`
-- Tests: service tests under `tests/services/` or DL-specific tests under `dl_service/` if they require model fixtures.
-
-**New AI Agent Capability:**
-- Agent behavior: `ai_agent_service/src/agents/`
-- Shared agent engine/memory/RAG/tooling: `ai_agent_service/src/core/`
-- HTTP contract: `ai_agent_service/src/server.py`
-- Main app integration: `routes/ai_routes.py` and `core/agent_middleware.py`
-- Do not import agent service classes directly into normal Flask route handlers; use the HTTP boundary configured by `HF_BASE_URL`.
+**New AI agent capability:**
+- Agent: add to `ai_agent_service/src/agents/`
+- Shared engine/tool logic: `ai_agent_service/src/core/`
 
 **Utilities:**
-- Main app shared helpers: `core/helpers.py` for business formatting/helpers and `core/utils.py` for generic utilities.
-- DL shared helpers: `dl_service/utils/`.
-- Frontend shared behavior: `static/js/script.js`, `static/js/base_theme.js`, or a page-specific file under `static/js/`.
+- Cross-cutting helpers: `core/utils.py`, `core/helpers.py`
+- DL-service-specific helpers: `dl_service/utils/`
 
 ## Special Directories
 
-**`.planning/`:**
-- Purpose: GSD project state, roadmap, requirements, phase artifacts, and generated codebase maps.
-- Generated: Yes.
-- Committed: Project-dependent; modify only requested planning artifacts.
+**`jobs/`:**
+- Purpose: Async job state as individual JSON files
+- Generated: Yes
+- Committed: Currently present in repo — treat as runtime data, do not hand-edit
 
-**`.planning/codebase/`:**
-- Purpose: Generated codebase reference docs consumed by GSD planning/execution commands.
-- Generated: Yes.
-- Committed: Intended planning artifact.
+**`uploads/`, `dl_service/uploads/`:**
+- Purpose: User-uploaded files (invoices, images for OCR)
+- Generated: Yes
+- Committed: Should generally be gitignored (verify against `.gitignore`)
 
-**`.codex/skills/`:**
-- Purpose: Project-local Codex/GSD skill definitions.
-- Generated: Tooling-managed.
-- Committed: Project-dependent; do not edit during application feature work unless updating skills.
-
-**`.github/`:**
-- Purpose: GitHub templates plus GSD agent/skill metadata.
-- Generated: Partly tooling-managed.
-- Committed: Yes for repository metadata.
-
-**`.agent/` and `.claude/`:**
-- Purpose: Local GSD/agent runtime tooling and migration journal data.
-- Generated: Yes.
-- Committed: No for local runtime contents.
+**`logs/`, `utils/logs/`:**
+- Purpose: Application log output
+- Generated: Yes
+- Committed: Should generally be gitignored
 
 **`secrets/`:**
-- Purpose: Secret-bearing OAuth/service-account/token files.
-- Generated: Manual/runtime.
-- Committed: No; `.gitignore` excludes `secrets/`.
+- Purpose: Local secret material referenced by CLAUDE.md ("Do not commit secrets from `secrets/`")
+- Generated: No (manually placed)
+- Committed: Must NOT be committed
 
-**`.env` and `.env.*`:**
-- Purpose: Local environment configuration.
-- Generated: Manual.
-- Committed: No; do not read contents.
+**`database/`, `dl_service/database/`:**
+- Purpose: SQLite database files for main app and DL service respectively
+- Generated: Yes (created on first run) but currently checked in — treat as environment-specific data
 
-**`jobs/`:**
-- Purpose: Runtime AI chat job status JSON written by `routes/ai_routes.py`.
-- Generated: Yes.
-- Committed: No; `.gitignore` excludes `jobs/`.
-
-**`logs/`:**
-- Purpose: Runtime application logs.
-- Generated: Yes.
-- Committed: No for `logs/*.log` and rotations.
-
-**`uploads/`:**
-- Purpose: Runtime uploaded files for workflow and app uploads.
-- Generated: Yes.
-- Committed: No; `.gitignore` excludes `uploads/`.
-
-**`database/`:**
-- Purpose: Runtime/local database artifacts.
-- Generated: Yes.
-- Committed: No; `.gitignore` excludes `database/` and `*.db`.
-
-**`dl_service/saved_models/` and `saved_models/`:**
-- Purpose: DL model weights and generated trained models.
-- Generated: Yes.
-- Committed: No; `.gitignore` excludes saved model directories.
-
-**`ai_agent_service/data/vector_db/`:**
-- Purpose: Chroma/vector database runtime data for the AI agent service.
-- Generated: Yes.
-- Committed: Runtime artifact; avoid editing by hand.
-
-**`examples/`:**
-- Purpose: Demo/reference snapshots.
-- Generated: No.
-- Committed: Reference material; do not add production code here.
-
-**`debug/`:**
-- Purpose: Manual operational/debugging scripts and coverage/route guardrails.
-- Generated: No.
-- Committed: Developer tooling; production app behavior belongs in `core/`, `routes/`, `dl_service/`, or `ai_agent_service/src/`.
+**`strix_runs/`:**
+- Purpose: Output of Strix security scans
+- Generated: Yes
+- Committed: Appears checked in — likely safe to periodically clean up
 
 ---
 
-*Structure analysis: 2026-06-08*
+*Structure analysis: 2026-07-08*

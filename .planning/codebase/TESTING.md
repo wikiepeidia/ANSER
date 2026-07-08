@@ -1,303 +1,183 @@
 # Testing Patterns
 
-**Analysis Date:** 2026-06-08
+**Analysis Date:** 2026-07-08
 
 ## Test Framework
 
 **Runner:**
-- pytest `>=8.0.0` from `requirements-dev.txt`.
-- Config: `pytest.ini`.
-- Test discovery is limited to `tests/` by `testpaths = tests` in `pytest.ini`.
-- Test file pattern is `test_*.py` by `python_files = test_*.py` in `pytest.ini`.
-- Repository-root imports are enabled by `pythonpath = .` in `pytest.ini`.
-- Quiet output is enabled by `addopts = -q` in `pytest.ini`.
+- `pytest>=8.0.0` (see `requirements-dev.txt`)
+- Config: `pytest.ini`
+  ```ini
+  [pytest]
+  testpaths = tests
+  python_files = test_*.py
+  pythonpath = .
+  addopts = -q
+  ```
+  `pythonpath = .` allows absolute imports from repo root in tests without needing `sys.path` hacks.
 
-**Assertion Library:**
-- Use plain Python `assert` statements with pytest assertion rewriting, as in `tests/services/test_inventory_tx_service.py`, `tests/test_inventory.py`, and `tests/contracts/test_contract_routes.py`.
-- Use `pytest.raises(...)` for expected exceptions, as in `tests/services/test_inventory_tx_service.py`, `tests/test_inventory.py`, and `tests/test_ops_subscription.py`.
-- Use `pytest.approx(...)` for float comparisons, as in `tests/services/test_inventory_tx_service.py`, `tests/test_inventory.py`, and `tests/test_ops_subscription.py`.
-- Use Flask test client response assertions, as in `tests/integration/test_catalog_crud_smoke.py`, `tests/contracts/test_contract_smoke.py`, and `tests/parity/test_endpoint_middleware_parity.py`.
+**Supporting libraries** (`requirements-dev.txt`):
+- `pytest-cov>=5.0.0` — coverage reporting
+- `pytest-mock>=3.14.0` — `mocker` fixture for mocking
+- `pytest-timeout>=2.3.1` — per-test timeouts
+- `requests-mock>=1.12.1` — HTTP mocking for outbound integration calls (Google, Make.com, DL service)
+- `ruff>=0.4.0` — lint (also used as a de facto style gate)
 
 **Run Commands:**
 ```bash
-python -m pytest                         # Run all configured tests under `tests/`
-python -m pytest tests/services -q       # Run service-layer tests
-python -m pytest tests/contracts -q      # Run route contract/smoke tests
-python -m pytest tests/parity -q         # Run parity tests
-python -m pytest tests/integration -q    # Run integration smoke tests
+pytest                          # run all tests (testpaths = tests)
+pytest -q                       # quiet mode (default via addopts)
+pytest tests/services/          # run one subdirectory
+pytest tests/test_workflow_crud.py::test_create_and_get_scenario   # single test
+pytest --cov=core --cov=routes  # coverage (pytest-cov installed, no default addopts cov flag)
 ```
-
-**Watch Mode:**
-```bash
-# Not detected: no pytest-watch, nodemon, npm test, or watch script is configured in `requirements-dev.txt` or `package.json`.
-```
-
-**Coverage:**
-```bash
-python -m pytest tests/services tests/contracts -q --cov=app --cov=core --cov=routes --cov-config=.coveragerc --cov-report=term-missing:skip-covered --cov-fail-under=20
-```
+There is also a standalone DL service test: `dl_service/test/test_ood_detection.py` — run separately with `pytest dl_service/test/` or as documented in `CLAUDE.md` for the DL service.
 
 ## Test File Organization
 
-**Location:**
-- Put configured pytest tests under `tests/`, because `pytest.ini` sets `testpaths = tests`.
-- Put service-unit tests under `tests/services/`, as in `tests/services/test_workflow_service.py`, `tests/services/test_ai_chat_service.py`, `tests/services/test_inventory_tx_service.py`, and `tests/services/test_product_import.py`.
-- Put route registry and smoke contract tests under `tests/contracts/`, as in `tests/contracts/test_contract_routes.py` and `tests/contracts/test_contract_smoke.py`.
-- Put parity tests under `tests/parity/`, as in `tests/parity/test_endpoint_middleware_parity.py` and `tests/parity/test_data_async_parity.py`.
-- Put Flask client integration smoke tests under `tests/integration/`, as in `tests/integration/test_catalog_crud_smoke.py`.
-- Root-level `tests/test_*.py` files cover broader service/repository integration slices, as in `tests/test_auth_integration.py`, `tests/test_inventory.py`, `tests/test_ops_subscription.py`, `tests/test_services_extra.py`, and `tests/test_workflow_crud.py`.
-- `debug/test_login.py`, `dl_service/test_vietocr.py`, `dl_service/test_vietocr2.py`, and `dl_service/test_ocr_pipeline.py` are outside configured `pytest.ini` discovery and should be treated as manual/ad hoc scripts unless moved under `tests/`.
+**Location:** All primary tests live under `tests/`, separate from source (not co-located). Subdirectories group tests by concern:
+- `tests/` (root) — top-level cross-cutting suites: `test_auth_integration.py`, `test_automation_smoke.py`, `test_code_hygiene.py`, `test_dl_service_contracts.py`, `test_inventory.py`, `test_ops_subscription.py`, `test_security_hardening.py`, `test_services_extra.py`, `test_workflow_crud.py`
+- `tests/services/` — service-layer unit tests, one file per service (`test_ai_chat_service.py`, `test_extraction_contracts.py`, `test_inventory_route_delegation.py`, `test_inventory_tx_service.py`, `test_product_import.py`, `test_workflow_service.py`) plus its own `conftest.py`
+- `tests/contracts/` — contract/smoke tests validating route ↔ service handshake shape (`test_contract_routes.py`, `test_contract_smoke.py`)
+- `tests/integration/` — cross-module integration (`test_catalog_crud_smoke.py`)
+- `tests/parity/` — regression-style parity checks (`test_data_async_parity.py`, `test_endpoint_middleware_parity.py`)
+- `tests/security/` — security tooling docs/config (README, model list, `strix` scanner config) rather than pytest files
+- `tests/jobs/` — currently empty (reserved for background-job tests)
 
-**Naming:**
-- Use file names starting with `test_`, as in `tests/services/test_inventory_tx_service.py`, `tests/contracts/test_contract_routes.py`, and `tests/parity/test_data_async_parity.py`.
-- Use test function names starting with `test_`, as in `test_create_import_transaction_calculates_total_and_increments_stock()` in `tests/services/test_inventory_tx_service.py`.
-- Use fixture names that describe the provided dependency, as in `app`, `client`, and `sqlite_db` in `tests/conftest.py`; `db_stub`, `workflow_payload`, and `tx_payload` in `tests/services/conftest.py`; and `catalog_client` in `tests/integration/test_catalog_crud_smoke.py`.
-- Use private helper names with a leading underscore, as in `_make_conn()` in `tests/test_inventory.py`, `_new_conn()` in `tests/services/test_inventory_tx_service.py`, and `_load_manifest()` in `tests/contracts/test_contract_routes.py`.
-
-**Structure:**
-```text
-tests/
-├── conftest.py                         # Flask app/client and temp SQLite fixtures
-├── contracts/                          # Endpoint manifest and smoke guardrails
-├── integration/                        # Flask client + temporary DB smoke tests
-├── parity/                             # Middleware, DB mode, and async lifecycle parity tests
-├── services/                           # Service-layer unit tests and shared service fixtures
-└── test_*.py                           # Broader service/repository integration tests
-```
+**Naming:** `test_*.py` files (enforced by `pytest.ini` `python_files = test_*.py`); individual test functions named `test_<behavior_under_test>`, e.g. `test_sale_delete_requires_owner`, `test_create_and_get_scenario`, `test_get_scenario_wrong_user_returns_none`.
 
 ## Test Structure
 
-**Suite Organization:**
+**Suite organization** — flat function-based tests (no class-based `TestX` suites observed); grouped visually with comment-banner section headers, e.g. `tests/test_workflow_crud.py`:
 ```python
-# Pattern from `tests/services/test_inventory_tx_service.py`
-import sqlite3
+# ── fixtures ──────────────────────────────────────────────────────────────────
+@pytest.fixture()
+def conn():
+    ...
 
-import pytest
-
-import core.services.inventory_tx_service as inventory_tx_service
-from core.services.service_errors import ServiceValidationError
-
-
-def _new_conn():
-    conn = sqlite3.connect(":memory:")
-    conn.row_factory = sqlite3.Row
-    conn.executescript("...")
-    conn.commit()
-    return conn
-
-
-def test_create_export_transaction_rolls_back_on_insufficient_stock():
-    conn = _new_conn()
-    with pytest.raises(ServiceValidationError):
-        inventory_tx_service.create_export_transaction(conn, user_id=12, payload={...})
+# ── WorkflowRepo direct ───────────────────────────────────────────────────────
+def test_create_and_get_scenario(repo):
+    sid = repo.create_scenario(1, "My Flow", "desc", True, '{"nodes":[]}')
+    result = repo.get_scenario(sid, 1)
+    assert result is not None
+    assert result["name"] == "My Flow"
 ```
 
 **Patterns:**
-- Define local SQLite schema helpers inside the test file when the schema is specific to one module, as in `_new_conn()` in `tests/services/test_inventory_tx_service.py` and `_make_conn()` in `tests/test_inventory.py`.
-- Put shared service fixtures in `tests/services/conftest.py` when multiple service tests need the same schema or payload.
-- Use `tests/conftest.py` for app-level fixtures (`app`, `client`, `sqlite_db`) used by contract and integration tests.
-- Use `pytest.mark.parametrize` for endpoint matrices and input variants, as in `tests/integration/test_catalog_crud_smoke.py`, `tests/contracts/test_contract_smoke.py`, and `tests/parity/test_endpoint_middleware_parity.py`.
-- Use direct function calls for service tests instead of Flask test requests, as in `tests/services/test_workflow_service.py`, `tests/services/test_ai_chat_service.py`, and `tests/services/test_inventory_tx_service.py`.
-- Use Flask `client` or `app.test_client()` only for route, contract, parity, and integration tests, as in `tests/contracts/test_contract_smoke.py`, `tests/parity/test_endpoint_middleware_parity.py`, and `tests/integration/test_catalog_crud_smoke.py`.
+- Arrange/Act/Assert inline in a single small function, no separate setup/teardown methods.
+- Fixtures scoped per-test (`@pytest.fixture()`) unless deliberately shared at session scope (`app` fixture in `tests/conftest.py` is `scope="session"`).
+- Ownership/authorization tests assert a specific exception type is raised AND that no unintended side effect occurred, e.g. `tests/test_security_hardening.py::test_sale_delete_requires_owner`:
+  ```python
+  with pytest.raises(LookupError):
+      delete_sale(conn, sale_id, user_id=1)
+
+  cursor.execute("SELECT COUNT(*) AS count FROM sales WHERE id = ?", (sale_id,))
+  assert cursor.fetchone()["count"] == 1
+  ```
 
 ## Mocking
 
-**Framework:** pytest `monkeypatch`; `pytest-mock` is installed in `requirements-dev.txt` but no `mocker` fixture usage is detected in `tests/`.
+**Framework:** `pytest-mock` (`mocker` fixture) and stdlib `unittest.mock`/`monkeypatch` (pytest builtin) — used interchangeably depending on the test.
 
 **Patterns:**
-```python
-# Pattern from `tests/services/test_inventory_route_delegation.py`
-from types import SimpleNamespace
+- `monkeypatch.setattr` for patching module-level attributes/config, e.g. `tests/test_code_hygiene.py`:
+  ```python
+  monkeypatch.setattr(Config, "GA_PROPERTY_ID", "123456789")
+  monkeypatch.setattr(google_integration, "get_google_service", lambda *_args, **_kwargs: _Service())
+  ```
+- Hand-rolled fake objects for external SDK surfaces instead of `unittest.mock.MagicMock` when a specific call shape matters, e.g. the `_Files`/`_Service` fake Google Drive client in `tests/test_code_hygiene.py:30-42`.
+- `monkeypatch.setattr(Config, "DATABASE_PATH", ...)` + `monkeypatch.setattr(Config, "USE_POSTGRES", False)` to redirect the app's real `Database` class at a temp SQLite file rather than mocking the DB layer itself — see the `sqlite_db` fixture in `tests/conftest.py`.
 
-def test_api_create_import_delegates_to_inventory_service(monkeypatch):
-    conn = _ConnStub()
-    called = {}
+**What to mock:**
+- External network/service boundaries: Google APIs (`core/google_integration.py`), Make.com webhooks (`core/make_integration.py`), DL service HTTP calls (`core/services/dl_client.py`) — use `requests-mock` or hand-rolled fakes.
+- Config values that would otherwise require real credentials/environment (`Config.GA_PROPERTY_ID`, `Config.DATABASE_PATH`).
 
-    def _fake_create_import(db_conn, user_id, payload):
-        called["db_conn"] = db_conn
-        called["user_id"] = user_id
-        called["payload"] = payload
-        return {"message": "Import created successfully", "id": 101}
-
-    monkeypatch.setattr(app_module, "current_user", SimpleNamespace(id=55))
-    monkeypatch.setattr(app_module, "db_manager", _DbManagerStub(conn), raising=False)
-    monkeypatch.setattr(inventory_routes.inventory_tx_service, "create_import_transaction", _fake_create_import)
-```
-
-**What to Mock:**
-- Mock Flask globals and app singletons when testing route delegation directly, as in `tests/services/test_inventory_route_delegation.py`.
-- Mock external email sending, as in `tests/test_auth_integration.py` patching `core.auth.send_email`.
-- Mock outbound HTTP and background dependencies, as in `tests/parity/test_data_async_parity.py` patching `ai_routes.requests.post`, `ai_routes.Database`, and `ai_routes.AgentMiddleware`.
-- Mock `db_manager` with a real in-memory SQLite connection wrapper for services that import the singleton, as in `tests/test_services_extra.py` and `tests/test_ops_subscription.py`.
-- Use local stub classes for cursor/connection behavior when the test only needs call recording, as in `tests/services/test_product_import.py` and `tests/parity/test_data_async_parity.py`.
-
-**What NOT to Mock:**
-- Do not mock service functions when the test target is service behavior; use real SQLite connections in `tests/services/test_inventory_tx_service.py`, `tests/test_inventory.py`, and `tests/test_workflow_crud.py`.
-- Do not mock Flask route registration for contract tests; use `app.url_map` in `tests/contracts/test_contract_routes.py`.
-- Do not mock the `AuthManager` database path in auth integration tests beyond the temporary SQLite fixture in `tests/conftest.py`; `tests/test_auth_integration.py` exercises real `AuthManager` and repository behavior.
-- Do not call real external AI, OCR, email, Google, or Hugging Face endpoints from configured pytest tests; keep those isolated as in `tests/parity/test_data_async_parity.py` and `tests/test_auth_integration.py`.
+**What NOT to mock:**
+- The database layer itself for service-layer tests — prefer real in-memory (`sqlite3.connect(":memory:")`) or temp-file SQLite (`sqlite_db` fixture) so tests exercise actual SQL and real row-shape behavior. `tests/services/conftest.py` explicitly documents this: the `db_stub` fixture docstring notes it "replaces the old `_StubRow` stub" and "returns actual database behaviour so contract smoke-tests exercise real service code paths instead of short-circuiting through a fake cursor."
 
 ## Fixtures and Factories
 
-**Test Data:**
+**Session-level app fixture** (`tests/conftest.py`):
 ```python
-# Pattern from `tests/conftest.py`
+@pytest.fixture(scope="session")
+def app():
+    flask_app = getattr(app_module, "app", None)
+    if flask_app is None:
+        flask_app = app_module.create_app()
+    flask_app.config.update(TESTING=True, WTF_CSRF_ENABLED=False, RATELIMIT_ENABLED=False)
+    return flask_app
+
+@pytest.fixture()
+def client(app):
+    return app.test_client()
+```
+Sets `USE_POSTGRES=False` and `OAUTHLIB_INSECURE_TRANSPORT=1` env vars at module import time before the Flask app is imported, ensuring tests never touch Postgres or require OAuth HTTPS.
+
+**Real-DB fixture** (`tests/conftest.py`):
+```python
 @pytest.fixture()
 def sqlite_db(tmp_path, monkeypatch):
     from core.config import Config
     from core.db.connection import Database
-
     monkeypatch.setattr(Config, "DATABASE_PATH", str(tmp_path / "test.db"))
     monkeypatch.setattr(Config, "USE_POSTGRES", False)
     return Database()
 ```
+Full schema is created via the app's real `init_database()` path against a fresh temp file per test — not a hand-maintained mini-schema.
 
-```python
-# Pattern from `tests/services/conftest.py`
-@pytest.fixture
-def tx_payload():
-    return {
-        "items": [
-            {"product_id": 1, "quantity": 2, "unit_price": 10.0}
-        ]
-    }
-```
+**In-memory schema fixture** (`tests/services/conftest.py`): a hand-written `_SCHEMA_SQL` string creates only the tables needed by service-layer tests (`products`, `import_transactions`, `import_details`, `export_transactions`, `export_details`, `workflows`, `ai_chat_history`, `chat_sessions`, `chat_attachments`) against `sqlite3.connect(":memory:")`, seeded with one baseline product row. Shared fixtures: `db_stub`, `workflow_payload`, `tx_payload`.
 
-**Location:**
-- Use `tests/conftest.py` for app-wide fixtures: `app`, `client`, and `sqlite_db`.
-- Use `tests/services/conftest.py` for shared service schemas and payloads: `db_stub`, `workflow_payload`, and `tx_payload`.
-- Keep one-off data builders beside the tests that need them, as in `_make_excel()` in `tests/services/test_product_import.py`, `_create_test_schema()` in `tests/integration/test_catalog_crud_smoke.py`, and `_seed_product()` in `tests/test_inventory.py`.
-- Use `tmp_path` for temporary database files in Flask client integration tests, as in `tests/integration/test_catalog_crud_smoke.py`.
-- Use in-memory SQLite (`sqlite3.connect(":memory:")`) for pure service/repository tests, as in `tests/test_workflow_crud.py`, `tests/test_inventory.py`, and `tests/services/test_inventory_tx_service.py`.
+**Location:** Fixtures live in `conftest.py` files at the level where they're shared: `tests/conftest.py` (app/client/sqlite_db — global), `tests/services/conftest.py` (service-layer schema/payload fixtures). Test-local fixtures are defined directly in the test file when only used there (e.g. `conn`/`repo` in `tests/test_workflow_crud.py`).
 
 ## Coverage
 
-**Requirements:** A backend coverage configuration exists in `.coveragerc`; a 20 percent gate is documented by `.planning/phases/14-backend-branch-integration-checkpoint/14-backend-coverage-report.md`. No executable gate script is detected under `scripts/`.
-
-**Scope:**
-- `.coveragerc` enables branch coverage with `branch = True`.
-- `.coveragerc` measures `app`, `core`, and `routes`.
-- `.coveragerc` omits `tests/*`, `*/__init__.py`, `dl_service/*`, `ai_agent_service/*`, `ui/*`, `static/*`, and `.planning/*`.
-- `requirements-dev.txt` includes `pytest-cov>=5.0.0`.
-- `.planning/phases/14-backend-branch-integration-checkpoint/14-backend-coverage-report.md` records a backend services/contracts coverage run using `--cov-fail-under=20.0`.
+**Requirements:** No enforced coverage threshold detected — `pytest-cov` is installed but `pytest.ini` `addopts` does not include `--cov` or `--cov-fail-under`. Coverage is opt-in per invocation.
 
 **View Coverage:**
 ```bash
-python -m pytest tests/services tests/contracts -q --cov=app --cov=core --cov=routes --cov-config=.coveragerc --cov-report=term-missing:skip-covered
-```
-
-**Enforce Coverage:**
-```bash
-python -m pytest tests/services tests/contracts -q --cov=app --cov=core --cov=routes --cov-config=.coveragerc --cov-report=term-missing:skip-covered --cov-fail-under=20
+pytest --cov=core --cov=routes --cov-report=term-missing
 ```
 
 ## Test Types
 
-**Unit Tests:**
-- Service unit tests live in `tests/services/`, including `tests/services/test_workflow_service.py`, `tests/services/test_ai_chat_service.py`, `tests/services/test_inventory_tx_service.py`, and `tests/services/test_product_import.py`.
-- Unit tests call service functions directly and use in-memory SQLite or local stubs, as in `tests/services/test_inventory_tx_service.py` and `tests/services/test_product_import.py`.
-- Unit tests assert domain exceptions with `pytest.raises`, as in `tests/services/test_ai_chat_service.py`, `tests/services/test_inventory_tx_service.py`, and `tests/services/test_product_import.py`.
+**Unit Tests:** Service-layer logic tested directly against in-memory SQLite without going through Flask routes — `tests/services/*`, most of `tests/test_workflow_crud.py`.
 
-**Integration Tests:**
-- Repository/service integration tests live in root `tests/test_*.py`, as in `tests/test_auth_integration.py`, `tests/test_inventory.py`, and `tests/test_workflow_crud.py`.
-- Flask client integration smoke tests live under `tests/integration/`, as in `tests/integration/test_catalog_crud_smoke.py`.
-- Integration tests use temporary SQLite databases and authenticated sessions instead of real external services, as in `tests/integration/test_catalog_crud_smoke.py`.
+**Integration Tests:** Route ↔ service ↔ DB flows exercised via Flask `test_client()` and/or real repo classes against a schema — `tests/contracts/`, `tests/integration/`, `tests/test_auth_integration.py`, `tests/test_ops_subscription.py`.
 
-**Contract Tests:**
-- Endpoint manifest and route registry checks live under `tests/contracts/`, using `.planning/phases/11-baseline-contract-guardrails/11-endpoint-manifest.json` in `tests/contracts/test_contract_routes.py`.
-- Smoke status checks use `.planning/phases/11-baseline-contract-guardrails/11-endpoint-manifest.json` and Flask `client.open(...)` in `tests/contracts/test_contract_smoke.py`.
+**Security/Hardening Tests:** Ownership-scoping and cross-user access-control regression tests — `tests/test_security_hardening.py` (validates fixes described in `.planning/` history, e.g. "v1.2 security ownership hardening"). New security-sensitive service functions should get a matching `test_<action>_requires_owner`-style test here.
 
-**Parity Tests:**
-- Middleware parity tests live in `tests/parity/test_endpoint_middleware_parity.py` and assert unauthorized API JSON responses, page redirects, CSRF behavior, and rate-limit profile.
-- Data/async parity tests live in `tests/parity/test_data_async_parity.py` and assert SQLite/PostgreSQL write paths plus background AI job status transitions with mocked dependencies.
+**Parity Tests:** `tests/parity/` guards that sync/async or middleware code paths behave identically — useful when a feature has two implementations that must stay in sync.
 
-**E2E Tests:**
-- Not used: no Playwright, Selenium, Cypress, or browser E2E config is detected in `package.json`, `requirements-dev.txt`, or `tests/`.
+**Code Hygiene Tests:** `tests/test_code_hygiene.py` — assertions on source code itself (`inspect.getsource`) enforcing style rules like "no `print()`" and "no raw tuple indexing into rows." Add a new hygiene test here when introducing a new repo-wide style rule that should be automatically enforced.
 
-**Frontend Tests:**
-- Not used: static JavaScript files under `static/js/` have no configured test runner in `package.json`, and no JS test files are detected under `tests/`.
+**E2E Tests:** Not used — no Selenium/Playwright/Cypress test suite detected in `tests/`. `tests/security/strix` relates to a security scanning tool config, not browser E2E.
 
-**DL/OCR Manual Scripts:**
-- `dl_service/test_vietocr.py`, `dl_service/test_vietocr2.py`, `dl_service/test_ocr_pipeline.py`, and `debug/test_login.py` are outside `pytest.ini` discovery and should not be used as merge gates without moving or wrapping them under `tests/`.
+**DL Service Tests:** Separate from the main pytest suite — `dl_service/test/test_ood_detection.py`, run via the DL service's own workflow per `CLAUDE.md` (`python run_dl_service.py` / `python dl_service/model_app.py`).
 
 ## Common Patterns
 
-**Async Testing:**
+**Ownership/authorization assertion:**
 ```python
-# Pattern from `tests/parity/test_data_async_parity.py`
-def test_background_ai_task_completed_parity(monkeypatch):
-    statuses = []
-
-    def _fake_save(job_id, payload):
-        statuses.append(payload.get("status"))
-
-    monkeypatch.setattr(ai_routes, "save_job_file", _fake_save)
-    monkeypatch.setattr(ai_routes.requests, "post", _fake_post)
-
-    ai_routes.background_ai_task("job-ok", 1, "hello")
-
-    assert statuses[0] == "processing"
-    assert statuses[-1] == "completed"
+with pytest.raises(LookupError):
+    delete_sale(conn, sale_id, user_id=1)
 ```
 
-**Error Testing:**
+**Source-inspection style assertion:**
 ```python
-# Pattern from `tests/services/test_inventory_tx_service.py`
-with pytest.raises(ServiceValidationError):
-    inventory_tx_service.create_export_transaction(
-        conn,
-        user_id=12,
-        payload={"items": [{"product_id": 1, "quantity": 5, "unit_price": 3.0}]},
-        automation_engine=None,
-    )
+source = inspect.getsource(__import__("core.services.analytics_service", fromlist=[""]))
+assert "print(" not in source
 ```
 
-**Route Testing:**
+**Real-connection fixture + manual cleanup:**
 ```python
-# Pattern from `tests/integration/test_catalog_crud_smoke.py`
-response = client.post('/api/products', json=payload)
-
-assert response.status_code == 200
-payload_json = response.get_json()
-assert payload_json['success'] is True
-```
-
-**Contract Testing:**
-```python
-# Pattern from `tests/contracts/test_contract_routes.py`
-route_map = _route_method_map(app)
-for entry in manifest["endpoints"]:
-    path = entry["path"]
-    expected_methods = set(entry.get("methods", []))
-    assert path in route_map
-    assert expected_methods.issubset(route_map[path])
-```
-
-**Parameterized Testing:**
-```python
-# Pattern from `tests/parity/test_endpoint_middleware_parity.py`
-@pytest.mark.parametrize(
-    "path",
-    ["/api/workflows", "/api/imports", "/api/ai/history"],
-)
-def test_unauthorized_api_returns_json_401(parity_client, path):
-    response = parity_client.get(path)
-    assert response.status_code == 401
-```
-
-**Database State Testing:**
-```python
-# Pattern from `tests/test_inventory.py`
-conn = _make_conn()
-pid = _seed_product(conn, "Rice", stock=5)
-result = inv.create_import_transaction(conn, user_id=1, payload={...})
-stock = conn.execute(
-    "SELECT stock_quantity FROM products WHERE id = ?",
-    (pid,),
-).fetchone()["stock_quantity"]
-assert stock == 15
+def test_sale_delete_requires_owner(sqlite_db):
+    conn = sqlite_db.get_connection()
+    try:
+        ...
+    finally:
+        conn.close()
 ```
 
 ---
 
-*Testing analysis: 2026-06-08*
+*Testing analysis: 2026-07-08*
