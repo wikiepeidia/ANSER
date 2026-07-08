@@ -368,3 +368,19 @@ group_project_ai_ml.db
 
 .planning/
 .tasks/
+
+# Local agent/runtime tooling — never commit to shared branches
+.agent/
+.claude/
+.codex/
+.cursor/
+.gemini/
+.github/agents/
+.github/get-shit-done/
+.github/copilot-instructions.md
+CLAUDE.md
+GEMINI.md
+
+# Local security scan outputs
+strix_runs/
+*.sarif
