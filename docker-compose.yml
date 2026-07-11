@@ -1,35 +1,63 @@
-version: '3.8'
-
 services:
   n8n:
-    image: n8nio/n8n:latest
-    restart: always
+    image: n8nio/n8n:2.29.10                       # OPS-2: pin, không :latest
+    container_name: anser-n8n
+    restart: unless-stopped
     ports:
-      - "${N8N_PORT:-5678}:5678"
+      # SEC-2: mặc định loopback; thiết bị LAN cần webhook -> N8N_BIND=0.0.0.0 trong .env
+      - "${N8N_BIND:-127.0.0.1}:${N8N_PORT:-5678}:5678"
     environment:
-      - N8N_BASIC_AUTH_ACTIVE=true
-      - N8N_BASIC_AUTH_USER=${N8N_USER:-admin}
-      - N8N_BASIC_AUTH_PASSWORD=${N8N_PASSWORD:-changeme123}
       - N8N_HOST=localhost
       - N8N_PORT=5678
       - N8N_PROTOCOL=http
-      - WEBHOOK_URL=http://localhost:${N8N_PORT:-5678}/
+      - N8N_SECURE_COOKIE=false
+      - N8N_BLOCK_ENV_ACCESS_IN_NODE=false          # BẮT BUỘC: cho phép $env trong Code node
+      - WEBHOOK_URL=${WEBHOOK_URL:-http://localhost:${N8N_PORT:-5678}/}
       - GENERIC_TIMEZONE=Asia/Ho_Chi_Minh
       - N8N_LOG_LEVEL=info
       - EXECUTIONS_DATA_SAVE_ON_ERROR=all
       - EXECUTIONS_DATA_SAVE_ON_SUCCESS=all
+      - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY:-}
+      # SEC-1/SEC-3: secrets qua env, không hardcode trong workflow JSON
+      - ANSER_WEBHOOK_TOKEN=${ANSER_WEBHOOK_TOKEN:-}
+      - DISCORD_WEBHOOK_URL=${DISCORD_WEBHOOK_URL:-}
+      - RAG_BASE_URL=${RAG_BASE_URL:-http://rag_service:8001}
+      - BRAIN_BASE_URL=${BRAIN_BASE_URL:-http://mock-brain:8100}
+      # Notifier đa kênh (dev trỏ discord-mock; prod đổi sang API thật)
+      - NOTIFY_URL=${NOTIFY_URL:-http://localhost:5678/webhook/notify}
+      - TELEGRAM_WEBHOOK_URL=${TELEGRAM_WEBHOOK_URL:-http://discord-mock:9099/telegram}
+      # Telegram Bot API thật — khi 2 biến này có giá trị, shared_notify tự chuyển sendMessage
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN:-}
+      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID:-}
+      - ZALO_WEBHOOK_URL=${ZALO_WEBHOOK_URL:-http://discord-mock:9099/zalo}
+      - FB_POST_URL=${FB_POST_URL:-http://discord-mock:9099/facebook}
+      - RESEARCHER_URL=${RESEARCHER_URL:-http://discord-mock:9099/researcher}
+      - DOCS_URL=${DOCS_URL:-http://discord-mock:9099/google-docs}
+      # C1: SePay webhook verify (dashboard → Webhooks → API Key). Rỗng = fail-open dev.
+      - SEPAY_API_KEY=${SEPAY_API_KEY:-}
+      # A1: WooCommerce thật (điền key trong .env là retail_woo_poll tự chạy) + đích push tồn
+      - WOO_BASE_URL=${WOO_BASE_URL:-https://ngocduygroup.com}
+      - WOO_KEY=${WOO_KEY:-}
+      - WOO_SECRET=${WOO_SECRET:-}
+      - WOO_STOCK_URL=${WOO_STOCK_URL:-http://discord-mock:9099/woo-stock}
+      - SHOPEE_STOCK_URL=${SHOPEE_STOCK_URL:-http://discord-mock:9099/shopee-stock}
+      - TIKTOK_STOCK_URL=${TIKTOK_STOCK_URL:-http://discord-mock:9099/tiktok-stock}
     volumes:
       - n8n_data:/home/node/.n8n
     depends_on:
-      - chromadb
+      rag_service:
+        condition: service_healthy
+      anser-test-pg:
+        condition: service_healthy
     networks:
       - ai_security_net
 
   n8n-proxy:
-    image: nginx:alpine
-    restart: always
+    image: nginx:1.29-alpine
+    container_name: anser-nginx
+    restart: unless-stopped
     ports:
-      - "${N8N_EMBED_PORT:-5679}:80"
+      - "127.0.0.1:${N8N_EMBED_PORT:-5679}:80"
     volumes:
       - ./nginx/n8n.conf:/etc/nginx/conf.d/default.conf:ro
     depends_on:
@@ -37,35 +65,121 @@ services:
     networks:
       - ai_security_net
 
-  chromadb:
-    image: chromadb/chroma:latest
-    restart: always
+  anser-chroma:
+    image: chromadb/chroma:1.5.9
+    container_name: anser-chroma
+    restart: unless-stopped
     ports:
-      - "${CHROMA_PORT:-8000}:8000"
+      - "127.0.0.1:${CHROMA_PORT:-8000}:8000"
     volumes:
       - chroma_data:/chroma/chroma
     environment:
-      - CHROMA_SERVER_HOST=0.0.0.0
-      - CHROMA_SERVER_HTTP_PORT=8000
       - ANONYMIZED_TELEMETRY=false
     networks:
       - ai_security_net
 
-  rag-service:
-    image: python:3.11-slim
-    restart: always
+  anser-test-pg:
+    image: postgres:16-alpine
+    container_name: anser-test-pg
+    restart: unless-stopped
     ports:
-      - "8001:8001"
-    volumes:
-      - ./rag_service:/app
-    working_dir: /app
+      - "127.0.0.1:${ANSER_PG_PORT:-15432}:5432"
     environment:
-      - POSTGRES_URL=${POSTGRES_URL}
-    command: >
-      sh -c "pip install fastapi uvicorn chromadb psycopg2-binary --quiet &&
-             uvicorn main:app --host 0.0.0.0 --port 8001"
+      - POSTGRES_DB=${ANSER_PG_DB:-anser_test}
+      - POSTGRES_USER=${ANSER_PG_USER:-postgres}
+      - POSTGRES_PASSWORD=${ANSER_PG_PASSWORD:-anser_test}
+    volumes:
+      - anser_pg_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${ANSER_PG_USER:-postgres} -d ${ANSER_PG_DB:-anser_test}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    networks:
+      - ai_security_net
+
+  rag_service:
+    build: ./rag_service
+    image: anser/rag-service:0.3.0                  # OPS-1: build từ Dockerfile, deps pin
+    container_name: anser-rag
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8001:8001"
+    environment:
+      # Dev: trỏ Postgres test trong compose. Prod: đổi POSTGRES_URL sang Neon.
+      - POSTGRES_URL=${POSTGRES_URL:-postgresql://${ANSER_PG_USER:-postgres}:${ANSER_PG_PASSWORD:-anser_test}@anser-test-pg:5432/${ANSER_PG_DB:-anser_test}}
+      - CHROMA_URL=http://anser-chroma:8000
+      # C1: VietQR động (TK thật trong .env — QR quét ra tên chủ TK)
+      - VIETQR_BANK=${VIETQR_BANK:-MB}
+      - VIETQR_ACC=${VIETQR_ACC:-0000000000}
+      - VIETQR_NAME=${VIETQR_NAME:-CONG TY TNHH TRA NGOC DUY}
+      # B1: NCC HĐĐT — dev = mock; prod điền EINVOICE_API_URL (MISA/VNPT/Viettel qua adapter)
+      - EINVOICE_API_URL=${EINVOICE_API_URL:-http://einvoice-mock:8200}
+      # B1: backup HĐĐT ≥2 đích (dev = discord-mock; prod = Google Drive + storage khác)
+      - BACKUP_URL_1=${BACKUP_URL_1:-http://discord-mock:9099/drive-backup}
+      - BACKUP_URL_2=${BACKUP_URL_2:-http://discord-mock:9099/s3-backup}
     depends_on:
-      - chromadb
+      anser-test-pg:
+        condition: service_healthy
+      anser-chroma:
+        condition: service_started
+      einvoice-mock:
+        condition: service_started
+    networks:
+      - ai_security_net
+
+  einvoice-mock:
+    build: ./mock_services/einvoice_mock
+    image: anser/einvoice-mock:0.1.0
+    container_name: anser-einvoice-mock
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8200:8200"
+    networks:
+      - ai_security_net
+
+  # A1 kênh web: giả lập WooCommerce (site thật chưa có quyền; wp.com Free không cài được Woo)
+  woo-mock:
+    build: ./mock_services/woo_mock
+    image: anser/woo-mock:0.1.0
+    container_name: anser-woo-mock
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8300:8300"
+    networks:
+      - ai_security_net
+
+  discord-mock:
+    build: ./mock_services/discord_mock
+    image: anser/discord-mock:0.1.0
+    container_name: anser-discord-mock
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:9099:9099"
+    networks:
+      - ai_security_net
+
+  mock-brain:
+    build: ./mock_services/mock_brain
+    image: anser/mock-brain:0.1.0
+    container_name: anser-mock-brain
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8100:8100"
+    networks:
+      - ai_security_net
+
+  pos-sim:
+    build:
+      context: ./scripts
+      dockerfile: Dockerfile.pos-sim
+    image: anser/pos-sim:0.1.0
+    profiles: ["testing"]                            # opt-in: docker compose --profile testing run pos-sim
+    environment:
+      - ANSER_POS_WEBHOOK=http://n8n:5678/webhook/pos-event
+      - ANSER_WEBHOOK_TOKEN=${ANSER_WEBHOOK_TOKEN:-}
     networks:
       - ai_security_net
 
@@ -76,3 +190,4 @@ networks:
 volumes:
   n8n_data:
   chroma_data:
+  anser_pg_data:

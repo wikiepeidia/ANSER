@@ -3,10 +3,13 @@ Test script for IoT Events Ingest workflow.
 Usage: python scripts/test_iot.py
 """
 import json
+import os
 import urllib.request
 import urllib.error
 
 WEBHOOK = "http://localhost:5678/webhook/iot-event"
+# SEC-3: token chia sẻ — phải khớp ANSER_WEBHOOK_TOKEN đã cấu hình cho n8n
+WEBHOOK_TOKEN = os.environ.get("ANSER_WEBHOOK_TOKEN", "")
 
 PAYLOADS = [
     # 1. Normal sale event
@@ -27,8 +30,10 @@ PAYLOADS = [
 
 def post(url, body):
     data = json.dumps(body).encode()
-    req  = urllib.request.Request(url, data=data, method="POST",
-                                   headers={"Content-Type": "application/json"})
+    headers = {"Content-Type": "application/json"}
+    if WEBHOOK_TOKEN:
+        headers["x-anser-token"] = WEBHOOK_TOKEN
+    req  = urllib.request.Request(url, data=data, method="POST", headers=headers)
     try:
         with urllib.request.urlopen(req, timeout=15) as r:
             return r.status, json.loads(r.read())

@@ -1,0 +1,7 @@
+# anser/pos-sim 0.1.0 — chạy pos_simulator.py trong container (profile testing)
+FROM python:3.11-slim
+WORKDIR /app
+COPY pos_simulator.py .
+# Mặc định gửi 1 hóa đơn rồi thoát; override CMD để chạy full/loop
+ENV ANSER_POS_WEBHOOK=http://n8n:5678/webhook/pos-event
+CMD ["python", "pos_simulator.py", "invoice"]

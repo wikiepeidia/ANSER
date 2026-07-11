@@ -7,24 +7,31 @@ Usage:
   python scripts/pos_simulator.py loop 10  # gửi liên tục 10 lần
 """
 import json
+import os
 import sys
 import time
+import uuid
 import random
 import urllib.request
 import urllib.error
 from datetime import datetime
 
-WEBHOOK = "http://localhost:5678/webhook/pos-event"
+WEBHOOK = os.environ.get("ANSER_POS_WEBHOOK", "http://localhost:5678/webhook/pos-event")
+# SEC-3: token chia sẻ — phải khớp ANSER_WEBHOOK_TOKEN đã cấu hình cho n8n
+WEBHOOK_TOKEN = os.environ.get("ANSER_WEBHOOK_TOKEN", "")
 
 DEVICES   = ["POS-001", "POS-002", "POS-003"]
 CASHIERS  = ["nguyen_van_a", "tran_thi_b", "le_van_c"]
-PRODUCTS  = ["Cà phê sữa", "Trà đào", "Bánh mì", "Nước cam", "Sinh tố bơ"]
+# SP thật của Ngọc Duy (PUBLIC — ngocduygroup.com); POS cửa hàng đặc sản Đà Lạt
+PRODUCTS  = ["Trà atiso túi lọc (50 túi)", "Cao atisô lá khô 1kg", "Bông atiso sấy khô 400gr",
+             "Linh chi lát 400gr", "Trà Thái Nguyên 80gr"]
 
 def make_invoice():
     items = random.randint(1, 5)
     return {
         "device_id":  random.choice(DEVICES),
-        "event_type": "sale_completed",
+        "event_type": "sale",              # registry PDF3 (rag map sale_completed -> sale)
+        "idempotency_key": str(uuid.uuid4()),
         "payload": {
             "amount":      random.randint(25000, 500000),
             "items":       items,
@@ -56,8 +63,10 @@ SCENARIOS = {
 
 def post(payload):
     data = json.dumps(payload, ensure_ascii=False).encode()
-    req  = urllib.request.Request(WEBHOOK, data=data, method="POST",
-                                   headers={"Content-Type": "application/json"})
+    headers = {"Content-Type": "application/json"}
+    if WEBHOOK_TOKEN:
+        headers["x-anser-token"] = WEBHOOK_TOKEN
+    req  = urllib.request.Request(WEBHOOK, data=data, method="POST", headers=headers)
     try:
         with urllib.request.urlopen(req, timeout=15) as r:
             return r.status, json.loads(r.read())

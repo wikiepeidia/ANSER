@@ -3,12 +3,15 @@ Send sample logs to the n8n webhook for testing.
 Usage:  python scripts/test_log.py [normal|attack|all]
 """
 import json
+import os
 import sys
 import urllib.request
 import urllib.error
 from datetime import datetime
 
 WEBHOOK_URL = "http://localhost:5678/webhook/analyze-log"
+# SEC-3: token chia sẻ — phải khớp ANSER_WEBHOOK_TOKEN đã cấu hình cho n8n
+WEBHOOK_TOKEN = os.environ.get("ANSER_WEBHOOK_TOKEN", "")
 
 ATTACK_LOGS = [
     {
@@ -72,9 +75,11 @@ NORMAL_LOGS = [
 def send_log(log: dict) -> dict:
     label = log.pop("_label", "Unknown")
     data  = json.dumps(log).encode()
+    headers = {"Content-Type": "application/json"}
+    if WEBHOOK_TOKEN:
+        headers["x-anser-token"] = WEBHOOK_TOKEN
     req   = urllib.request.Request(
-        WEBHOOK_URL, data=data, method="POST",
-        headers={"Content-Type": "application/json"}
+        WEBHOOK_URL, data=data, method="POST", headers=headers
     )
     try:
         with urllib.request.urlopen(req, timeout=90) as r:

@@ -65,6 +65,7 @@ http://localhost:5678/webhook/<path>
 ```
 POST http://localhost:5678/webhook/analyze-log
 Content-Type: application/json
+x-anser-token: <ANSER_WEBHOOK_TOKEN trong .env>   # SEC-3: bắt buộc nếu token đã cấu hình
 
 { "event_type": "authentication_failure", "source_ip": "1.2.3.4", ... }
 ```

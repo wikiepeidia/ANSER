@@ -1,43 +1,56 @@
-# Setup cho teammate
+# Setup — ANSER automation (Docker + n8n)
 
 ## Yêu cầu
-- Docker Desktop đã cài và đang chạy
-- Python 3.10+ (để chạy scripts)
+- Docker Desktop đang chạy
+- Python 3.10+ (chạy scripts/tests)
 
-## Bước 1: Chạy containers
+## Chạy nhanh toàn bộ (1 lệnh)
 ```powershell
-cd new_project
-docker compose up -d
+copy .env.example .env      # rồi điền N8N_EMAIL/N8N_PASSWORD, ANSER_WEBHOOK_TOKEN...
+powershell -File tests\smoke\run_all.ps1
 ```
-Lần đầu sẽ tải images (~2-3 phút). Sau đó 4 container sẽ chạy:
-- **n8n** (port 5678) — workflow automation
-- **n8n-proxy** (port 5679) — proxy cho iframe
-- **rag-service** (port 8001) — API microservice
-- **chromadb** (port 8000) — vector database
+Lệnh trên: `docker compose up -d --build` → chờ n8n → `setup.py` (owner + import + activate)
+→ `gen_evidence.py` (test matrix) → chụp `tests/evidence/report.png`.
 
-## Bước 2: Tạo bảng database
+## Chạy từng bước
 ```powershell
-pip install psycopg2-binary alembic
-python -m alembic upgrade head
+docker compose up -d --build     # build image local (rag 0.3.0, mock-brain, discord-mock) + pull n8n/chroma/pg
 ```
+Sau khi lên, có 7 container (tất cả bind 127.0.0.1):
+- **anser-n8n** (5678) — workflow engine (n8n 2.29.10)
+- **anser-nginx** (5679) — reverse proxy iframe
+- **anser-rag** (8001) — DB gateway FastAPI (idempotency, low-stock, import, ...)
+- **anser-test-pg** (15432) — Postgres 16 test (init.sql tự nạp schema + seed)
+- **anser-chroma** (8000) — vector DB
+- **anser-mock-brain** (8100) — Brain giả lập (OCR/validate/chat) cho dev
+- **anser-discord-mock** (9099) — nhận Discord webhook khi test
 
-## Bước 3: Import workflows vào n8n
+### Owner + import + activate
+Mở http://localhost:5678 tạo owner (email+mật khẩu), điền vào `.env`, rồi:
 ```powershell
-pip install requests
-python scripts/import_workflows.py
+python tests\smoke\setup.py          # tạo owner (nếu chưa) + import 10 workflow + activate 5 retail
 ```
 
-## Bước 4: Test
+### Chạy test matrix + bằng chứng
 ```powershell
-python scripts/pos_simulator.py invoice
+python tests\smoke\gen_evidence.py   # -> tests/evidence/report.html + report.png + transcript.txt
+python tests\smoke\screenshot_n8n.py # (tuỳ chọn, cần playwright) -> ảnh n8n UI executions
 ```
-Kết quả mong đợi: `HTTP 201` + Discord notification
 
-## Truy cập
-- n8n: http://localhost:5678
-- n8n (qua ANSER): trang "n8n Workflows" trong sidebar
-- RAG API: http://localhost:8001/docs
+## Cấu trúc
+```
+workflows/retail/    # 10 QT bán lẻ (POS, tồn kho, doanh số, CSKH, OCR nhập, forecast, KM, marketplace, công nợ, giá đối thủ)
+workflows/manuf/     # 3 QT sản xuất (ingest mẻ PLC/tay, %thất thoát+%lãi, báo cáo ĐR) — pilot xưởng đồ uống
+workflows/shared/    # notifier đa kênh, error handler, ingest chung, mẫu
+rag_service/                        # FastAPI DB gateway (Dockerfile + requirements pin)
+mock_services/{discord_mock,mock_brain}/
+init.sql                            # schema + seed test
+tests/{test_matrix.md, smoke/, evidence/}
+docs/                               # 3 PDF automation + báo cáo + DEVIATIONS.md
+```
 
-## Tài khoản n8n
-Khi truy cập qua ANSER, proxy tự đăng nhập.
-Nếu truy cập trực tiếp localhost:5678, tài khoản được tạo tự động lần đầu — xem file `.n8n_creds.json` trong thư mục ANSER.
+## Bảo mật (Sprint 0 + 1)
+- **Không commit `.env`** — mọi secret chỉ ở `.env` (đã gitignore).
+- Webhook yêu cầu header `x-anser-token` = `ANSER_WEBHOOK_TOKEN` (trống = tắt, chỉ demo local).
+- Cổng 5678/5679/8000/8001/8100/9099/15432 đều bind `127.0.0.1`.
+- Xem sai khác so với PDF ở `docs/DEVIATIONS.md`.
