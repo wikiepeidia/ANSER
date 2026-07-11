@@ -1,0 +1,108 @@
+{
+  "name": "retail_marketplace_sync",
+  "nodes": [
+    {
+      "parameters": { "httpMethod": "POST", "path": "marketplace-order", "responseMode": "responseNode", "options": {} },
+      "id": "mp-webhook",
+      "name": "Receive Marketplace Order",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [180, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $input.first().json;\nconst expected = $env.ANSER_WEBHOOK_TOKEN || '';\nif (expected && ((raw.headers || {})['x-anser-token'] || '') !== expected) {\n  return [{ json: { valid: false, error: 'Unauthorized' } }];\n}\nconst b = (raw.body && typeof raw.body === 'object') ? raw.body : raw;\nif (!b.external_order_id || !b.marketplace) {\n  return [{ json: { valid: false, error: 'Missing required fields: marketplace, external_order_id' } }];\n}\nreturn [{ json: {\n  valid: true, marketplace: b.marketplace, external_order_id: String(b.external_order_id),\n  request_body: JSON.stringify({ marketplace: b.marketplace, external_order_id: String(b.external_order_id), total_amount: b.total_amount || 0, items: b.items || [] })\n} }];"
+      },
+      "id": "mp-verify",
+      "name": "Verify + Validate",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [400, 300]
+    },
+    {
+      "parameters": { "conditions": { "boolean": [{ "value1": "={{ $json.valid }}", "value2": true }] } },
+      "id": "mp-authz",
+      "name": "Valid?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [640, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.RAG_BASE_URL }}/marketplace-upsert",
+        "authentication": "none",
+        "sendBody": true, "contentType": "raw", "rawContentType": "application/json",
+        "body": "={{ $json.request_body }}",
+        "options": {}
+      },
+      "id": "mp-upsert",
+      "name": "Upsert Order (idempotent)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [880, 200],
+      "retryOnFail": true, "maxTries": 3, "waitBetweenTries": 1000
+    },
+    {
+      "parameters": {
+        "jsCode": "const db = $input.first().json;\nconst orig = $('Verify + Validate').first().json;\nconst deduped = db.deduped === true;\nconst notify_body = JSON.stringify({ channel: 'discord', title: deduped ? '🔁 Đơn marketplace trùng (bỏ qua)' : '🛒 Đơn marketplace mới', color: deduped ? 10197915 : 3066993, fields: [ { name: 'Sàn', value: orig.marketplace, inline: true }, { name: 'Mã đơn', value: orig.external_order_id, inline: true }, { name: 'Sale ID', value: String(db.sale_id || '—'), inline: true } ] });\nconst resp = JSON.stringify({ status: db.status, sale_id: db.sale_id || null, deduped });\nreturn [{ json: { notify_body, resp } }];"
+      },
+      "id": "mp-build",
+      "name": "Build Notice",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1120, 200]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.NOTIFY_URL }}",
+        "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": { "parameters": [{ "name": "x-anser-token", "value": "={{ $env.ANSER_WEBHOOK_TOKEN }}" }] },
+        "sendBody": true, "contentType": "raw", "rawContentType": "application/json",
+        "body": "={{ $json.notify_body }}",
+        "options": {}
+      },
+      "id": "mp-notify",
+      "name": "Notify Ops",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [1360, 200]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $('Build Notice').first().json.resp }}",
+        "options": { "responseCode": 201 }
+      },
+      "id": "mp-resp-201",
+      "name": "Respond 201",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1600, 200]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ error: $json.error, status: 400 }) }}",
+        "options": { "responseCode": 400 }
+      },
+      "id": "mp-resp-400",
+      "name": "Respond 400",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [880, 420]
+    }
+  ],
+  "connections": {
+    "Receive Marketplace Order": { "main": [[{ "node": "Verify + Validate", "type": "main", "index": 0 }]] },
+    "Verify + Validate": { "main": [[{ "node": "Valid?", "type": "main", "index": 0 }]] },
+    "Valid?": { "main": [[{ "node": "Upsert Order (idempotent)", "type": "main", "index": 0 }], [{ "node": "Respond 400", "type": "main", "index": 0 }]] },
+    "Upsert Order (idempotent)": { "main": [[{ "node": "Build Notice", "type": "main", "index": 0 }]] },
+    "Build Notice": { "main": [[{ "node": "Notify Ops", "type": "main", "index": 0 }]] },
+    "Notify Ops": { "main": [[{ "node": "Respond 201", "type": "main", "index": 0 }]] }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" }
+}

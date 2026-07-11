@@ -1,0 +1,165 @@
+{
+  "name": "retail_sepay_payment",
+  "nodes": [
+    {
+      "parameters": { "httpMethod": "POST", "path": "sepay-webhook", "responseMode": "responseNode", "options": {} },
+      "id": "sp-webhook",
+      "name": "Receive SePay Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [180, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $input.first().json;\n// SePay gửi 'Authorization: Apikey <KEY>' (cấu hình trong dashboard SePay).\n// Fail-open khi SEPAY_API_KEY rỗng (dev/mock) — điền key là khóa chặt.\nconst expected = $env.SEPAY_API_KEY || '';\nconst got = ((raw.headers || {})['authorization'] || '');\nif (expected && got !== 'Apikey ' + expected) {\n  return [{ json: { valid: false, error: 'Unauthorized: sai SePay API key' } }];\n}\nconst b = (raw.body && typeof raw.body === 'object') ? raw.body : raw;\nif (b.id === undefined || b.transferAmount === undefined) {\n  return [{ json: { valid: false, error: 'Missing required fields: id, transferAmount' } }];\n}\nreturn [{ json: { valid: true, request_body: JSON.stringify({ id: b.id, gateway: b.gateway || null, transactionDate: b.transactionDate || null, content: b.content || '', transferAmount: b.transferAmount, transferType: b.transferType || 'in', accountNumber: b.accountNumber || null, referenceCode: b.referenceCode || null }) } }];"
+      },
+      "id": "sp-verify",
+      "name": "Verify SePay Key",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [400, 300]
+    },
+    {
+      "parameters": { "conditions": { "boolean": [{ "value1": "={{ $json.valid }}", "value2": true }] } },
+      "id": "sp-authz",
+      "name": "Authorized?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [620, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.RAG_BASE_URL }}/sepay-webhook-process",
+        "authentication": "none",
+        "sendBody": true, "contentType": "raw", "rawContentType": "application/json",
+        "body": "={{ $json.request_body }}",
+        "options": {}
+      },
+      "id": "sp-process",
+      "name": "Match Payment (deterministic)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [860, 200],
+      "retryOnFail": true, "maxTries": 3, "waitBetweenTries": 1000
+    },
+    {
+      "parameters": { "conditions": { "string": [{ "value1": "={{ $json.action }}", "value2": "matched" }] } },
+      "id": "sp-matched",
+      "name": "Matched?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [1080, 200]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.RAG_BASE_URL }}/einvoice-issue",
+        "authentication": "none",
+        "sendBody": true, "contentType": "raw", "rawContentType": "application/json",
+        "body": "={{ JSON.stringify({ order_no: $json.order_no }) }}",
+        "options": {}
+      },
+      "id": "sp-einvoice",
+      "name": "Issue E-Invoice (B1)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [1300, 100],
+      "retryOnFail": true, "maxTries": 3, "waitBetweenTries": 1000
+    },
+    {
+      "parameters": {
+        "jsCode": "const inv = $input.first().json;\nconst pay = $('Match Payment (deterministic)').first().json;\nconst fmt = n => new Intl.NumberFormat('vi-VN').format(n);\nlet title, color, desc;\nif (inv.status === 'issued') {\n  title = '💰 Đã nhận thanh toán ' + pay.order_no + ' + HĐĐT ' + inv.invoice_no;\n  color = 3066993;\n  desc = 'CK ' + fmt(pay.amount) + ' đ qua ' + (pay.gateway || 'ngân hàng') + ' khớp đơn.\\n' +\n    '🧾 HĐĐT phát hành tự động — mã CQT: **' + inv.tax_authority_code + '**\\n' +\n    'VAT ' + inv.vat_rate + '%: ' + fmt(inv.vat_amount) + ' đ (trước thuế ' + fmt(inv.subtotal) + ' đ).';\n} else if (inv.status === 'duplicate') {\n  title = '💰 Thanh toán ' + pay.order_no + ' (HĐĐT đã có: ' + inv.invoice_no + ')';\n  color = 3066993;\n  desc = 'Đơn đã có hóa đơn hiệu lực — không phát hành trùng.';\n} else {\n  title = '⚠️ Thanh toán ' + pay.order_no + ' OK — HĐĐT VÀO HÀNG ĐỢI';\n  color = 15105570;\n  desc = (inv.reason || 'NCC HĐĐT lỗi') + '\\nKhông để đơn thiếu hóa đơn — hàng đợi einvoice_pending #' + (inv.pending_id || '?') + ' sẽ phát hành lại.';\n}\nreturn [{ json: { notify_needed: true, notify_body: JSON.stringify({ channel: 'discord', title, color, description: desc }), resp: JSON.stringify({ status: 'ok', action: 'matched', order_no: pay.order_no, einvoice: inv.status, invoice_no: inv.invoice_no || null }) } }];"
+      },
+      "id": "sp-build-ok",
+      "name": "Build Paid Notice",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1520, 100]
+    },
+    {
+      "parameters": {
+        "jsCode": "const d = $input.first().json;\nconst fmt = n => new Intl.NumberFormat('vi-VN').format(n);\nlet notify_needed = false, title = '', color = 15105570, desc = '';\nif (d.action === 'review') {\n  notify_needed = true;\n  title = '🟠 CK cần ĐỐI SOÁT TAY';\n  desc = (d.reason || '') + (d.suggested_order ? '\\nGợi ý đơn khớp: **' + d.suggested_order + '**' : '') + '\\nGiữ ở payment_pending — KHÔNG tự khớp tiền lệch.';\n}\nreturn [{ json: { notify_needed, notify_body: JSON.stringify({ channel: 'discord', title, color, description: desc }), resp: JSON.stringify({ status: 'ok', action: d.action, reason: d.reason || null, suggested_order: d.suggested_order || null }) } }];"
+      },
+      "id": "sp-build-rev",
+      "name": "Build Review Notice",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1300, 320]
+    },
+    {
+      "parameters": { "conditions": { "boolean": [{ "value1": "={{ $json.notify_needed }}", "value2": true }] } },
+      "id": "sp-need",
+      "name": "Notify Needed?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [1740, 200]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.NOTIFY_URL }}",
+        "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": { "parameters": [{ "name": "x-anser-token", "value": "={{ $env.ANSER_WEBHOOK_TOKEN }}" }] },
+        "sendBody": true, "contentType": "raw", "rawContentType": "application/json",
+        "body": "={{ $json.notify_body }}",
+        "options": {}
+      },
+      "id": "sp-notify",
+      "name": "Notify Accounting",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [1960, 100]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Lấy resp từ nhánh ĐÃ chạy (paid hoặc review) — tham chiếu node chưa chạy sẽ throw\nlet resp;\ntry { resp = $('Build Paid Notice').first().json.resp; } catch (e) { resp = $('Build Review Notice').first().json.resp; }\nreturn [{ json: { resp } }];"
+      },
+      "id": "sp-pick",
+      "name": "Pick Resp",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2180, 200]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json.resp }}",
+        "options": { "responseCode": 200 }
+      },
+      "id": "sp-resp-200",
+      "name": "Respond 200 (SePay <30s)",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [2400, 200]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ error: $json.error, status: 401 }) }}",
+        "options": { "responseCode": 401 }
+      },
+      "id": "sp-resp-401",
+      "name": "Respond 401",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [860, 440]
+    }
+  ],
+  "connections": {
+    "Receive SePay Webhook": { "main": [[{ "node": "Verify SePay Key", "type": "main", "index": 0 }]] },
+    "Verify SePay Key": { "main": [[{ "node": "Authorized?", "type": "main", "index": 0 }]] },
+    "Authorized?": { "main": [[{ "node": "Match Payment (deterministic)", "type": "main", "index": 0 }], [{ "node": "Respond 401", "type": "main", "index": 0 }]] },
+    "Match Payment (deterministic)": { "main": [[{ "node": "Matched?", "type": "main", "index": 0 }]] },
+    "Matched?": { "main": [[{ "node": "Issue E-Invoice (B1)", "type": "main", "index": 0 }], [{ "node": "Build Review Notice", "type": "main", "index": 0 }]] },
+    "Issue E-Invoice (B1)": { "main": [[{ "node": "Build Paid Notice", "type": "main", "index": 0 }]] },
+    "Build Paid Notice": { "main": [[{ "node": "Notify Needed?", "type": "main", "index": 0 }]] },
+    "Build Review Notice": { "main": [[{ "node": "Notify Needed?", "type": "main", "index": 0 }]] },
+    "Notify Needed?": { "main": [[{ "node": "Notify Accounting", "type": "main", "index": 0 }], [{ "node": "Pick Resp", "type": "main", "index": 0 }]] },
+    "Notify Accounting": { "main": [[{ "node": "Pick Resp", "type": "main", "index": 0 }]] },
+    "Pick Resp": { "main": [[{ "node": "Respond 200 (SePay <30s)", "type": "main", "index": 0 }]] }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" }
+}

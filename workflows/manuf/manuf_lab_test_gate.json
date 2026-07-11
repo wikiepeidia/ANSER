@@ -1,0 +1,108 @@
+{
+  "name": "manuf_lab_test_gate",
+  "nodes": [
+    {
+      "parameters": { "httpMethod": "POST", "path": "lab-result", "responseMode": "responseNode", "options": {} },
+      "id": "lt-webhook",
+      "name": "Receive Lab Result",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [180, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $input.first().json;\nconst expected = $env.ANSER_WEBHOOK_TOKEN || '';\nif (expected && ((raw.headers || {})['x-anser-token'] || '') !== expected) {\n  return [{ json: { valid: false, error: 'Unauthorized' } }];\n}\nconst b = (raw.body && typeof raw.body === 'object') ? raw.body : raw;\nif (!b.batch_code) return [{ json: { valid: false, error: 'Missing required field: batch_code' } }];\nreturn [{ json: { valid: true, batch_code: String(b.batch_code), request_body: JSON.stringify({ batch_code: b.batch_code, cynarin_pct: b.cynarin_pct ?? 0, mold_cfu_g: b.mold_cfu_g ?? 0, pesticide_ok: b.pesticide_ok !== false, heavy_metal_ok: b.heavy_metal_ok !== false, tested_by: b.tested_by || null }) } }];"
+      },
+      "id": "lt-verify",
+      "name": "Verify Anser Token",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [400, 300]
+    },
+    {
+      "parameters": { "conditions": { "boolean": [{ "value1": "={{ $json.valid }}", "value2": true }] } },
+      "id": "lt-authz",
+      "name": "Authorized?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [620, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.RAG_BASE_URL }}/lab-result-insert",
+        "authentication": "none",
+        "sendBody": true, "contentType": "raw", "rawContentType": "application/json",
+        "body": "={{ $json.request_body }}",
+        "options": {}
+      },
+      "id": "lt-insert",
+      "name": "Record Result + Gate (code)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [860, 200],
+      "retryOnFail": true, "maxTries": 3, "waitBetweenTries": 1000
+    },
+    {
+      "parameters": {
+        "jsCode": "const d = $input.first().json;\nconst passed = d.status === 'passed';\nlet desc;\nif (passed) {\n  desc = 'Đạt toàn bộ chỉ tiêu dược liệu — **mở khóa cho phép bán**. Số phiếu kiểm nghiệm #' + d.test_id + ' đã gắn vào lô (phục vụ truy xuất GACP/QR).';\n} else {\n  desc = '**CHẶN XUẤT — tuyệt đối không bán lô này.**\\nLý do: ' + (d.reasons || []).join('; ');\n  if (d.investigate) {\n    desc += '\\n\\n🔍 Điều tra nguồn gốc:\\n• Lô NVL: ' + d.investigate.lot_code + '\\n• Nông hộ/HTX: ' + d.investigate.farmer + '\\n• Vùng trồng: ' + d.investigate.region_grown + '\\n• Thu hái: ' + d.investigate.harvest_date;\n  }\n}\nconst notify_body = JSON.stringify({ channel: 'discord', title: (passed ? '🟢 KIỂM NGHIỆM ĐẠT — lô ' : '🔴 KIỂM NGHIỆM KHÔNG ĐẠT — lô ') + d.batch_code, color: passed ? 3066993 : 15158332, description: desc });\nconst resp = JSON.stringify({ status: d.status, batch_code: d.batch_code, test_id: d.test_id, sellable: d.sellable, reasons: d.reasons, investigate: d.investigate || null });\nreturn [{ json: { notify_body, resp } }];"
+      },
+      "id": "lt-build",
+      "name": "Build Gate Notice",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1100, 200]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.NOTIFY_URL }}",
+        "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": { "parameters": [{ "name": "x-anser-token", "value": "={{ $env.ANSER_WEBHOOK_TOKEN }}" }] },
+        "sendBody": true, "contentType": "raw", "rawContentType": "application/json",
+        "body": "={{ $json.notify_body }}",
+        "options": {}
+      },
+      "id": "lt-notify",
+      "name": "Notify QC",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [1340, 200]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $('Build Gate Notice').first().json.resp }}",
+        "options": { "responseCode": 201 }
+      },
+      "id": "lt-resp-201",
+      "name": "Respond 201",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1580, 200]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ error: $json.error, status: 400 }) }}",
+        "options": { "responseCode": 400 }
+      },
+      "id": "lt-resp-400",
+      "name": "Respond 400",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [860, 440]
+    }
+  ],
+  "connections": {
+    "Receive Lab Result": { "main": [[{ "node": "Verify Anser Token", "type": "main", "index": 0 }]] },
+    "Verify Anser Token": { "main": [[{ "node": "Authorized?", "type": "main", "index": 0 }]] },
+    "Authorized?": { "main": [[{ "node": "Record Result + Gate (code)", "type": "main", "index": 0 }], [{ "node": "Respond 400", "type": "main", "index": 0 }]] },
+    "Record Result + Gate (code)": { "main": [[{ "node": "Build Gate Notice", "type": "main", "index": 0 }]] },
+    "Build Gate Notice": { "main": [[{ "node": "Notify QC", "type": "main", "index": 0 }]] },
+    "Notify QC": { "main": [[{ "node": "Respond 201", "type": "main", "index": 0 }]] }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" }
+}

@@ -1,20 +1,30 @@
 {
-  "name": "Cảnh báo tồn kho thấp",
+  "name": "retail_low_stock_alert",
   "nodes": [
     {
       "parameters": {
-        "rule": { "interval": [{ "field": "hours", "hoursInterval": 6 }] }
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 6
+            }
+          ]
+        }
       },
       "id": "ls-trigger",
       "name": "Mỗi 6 giờ",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
-      "position": [180, 300]
+      "position": [
+        180,
+        300
+      ]
     },
     {
       "parameters": {
         "method": "GET",
-        "url": "http://rag-service:8001/low-stock?threshold=10",
+        "url": "http://rag_service:8001/low-stock",
         "authentication": "none",
         "options": {}
       },
@@ -22,34 +32,52 @@
       "name": "Kiểm tra tồn kho",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
-      "position": [420, 300]
+      "position": [
+        420,
+        300
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1000
     },
     {
       "parameters": {
         "conditions": {
-          "number": [{ "value1": "={{ $json.count }}", "operation": "larger", "value2": 0 }]
+          "number": [
+            {
+              "value1": "={{ $json.count }}",
+              "operation": "larger",
+              "value2": 0
+            }
+          ]
         }
       },
       "id": "ls-if",
       "name": "Có SP cần nhập?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
-      "position": [660, 300]
+      "position": [
+        660,
+        300
+      ]
     },
     {
       "parameters": {
-        "jsCode": "const data = $input.first().json;\nconst items = data.items || [];\nconst list = items.map(p => `⚠️ **${p.name}** (${p.code}) — còn **${p.stock_quantity}** | giá ${new Intl.NumberFormat('vi-VN').format(p.price)} đ`).join('\\n');\nconst body = {\n  embeds: [{\n    title: '🚨 Cảnh báo tồn kho thấp',\n    color: 16744448,\n    description: `Có **${items.length}** sản phẩm dưới ngưỡng ${data.threshold}:\\n\\n${list}`,\n    footer: { text: 'ANSER Stock Alert • NeonDB' },\n    timestamp: new Date().toISOString()\n  }]\n};\nreturn [{ json: { discord_body: JSON.stringify(body) } }];"
+        "jsCode": "const data = $input.first().json;\nconst items = data.items || [];\n// Ngưỡng RIÊNG từng SP (low_stock_threshold) — đóng gap G1 báo cáo\nconst list = items.map(p => `⚠️ **${p.name}** (${p.code}) — còn **${p.stock_quantity}**/ngưỡng ${p.low_stock_threshold} | giá ${new Intl.NumberFormat('vi-VN').format(p.price)} đ`).join('\\n');\nconst body = {\n  embeds: [{\n    title: '🚨 Cảnh báo tồn kho thấp',\n    color: 16744448,\n    description: `Có **${items.length}** sản phẩm dưới ngưỡng riêng:\\n\\n${list}`,\n    footer: { text: 'ANSER Stock Alert • per-product threshold' },\n    timestamp: new Date().toISOString()\n  }]\n};\nreturn [{ json: { discord_body: JSON.stringify(body) } }];"
       },
       "id": "ls-format",
       "name": "Tạo cảnh báo",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [900, 180]
+      "position": [
+        900,
+        180
+      ]
     },
     {
       "parameters": {
         "method": "POST",
-        "url": "https://discord.com/api/webhooks/1515444369480745063/ZlYUlYstgHrc5-P7lZTrcZcsGVGrqo2rvxq_IAPPREB_YP4ci1EZVe0oVC7SZX1Da89R",
+        "url": "={{ $env.DISCORD_WEBHOOK_URL }}",
         "authentication": "none",
         "sendBody": true,
         "contentType": "raw",
@@ -61,20 +89,61 @@
       "name": "Gửi Discord",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
-      "position": [1140, 180]
+      "position": [
+        1140,
+        180
+      ]
     }
   ],
   "connections": {
-    "Mỗi 6 giờ":       { "main": [[{ "node": "Kiểm tra tồn kho", "type": "main", "index": 0 }]] },
-    "Kiểm tra tồn kho": { "main": [[{ "node": "Có SP cần nhập?",  "type": "main", "index": 0 }]] },
+    "Mỗi 6 giờ": {
+      "main": [
+        [
+          {
+            "node": "Kiểm tra tồn kho",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Kiểm tra tồn kho": {
+      "main": [
+        [
+          {
+            "node": "Có SP cần nhập?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
     "Có SP cần nhập?": {
       "main": [
-        [{ "node": "Tạo cảnh báo", "type": "main", "index": 0 }],
+        [
+          {
+            "node": "Tạo cảnh báo",
+            "type": "main",
+            "index": 0
+          }
+        ],
         []
       ]
     },
-    "Tạo cảnh báo":    { "main": [[{ "node": "Gửi Discord",       "type": "main", "index": 0 }]] }
+    "Tạo cảnh báo": {
+      "main": [
+        [
+          {
+            "node": "Gửi Discord",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
   },
   "active": false,
-  "settings": { "executionOrder": "v1" }
+  "settings": {
+    "executionOrder": "v1"
+  }
 }

@@ -1,0 +1,108 @@
+{
+  "name": "retail_lot_intake",
+  "nodes": [
+    {
+      "parameters": { "httpMethod": "POST", "path": "lot-intake", "responseMode": "responseNode", "options": {} },
+      "id": "li-webhook",
+      "name": "Receive Lot Intake",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [180, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $input.first().json;\nconst expected = $env.ANSER_WEBHOOK_TOKEN || '';\nif (expected && ((raw.headers || {})['x-anser-token'] || '') !== expected) {\n  return [{ json: { valid: false, error: 'Unauthorized' } }];\n}\nconst b = (raw.body && typeof raw.body === 'object') ? raw.body : raw;\nconst miss = [];\nif (!b.sku) miss.push('sku');\nif (!b.expiry_date) miss.push('expiry_date');\nif (!b.qty) miss.push('qty');\nif (miss.length) return [{ json: { valid: false, error: 'Missing required fields: ' + miss.join(', ') } }];\nreturn [{ json: { valid: true, request_body: JSON.stringify({ sku: b.sku, lot_code: b.lot_code || null, expiry_date: b.expiry_date, qty: b.qty, source: 'manual' }) } }];"
+      },
+      "id": "li-verify",
+      "name": "Verify Anser Token",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [400, 300]
+    },
+    {
+      "parameters": { "conditions": { "boolean": [{ "value1": "={{ $json.valid }}", "value2": true }] } },
+      "id": "li-authz",
+      "name": "Authorized?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [620, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.RAG_BASE_URL }}/lot-insert",
+        "authentication": "none",
+        "sendBody": true, "contentType": "raw", "rawContentType": "application/json",
+        "body": "={{ $json.request_body }}",
+        "options": {}
+      },
+      "id": "li-insert",
+      "name": "Insert Lot (idempotent)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [860, 200],
+      "retryOnFail": true, "maxTries": 3, "waitBetweenTries": 1000
+    },
+    {
+      "parameters": {
+        "jsCode": "const d = $input.first().json;\nconst dup = d.deduped === true;\nconst notify_body = JSON.stringify({ channel: 'discord', title: dup ? '🔁 Lô kho bán trùng (bỏ qua)' : '📦 Nhập lô kho bán ' + d.lot_code, color: dup ? 10197915 : 3066993, description: dup ? 'Lô đã tồn tại — không nhập trùng.' : ('SKU **' + d.sku + '** ×' + d.qty + ' • HSD ' + d.expiry_date + ' • tồn mới: ' + d.stock_after + '\\n(FEFO: lô cận hạn sẽ xuất trước)') });\nconst resp = JSON.stringify(d);\nreturn [{ json: { notify_body, resp } }];"
+      },
+      "id": "li-build",
+      "name": "Build Notice",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1080, 200]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.NOTIFY_URL }}",
+        "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": { "parameters": [{ "name": "x-anser-token", "value": "={{ $env.ANSER_WEBHOOK_TOKEN }}" }] },
+        "sendBody": true, "contentType": "raw", "rawContentType": "application/json",
+        "body": "={{ $json.notify_body }}",
+        "options": {}
+      },
+      "id": "li-notify",
+      "name": "Notify Warehouse",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [1300, 200]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $('Build Notice').first().json.resp }}",
+        "options": { "responseCode": 201 }
+      },
+      "id": "li-resp-201",
+      "name": "Respond 201",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1520, 200]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ error: $json.error, status: 400 }) }}",
+        "options": { "responseCode": 400 }
+      },
+      "id": "li-resp-400",
+      "name": "Respond 400",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [860, 440]
+    }
+  ],
+  "connections": {
+    "Receive Lot Intake": { "main": [[{ "node": "Verify Anser Token", "type": "main", "index": 0 }]] },
+    "Verify Anser Token": { "main": [[{ "node": "Authorized?", "type": "main", "index": 0 }]] },
+    "Authorized?": { "main": [[{ "node": "Insert Lot (idempotent)", "type": "main", "index": 0 }], [{ "node": "Respond 400", "type": "main", "index": 0 }]] },
+    "Insert Lot (idempotent)": { "main": [[{ "node": "Build Notice", "type": "main", "index": 0 }]] },
+    "Build Notice": { "main": [[{ "node": "Notify Warehouse", "type": "main", "index": 0 }]] },
+    "Notify Warehouse": { "main": [[{ "node": "Respond 201", "type": "main", "index": 0 }]] }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" }
+}

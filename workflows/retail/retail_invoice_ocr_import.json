@@ -1,0 +1,451 @@
+{
+  "name": "retail_invoice_ocr_import",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "invoice-ocr",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "inv-webhook",
+      "name": "Receive Invoice Upload",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        180,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $input.first().json;\n// SEC-3: verify token\nconst expectedToken = $env.ANSER_WEBHOOK_TOKEN || '';\nif (expectedToken && ((raw.headers || {})['x-anser-token'] || '') !== expectedToken) {\n  return [{ json: { valid: false, error: 'Unauthorized: thieu hoac sai header x-anser-token' } }];\n}\nconst body = (raw.body && typeof raw.body === 'object') ? raw.body : raw;\nconst scenario = body.scenario || (raw.query || {}).scenario || 'ok';\nreturn [{ json: { valid: true, scenario } }];"
+      },
+      "id": "inv-verify",
+      "name": "Verify Anser Token",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        400,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.valid }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "inv-authz",
+      "name": "Authorized?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        620,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.BRAIN_BASE_URL }}/upload?scenario={{ $json.scenario }}",
+        "authentication": "none",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "inv-ocr",
+      "name": "Call Brain OCR",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        840,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.BRAIN_BASE_URL }}/mcp/validate-invoice",
+        "authentication": "none",
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify({ items: $json.items, total: $json.total }) }}",
+        "options": {}
+      },
+      "id": "inv-validate",
+      "name": "Validate Invoice Total",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1060,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const ocr = $('Call Brain OCR').first().json;\nconst val = $input.first().json;\nconst d = {\n  is_valid: val.is_valid === true,\n  supplier: ocr.supplier,\n  items: ocr.items || [],\n  ocr_total: val.ocr_total,\n  calculated_total: val.calculated_total,\n  difference: val.difference\n};\nd.import_body = JSON.stringify({ supplier: d.supplier, total_amount: d.calculated_total, source_file: 'ocr_upload', items: d.items });\nd.pending_body = JSON.stringify({ kind: 'invoice_import', reason: `Lech tong ${d.difference} VND`, ocr_total: d.ocr_total, calculated_total: d.calculated_total, raw_payload: { supplier: d.supplier, items: d.items } });\nreturn [{ json: d }];"
+      },
+      "id": "inv-merge",
+      "name": "Merge OCR + Validation",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1280,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.is_valid }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "inv-isvalid",
+      "name": "Invoice Valid?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        1500,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.RAG_BASE_URL }}/import-insert",
+        "authentication": "none",
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ $json.import_body }}",
+        "options": {}
+      },
+      "id": "inv-import",
+      "name": "Insert Import Transaction",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1720,
+        100
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1000
+    },
+    {
+      "parameters": {
+        "jsCode": "const db = $input.first().json;\nconst merged = $('Merge OCR + Validation').first().json;\nconst fmt = n => new Intl.NumberFormat('vi-VN').format(n);\nconst discord_body = JSON.stringify({ embeds: [{ title: '📦 Da ghi phieu nhap #' + db.import_id, color: 3066993, fields: [ { name: 'NCC', value: merged.supplier || 'N/A', inline: true }, { name: 'Tong tien', value: fmt(merged.calculated_total) + ' đ', inline: true }, { name: 'So dong', value: String((merged.items||[]).length), inline: true } ], footer: { text: 'ANSER Import • deterministic-first' }, timestamp: new Date().toISOString() }] });\nconst resp = JSON.stringify({ status: 'imported', import_id: db.import_id, total: merged.calculated_total });\nreturn [{ json: { discord_body, resp } }];"
+      },
+      "id": "inv-ok-build",
+      "name": "Build Success Notice",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1940,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.DISCORD_WEBHOOK_URL }}",
+        "authentication": "none",
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ $json.discord_body }}",
+        "options": {}
+      },
+      "id": "inv-ok-discord",
+      "name": "Post Import Discord",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        2160,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $('Build Success Notice').first().json.resp }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "inv-resp-200",
+      "name": "Respond 200",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        2380,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.RAG_BASE_URL }}/pending-review",
+        "authentication": "none",
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ $json.pending_body }}",
+        "options": {}
+      },
+      "id": "inv-pending",
+      "name": "Insert Pending Review",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1720,
+        320
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1000
+    },
+    {
+      "parameters": {
+        "jsCode": "const db = $input.first().json;\nconst merged = $('Merge OCR + Validation').first().json;\nconst fmt = n => new Intl.NumberFormat('vi-VN').format(n);\nconst discord_body = JSON.stringify({ embeds: [{ title: '⚠️ Can xac nhan thu cong — HD lech tong', color: 16744448, fields: [ { name: 'NCC', value: merged.supplier || 'N/A', inline: true }, { name: 'OCR tong', value: fmt(merged.ocr_total) + ' đ', inline: true }, { name: 'Tinh lai', value: fmt(merged.calculated_total) + ' đ', inline: true }, { name: 'Lech', value: fmt(merged.difference) + ' đ', inline: true } ], footer: { text: 'ANSER Pending Review #' + db.id } }] });\nconst resp = JSON.stringify({ status: 'pending_review', review_id: db.id, difference: merged.difference });\nreturn [{ json: { discord_body, resp } }];"
+      },
+      "id": "inv-rev-build",
+      "name": "Build Review Notice",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1940,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.DISCORD_WEBHOOK_URL }}",
+        "authentication": "none",
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ $json.discord_body }}",
+        "options": {}
+      },
+      "id": "inv-rev-discord",
+      "name": "Post Review Discord",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        2160,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $('Build Review Notice').first().json.resp }}",
+        "options": {
+          "responseCode": 422
+        }
+      },
+      "id": "inv-resp-422",
+      "name": "Respond 422",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        2380,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ error: $json.error, status: 400 }) }}",
+        "options": {
+          "responseCode": 400
+        }
+      },
+      "id": "inv-resp-400",
+      "name": "Respond 400",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        840,
+        440
+      ]
+    }
+  ],
+  "connections": {
+    "Receive Invoice Upload": {
+      "main": [
+        [
+          {
+            "node": "Verify Anser Token",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verify Anser Token": {
+      "main": [
+        [
+          {
+            "node": "Authorized?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Authorized?": {
+      "main": [
+        [
+          {
+            "node": "Call Brain OCR",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond 400",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call Brain OCR": {
+      "main": [
+        [
+          {
+            "node": "Validate Invoice Total",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Invoice Total": {
+      "main": [
+        [
+          {
+            "node": "Merge OCR + Validation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge OCR + Validation": {
+      "main": [
+        [
+          {
+            "node": "Invoice Valid?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Invoice Valid?": {
+      "main": [
+        [
+          {
+            "node": "Insert Import Transaction",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Insert Pending Review",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert Import Transaction": {
+      "main": [
+        [
+          {
+            "node": "Build Success Notice",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Success Notice": {
+      "main": [
+        [
+          {
+            "node": "Post Import Discord",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post Import Discord": {
+      "main": [
+        [
+          {
+            "node": "Respond 200",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert Pending Review": {
+      "main": [
+        [
+          {
+            "node": "Build Review Notice",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Review Notice": {
+      "main": [
+        [
+          {
+            "node": "Post Review Discord",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post Review Discord": {
+      "main": [
+        [
+          {
+            "node": "Respond 422",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

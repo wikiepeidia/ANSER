@@ -1,0 +1,98 @@
+{
+  "name": "retail_competitor_price_sync",
+  "nodes": [
+    {
+      "parameters": { "rule": { "interval": [{ "field": "weeks", "weeksInterval": 1 }] } },
+      "id": "cp-trigger",
+      "name": "Weekly Schedule",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [180, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $env.RAG_BASE_URL }}/products",
+        "authentication": "none",
+        "options": {}
+      },
+      "id": "cp-products",
+      "name": "Get Our Products",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [400, 300],
+      "retryOnFail": true, "maxTries": 3, "waitBetweenTries": 1000
+    },
+    {
+      "parameters": {
+        "jsCode": "// STUB ResearcherAgent (DuckDuckGo) — thay bằng $env.RESEARCHER_URL thật ở prod.\n// Dev: giả lập đối thủ bán thấp hơn 20% để minh hoạ nhánh cảnh báo.\nconst items = $input.first().json.items || [];\nconst rows = items.map(p => ({ sku: p.code, product_name: p.name, our_price: p.price, competitor_price: Math.round(p.price * 0.8), source: 'stub://researcher-agent' }));\nreturn [{ json: { request_body: JSON.stringify({ rows, alert_ratio: 1.1 }) } }];"
+      },
+      "id": "cp-research",
+      "name": "Fetch Competitor Prices (stub)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [640, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.RAG_BASE_URL }}/competitor-upsert",
+        "authentication": "none",
+        "sendBody": true, "contentType": "raw", "rawContentType": "application/json",
+        "body": "={{ $json.request_body }}",
+        "options": {}
+      },
+      "id": "cp-save",
+      "name": "Save + Compute Alerts",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [880, 300],
+      "retryOnFail": true, "maxTries": 3, "waitBetweenTries": 1000
+    },
+    {
+      "parameters": { "conditions": { "number": [{ "value1": "={{ ($json.alerts || []).length }}", "operation": "larger", "value2": 0 }] } },
+      "id": "cp-if",
+      "name": "Có cảnh báo giá?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [1120, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const alerts = $input.first().json.alerts || [];\nconst fmt = n => new Intl.NumberFormat('vi-VN').format(n);\nconst fields = alerts.slice(0, 20).map(a => ({ name: a.product_name, value: `ta ${fmt(a.our_price)} đ vs đối thủ ${fmt(a.competitor_price)} đ`, inline: false }));\nreturn [{ json: { notify_body: JSON.stringify({ channel: 'discord', title: '💰 Giá ta cao hơn đối thủ >10%', color: 15158332, description: `Có **${alerts.length}** SP cần xem lại giá`, fields }) } }];"
+      },
+      "id": "cp-build",
+      "name": "Build Alert",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1360, 200]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.NOTIFY_URL }}",
+        "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": { "parameters": [{ "name": "x-anser-token", "value": "={{ $env.ANSER_WEBHOOK_TOKEN }}" }] },
+        "sendBody": true, "contentType": "raw", "rawContentType": "application/json",
+        "body": "={{ $json.notify_body }}",
+        "options": {}
+      },
+      "id": "cp-notify",
+      "name": "Notify Pricing",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [1600, 200]
+    }
+  ],
+  "connections": {
+    "Weekly Schedule": { "main": [[{ "node": "Get Our Products", "type": "main", "index": 0 }]] },
+    "Get Our Products": { "main": [[{ "node": "Fetch Competitor Prices (stub)", "type": "main", "index": 0 }]] },
+    "Fetch Competitor Prices (stub)": { "main": [[{ "node": "Save + Compute Alerts", "type": "main", "index": 0 }]] },
+    "Save + Compute Alerts": { "main": [[{ "node": "Có cảnh báo giá?", "type": "main", "index": 0 }]] },
+    "Có cảnh báo giá?": { "main": [[{ "node": "Build Alert", "type": "main", "index": 0 }], []] },
+    "Build Alert": { "main": [[{ "node": "Notify Pricing", "type": "main", "index": 0 }]] }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" }
+}

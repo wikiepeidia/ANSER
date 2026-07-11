@@ -1,0 +1,227 @@
+{
+  "name": "retail_channel_order_sync",
+  "nodes": [
+    {
+      "parameters": { "httpMethod": "POST", "path": "channel-order", "responseMode": "responseNode", "options": {} },
+      "id": "cs-webhook",
+      "name": "Receive Channel Order",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [180, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $input.first().json;\nconst expected = $env.ANSER_WEBHOOK_TOKEN || '';\nif (expected && ((raw.headers || {})['x-anser-token'] || '') !== expected) {\n  return [{ json: { valid: false, error: 'Unauthorized' } }];\n}\nconst b = (raw.body && typeof raw.body === 'object') ? raw.body : raw;\nconst channel = (b.channel || '').toLowerCase();\n// CHUẨN HÓA payload từng kênh về schema chung (PDF A1 bước 1)\nlet ext, items, customer;\ntry {\n  if (channel === 'shopee') {\n    ext = 'SHOPEE-' + b.order_sn;\n    items = (b.item_list || []).map(i => ({ sku: i.item_sku, name: i.item_name || i.item_sku, qty: i.model_quantity_purchased || 1, price: parseFloat(i.model_discounted_price || 0) }));\n    customer = (b.recipient_address || {}).name || null;\n  } else if (channel === 'tiktok') {\n    ext = 'TIKTOK-' + b.order_id;\n    items = (b.line_items || []).map(i => ({ sku: i.seller_sku, name: i.product_name || i.seller_sku, qty: i.quantity || 1, price: parseFloat(i.sale_price || 0) }));\n    customer = (b.recipient_address || {}).name || null;\n  } else if (channel === 'web') {\n    ext = 'WOO-' + b.id;\n    items = (b.line_items || []).map(i => ({ sku: i.sku, name: i.name || i.sku, qty: i.quantity || 1, price: parseFloat(i.price || 0) }));\n    customer = ((b.billing || {}).first_name ? ((b.billing.first_name + ' ' + (b.billing.last_name || '')).trim()) : null);\n  } else {\n    return [{ json: { valid: false, error: 'channel không hỗ trợ: ' + channel + ' (web|shopee|tiktok)' } }];\n  }\n} catch (e) {\n  return [{ json: { valid: false, error: 'payload kênh ' + channel + ' không đúng shape: ' + e.message } }];\n}\nif (!ext || !items || !items.length) return [{ json: { valid: false, error: 'Thiếu mã đơn kênh hoặc items' } }];\nreturn [{ json: { valid: true, channel, request_body: JSON.stringify({ channel, external_order_id: ext, customer_name: customer, is_gift: b.is_gift === true, items }) } }];"
+      },
+      "id": "cs-normalize",
+      "name": "Verify + Normalize Channel Payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [400, 300]
+    },
+    {
+      "parameters": { "conditions": { "boolean": [{ "value1": "={{ $json.valid }}", "value2": true }] } },
+      "id": "cs-authz",
+      "name": "Authorized?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [620, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.RAG_BASE_URL }}/channel-order-sync",
+        "authentication": "none",
+        "sendBody": true, "contentType": "raw", "rawContentType": "application/json",
+        "body": "={{ $json.request_body }}",
+        "options": {}
+      },
+      "id": "cs-sync",
+      "name": "Allocate FEFO (khóa lô)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [860, 200],
+      "retryOnFail": true, "maxTries": 3, "waitBetweenTries": 1000
+    },
+    {
+      "parameters": { "conditions": { "string": [{ "value1": "={{ $json.action }}", "value2": "allocated" }] } },
+      "id": "cs-ok",
+      "name": "Allocated?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [1080, 200]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Đồng bộ tồn MỚI ngược lên TẤT CẢ kênh (PDF A1 bước 3 — bán 1 kênh, giảm tồn mọi kênh)\nconst d = $input.first().json;\nconst stock_body = JSON.stringify({ event: 'stock_update', source_order: d.order_no, stock: d.new_stock });\nconst fmt = n => new Intl.NumberFormat('vi-VN').format(n);\nconst lines = (d.allocations || []).map(a => `• ${a.sku}: lô **${a.lot_code}** (HSD ${a.expiry_date}) ×${a.qty}`).join('\\n');\nlet desc = 'Đơn ' + d.channel.toUpperCase() + ' — trừ tồn theo lô FEFO' + (d.is_gift ? ' (QUÀ TẶNG → gán lô HSD xa)' : ' (lô cận hạn xuất trước)') + ':\\n' + lines;\nif (d.warn_expiry) desc += '\\n⚠️ Quà tặng nhưng chỉ còn lô cận hạn (<90 ngày) — cân nhắc đổi lô.';\ndesc += '\\nTồn mới đã đẩy ngược lên web + Shopee + TikTok.';\nconst notify_body = JSON.stringify({ channel: 'discord', title: '🛒 Đơn đa kênh ' + d.order_no + ' (' + d.channel + ') — ' + fmt(d.total_amount) + ' đ', color: d.warn_expiry ? 15105570 : 3066993, description: desc });\nconst resp = JSON.stringify({ status: 'allocated', order_no: d.order_no, channel: d.channel, total_amount: d.total_amount, allocations: d.allocations, new_stock: d.new_stock, warn_expiry: d.warn_expiry });\nreturn [{ json: { stock_body, notify_body, resp } }];"
+      },
+      "id": "cs-build-ok",
+      "name": "Build Stock Push + Notice",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1300, 100]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.WOO_STOCK_URL }}",
+        "authentication": "none",
+        "sendBody": true, "contentType": "raw", "rawContentType": "application/json",
+        "body": "={{ $json.stock_body }}",
+        "options": { "timeout": 10000 }
+      },
+      "id": "cs-push-woo",
+      "name": "Push Stock → Web",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [1520, 40]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.SHOPEE_STOCK_URL }}",
+        "authentication": "none",
+        "sendBody": true, "contentType": "raw", "rawContentType": "application/json",
+        "body": "={{ $('Build Stock Push + Notice').first().json.stock_body }}",
+        "options": { "timeout": 10000 }
+      },
+      "id": "cs-push-shopee",
+      "name": "Push Stock → Shopee",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [1740, 40]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.TIKTOK_STOCK_URL }}",
+        "authentication": "none",
+        "sendBody": true, "contentType": "raw", "rawContentType": "application/json",
+        "body": "={{ $('Build Stock Push + Notice').first().json.stock_body }}",
+        "options": { "timeout": 10000 }
+      },
+      "id": "cs-push-tiktok",
+      "name": "Push Stock → TikTok",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [1960, 40]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.NOTIFY_URL }}",
+        "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": { "parameters": [{ "name": "x-anser-token", "value": "={{ $env.ANSER_WEBHOOK_TOKEN }}" }] },
+        "sendBody": true, "contentType": "raw", "rawContentType": "application/json",
+        "body": "={{ $('Build Stock Push + Notice').first().json.notify_body }}",
+        "options": {}
+      },
+      "id": "cs-notify",
+      "name": "Notify Sales",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [2180, 40]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $('Build Stock Push + Notice').first().json.resp }}",
+        "options": { "responseCode": 201 }
+      },
+      "id": "cs-resp-201",
+      "name": "Respond 201",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [2400, 40]
+    },
+    {
+      "parameters": {
+        "jsCode": "const d = $input.first().json;\nconst dup = d.action === 'duplicate';\nconst notify_body = JSON.stringify({ channel: 'discord', title: dup ? '🔁 Đơn kênh trùng (bỏ qua)' : '🔴 CHẶN OVERSELL — ' + (d.sku || ''), color: dup ? 10197915 : 15158332, description: dup ? ('Webhook kênh gửi lại — đơn đã có: ' + (d.order_no || '')) : ('Đơn cần ' + d.need + ' nhưng tồn theo lô chỉ còn ' + d.available + ' — TỪ CHỐI, không trừ gì (tránh bán trùng lô cuối giữa 2 kênh). Đồng bộ tồn/khuyến mãi lại ngay.') });\nreturn [{ json: { notify_needed: !dup, notify_body, resp: JSON.stringify(d), code: dup ? 200 : 409 } }];"
+      },
+      "id": "cs-build-block",
+      "name": "Build Block Notice",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1300, 340]
+    },
+    {
+      "parameters": { "conditions": { "boolean": [{ "value1": "={{ $json.notify_needed }}", "value2": true }] } },
+      "id": "cs-need",
+      "name": "Notify Needed?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [1520, 340]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.NOTIFY_URL }}",
+        "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": { "parameters": [{ "name": "x-anser-token", "value": "={{ $env.ANSER_WEBHOOK_TOKEN }}" }] },
+        "sendBody": true, "contentType": "raw", "rawContentType": "application/json",
+        "body": "={{ $json.notify_body }}",
+        "options": {}
+      },
+      "id": "cs-notify-block",
+      "name": "Notify Oversell",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [1740, 280]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $('Build Block Notice').first().json.resp }}",
+        "options": { "responseCode": 409 }
+      },
+      "id": "cs-resp-409",
+      "name": "Respond 409",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1960, 280]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $('Build Block Notice').first().json.resp }}",
+        "options": { "responseCode": 200 }
+      },
+      "id": "cs-resp-dup",
+      "name": "Respond 200 (dup)",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1740, 420]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ error: $json.error, status: 400 }) }}",
+        "options": { "responseCode": 400 }
+      },
+      "id": "cs-resp-400",
+      "name": "Respond 400",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [860, 460]
+    }
+  ],
+  "connections": {
+    "Receive Channel Order": { "main": [[{ "node": "Verify + Normalize Channel Payload", "type": "main", "index": 0 }]] },
+    "Verify + Normalize Channel Payload": { "main": [[{ "node": "Authorized?", "type": "main", "index": 0 }]] },
+    "Authorized?": { "main": [[{ "node": "Allocate FEFO (khóa lô)", "type": "main", "index": 0 }], [{ "node": "Respond 400", "type": "main", "index": 0 }]] },
+    "Allocate FEFO (khóa lô)": { "main": [[{ "node": "Allocated?", "type": "main", "index": 0 }]] },
+    "Allocated?": { "main": [[{ "node": "Build Stock Push + Notice", "type": "main", "index": 0 }], [{ "node": "Build Block Notice", "type": "main", "index": 0 }]] },
+    "Build Stock Push + Notice": { "main": [[{ "node": "Push Stock → Web", "type": "main", "index": 0 }]] },
+    "Push Stock → Web": { "main": [[{ "node": "Push Stock → Shopee", "type": "main", "index": 0 }]] },
+    "Push Stock → Shopee": { "main": [[{ "node": "Push Stock → TikTok", "type": "main", "index": 0 }]] },
+    "Push Stock → TikTok": { "main": [[{ "node": "Notify Sales", "type": "main", "index": 0 }]] },
+    "Notify Sales": { "main": [[{ "node": "Respond 201", "type": "main", "index": 0 }]] },
+    "Build Block Notice": { "main": [[{ "node": "Notify Needed?", "type": "main", "index": 0 }]] },
+    "Notify Needed?": { "main": [[{ "node": "Notify Oversell", "type": "main", "index": 0 }], [{ "node": "Respond 200 (dup)", "type": "main", "index": 0 }]] },
+    "Notify Oversell": { "main": [[{ "node": "Respond 409", "type": "main", "index": 0 }]] }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" }
+}

@@ -1,0 +1,65 @@
+{
+  "name": "retail_einvoice_backup",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": { "interval": [{ "field": "hours", "hoursInterval": 24, "triggerAtHour": 23 }] }
+      },
+      "id": "eb-trigger",
+      "name": "Mỗi ngày 23h",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [180, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.RAG_BASE_URL }}/einvoice-backup-run",
+        "authentication": "none",
+        "sendBody": true, "contentType": "raw", "rawContentType": "application/json",
+        "body": "{}",
+        "options": {}
+      },
+      "id": "eb-run",
+      "name": "Backup E-Invoices (2 đích + checksum)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [420, 300],
+      "retryOnFail": true, "maxTries": 3, "waitBetweenTries": 1000
+    },
+    {
+      "parameters": {
+        "jsCode": "const d = $input.first().json;\nconst allOk = d.targets_ok >= 2;\nconst lines = (d.targets || []).map(t => `• ${t.target}: ${t.ok ? '✅ HTTP ' + t.http : '❌ HTTP ' + t.http}`).join('\\n');\nconst notify_body = JSON.stringify({ channel: 'discord', title: (allOk ? '💾' : '🟠') + ' Backup HĐĐT hằng ngày — ' + d.count + ' hóa đơn', color: allOk ? 3066993 : 15105570, description: lines + '\\nChecksum SHA-256: `' + String(d.checksum).slice(0, 16) + '…`\\n(NĐ 70/2025: lưu trữ ≥10 năm, ≥2 đích' + (allOk ? '' : ' — MỘT ĐÍCH LỖI, kiểm tra ngay') + ')' });\nreturn [{ json: { notify_body } }];"
+      },
+      "id": "eb-build",
+      "name": "Build Backup Notice",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [660, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.NOTIFY_URL }}",
+        "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": { "parameters": [{ "name": "x-anser-token", "value": "={{ $env.ANSER_WEBHOOK_TOKEN }}" }] },
+        "sendBody": true, "contentType": "raw", "rawContentType": "application/json",
+        "body": "={{ $json.notify_body }}",
+        "options": {}
+      },
+      "id": "eb-notify",
+      "name": "Notify Accounting",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [900, 300]
+    }
+  ],
+  "connections": {
+    "Mỗi ngày 23h": { "main": [[{ "node": "Backup E-Invoices (2 đích + checksum)", "type": "main", "index": 0 }]] },
+    "Backup E-Invoices (2 đích + checksum)": { "main": [[{ "node": "Build Backup Notice", "type": "main", "index": 0 }]] },
+    "Build Backup Notice": { "main": [[{ "node": "Notify Accounting", "type": "main", "index": 0 }]] }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" }
+}

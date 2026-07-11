@@ -1,5 +1,5 @@
 {
-  "name": "Khách hàng mới → Welcome",
+  "name": "retail_new_customer_welcome",
   "nodes": [
     {
       "parameters": {
@@ -12,34 +12,48 @@
       "name": "Nhận khách mới",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
-      "position": [180, 300]
+      "position": [
+        180,
+        300
+      ]
     },
     {
       "parameters": {
-        "jsCode": "const raw = $input.first().json;\nconst body = (raw.body && typeof raw.body === 'object') ? raw.body : raw;\nif (!body.name) {\n  return [{ json: { valid: false, error: 'Thiếu tên khách hàng (name)' } }];\n}\nreturn [{ json: {\n  valid: true,\n  name:    String(body.name),\n  email:   body.email || null,\n  phone:   body.phone || null,\n  address: body.address || null,\n  request_body: JSON.stringify({ name: body.name, email: body.email || null, phone: body.phone || null, address: body.address || null })\n} }];"
+        "jsCode": "const raw = $input.first().json;\nconst body = (raw.body && typeof raw.body === 'object') ? raw.body : raw;\n// SEC-3: shared-token check — chi kiem tra khi ANSER_WEBHOOK_TOKEN da duoc cau hinh\nconst expectedToken = $env.ANSER_WEBHOOK_TOKEN || '';\nif (expectedToken && ((raw.headers || {})['x-anser-token'] || '') !== expectedToken) {\n  return [{ json: { valid: false, error: 'Unauthorized: thieu hoac sai header x-anser-token' } }];\n}\nif (!body.name) {\n  return [{ json: { valid: false, error: 'Thiếu tên khách hàng (name)' } }];\n}\nreturn [{ json: {\n  valid: true,\n  name:    String(body.name),\n  email:   body.email || null,\n  phone:   body.phone || null,\n  address: body.address || null,\n  request_body: JSON.stringify({ name: body.name, email: body.email || null, phone: body.phone || null, address: body.address || null })\n} }];"
       },
       "id": "nc-validate",
       "name": "Validate thông tin",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [420, 300]
+      "position": [
+        420,
+        300
+      ]
     },
     {
       "parameters": {
         "conditions": {
-          "boolean": [{ "value1": "={{ $json.valid }}", "value2": true }]
+          "boolean": [
+            {
+              "value1": "={{ $json.valid }}",
+              "value2": true
+            }
+          ]
         }
       },
       "id": "nc-if",
       "name": "Hợp lệ?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
-      "position": [660, 300]
+      "position": [
+        660,
+        300
+      ]
     },
     {
       "parameters": {
         "method": "POST",
-        "url": "http://rag-service:8001/customer-insert",
+        "url": "http://rag_service:8001/customer-insert",
         "authentication": "none",
         "sendBody": true,
         "contentType": "raw",
@@ -51,22 +65,31 @@
       "name": "Lưu vào NeonDB",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
-      "position": [900, 180]
+      "position": [
+        900,
+        180
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1000
     },
     {
       "parameters": {
-        "jsCode": "const db = $input.first().json;\nconst orig = $('Validate thông tin').first().json;\nconst body = {\n  embeds: [{\n    title: '👋 Khách hàng mới!',\n    color: 3447003,\n    fields: [\n      { name: 'Tên', value: orig.name, inline: true },\n      { name: 'Mã KH', value: db.code || '—', inline: true },\n      { name: 'SĐT', value: orig.phone || 'Chưa có', inline: true },\n      { name: 'Email', value: orig.email || 'Chưa có', inline: true },\n      { name: 'Địa chỉ', value: orig.address || 'Chưa có', inline: false }\n    ],\n    footer: { text: 'ANSER CRM • NeonDB' },\n    timestamp: new Date().toISOString()\n  }]\n};\nconst resp = { status: 'ok', id: db.id, code: db.code, name: orig.name };\nreturn [{ json: { discord_body: JSON.stringify(body), response_201: JSON.stringify(resp) } }];"
+        "jsCode": "const db = $input.first().json;\nconst orig = $('Validate thông tin').first().json;\n// PII masking (NT6 PDF1): che SĐT/email khi hiển thị ra kênh thông báo\nconst maskPhone = p => p ? String(p).replace(/.(?=.{3})/g, 'X') : 'Chưa có';\nconst maskEmail = e => { if (!e) return 'Chưa có'; const [u,d] = String(e).split('@'); return (u ? u[0] + '***' : '***') + (d ? '@' + d : ''); };\nconst body = {\n  embeds: [{\n    title: '👋 Khách hàng mới!',\n    color: 3447003,\n    fields: [\n      { name: 'Tên', value: orig.name, inline: true },\n      { name: 'Mã KH', value: db.code || '—', inline: true },\n      { name: 'SĐT', value: maskPhone(orig.phone), inline: true },\n      { name: 'Email', value: maskEmail(orig.email), inline: true },\n      { name: 'Địa chỉ', value: orig.address || 'Chưa có', inline: false }\n    ],\n    footer: { text: 'ANSER CRM • PII masked' },\n    timestamp: new Date().toISOString()\n  }]\n};\nconst resp = { status: 'ok', id: db.id, code: db.code, name: orig.name };\nreturn [{ json: { discord_body: JSON.stringify(body), response_201: JSON.stringify(resp) } }];"
       },
       "id": "nc-format",
       "name": "Tạo thông báo",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1140, 180]
+      "position": [
+        1140,
+        180
+      ]
     },
     {
       "parameters": {
         "method": "POST",
-        "url": "https://discord.com/api/webhooks/1515444369480745063/ZlYUlYstgHrc5-P7lZTrcZcsGVGrqo2rvxq_IAPPREB_YP4ci1EZVe0oVC7SZX1Da89R",
+        "url": "={{ $env.DISCORD_WEBHOOK_URL }}",
         "authentication": "none",
         "sendBody": true,
         "contentType": "raw",
@@ -78,46 +101,123 @@
       "name": "Gửi Discord",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
-      "position": [1380, 180]
+      "position": [
+        1380,
+        180
+      ]
     },
     {
       "parameters": {
         "respondWith": "json",
         "responseBody": "={{ $('Tạo thông báo').first().json.response_201 }}",
-        "options": { "responseCode": 201 }
+        "options": {
+          "responseCode": 201
+        }
       },
       "id": "nc-respond-ok",
       "name": "Trả 201",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
-      "position": [1620, 180]
+      "position": [
+        1620,
+        180
+      ]
     },
     {
       "parameters": {
         "respondWith": "json",
         "responseBody": "={{ JSON.stringify({ error: $json.error, status: 400 }) }}",
-        "options": { "responseCode": 400 }
+        "options": {
+          "responseCode": 400
+        }
       },
       "id": "nc-respond-err",
       "name": "Trả 400",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
-      "position": [900, 420]
+      "position": [
+        900,
+        420
+      ]
     }
   ],
   "connections": {
-    "Nhận khách mới":     { "main": [[{ "node": "Validate thông tin", "type": "main", "index": 0 }]] },
-    "Validate thông tin":  { "main": [[{ "node": "Hợp lệ?",           "type": "main", "index": 0 }]] },
-    "Hợp lệ?": {
+    "Nhận khách mới": {
       "main": [
-        [{ "node": "Lưu vào NeonDB", "type": "main", "index": 0 }],
-        [{ "node": "Trả 400",        "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Validate thông tin",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
-    "Lưu vào NeonDB":    { "main": [[{ "node": "Tạo thông báo",      "type": "main", "index": 0 }]] },
-    "Tạo thông báo":      { "main": [[{ "node": "Gửi Discord",        "type": "main", "index": 0 }]] },
-    "Gửi Discord":        { "main": [[{ "node": "Trả 201",            "type": "main", "index": 0 }]] }
+    "Validate thông tin": {
+      "main": [
+        [
+          {
+            "node": "Hợp lệ?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Hợp lệ?": {
+      "main": [
+        [
+          {
+            "node": "Lưu vào NeonDB",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Trả 400",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lưu vào NeonDB": {
+      "main": [
+        [
+          {
+            "node": "Tạo thông báo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tạo thông báo": {
+      "main": [
+        [
+          {
+            "node": "Gửi Discord",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gửi Discord": {
+      "main": [
+        [
+          {
+            "node": "Trả 201",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
   },
   "active": false,
-  "settings": { "executionOrder": "v1" }
+  "settings": {
+    "executionOrder": "v1"
+  }
 }

@@ -1,0 +1,92 @@
+{
+  "name": "shared_notify",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "notify",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "nt-webhook",
+      "name": "Receive Notify Request",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [180, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $input.first().json;\n// SEC-3: verify token (gọi nội bộ vẫn phải kèm token)\nconst expected = $env.ANSER_WEBHOOK_TOKEN || '';\nif (expected && ((raw.headers || {})['x-anser-token'] || '') !== expected) {\n  return [{ json: { valid: false, error: 'Unauthorized' } }];\n}\nconst b = (raw.body && typeof raw.body === 'object') ? raw.body : raw;\nconst channel = (b.channel || 'discord').toLowerCase();\n// Abstraction: map channel -> URL từ $env (dev trỏ mock; prod đổi .env)\nconst MAP = {\n  discord:  $env.DISCORD_WEBHOOK_URL,\n  telegram: $env.TELEGRAM_WEBHOOK_URL || $env.DISCORD_WEBHOOK_URL,\n  zalo:     $env.ZALO_WEBHOOK_URL     || $env.DISCORD_WEBHOOK_URL,\n  facebook: $env.FB_POST_URL          || $env.DISCORD_WEBHOOK_URL\n};\nlet target = MAP[channel] || MAP.discord;\nlet body_json;\nif (channel === 'telegram' && $env.TELEGRAM_BOT_TOKEN && $env.TELEGRAM_CHAT_ID) {\n  // Telegram Bot API THẬT — payload sendMessage khác hẳn Discord embed\n  target = 'https://api.telegram.org/bot' + $env.TELEGRAM_BOT_TOKEN + '/sendMessage';\n  const lines = ['*' + (b.title || 'ANSER') + '*', b.description || '',\n                 ...((b.fields || []).map(f => f.name + ': ' + f.value))].filter(Boolean);\n  body_json = JSON.stringify({ chat_id: $env.TELEGRAM_CHAT_ID, text: lines.join('\\n'), parse_mode: 'Markdown' });\n} else {\n  const embed = { title: b.title || 'ANSER', color: b.color || 3447003, description: b.description || '', fields: b.fields || [], footer: { text: 'ANSER Notify • ' + channel }, timestamp: new Date().toISOString() };\n  body_json = JSON.stringify({ channel, embeds: [embed] });\n}\nreturn [{ json: { valid: true, channel, target_url: target, body_json } }];"
+      },
+      "id": "nt-route",
+      "name": "Route Channel",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [400, 300]
+    },
+    {
+      "parameters": {
+        "conditions": { "boolean": [{ "value1": "={{ $json.valid }}", "value2": true }] }
+      },
+      "id": "nt-if",
+      "name": "Authorized?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [620, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.target_url }}",
+        "authentication": "none",
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ $json.body_json }}",
+        "options": {}
+      },
+      "id": "nt-send",
+      "name": "Send To Channel",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [840, 200]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ status: 'sent', channel: $('Route Channel').first().json.channel }) }}",
+        "options": { "responseCode": 200 }
+      },
+      "id": "nt-resp-200",
+      "name": "Respond 200",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1060, 200]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ error: $json.error || 'unauthorized', status: 400 }) }}",
+        "options": { "responseCode": 400 }
+      },
+      "id": "nt-resp-400",
+      "name": "Respond 400",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [840, 400]
+    }
+  ],
+  "connections": {
+    "Receive Notify Request": { "main": [[{ "node": "Route Channel", "type": "main", "index": 0 }]] },
+    "Route Channel":          { "main": [[{ "node": "Authorized?", "type": "main", "index": 0 }]] },
+    "Authorized?": {
+      "main": [
+        [{ "node": "Send To Channel", "type": "main", "index": 0 }],
+        [{ "node": "Respond 400", "type": "main", "index": 0 }]
+      ]
+    },
+    "Send To Channel": { "main": [[{ "node": "Respond 200", "type": "main", "index": 0 }]] }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" }
+}

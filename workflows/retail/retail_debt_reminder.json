@@ -1,0 +1,115 @@
+{
+  "name": "retail_debt_reminder",
+  "nodes": [
+    {
+      "parameters": { "rule": { "interval": [{ "field": "weeks", "weeksInterval": 1 }] } },
+      "id": "dr-trigger",
+      "name": "Weekly Schedule",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [180, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $env.RAG_BASE_URL }}/debtors",
+        "authentication": "none",
+        "options": {}
+      },
+      "id": "dr-fetch",
+      "name": "Get Overdue Debtors",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [400, 300],
+      "retryOnFail": true, "maxTries": 3, "waitBetweenTries": 1000
+    },
+    {
+      "parameters": { "conditions": { "number": [{ "value1": "={{ $json.count }}", "operation": "larger", "value2": 0 }] } },
+      "id": "dr-if",
+      "name": "Có khách nợ?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [640, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.first().json.items || [];\n// PII masking: che SĐT, chỉ để 3 số cuối (nguyên tắc NT6 PDF1)\nconst mask = p => String(p || '').replace(/.(?=.{3})/g, 'X');\nconst fmt = n => new Intl.NumberFormat('vi-VN').format(n);\nreturn items.map(d => ({ json: {\n  customer_id: d.id,\n  name: d.name,\n  phone_mask: mask(d.phone),\n  debt_fmt: fmt(d.debt_amount) + ' đ',\n  prompt_body: JSON.stringify({ route: 'GENERAL', prompt: `Viết tin nhắn nhắc nợ lịch sự, ngắn cho khách ${d.name}, còn nợ ${d.debt_amount} đồng` })\n} }));"
+      },
+      "id": "dr-split",
+      "name": "Split + Mask PII",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [880, 200]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.BRAIN_BASE_URL }}/chat",
+        "authentication": "none",
+        "sendBody": true, "contentType": "raw", "rawContentType": "application/json",
+        "body": "={{ $json.prompt_body }}",
+        "options": {}
+      },
+      "id": "dr-brain",
+      "name": "Generate Message (Brain)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [1120, 200],
+      "retryOnFail": true, "maxTries": 2, "waitBetweenTries": 1500
+    },
+    {
+      "parameters": {
+        "jsCode": "const msg = $input.first().json.text || 'Nhắc nợ';\nconst d = $('Split + Mask PII').item.json;\nreturn [{ json: {\n  notify_body: JSON.stringify({ channel: 'zalo', title: '💬 Nhắc nợ (Zalo)', color: 15844367, description: `Gửi ${d.name} (SĐT ${d.phone_mask}) — nợ ${d.debt_fmt}\\n${msg}` }),\n  log_body: JSON.stringify({ customer_id: d.customer_id, channel: 'zalo', message: msg })\n} }];"
+      },
+      "id": "dr-build",
+      "name": "Build Send + Log",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1360, 200]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.NOTIFY_URL }}",
+        "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": { "parameters": [{ "name": "x-anser-token", "value": "={{ $env.ANSER_WEBHOOK_TOKEN }}" }] },
+        "sendBody": true, "contentType": "raw", "rawContentType": "application/json",
+        "body": "={{ $json.notify_body }}",
+        "options": {}
+      },
+      "id": "dr-send",
+      "name": "Send Zalo (via notify)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [1600, 200]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.RAG_BASE_URL }}/debt-log",
+        "authentication": "none",
+        "sendBody": true, "contentType": "raw", "rawContentType": "application/json",
+        "body": "={{ $('Build Send + Log').item.json.log_body }}",
+        "options": {}
+      },
+      "id": "dr-log",
+      "name": "Log Debt Reminder",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [1840, 200],
+      "retryOnFail": true, "maxTries": 3, "waitBetweenTries": 1000
+    }
+  ],
+  "connections": {
+    "Weekly Schedule": { "main": [[{ "node": "Get Overdue Debtors", "type": "main", "index": 0 }]] },
+    "Get Overdue Debtors": { "main": [[{ "node": "Có khách nợ?", "type": "main", "index": 0 }]] },
+    "Có khách nợ?": { "main": [[{ "node": "Split + Mask PII", "type": "main", "index": 0 }], []] },
+    "Split + Mask PII": { "main": [[{ "node": "Generate Message (Brain)", "type": "main", "index": 0 }]] },
+    "Generate Message (Brain)": { "main": [[{ "node": "Build Send + Log", "type": "main", "index": 0 }]] },
+    "Build Send + Log": { "main": [[{ "node": "Send Zalo (via notify)", "type": "main", "index": 0 }]] },
+    "Send Zalo (via notify)": { "main": [[{ "node": "Log Debt Reminder", "type": "main", "index": 0 }]] }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" }
+}

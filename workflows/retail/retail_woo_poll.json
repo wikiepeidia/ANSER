@@ -1,0 +1,74 @@
+{
+  "name": "retail_woo_poll",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": { "interval": [{ "field": "minutes", "minutesInterval": 5 }] }
+      },
+      "id": "wp-trigger",
+      "name": "Mỗi 5 phút",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [180, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Poll WooCommerce THẬT (ngocduygroup.com) — chỉ chạy khi có key trong .env.\n// WOO_KEY/WOO_SECRET rỗng → dừng êm (mock 'web' vẫn test qua /webhook/channel-order).\nconst key = $env.WOO_KEY || '';\nconst secret = $env.WOO_SECRET || '';\nconst base = $env.WOO_BASE_URL || 'https://ngocduygroup.com';\nif (!key || !secret) return [];\nconst url = base.replace(/\\/$/, '') + '/wp-json/wc/v3/orders?status=processing&per_page=10&consumer_key=' + encodeURIComponent(key) + '&consumer_secret=' + encodeURIComponent(secret);\nreturn [{ json: { url } }];"
+      },
+      "id": "wp-gate",
+      "name": "Has Woo Keys?",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [400, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $json.url }}",
+        "authentication": "none",
+        "options": { "timeout": 20000 }
+      },
+      "id": "wp-fetch",
+      "name": "Fetch Woo Orders",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [620, 300],
+      "retryOnFail": true, "maxTries": 2, "waitBetweenTries": 3000
+    },
+    {
+      "parameters": {
+        "jsCode": "// Mỗi đơn Woo → 1 item bơm vào pipeline chuẩn hóa chung (idempotent WOO-{id})\nconst all = $input.all().map(i => i.json);\nconst orders = Array.isArray(all[0]) ? all[0] : all;\nconst out = [];\nfor (const o of orders) {\n  if (!o || !o.id) continue;\n  out.push({ json: { order_body: JSON.stringify({ channel: 'web', id: o.id, line_items: o.line_items || [], billing: o.billing || {} }) } });\n}\nreturn out;"
+      },
+      "id": "wp-map",
+      "name": "Map Orders",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [840, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:5678/webhook/channel-order",
+        "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": { "parameters": [{ "name": "x-anser-token", "value": "={{ $env.ANSER_WEBHOOK_TOKEN }}" }] },
+        "sendBody": true, "contentType": "raw", "rawContentType": "application/json",
+        "body": "={{ $json.order_body }}",
+        "options": { "timeout": 25000 }
+      },
+      "id": "wp-feed",
+      "name": "Feed Channel Pipeline",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [1060, 300]
+    }
+  ],
+  "connections": {
+    "Mỗi 5 phút": { "main": [[{ "node": "Has Woo Keys?", "type": "main", "index": 0 }]] },
+    "Has Woo Keys?": { "main": [[{ "node": "Fetch Woo Orders", "type": "main", "index": 0 }]] },
+    "Fetch Woo Orders": { "main": [[{ "node": "Map Orders", "type": "main", "index": 0 }]] },
+    "Map Orders": { "main": [[{ "node": "Feed Channel Pipeline", "type": "main", "index": 0 }]] }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" }
+}

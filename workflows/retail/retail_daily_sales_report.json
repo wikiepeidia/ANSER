@@ -1,20 +1,31 @@
 {
-  "name": "Báo cáo doanh số hàng ngày",
+  "name": "retail_daily_sales_report",
   "nodes": [
     {
       "parameters": {
-        "rule": { "interval": [{ "field": "hours", "hoursInterval": 24, "triggerAtHour": 20 }] }
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 24,
+              "triggerAtHour": 20
+            }
+          ]
+        }
       },
       "id": "ds-trigger",
       "name": "Mỗi ngày 20h",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
-      "position": [180, 300]
+      "position": [
+        180,
+        300
+      ]
     },
     {
       "parameters": {
         "method": "GET",
-        "url": "http://rag-service:8001/daily-sales",
+        "url": "http://rag_service:8001/daily-sales",
         "authentication": "none",
         "options": {}
       },
@@ -22,7 +33,13 @@
       "name": "Lấy doanh số hôm nay",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
-      "position": [420, 300]
+      "position": [
+        420,
+        300
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1000
     },
     {
       "parameters": {
@@ -32,12 +49,15 @@
       "name": "Tạo Discord embed",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [660, 300]
+      "position": [
+        660,
+        300
+      ]
     },
     {
       "parameters": {
         "method": "POST",
-        "url": "https://discord.com/api/webhooks/1515444369480745063/ZlYUlYstgHrc5-P7lZTrcZcsGVGrqo2rvxq_IAPPREB_YP4ci1EZVe0oVC7SZX1Da89R",
+        "url": "={{ $env.DISCORD_WEBHOOK_URL }}",
         "authentication": "none",
         "sendBody": true,
         "contentType": "raw",
@@ -49,14 +69,49 @@
       "name": "Gửi Discord",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
-      "position": [900, 300]
+      "position": [
+        900,
+        300
+      ]
     }
   ],
   "connections": {
-    "Mỗi ngày 20h":         { "main": [[{ "node": "Lấy doanh số hôm nay", "type": "main", "index": 0 }]] },
-    "Lấy doanh số hôm nay": { "main": [[{ "node": "Tạo Discord embed",    "type": "main", "index": 0 }]] },
-    "Tạo Discord embed":    { "main": [[{ "node": "Gửi Discord",           "type": "main", "index": 0 }]] }
+    "Mỗi ngày 20h": {
+      "main": [
+        [
+          {
+            "node": "Lấy doanh số hôm nay",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lấy doanh số hôm nay": {
+      "main": [
+        [
+          {
+            "node": "Tạo Discord embed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tạo Discord embed": {
+      "main": [
+        [
+          {
+            "node": "Gửi Discord",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
   },
   "active": false,
-  "settings": { "executionOrder": "v1" }
+  "settings": {
+    "executionOrder": "v1"
+  }
 }

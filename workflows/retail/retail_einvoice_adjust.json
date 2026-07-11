@@ -1,0 +1,108 @@
+{
+  "name": "retail_einvoice_adjust",
+  "nodes": [
+    {
+      "parameters": { "httpMethod": "POST", "path": "einvoice-adjust", "responseMode": "responseNode", "options": {} },
+      "id": "ea-webhook",
+      "name": "Receive Adjust Request",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [180, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $input.first().json;\nconst expected = $env.ANSER_WEBHOOK_TOKEN || '';\nif (expected && ((raw.headers || {})['x-anser-token'] || '') !== expected) {\n  return [{ json: { valid: false, error: 'Unauthorized' } }];\n}\nconst b = (raw.body && typeof raw.body === 'object') ? raw.body : raw;\nconst miss = [];\nif (!b.original_invoice_no) miss.push('original_invoice_no');\nif (!b.reason) miss.push('reason');\nif (miss.length) return [{ json: { valid: false, error: 'Missing required fields: ' + miss.join(', ') } }];\n// NĐ 70/2025: KHÔNG có đường hủy — chỉ điều chỉnh/thay thế, lưu vết cả hai\nreturn [{ json: { valid: true, request_body: JSON.stringify({ original_invoice_no: b.original_invoice_no, reason: b.reason, new_total: b.new_total ?? null }) } }];"
+      },
+      "id": "ea-verify",
+      "name": "Verify Anser Token",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [400, 300]
+    },
+    {
+      "parameters": { "conditions": { "boolean": [{ "value1": "={{ $json.valid }}", "value2": true }] } },
+      "id": "ea-authz",
+      "name": "Authorized?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [620, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.RAG_BASE_URL }}/einvoice-adjust",
+        "authentication": "none",
+        "sendBody": true, "contentType": "raw", "rawContentType": "application/json",
+        "body": "={{ $json.request_body }}",
+        "options": {}
+      },
+      "id": "ea-adjust",
+      "name": "Issue Adjustment Invoice",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [860, 200],
+      "retryOnFail": true, "maxTries": 3, "waitBetweenTries": 1000
+    },
+    {
+      "parameters": {
+        "jsCode": "const d = $input.first().json;\nconst fmt = n => new Intl.NumberFormat('vi-VN').format(n);\nconst notify_body = JSON.stringify({ channel: 'discord', title: '🧾 HĐĐT điều chỉnh: ' + d.new_invoice_no + ' (thay ' + d.original_invoice_no + ')', color: 15105570, description: 'NĐ 70/2025: hóa đơn sai KHÔNG hủy — phát hành HĐ điều chỉnh, HĐ gốc giữ nguyên lưu vết.\\nMã CQT mới: **' + d.tax_authority_code + '** • Tổng: ' + fmt(d.total) + ' đ' });\nconst resp = JSON.stringify(d);\nreturn [{ json: { notify_body, resp } }];"
+      },
+      "id": "ea-build",
+      "name": "Build Adjust Notice",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1100, 200]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.NOTIFY_URL }}",
+        "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": { "parameters": [{ "name": "x-anser-token", "value": "={{ $env.ANSER_WEBHOOK_TOKEN }}" }] },
+        "sendBody": true, "contentType": "raw", "rawContentType": "application/json",
+        "body": "={{ $json.notify_body }}",
+        "options": {}
+      },
+      "id": "ea-notify",
+      "name": "Notify Accounting",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [1340, 200]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $('Build Adjust Notice').first().json.resp }}",
+        "options": { "responseCode": 201 }
+      },
+      "id": "ea-resp-201",
+      "name": "Respond 201",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1580, 200]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ error: $json.error, status: 400 }) }}",
+        "options": { "responseCode": 400 }
+      },
+      "id": "ea-resp-400",
+      "name": "Respond 400",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [860, 440]
+    }
+  ],
+  "connections": {
+    "Receive Adjust Request": { "main": [[{ "node": "Verify Anser Token", "type": "main", "index": 0 }]] },
+    "Verify Anser Token": { "main": [[{ "node": "Authorized?", "type": "main", "index": 0 }]] },
+    "Authorized?": { "main": [[{ "node": "Issue Adjustment Invoice", "type": "main", "index": 0 }], [{ "node": "Respond 400", "type": "main", "index": 0 }]] },
+    "Issue Adjustment Invoice": { "main": [[{ "node": "Build Adjust Notice", "type": "main", "index": 0 }]] },
+    "Build Adjust Notice": { "main": [[{ "node": "Notify Accounting", "type": "main", "index": 0 }]] },
+    "Notify Accounting": { "main": [[{ "node": "Respond 201", "type": "main", "index": 0 }]] }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" }
+}

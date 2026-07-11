@@ -1,0 +1,97 @@
+{
+  "name": "retail_forecast_suggest_reorder",
+  "nodes": [
+    {
+      "parameters": { "rule": { "interval": [{ "field": "weeks", "weeksInterval": 1 }] } },
+      "id": "fc-trigger",
+      "name": "Weekly Schedule",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [180, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $env.RAG_BASE_URL }}/forecast-reorder",
+        "authentication": "none",
+        "options": {}
+      },
+      "id": "fc-forecast",
+      "name": "Get Forecast Suggestions",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [400, 300],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1000
+    },
+    {
+      "parameters": {
+        "conditions": { "number": [{ "value1": "={{ $json.count }}", "operation": "larger", "value2": 0 }] }
+      },
+      "id": "fc-if",
+      "name": "Có SP cần nhập?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [640, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const s = $input.first().json.suggestions || [];\nconst fmt = n => new Intl.NumberFormat('vi-VN').format(n);\nconst fields = s.slice(0, 20).map(p => ({ name: `${p.product_name} (${p.sku})`, value: `dự báo ${p.predicted_demand} / tồn ${p.current_stock} → nhập **${p.reorder_qty}**`, inline: false }));\nreturn [{ json: {\n  draft_body: JSON.stringify({ items: s }),\n  notify_body: JSON.stringify({ channel: 'discord', title: '📈 Gợi ý nhập hàng (dự báo moving-avg)', color: 3447003, description: `Có **${s.length}** SP nên nhập thêm — chờ duyệt`, fields })\n} }];"
+      },
+      "id": "fc-prep",
+      "name": "Prepare Drafts + Notice",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [880, 200]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.RAG_BASE_URL }}/po-draft-insert",
+        "authentication": "none",
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ $json.draft_body }}",
+        "options": {}
+      },
+      "id": "fc-draft",
+      "name": "Insert PO Drafts",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [1120, 200],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1000
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.NOTIFY_URL }}",
+        "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": { "parameters": [{ "name": "x-anser-token", "value": "={{ $env.ANSER_WEBHOOK_TOKEN }}" }] },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ $('Prepare Drafts + Notice').first().json.notify_body }}",
+        "options": {}
+      },
+      "id": "fc-notify",
+      "name": "Notify Manager",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [1360, 200]
+    }
+  ],
+  "connections": {
+    "Weekly Schedule":        { "main": [[{ "node": "Get Forecast Suggestions", "type": "main", "index": 0 }]] },
+    "Get Forecast Suggestions": { "main": [[{ "node": "Có SP cần nhập?", "type": "main", "index": 0 }]] },
+    "Có SP cần nhập?": { "main": [[{ "node": "Prepare Drafts + Notice", "type": "main", "index": 0 }], []] },
+    "Prepare Drafts + Notice": { "main": [[{ "node": "Insert PO Drafts", "type": "main", "index": 0 }]] },
+    "Insert PO Drafts":       { "main": [[{ "node": "Notify Manager", "type": "main", "index": 0 }]] }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" }
+}

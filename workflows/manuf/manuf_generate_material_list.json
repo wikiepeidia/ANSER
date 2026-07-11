@@ -1,0 +1,164 @@
+{
+  "name": "manuf_generate_material_list",
+  "nodes": [
+    {
+      "parameters": { "httpMethod": "POST", "path": "production-approved", "responseMode": "responseNode", "options": {} },
+      "id": "ml-webhook",
+      "name": "Receive Approved Order",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [180, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $input.first().json;\nconst expected = $env.ANSER_WEBHOOK_TOKEN || '';\nif (expected && ((raw.headers || {})['x-anser-token'] || '') !== expected) {\n  return [{ json: { valid: false, error: 'Unauthorized' } }];\n}\nconst b = (raw.body && typeof raw.body === 'object') ? raw.body : raw;\nif (!b.order_code) return [{ json: { valid: false, error: 'Missing required field: order_code' } }];\nreturn [{ json: { valid: true, order_code: String(b.order_code), request_body: JSON.stringify({ order_code: String(b.order_code) }) } }];"
+      },
+      "id": "ml-verify",
+      "name": "Verify Anser Token",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [400, 300]
+    },
+    {
+      "parameters": { "conditions": { "boolean": [{ "value1": "={{ $json.valid }}", "value2": true }] } },
+      "id": "ml-authz",
+      "name": "Authorized?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [620, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.RAG_BASE_URL }}/material-requirements-generate",
+        "authentication": "none",
+        "sendBody": true, "contentType": "raw", "rawContentType": "application/json",
+        "body": "={{ $json.request_body }}",
+        "options": {}
+      },
+      "id": "ml-generate",
+      "name": "Generate From BOM",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [840, 200],
+      "retryOnFail": true, "maxTries": 3, "waitBetweenTries": 1000
+    },
+    {
+      "parameters": {
+        "conditions": { "string": [{ "value1": "={{ $json.status }}", "value2": "needs_fallback" }] }
+      },
+      "id": "ml-needsfb",
+      "name": "Missing BOM?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [1060, 200]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.BRAIN_BASE_URL }}/chat",
+        "authentication": "none",
+        "sendBody": true, "contentType": "raw", "rawContentType": "application/json",
+        "body": "={{ JSON.stringify({ route: 'TECHNICAL', prompt: 'Uoc luong nguyen lieu can cho SP ' + $json.product_code + ' so luong ' + $json.qty, context: { estimate_bom: { product_code: $json.product_code, qty: $json.qty } } }) }}",
+        "options": {}
+      },
+      "id": "ml-estimate",
+      "name": "Estimate Materials (Brain)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [1280, 100],
+      "retryOnFail": true, "maxTries": 2, "waitBetweenTries": 1500
+    },
+    {
+      "parameters": {
+        "jsCode": "const est = ($input.first().json.estimation || {});\nconst gen = $('Generate From BOM').first().json;\nreturn [{ json: { fallback_body: JSON.stringify({ order_code: gen.order_code, materials: est.materials || [], estimation_method: 'llm_fallback', batches_suggested: null }), confidence: est.confidence || 0 } }];"
+      },
+      "id": "ml-fb-build",
+      "name": "Build Fallback Payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1500, 100]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.RAG_BASE_URL }}/material-requirements-insert",
+        "authentication": "none",
+        "sendBody": true, "contentType": "raw", "rawContentType": "application/json",
+        "body": "={{ $json.fallback_body }}",
+        "options": {}
+      },
+      "id": "ml-fb-insert",
+      "name": "Save LLM Fallback List",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [1720, 100],
+      "retryOnFail": true, "maxTries": 3, "waitBetweenTries": 1000
+    },
+    {
+      "parameters": {
+        "jsCode": "// Gộp 2 nhánh: BOM deterministic hoặc LLM fallback\nconst d = $input.first().json;\nconst isFallback = d.estimation_method === 'llm_fallback';\nconst src = isFallback ? JSON.parse($('Build Fallback Payload').first().json.fallback_body) : d;\nconst mats = src.materials || d.materials || [];\nconst fmt = n => new Intl.NumberFormat('vi-VN').format(n);\nconst lines = mats.map(m => `• ${m.material_name || m.material_code}: cần ${fmt(m.need)} ${m.unit || ''}, tồn ${fmt(m.on_hand)} → MUA ${fmt(m.to_buy)} ${m.buy_unit || m.unit || ''}`).join('\\n');\nconst warn = isFallback;\nconst notify_body = JSON.stringify({ channel: 'discord', title: (warn ? '⚠️ DS NVL (LLM ước lượng — BẮT BUỘC duyệt tay)' : '📋 DS nguyên liệu cần nhập (BOM)') , color: warn ? 15844367 : 3066993, description: lines + (d.batches_suggested ? `\\n\\nSố mẻ gợi ý: **${d.batches_suggested}**` : ''), footer: { text: 'requirement #' + d.requirement_id + ' • ' + d.estimation_method } });\nconst resp = JSON.stringify({ status: 'generated', requirement_id: d.requirement_id, estimation_method: d.estimation_method, batches_suggested: d.batches_suggested || null, to_buy: mats.map(m => ({ code: m.material_code, to_buy: m.to_buy })) });\nreturn [{ json: { notify_body, resp } }];"
+      },
+      "id": "ml-merge",
+      "name": "Build Notice",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1940, 200]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.NOTIFY_URL }}",
+        "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": { "parameters": [{ "name": "x-anser-token", "value": "={{ $env.ANSER_WEBHOOK_TOKEN }}" }] },
+        "sendBody": true, "contentType": "raw", "rawContentType": "application/json",
+        "body": "={{ $json.notify_body }}",
+        "options": {}
+      },
+      "id": "ml-notify",
+      "name": "Notify Purchasing",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [2160, 200]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $('Build Notice').first().json.resp }}",
+        "options": { "responseCode": 200 }
+      },
+      "id": "ml-resp-200",
+      "name": "Respond 200",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [2380, 200]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ error: $json.error, status: 400 }) }}",
+        "options": { "responseCode": 400 }
+      },
+      "id": "ml-resp-400",
+      "name": "Respond 400",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [840, 440]
+    }
+  ],
+  "connections": {
+    "Receive Approved Order": { "main": [[{ "node": "Verify Anser Token", "type": "main", "index": 0 }]] },
+    "Verify Anser Token": { "main": [[{ "node": "Authorized?", "type": "main", "index": 0 }]] },
+    "Authorized?": { "main": [[{ "node": "Generate From BOM", "type": "main", "index": 0 }], [{ "node": "Respond 400", "type": "main", "index": 0 }]] },
+    "Generate From BOM": { "main": [[{ "node": "Missing BOM?", "type": "main", "index": 0 }]] },
+    "Missing BOM?": { "main": [[{ "node": "Estimate Materials (Brain)", "type": "main", "index": 0 }], [{ "node": "Build Notice", "type": "main", "index": 0 }]] },
+    "Estimate Materials (Brain)": { "main": [[{ "node": "Build Fallback Payload", "type": "main", "index": 0 }]] },
+    "Build Fallback Payload": { "main": [[{ "node": "Save LLM Fallback List", "type": "main", "index": 0 }]] },
+    "Save LLM Fallback List": { "main": [[{ "node": "Build Notice", "type": "main", "index": 0 }]] },
+    "Build Notice": { "main": [[{ "node": "Notify Purchasing", "type": "main", "index": 0 }]] },
+    "Notify Purchasing": { "main": [[{ "node": "Respond 200", "type": "main", "index": 0 }]] }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" }
+}

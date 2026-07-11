@@ -1,5 +1,5 @@
 {
-  "name": "Sample 1 — Webhook Echo",
+  "name": "shared_webhook_echo",
   "nodes": [
     {
       "parameters": {
@@ -11,7 +11,10 @@
       "name": "Webhook POST /echo",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
-      "position": [240, 300]
+      "position": [
+        240,
+        300
+      ]
     },
     {
       "parameters": {
@@ -21,14 +24,27 @@
       "name": "Log and Return",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [460, 300]
+      "position": [
+        460,
+        300
+      ]
     }
   ],
   "connections": {
     "Webhook POST /echo": {
-      "main": [[{ "node": "Log and Return", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Log and Return",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": false,
-  "settings": { "executionOrder": "v1" }
+  "settings": {
+    "executionOrder": "v1"
+  }
 }

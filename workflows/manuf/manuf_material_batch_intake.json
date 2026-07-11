@@ -1,0 +1,207 @@
+{
+  "name": "manuf_material_batch_intake",
+  "nodes": [
+    {
+      "parameters": { "httpMethod": "POST", "path": "material-intake", "responseMode": "responseNode", "options": {} },
+      "id": "in-webhook",
+      "name": "Receive Material Intake",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [180, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $input.first().json;\nconst expected = $env.ANSER_WEBHOOK_TOKEN || '';\nif (expected && ((raw.headers || {})['x-anser-token'] || '') !== expected) {\n  return [{ json: { valid: false, error: 'Unauthorized' } }];\n}\nconst b = (raw.body && typeof raw.body === 'object') ? raw.body : raw;\n// 2 đường vào (PDF V2 E2): chụp phiếu cân → OCR (scenario) HOẶC nhập app trực tiếp\nconst use_ocr = !!b.scenario;\nif (!use_ocr && (!b.material_code || !b.qty_kg)) {\n  return [{ json: { valid: false, error: 'Missing required fields: material_code, qty_kg (hoặc scenario để OCR phiếu cân)' } }];\n}\n// harvest_ts: client gửi ISO hoặc harvest_hours_ago (phiếu cân ghi giờ thu hái)\nconst hoursAgo = Number(b.harvest_hours_ago ?? 5);\nconst harvest_ts = b.harvest_ts || new Date(Date.now() - hoursAgo * 3600 * 1000).toISOString();\nconst lot_code = b.lot_code || ('LOT-' + new Date().toISOString().slice(0, 10).replace(/-/g, '') + '-' + Math.random().toString(36).slice(2, 7).toUpperCase());\nreturn [{ json: { valid: true, use_ocr, scenario: b.scenario || null, lot_code, harvest_ts, order_code: b.order_code || null, direct: { farmer: b.farmer || null, region_grown: b.region_grown || null, part: b.part || null, form: b.form || 'tuoi', material_code: b.material_code || null, qty_kg: b.qty_kg || 0, unit_cost_vnd: b.unit_cost_vnd || 0, gacp_cert: b.gacp_cert || null } } }];"
+      },
+      "id": "in-verify",
+      "name": "Verify Anser Token",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [400, 300]
+    },
+    {
+      "parameters": { "conditions": { "boolean": [{ "value1": "={{ $json.valid }}", "value2": true }] } },
+      "id": "in-authz",
+      "name": "Authorized?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [620, 300]
+    },
+    {
+      "parameters": { "conditions": { "boolean": [{ "value1": "={{ $json.use_ocr }}", "value2": true }] } },
+      "id": "in-mode",
+      "name": "From Weigh Slip (OCR)?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [840, 200]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.BRAIN_BASE_URL }}/upload?scenario={{ $json.scenario }}",
+        "authentication": "none",
+        "options": { "timeout": 30000 }
+      },
+      "id": "in-ocr",
+      "name": "OCR Weigh Slip (Brain)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [1060, 100]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.BRAIN_BASE_URL }}/mcp/validate-invoice",
+        "authentication": "none",
+        "sendBody": true, "contentType": "raw", "rawContentType": "application/json",
+        "body": "={{ JSON.stringify({ items: $json.items, total: $json.total }) }}",
+        "options": {}
+      },
+      "id": "in-validate",
+      "name": "Validate Weigh Total",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [1280, 100]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Tiền trả nông hộ = cân × đơn giá — lệch là sai giá vốn NVL → chặn, chờ đối soát\nconst ocr = $('OCR Weigh Slip (Brain)').first().json;\nconst val = $input.first().json;\nconst v = $('Verify Anser Token').first().json;\nconst line = (ocr.items || [])[0] || {};\nconst d = { is_valid: val.is_valid === true };\nd.intake_body = JSON.stringify({ lot_code: v.lot_code, farmer: ocr.farmer, region_grown: ocr.region_grown, part: ocr.part, form: ocr.form || 'tuoi', material_code: line.sku, qty_kg: line.qty || 0, unit_cost_vnd: line.unit_price || 0, harvest_ts: v.harvest_ts, gacp_cert: ocr.gacp_cert || null, order_code: v.order_code });\nd.pending_body = JSON.stringify({ kind: 'material_intake', reason: `Phieu can lech ${val.difference} VND — tien tra nong ho phai khop can x don gia`, ocr_total: val.ocr_total, calculated_total: val.calculated_total, raw_payload: { farmer: ocr.farmer, items: ocr.items } });\nreturn [{ json: d }];"
+      },
+      "id": "in-merge",
+      "name": "Merge OCR + Validation",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1500, 100]
+    },
+    {
+      "parameters": { "conditions": { "boolean": [{ "value1": "={{ $json.is_valid }}", "value2": true }] } },
+      "id": "in-isvalid",
+      "name": "Weigh Slip Valid?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [1720, 100]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Nhập app trực tiếp (xưởng không chụp phiếu cân)\nconst v = $input.first().json;\nreturn [{ json: { intake_body: JSON.stringify({ lot_code: v.lot_code, ...v.direct, harvest_ts: v.harvest_ts, order_code: v.order_code }) } }];"
+      },
+      "id": "in-direct",
+      "name": "Build Direct Intake",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1060, 320]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.RAG_BASE_URL }}/material-batch-insert",
+        "authentication": "none",
+        "sendBody": true, "contentType": "raw", "rawContentType": "application/json",
+        "body": "={{ $json.intake_body }}",
+        "options": {}
+      },
+      "id": "in-insert",
+      "name": "Insert Material Batch",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [1940, 200],
+      "retryOnFail": true, "maxTries": 3, "waitBetweenTries": 1000
+    },
+    {
+      "parameters": {
+        "jsCode": "const d = $input.first().json;\nconst fmt = n => new Intl.NumberFormat('vi-VN').format(n);\nconst dup = d.deduped === true;\n// Cửa sổ chế biến 24h (giữ cynarin): ok 🟢 / urgent 🟠 (<6h) / overdue 🔴 (quá hạn)\nlet title, color, desc;\nif (dup) { title = '🔁 Lô trùng lot_code (bỏ qua)'; color = 10197915; desc = 'Phiếu cân gửi lại — không nhập trùng.'; }\nelse if (d.window_status === 'overdue') { title = '🔴 QUÁ CỬA SỔ 24H — lô ' + d.lot_code; color = 15158332; desc = 'Nguyên liệu tươi đã ' + (24 - d.hours_left).toFixed(1) + 'h kể từ thu hái — QUÁ HẠN ' + Math.abs(d.hours_left).toFixed(1) + 'h, nguy cơ mất cynarin. Cân nhắc chuyển hướng sản phẩm.'; }\nelse if (d.window_status === 'urgent') { title = '🟠 KHẨN: đưa vào chế biến ngay — lô ' + d.lot_code; color = 15105570; desc = 'Chỉ còn **' + d.hours_left + 'h** trong cửa sổ 24h giữ dược tính.'; }\nelse { title = '🌿 Nhập lô nguyên liệu ' + d.lot_code; color = 3066993; desc = d.window_status === 'ok' ? ('Còn ' + d.hours_left + 'h trong cửa sổ chế biến 24h.') : 'Nguyên liệu khô — lưu kho được ≤ 1 năm.'; }\nif (d.order_linked) desc += '\\n→ Đơn liên quan: **NVL đã về, sẵn sàng sản xuất**';\nconst notify_body = JSON.stringify({ channel: 'discord', title, color, description: desc, fields: [ { name: 'Nông hộ/HTX', value: String(d.farmer || 'N/A'), inline: true }, { name: 'NVL', value: String(d.material_code || ''), inline: true }, { name: 'Khối lượng', value: fmt(d.qty_kg || 0) + ' kg', inline: true } ] });\nconst resp = JSON.stringify({ status: d.status, lot_code: d.lot_code, deduped: dup, window_status: d.window_status || null, hours_left: d.hours_left ?? null, order_linked: d.order_linked || false });\nreturn [{ json: { notify_body, resp } }];"
+      },
+      "id": "in-build",
+      "name": "Build Notice",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2160, 200]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.NOTIFY_URL }}",
+        "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": { "parameters": [{ "name": "x-anser-token", "value": "={{ $env.ANSER_WEBHOOK_TOKEN }}" }] },
+        "sendBody": true, "contentType": "raw", "rawContentType": "application/json",
+        "body": "={{ $json.notify_body }}",
+        "options": {}
+      },
+      "id": "in-notify",
+      "name": "Notify Purchasing",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [2380, 200]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $('Build Notice').first().json.resp }}",
+        "options": { "responseCode": 201 }
+      },
+      "id": "in-resp-201",
+      "name": "Respond 201",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [2600, 200]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.RAG_BASE_URL }}/pending-review",
+        "authentication": "none",
+        "sendBody": true, "contentType": "raw", "rawContentType": "application/json",
+        "body": "={{ $json.pending_body }}",
+        "options": {}
+      },
+      "id": "in-pending",
+      "name": "Insert Pending Review",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [1940, 420],
+      "retryOnFail": true, "maxTries": 3, "waitBetweenTries": 1000
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ status: 'pending_review', review_id: $json.id }) }}",
+        "options": { "responseCode": 422 }
+      },
+      "id": "in-resp-422",
+      "name": "Respond 422",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [2160, 420]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ error: $json.error, status: 400 }) }}",
+        "options": { "responseCode": 400 }
+      },
+      "id": "in-resp-400",
+      "name": "Respond 400",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [840, 460]
+    }
+  ],
+  "connections": {
+    "Receive Material Intake": { "main": [[{ "node": "Verify Anser Token", "type": "main", "index": 0 }]] },
+    "Verify Anser Token": { "main": [[{ "node": "Authorized?", "type": "main", "index": 0 }]] },
+    "Authorized?": { "main": [[{ "node": "From Weigh Slip (OCR)?", "type": "main", "index": 0 }], [{ "node": "Respond 400", "type": "main", "index": 0 }]] },
+    "From Weigh Slip (OCR)?": { "main": [[{ "node": "OCR Weigh Slip (Brain)", "type": "main", "index": 0 }], [{ "node": "Build Direct Intake", "type": "main", "index": 0 }]] },
+    "OCR Weigh Slip (Brain)": { "main": [[{ "node": "Validate Weigh Total", "type": "main", "index": 0 }]] },
+    "Validate Weigh Total": { "main": [[{ "node": "Merge OCR + Validation", "type": "main", "index": 0 }]] },
+    "Merge OCR + Validation": { "main": [[{ "node": "Weigh Slip Valid?", "type": "main", "index": 0 }]] },
+    "Weigh Slip Valid?": { "main": [[{ "node": "Insert Material Batch", "type": "main", "index": 0 }], [{ "node": "Insert Pending Review", "type": "main", "index": 0 }]] },
+    "Build Direct Intake": { "main": [[{ "node": "Insert Material Batch", "type": "main", "index": 0 }]] },
+    "Insert Material Batch": { "main": [[{ "node": "Build Notice", "type": "main", "index": 0 }]] },
+    "Build Notice": { "main": [[{ "node": "Notify Purchasing", "type": "main", "index": 0 }]] },
+    "Notify Purchasing": { "main": [[{ "node": "Respond 201", "type": "main", "index": 0 }]] },
+    "Insert Pending Review": { "main": [[{ "node": "Respond 422", "type": "main", "index": 0 }]] }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" }
+}

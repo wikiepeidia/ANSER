@@ -1,0 +1,106 @@
+{
+  "name": "retail_order_payment_qr",
+  "nodes": [
+    {
+      "parameters": { "httpMethod": "POST", "path": "order-create", "responseMode": "responseNode", "options": {} },
+      "id": "oq-webhook",
+      "name": "Receive New Order",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [180, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $input.first().json;\nconst expected = $env.ANSER_WEBHOOK_TOKEN || '';\nif (expected && ((raw.headers || {})['x-anser-token'] || '') !== expected) {\n  return [{ json: { valid: false, error: 'Unauthorized' } }];\n}\nconst b = (raw.body && typeof raw.body === 'object') ? raw.body : raw;\nif (!Array.isArray(b.items) || !b.items.length) {\n  return [{ json: { valid: false, error: 'Missing required field: items (mảng {sku,name,qty,price})' } }];\n}\nreturn [{ json: { valid: true, request_body: JSON.stringify({ items: b.items, customer_name: b.customer_name || null, channel: b.channel || 'store' }) } }];"
+      },
+      "id": "oq-verify",
+      "name": "Verify Anser Token",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [400, 300]
+    },
+    {
+      "parameters": { "conditions": { "boolean": [{ "value1": "={{ $json.valid }}", "value2": true }] } },
+      "id": "oq-authz",
+      "name": "Authorized?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [620, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.RAG_BASE_URL }}/order-create",
+        "authentication": "none",
+        "sendBody": true, "contentType": "raw", "rawContentType": "application/json",
+        "body": "={{ $json.request_body }}",
+        "options": {}
+      },
+      "id": "oq-create",
+      "name": "Create Order + VietQR",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [860, 200],
+      "retryOnFail": true, "maxTries": 3, "waitBetweenTries": 1000
+    },
+    {
+      "parameters": {
+        "jsCode": "const d = $input.first().json;\nconst fmt = n => new Intl.NumberFormat('vi-VN').format(n);\n// Gửi TRỰC TIẾP Discord webhook để đính ảnh QR (embed.image) — khách quét bằng app ngân hàng\nconst discord_body = JSON.stringify({ embeds: [{ title: '🧾 Đơn ' + d.order_no + ' — chờ thanh toán ' + fmt(d.total_amount) + ' đ', color: 3447003, description: 'Khách quét QR bên dưới bằng app ngân hàng.\\nNội dung CK: **' + d.transfer_content + '** (hệ thống tự đối soát qua SePay).', image: { url: d.qr_url }, footer: { text: 'ANSER C1 • VietQR động' }, timestamp: new Date().toISOString() }] });\nconst resp = JSON.stringify({ status: d.status, order_no: d.order_no, total_amount: d.total_amount, transfer_content: d.transfer_content, qr_url: d.qr_url });\nreturn [{ json: { discord_body, resp } }];"
+      },
+      "id": "oq-build",
+      "name": "Build QR Notice",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1100, 200]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.DISCORD_WEBHOOK_URL }}",
+        "authentication": "none",
+        "sendBody": true, "contentType": "raw", "rawContentType": "application/json",
+        "body": "={{ $json.discord_body }}",
+        "options": {}
+      },
+      "id": "oq-notify",
+      "name": "Post QR To Discord",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [1340, 200]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $('Build QR Notice').first().json.resp }}",
+        "options": { "responseCode": 201 }
+      },
+      "id": "oq-resp-201",
+      "name": "Respond 201",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1580, 200]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ error: $json.error, status: 400 }) }}",
+        "options": { "responseCode": 400 }
+      },
+      "id": "oq-resp-400",
+      "name": "Respond 400",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [860, 440]
+    }
+  ],
+  "connections": {
+    "Receive New Order": { "main": [[{ "node": "Verify Anser Token", "type": "main", "index": 0 }]] },
+    "Verify Anser Token": { "main": [[{ "node": "Authorized?", "type": "main", "index": 0 }]] },
+    "Authorized?": { "main": [[{ "node": "Create Order + VietQR", "type": "main", "index": 0 }], [{ "node": "Respond 400", "type": "main", "index": 0 }]] },
+    "Create Order + VietQR": { "main": [[{ "node": "Build QR Notice", "type": "main", "index": 0 }]] },
+    "Build QR Notice": { "main": [[{ "node": "Post QR To Discord", "type": "main", "index": 0 }]] },
+    "Post QR To Discord": { "main": [[{ "node": "Respond 201", "type": "main", "index": 0 }]] }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" }
+}

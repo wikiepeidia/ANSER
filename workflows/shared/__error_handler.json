@@ -1,0 +1,111 @@
+{
+  "name": "__error_handler",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "eh-trigger",
+      "name": "On Workflow Error",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        220,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const e = $input.first().json;\nconst wf = e.workflow || {};\nconst err = e.execution?.error || e.error || {};\nconst lastNode = e.execution?.lastNodeExecuted || err.node?.name || 'unknown';\nconst payload = {\n  workflow_name: wf.name || 'unknown',\n  node_name: String(lastNode),\n  error_message: String(err.message || err.description || 'unknown error').slice(0, 500),\n  execution_id: String(e.execution?.id || '')\n};\nconst discord_body = JSON.stringify({ embeds: [{ title: '⚠️ Workflow fail: ' + payload.workflow_name, color: 15158332, fields: [ { name: 'Node', value: payload.node_name, inline: true }, { name: 'Exec', value: payload.execution_id || 'n/a', inline: true }, { name: 'Loi', value: payload.error_message.slice(0,300), inline: false } ], footer: { text: 'ANSER Error Handler' }, timestamp: new Date().toISOString() }] });\nreturn [{ json: { log_body: JSON.stringify(payload), discord_body } }];"
+      },
+      "id": "eh-build",
+      "name": "Build Error Context",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.RAG_BASE_URL }}/workflow-error",
+        "authentication": "none",
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ $json.log_body }}",
+        "options": {}
+      },
+      "id": "eh-log",
+      "name": "Log To DB",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        660,
+        300
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1000
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.DISCORD_WEBHOOK_URL }}",
+        "authentication": "none",
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ $('Build Error Context').first().json.discord_body }}",
+        "options": {}
+      },
+      "id": "eh-discord",
+      "name": "Alert Discord",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        880,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "On Workflow Error": {
+      "main": [
+        [
+          {
+            "node": "Build Error Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Error Context": {
+      "main": [
+        [
+          {
+            "node": "Log To DB",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log To DB": {
+      "main": [
+        [
+          {
+            "node": "Alert Discord",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

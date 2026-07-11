@@ -1,5 +1,5 @@
 {
-  "name": "IoT Events Ingest (POS → NeonDB)",
+  "name": "shared_iot_events_ingest",
   "nodes": [
     {
       "parameters": {
@@ -12,17 +12,23 @@
       "name": "Receive IoT Event",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
-      "position": [180, 300]
+      "position": [
+        180,
+        300
+      ]
     },
     {
       "parameters": {
-        "jsCode": "const raw = $input.first().json;\nconst body = (raw.body && typeof raw.body === 'object') ? raw.body : raw;\nconst missing = [];\nif (!body.device_id)  missing.push('device_id');\nif (!body.event_type) missing.push('event_type');\nif (missing.length > 0) {\n  return [{ json: { valid: false, error: `Missing required fields: ${missing.join(', ')}`, status: 400 } }];\n}\nreturn [{ json: {\n  valid: true,\n  device_id:  String(body.device_id),\n  event_type: String(body.event_type),\n  payload:    body.payload || {}\n} }];"
+        "jsCode": "const raw = $input.first().json;\nconst body = (raw.body && typeof raw.body === 'object') ? raw.body : raw;\n// SEC-3: shared-token check — chi kiem tra khi ANSER_WEBHOOK_TOKEN da duoc cau hinh\nconst expectedToken = $env.ANSER_WEBHOOK_TOKEN || '';\nif (expectedToken && ((raw.headers || {})['x-anser-token'] || '') !== expectedToken) {\n  return [{ json: { valid: false, error: 'Unauthorized: thieu hoac sai header x-anser-token', status: 400 } }];\n}\nconst missing = [];\nif (!body.device_id)  missing.push('device_id');\nif (!body.event_type) missing.push('event_type');\nif (missing.length > 0) {\n  return [{ json: { valid: false, error: `Missing required fields: ${missing.join(', ')}`, status: 400 } }];\n}\nreturn [{ json: {\n  valid: true,\n  device_id:  String(body.device_id),\n  event_type: String(body.event_type),\n  payload:    body.payload || {}\n} }];"
       },
       "id": "iot-code-001",
       "name": "Validate Fields",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [400, 300]
+      "position": [
+        400,
+        300
+      ]
     },
     {
       "parameters": {
@@ -39,17 +45,23 @@
       "name": "Valid?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
-      "position": [620, 300]
+      "position": [
+        620,
+        300
+      ]
     },
     {
       "parameters": {
-        "jsCode": "const d = $input.first().json;\ntry {\n  const reqBody = JSON.stringify({ device_id: d.device_id, event_type: d.event_type, payload: d.payload });\n  const data = await new Promise((resolve, reject) => {\n    const req = require('http').request({\n      hostname: 'rag-service', port: 8001, path: '/iot-insert', method: 'POST',\n      headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(reqBody) }\n    }, res => {\n      let raw = ''; res.on('data', c => raw += c);\n      res.on('end', () => { try { resolve(JSON.parse(raw)); } catch(e) { resolve({}); } });\n    });\n    req.on('error', reject); req.write(reqBody); req.end();\n  });\n  return [{ json: { success: true, ...data } }];\n} catch (e) {\n  return [{ json: { success: false, error: e.message } }];\n}"
+        "jsCode": "const d = $input.first().json;\ntry {\n  const reqBody = JSON.stringify({ device_id: d.device_id, event_type: d.event_type, payload: d.payload });\n  const data = await new Promise((resolve, reject) => {\n    const req = require('http').request({\n      hostname: 'rag_service', port: 8001, path: '/iot-insert', method: 'POST',\n      headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(reqBody) }\n    }, res => {\n      let raw = ''; res.on('data', c => raw += c);\n      res.on('end', () => { try { resolve(JSON.parse(raw)); } catch(e) { resolve({}); } });\n    });\n    req.on('error', reject); req.write(reqBody); req.end();\n  });\n  return [{ json: { success: true, ...data } }];\n} catch (e) {\n  return [{ json: { success: false, error: e.message } }];\n}"
       },
       "id": "iot-code-002",
       "name": "Insert to NeonDB",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [840, 180]
+      "position": [
+        840,
+        180
+      ]
     },
     {
       "parameters": {
@@ -63,7 +75,10 @@
       "name": "Respond 201",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
-      "position": [1060, 180]
+      "position": [
+        1060,
+        180
+      ]
     },
     {
       "parameters": {
@@ -77,26 +92,67 @@
       "name": "Respond 400",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
-      "position": [840, 420]
+      "position": [
+        840,
+        420
+      ]
     }
   ],
   "connections": {
     "Receive IoT Event": {
-      "main": [[{ "node": "Validate Fields", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Validate Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Validate Fields": {
-      "main": [[{ "node": "Valid?", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Valid?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Valid?": {
       "main": [
-        [{ "node": "Insert to NeonDB", "type": "main", "index": 0 }],
-        [{ "node": "Respond 400",      "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Insert to NeonDB",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond 400",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Insert to NeonDB": {
-      "main": [[{ "node": "Respond 201", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Respond 201",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": false,
-  "settings": { "executionOrder": "v1" }
+  "settings": {
+    "executionOrder": "v1"
+  }
 }

@@ -1,5 +1,5 @@
 {
-  "name": "POS Demo — IoT → NeonDB → Discord",
+  "name": "retail_pos_ingest",
   "nodes": [
     {
       "parameters": {
@@ -12,34 +12,48 @@
       "name": "Receive POS Event",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
-      "position": [180, 300]
+      "position": [
+        180,
+        300
+      ]
     },
     {
       "parameters": {
-        "jsCode": "const raw = $input.first().json;\nconst body = (raw.body && typeof raw.body === 'object') ? raw.body : raw;\nconst missing = [];\nif (!body.device_id)  missing.push('device_id');\nif (!body.event_type) missing.push('event_type');\nif (missing.length > 0) {\n  return [{ json: { valid: false, error: `Missing required fields: ${missing.join(', ')}` } }];\n}\nconst amount = body.payload?.amount || 0;\nconst d = {\n  valid: true,\n  device_id:  String(body.device_id),\n  event_type: String(body.event_type),\n  payload:    body.payload || {},\n  amount_vnd: amount,\n  amount_fmt: new Intl.NumberFormat('vi-VN').format(amount) + ' VND'\n};\nd.request_body = JSON.stringify({ device_id: d.device_id, event_type: d.event_type, payload: d.payload });\nreturn [{ json: d }];"
+        "jsCode": "const raw = $input.first().json;\nconst body = (raw.body && typeof raw.body === 'object') ? raw.body : raw;\n// SEC-3: shared-token check — chi kiem tra khi ANSER_WEBHOOK_TOKEN da duoc cau hinh\nconst expectedToken = $env.ANSER_WEBHOOK_TOKEN || '';\nif (expectedToken && ((raw.headers || {})['x-anser-token'] || '') !== expectedToken) {\n  return [{ json: { valid: false, error: 'Unauthorized: thieu hoac sai header x-anser-token' } }];\n}\nconst missing = [];\nif (!body.device_id)  missing.push('device_id');\nif (!body.event_type) missing.push('event_type');\nif (missing.length > 0) {\n  return [{ json: { valid: false, error: `Missing required fields: ${missing.join(', ')}` } }];\n}\nconst amount = body.payload?.amount || 0;\n// idempotency: client gui UUID, neu thieu thi tu sinh (PDF3 muc 3)\nconst idem = body.idempotency_key || require('crypto').randomUUID();\nconst d = {\n  valid: true,\n  device_id:  String(body.device_id),\n  event_type: String(body.event_type),\n  payload:    body.payload || {},\n  idempotency_key: idem,\n  amount_vnd: amount,\n  amount_fmt: new Intl.NumberFormat('vi-VN').format(amount) + ' VND'\n};\nd.request_body = JSON.stringify({ device_id: d.device_id, event_type: d.event_type, payload: d.payload, idempotency_key: d.idempotency_key });\nreturn [{ json: d }];"
       },
       "id": "pos-code-001",
       "name": "Validate + Enrich",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [400, 300]
+      "position": [
+        400,
+        300
+      ]
     },
     {
       "parameters": {
         "conditions": {
-          "boolean": [{ "value1": "={{ $json.valid }}", "value2": true }]
+          "boolean": [
+            {
+              "value1": "={{ $json.valid }}",
+              "value2": true
+            }
+          ]
         }
       },
       "id": "pos-if-001",
       "name": "Valid?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
-      "position": [620, 300]
+      "position": [
+        620,
+        300
+      ]
     },
     {
       "parameters": {
         "method": "POST",
-        "url": "http://rag-service:8001/iot-insert",
+        "url": "http://rag_service:8001/iot-insert",
         "authentication": "none",
         "sendBody": true,
         "contentType": "raw",
@@ -51,22 +65,31 @@
       "name": "Call iot-insert",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
-      "position": [840, 180]
+      "position": [
+        840,
+        180
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1000
     },
     {
       "parameters": {
-        "jsCode": "const dbResult = $input.first().json;\nconst orig = $('Validate + Enrich').first().json;\nconst d = { ...orig, db_id: dbResult.id, created_at: dbResult.created_at, db_ok: true };\nconst isInvoice = ['sale_completed', 'payment_received', 'invoice'].includes(d.event_type);\nd.discord_body = JSON.stringify({\n  embeds: [{\n    title: (isInvoice ? 'Hoa don moi' : 'Su kien POS') + ' — ' + d.device_id,\n    color: isInvoice ? 52307 : 16744448,\n    fields: [\n      { name: 'Thiet bi',  value: d.device_id,             inline: true  },\n      { name: 'Loai',      value: d.event_type,            inline: true  },\n      { name: 'DB Record', value: '#' + (d.db_id || '?'),  inline: true  },\n      { name: 'So tien',   value: d.amount_fmt || 'N/A',   inline: true  },\n      { name: 'Thoi gian', value: d.created_at || new Date().toISOString(), inline: false }\n    ],\n    footer: { text: 'n8n IoT Pipeline • NeonDB' }\n  }]\n});\nd.response_201 = JSON.stringify({ status: 'ok', id: d.db_id, device: d.device_id, event: d.event_type, timestamp: d.created_at });\nreturn [{ json: d }];"
+        "jsCode": "const dbResult = $input.first().json;\nconst orig = $('Validate + Enrich').first().json;\nconst d = { ...orig, db_id: dbResult.id, created_at: dbResult.created_at, db_ok: true };\nconst isInvoice = ['sale', 'sale_completed', 'payment_received', 'invoice'].includes(d.event_type);\nd.discord_body = JSON.stringify({\n  embeds: [{\n    title: (isInvoice ? 'Hoa don moi' : 'Su kien POS') + ' — ' + d.device_id,\n    color: isInvoice ? 52307 : 16744448,\n    fields: [\n      { name: 'Thiet bi',  value: d.device_id,             inline: true  },\n      { name: 'Loai',      value: d.event_type,            inline: true  },\n      { name: 'DB Record', value: '#' + (d.db_id || '?'),  inline: true  },\n      { name: 'So tien',   value: d.amount_fmt || 'N/A',   inline: true  },\n      { name: 'Thoi gian', value: d.created_at || new Date().toISOString(), inline: false }\n    ],\n    footer: { text: 'n8n IoT Pipeline • NeonDB' }\n  }]\n});\nd.response_201 = JSON.stringify({ status: 'ok', id: d.db_id, device: d.device_id, event: d.event_type, timestamp: d.created_at });\nreturn [{ json: d }];"
       },
       "id": "pos-code-002",
       "name": "Enrich + Build Discord",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1060, 180]
+      "position": [
+        1060,
+        180
+      ]
     },
     {
       "parameters": {
         "method": "POST",
-        "url": "https://discord.com/api/webhooks/1515444369480745063/ZlYUlYstgHrc5-P7lZTrcZcsGVGrqo2rvxq_IAPPREB_YP4ci1EZVe0oVC7SZX1Da89R",
+        "url": "={{ $env.DISCORD_WEBHOOK_URL }}",
         "authentication": "none",
         "sendBody": true,
         "contentType": "raw",
@@ -78,46 +101,123 @@
       "name": "Notify Discord",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
-      "position": [1280, 180]
+      "position": [
+        1280,
+        180
+      ]
     },
     {
       "parameters": {
         "respondWith": "json",
         "responseBody": "={{ $('Enrich + Build Discord').first().json.response_201 }}",
-        "options": { "responseCode": 201 }
+        "options": {
+          "responseCode": 201
+        }
       },
       "id": "pos-respond-201",
       "name": "Respond 201",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
-      "position": [1500, 180]
+      "position": [
+        1500,
+        180
+      ]
     },
     {
       "parameters": {
         "respondWith": "json",
         "responseBody": "={{ JSON.stringify({ error: $json.error, status: 400 }) }}",
-        "options": { "responseCode": 400 }
+        "options": {
+          "responseCode": 400
+        }
       },
       "id": "pos-respond-400",
       "name": "Respond 400",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
-      "position": [840, 420]
+      "position": [
+        840,
+        420
+      ]
     }
   ],
   "connections": {
-    "Receive POS Event":     { "main": [[{ "node": "Validate + Enrich",       "type": "main", "index": 0 }]] },
-    "Validate + Enrich":     { "main": [[{ "node": "Valid?",                   "type": "main", "index": 0 }]] },
-    "Valid?": {
+    "Receive POS Event": {
       "main": [
-        [{ "node": "Call iot-insert", "type": "main", "index": 0 }],
-        [{ "node": "Respond 400",     "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Validate + Enrich",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
-    "Call iot-insert":       { "main": [[{ "node": "Enrich + Build Discord",  "type": "main", "index": 0 }]] },
-    "Enrich + Build Discord":{ "main": [[{ "node": "Notify Discord",          "type": "main", "index": 0 }]] },
-    "Notify Discord":        { "main": [[{ "node": "Respond 201",             "type": "main", "index": 0 }]] }
+    "Validate + Enrich": {
+      "main": [
+        [
+          {
+            "node": "Valid?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Valid?": {
+      "main": [
+        [
+          {
+            "node": "Call iot-insert",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond 400",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call iot-insert": {
+      "main": [
+        [
+          {
+            "node": "Enrich + Build Discord",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enrich + Build Discord": {
+      "main": [
+        [
+          {
+            "node": "Notify Discord",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notify Discord": {
+      "main": [
+        [
+          {
+            "node": "Respond 201",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
   },
   "active": false,
-  "settings": { "executionOrder": "v1" }
+  "settings": {
+    "executionOrder": "v1"
+  }
 }

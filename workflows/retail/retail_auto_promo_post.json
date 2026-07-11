@@ -1,0 +1,151 @@
+{
+  "name": "retail_auto_promo_post",
+  "nodes": [
+    {
+      "parameters": { "httpMethod": "POST", "path": "promo-post", "responseMode": "responseNode", "options": {} },
+      "id": "pp-webhook",
+      "name": "Trigger Promo Post",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [180, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $input.first().json;\nconst expected = $env.ANSER_WEBHOOK_TOKEN || '';\nif (expected && ((raw.headers || {})['x-anser-token'] || '') !== expected) {\n  return [{ json: { valid: false, error: 'Unauthorized' } }];\n}\nreturn [{ json: { valid: true } }];"
+      },
+      "id": "pp-verify",
+      "name": "Verify Anser Token",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [400, 300]
+    },
+    {
+      "parameters": { "conditions": { "boolean": [{ "value1": "={{ $json.valid }}", "value2": true }] } },
+      "id": "pp-authz",
+      "name": "Authorized?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [620, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $env.RAG_BASE_URL }}/promo-list",
+        "authentication": "none",
+        "options": {}
+      },
+      "id": "pp-promos",
+      "name": "Get Active Promotions",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [840, 200],
+      "retryOnFail": true, "maxTries": 3, "waitBetweenTries": 1000
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.first().json.items || [];\nconst list = items.map(p => `${p.product_name} giảm ${p.discount_pct}%`).join(', ');\nreturn [{ json: { count: items.length, promo_id: (items[0]||{}).id || null, prompt_body: JSON.stringify({ route: 'GENERAL', prompt: `Viết 1 caption Facebook ngắn, hấp dẫn cho các sản phẩm đang khuyến mãi: ${list}` }) } }];"
+      },
+      "id": "pp-prompt",
+      "name": "Build Caption Prompt",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1060, 200]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.BRAIN_BASE_URL }}/chat",
+        "authentication": "none",
+        "sendBody": true, "contentType": "raw", "rawContentType": "application/json",
+        "body": "={{ $json.prompt_body }}",
+        "options": {}
+      },
+      "id": "pp-brain",
+      "name": "Generate Caption (Brain)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [1280, 200],
+      "retryOnFail": true, "maxTries": 2, "waitBetweenTries": 1500
+    },
+    {
+      "parameters": {
+        "jsCode": "const caption = ($input.first().json.text) || '(không có caption)';\nconst promo_id = $('Build Caption Prompt').first().json.promo_id;\n// Nguyên tắc: caption AI PHẢI người duyệt trước khi đăng → log status pending, KHÔNG tự post FB\nreturn [{ json: {\n  caption,\n  log_body: JSON.stringify({ promo_id, caption, channel: 'facebook', external_post_id: null }),\n  notify_body: JSON.stringify({ channel: 'discord', title: '📝 Caption KM chờ duyệt', color: 15844367, description: caption + '\\n\\n_Đăng FB sau khi người duyệt (FB_POST_URL cấu hình ở .env)_' }),\n  resp: JSON.stringify({ status: 'pending_approval', caption })\n} }];"
+      },
+      "id": "pp-build",
+      "name": "Build Pending + Notice",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1500, 200]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.RAG_BASE_URL }}/social-post-log",
+        "authentication": "none",
+        "sendBody": true, "contentType": "raw", "rawContentType": "application/json",
+        "body": "={{ $json.log_body }}",
+        "options": {}
+      },
+      "id": "pp-log",
+      "name": "Log Social Post",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [1720, 200],
+      "retryOnFail": true, "maxTries": 3, "waitBetweenTries": 1000
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.NOTIFY_URL }}",
+        "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": { "parameters": [{ "name": "x-anser-token", "value": "={{ $env.ANSER_WEBHOOK_TOKEN }}" }] },
+        "sendBody": true, "contentType": "raw", "rawContentType": "application/json",
+        "body": "={{ $('Build Pending + Notice').first().json.notify_body }}",
+        "options": {}
+      },
+      "id": "pp-notify",
+      "name": "Notify Marketing",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [1940, 200]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $('Build Pending + Notice').first().json.resp }}",
+        "options": { "responseCode": 200 }
+      },
+      "id": "pp-resp-200",
+      "name": "Respond 200",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [2160, 200]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ error: $json.error, status: 400 }) }}",
+        "options": { "responseCode": 400 }
+      },
+      "id": "pp-resp-400",
+      "name": "Respond 400",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [840, 420]
+    }
+  ],
+  "connections": {
+    "Trigger Promo Post": { "main": [[{ "node": "Verify Anser Token", "type": "main", "index": 0 }]] },
+    "Verify Anser Token": { "main": [[{ "node": "Authorized?", "type": "main", "index": 0 }]] },
+    "Authorized?": { "main": [[{ "node": "Get Active Promotions", "type": "main", "index": 0 }], [{ "node": "Respond 400", "type": "main", "index": 0 }]] },
+    "Get Active Promotions": { "main": [[{ "node": "Build Caption Prompt", "type": "main", "index": 0 }]] },
+    "Build Caption Prompt": { "main": [[{ "node": "Generate Caption (Brain)", "type": "main", "index": 0 }]] },
+    "Generate Caption (Brain)": { "main": [[{ "node": "Build Pending + Notice", "type": "main", "index": 0 }]] },
+    "Build Pending + Notice": { "main": [[{ "node": "Log Social Post", "type": "main", "index": 0 }]] },
+    "Log Social Post": { "main": [[{ "node": "Notify Marketing", "type": "main", "index": 0 }]] },
+    "Notify Marketing": { "main": [[{ "node": "Respond 200", "type": "main", "index": 0 }]] }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" }
+}

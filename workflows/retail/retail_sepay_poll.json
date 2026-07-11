@@ -1,0 +1,65 @@
+{
+  "name": "retail_sepay_poll",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": { "interval": [{ "field": "minutes", "minutesInterval": 1 }] }
+      },
+      "id": "pl-trigger",
+      "name": "Mỗi phút",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [180, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://my.sepay.vn/userapi/transactions/list?limit=20",
+        "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": { "parameters": [{ "name": "Authorization", "value": "=Bearer {{ $env.SEPAY_API_KEY }}" }] },
+        "options": { "timeout": 15000 }
+      },
+      "id": "pl-fetch",
+      "name": "Fetch SePay Transactions",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [400, 300],
+      "retryOnFail": true, "maxTries": 2, "waitBetweenTries": 2000
+    },
+    {
+      "parameters": {
+        "jsCode": "// Lọc giao dịch TIỀN VÀO trong 10 phút gần nhất → map về shape webhook SePay.\n// Dedup: rag idempotent theo tx id — poll lặp lại vô hại (prod: chuyển cursor last-id).\nconst body = $input.first().json;\nconst txns = body.transactions || [];\nconst cutoff = Date.now() - 10 * 60 * 1000;\nconst out = [];\nfor (const t of txns) {\n  const amountIn = parseFloat(t.amount_in || 0);\n  if (amountIn <= 0) continue;\n  const ts = new Date((t.transaction_date || '').replace(' ', 'T') + '+07:00').getTime();\n  if (isNaN(ts) || ts < cutoff) continue;\n  out.push({ json: { webhook_body: JSON.stringify({ id: Number(t.id), gateway: t.bank_brand_name || 'SePay', transactionDate: t.transaction_date, content: t.transaction_content || '', transferAmount: amountIn, transferType: 'in', accountNumber: t.account_number || null, referenceCode: t.reference_number || null }) } });\n}\nreturn out; // rỗng = không có giao dịch mới → dừng êm"
+      },
+      "id": "pl-map",
+      "name": "Filter New Incoming",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [620, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:5678/webhook/sepay-webhook",
+        "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": { "parameters": [{ "name": "Authorization", "value": "=Apikey {{ $env.SEPAY_API_KEY }}" }] },
+        "sendBody": true, "contentType": "raw", "rawContentType": "application/json",
+        "body": "={{ $json.webhook_body }}",
+        "options": { "timeout": 25000 }
+      },
+      "id": "pl-feed",
+      "name": "Feed Payment Pipeline",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [840, 300]
+    }
+  ],
+  "connections": {
+    "Mỗi phút": { "main": [[{ "node": "Fetch SePay Transactions", "type": "main", "index": 0 }]] },
+    "Fetch SePay Transactions": { "main": [[{ "node": "Filter New Incoming", "type": "main", "index": 0 }]] },
+    "Filter New Incoming": { "main": [[{ "node": "Feed Payment Pipeline", "type": "main", "index": 0 }]] }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" }
+}

@@ -1,0 +1,125 @@
+{
+  "name": "retail_channel_delivered",
+  "nodes": [
+    {
+      "parameters": { "httpMethod": "POST", "path": "channel-delivered", "responseMode": "responseNode", "options": {} },
+      "id": "cd-webhook",
+      "name": "Receive Delivered Event",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [180, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $input.first().json;\nconst expected = $env.ANSER_WEBHOOK_TOKEN || '';\nif (expected && ((raw.headers || {})['x-anser-token'] || '') !== expected) {\n  return [{ json: { valid: false, error: 'Unauthorized' } }];\n}\nconst b = (raw.body && typeof raw.body === 'object') ? raw.body : raw;\nif (!b.external_order_id && !b.order_no) return [{ json: { valid: false, error: 'Missing: external_order_id hoặc order_no' } }];\nreturn [{ json: { valid: true, request_body: JSON.stringify({ external_order_id: b.external_order_id || null, order_no: b.order_no || null }) } }];"
+      },
+      "id": "cd-verify",
+      "name": "Verify Anser Token",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [400, 300]
+    },
+    {
+      "parameters": { "conditions": { "boolean": [{ "value1": "={{ $json.valid }}", "value2": true }] } },
+      "id": "cd-authz",
+      "name": "Authorized?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [620, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.RAG_BASE_URL }}/channel-delivered",
+        "authentication": "none",
+        "sendBody": true, "contentType": "raw", "rawContentType": "application/json",
+        "body": "={{ $json.request_body }}",
+        "options": {}
+      },
+      "id": "cd-mark",
+      "name": "Mark Delivered",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [860, 200],
+      "retryOnFail": true, "maxTries": 3, "waitBetweenTries": 1000
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.RAG_BASE_URL }}/einvoice-issue",
+        "authentication": "none",
+        "sendBody": true, "contentType": "raw", "rawContentType": "application/json",
+        "body": "={{ JSON.stringify({ order_no: $json.order_no }) }}",
+        "options": {}
+      },
+      "id": "cd-einvoice",
+      "name": "Issue E-Invoice (sàn: chờ delivered)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [1080, 200],
+      "retryOnFail": true, "maxTries": 3, "waitBetweenTries": 1000
+    },
+    {
+      "parameters": {
+        "jsCode": "const inv = $input.first().json;\nconst dv = $('Mark Delivered').first().json;\nconst fmt = n => new Intl.NumberFormat('vi-VN').format(n);\nlet desc;\nif (inv.status === 'issued') desc = '🧾 HĐĐT ' + inv.invoice_no + ' (mã CQT ' + inv.tax_authority_code + ') — VAT ' + inv.vat_rate + '%: ' + fmt(inv.vat_amount) + ' đ.\\n(Đơn sàn xuất HĐ khi GIAO THÀNH CÔNG — giảm điều chỉnh do COD hoàn/hủy; sàn không xuất thay — NĐ 117/2025)';\nelse if (inv.status === 'duplicate') desc = 'HĐĐT đã có từ trước: ' + inv.invoice_no;\nelse desc = '⚠️ HĐĐT vào hàng đợi: ' + (inv.reason || '');\nconst notify_body = JSON.stringify({ channel: 'discord', title: '📦 Đơn ' + dv.order_no + ' (' + dv.channel + ') giao thành công — ' + fmt(dv.total_amount) + ' đ', color: inv.status === 'queued' ? 15105570 : 3066993, description: desc });\nconst resp = JSON.stringify({ status: 'delivered', order_no: dv.order_no, einvoice: inv.status, invoice_no: inv.invoice_no || null });\nreturn [{ json: { notify_body, resp } }];"
+      },
+      "id": "cd-build",
+      "name": "Build Delivered Notice",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1300, 200]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.NOTIFY_URL }}",
+        "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": { "parameters": [{ "name": "x-anser-token", "value": "={{ $env.ANSER_WEBHOOK_TOKEN }}" }] },
+        "sendBody": true, "contentType": "raw", "rawContentType": "application/json",
+        "body": "={{ $json.notify_body }}",
+        "options": {}
+      },
+      "id": "cd-notify",
+      "name": "Notify Sales",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [1520, 200]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $('Build Delivered Notice').first().json.resp }}",
+        "options": { "responseCode": 200 }
+      },
+      "id": "cd-resp-200",
+      "name": "Respond 200",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1740, 200]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ error: $json.error, status: 400 }) }}",
+        "options": { "responseCode": 400 }
+      },
+      "id": "cd-resp-400",
+      "name": "Respond 400",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [860, 440]
+    }
+  ],
+  "connections": {
+    "Receive Delivered Event": { "main": [[{ "node": "Verify Anser Token", "type": "main", "index": 0 }]] },
+    "Verify Anser Token": { "main": [[{ "node": "Authorized?", "type": "main", "index": 0 }]] },
+    "Authorized?": { "main": [[{ "node": "Mark Delivered", "type": "main", "index": 0 }], [{ "node": "Respond 400", "type": "main", "index": 0 }]] },
+    "Mark Delivered": { "main": [[{ "node": "Issue E-Invoice (sàn: chờ delivered)", "type": "main", "index": 0 }]] },
+    "Issue E-Invoice (sàn: chờ delivered)": { "main": [[{ "node": "Build Delivered Notice", "type": "main", "index": 0 }]] },
+    "Build Delivered Notice": { "main": [[{ "node": "Notify Sales", "type": "main", "index": 0 }]] },
+    "Notify Sales": { "main": [[{ "node": "Respond 200", "type": "main", "index": 0 }]] }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" }
+}
