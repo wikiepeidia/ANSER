@@ -1,0 +1,403 @@
+<!doctype html><html lang="vi"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ANSER V2 Trà/Cao Atiso — Evidence</title>
+<style>
+body{font-family:-apple-system,Segoe UI,Roboto,sans-serif;margin:0;background:#f5f6f8;color:#1a2230}
+.wrap{max-width:1100px;margin:0 auto;padding:24px}
+h1{font-size:22px} .meta{color:#5b6676;font-size:14px;margin-bottom:16px}
+.summary{font-size:18px;font-weight:700;padding:12px 16px;border-radius:10px;margin:12px 0;
+  background:#ecfdf3;color:#067647}
+table{border-collapse:collapse;width:100%;background:#fff;font-size:13px;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+th,td{border:1px solid #e3e7ee;padding:8px 10px;text-align:left;vertical-align:top}
+th{background:#f0f3f8} code{font-size:11px;color:#0b3d91;word-break:break-all}
+.ok{background:#067647;color:#fff;padding:2px 8px;border-radius:10px;font-weight:700}
+.fail{background:#d92d20;color:#fff;padding:2px 8px;border-radius:10px;font-weight:700}
+.r-fail{background:#fff6f6} .box{background:#fff;border:1px solid #e3e7ee;border-radius:8px;padding:12px 16px;margin:12px 0}
+</style></head><body><div class="wrap">
+<h1>ANSER — Automation V2 Trà/Cao Atiso (pilot Ngọc Duy) · Test Matrix Evidence</h1>
+<div class="meta">Chạy lúc: 2026-07-11 23:11:52 · Stack: n8n 2.29.10 · rag_service 0.4.0 · postgres 16 · mock-brain · discord-mock · Giá bán PUBLIC từ ngocduygroup.com (2026-07-11); định mức/giá thu mua = ASSUMED</div>
+<div class="summary">KẾT QUẢ: 56/56 PASS</div>
+<div class="box"><b>docker compose ps</b> (7 container đang chạy):<pre style="overflow-x:auto;font-size:12px;background:#0f172a;color:#e2e8f0;padding:12px;border-radius:6px">NAME                  STATUS                   PORTS
+anser-chroma          Up 5 hours               127.0.0.1:8000-&gt;8000/tcp
+anser-discord-mock    Up 5 hours (healthy)     127.0.0.1:9099-&gt;9099/tcp
+anser-einvoice-mock   Up 7 minutes (healthy)   127.0.0.1:8200-&gt;8200/tcp
+anser-mock-brain      Up 5 hours (healthy)     127.0.0.1:8100-&gt;8100/tcp
+anser-n8n             Up 4 minutes             127.0.0.1:5678-&gt;5678/tcp
+anser-nginx           Up 5 hours               127.0.0.1:5679-&gt;80/tcp
+anser-rag             Up 7 minutes (healthy)   127.0.0.1:8001-&gt;8001/tcp
+anser-test-pg         Up 4 minutes (healthy)   127.0.0.1:15432-&gt;5432/tcp
+anser-woo-mock        Up 7 minutes (healthy)   127.0.0.1:8300-&gt;8300/tcp</pre></div>
+<div class="box"><b>Discord-mock đã nhận 50 thông báo:</b><br>[&#x27;📄 Đơn mới từ khách A&#x27;, &#x27;🔁 Đơn A trùng (bỏ qua)&#x27;, &#x27;📋 DS nguyên liệu cần nhập (BOM)&#x27;, &#x27;⚠️ DS NVL (LLM ước lượng — BẮT BUỘC duyệt tay)&#x27;, &#x27;🌿 Nhập lô nguyên liệu LOT-EV-28c6a2&#x27;, &#x27;🏭 Bắt đầu mẻ MEB-EV-602450&#x27;, &#x27;🔁 Mẻ trùng batch_code (bỏ qua)&#x27;, &#x27;🟠 Mẻ MEB-EV-602450 — độ ẩm 9.2% CHƯA ĐẠT&#x27;, &#x27;🟢 Mẻ MEB-EV-602450 hoàn thành — độ ẩm 6.5%, HSD 12 tháng&#x27;, &#x27;🟢 KIỂM NGHIỆM ĐẠT — lô MEB-EV-602450&#x27;, &#x27;🏭 Bắt đầu mẻ MEB-EV-32015c&#x27;, &#x27;🟢 Mẻ MEB-EV-32015c hoàn thành — độ ẩm 7.5%, HSD 6 tháng&#x27;, &#x27;🔴 KIỂM NGHIỆM KHÔNG ĐẠT — lô MEB-EV-32015c&#x27;, &#x27;🟢 Báo cáo SX đơn DH-A-102&#x27;, &#x27;🔴 Báo cáo SX đơn DH-A-101&#x27;, &#x27;&lt;no title&gt;&#x27;, &#x27;📊 Báo cáo ĐR kỳ (month)&#x27;, &#x27;🧾 Đơn DH1 — chờ thanh toán 174.000 đ&#x27;, &#x27;💰 Đã nhận thanh toán DH1 + HĐĐT ND26-00001&#x27;, &#x27;🧾 Đơn DH2 — chờ thanh toán 843.000 đ&#x27;, &#x27;🟠 CK cần ĐỐI SOÁT TAY&#x27;, &#x27;🧾 HĐĐT điều chỉnh: ND26-00002 (thay ND26-00001)&#x27;, &#x27;&lt;no title&gt;&#x27;, &#x27;&lt;no title&gt;&#x27;, &#x27;&lt;no title&gt;&#x27;, &#x27;&lt;no title&gt;&#x27;, &#x27;💾 Backup HĐĐT hằng ngày — 2 hóa đơn&#x27;, &#x27;📦 Nhập lô kho bán LOT-EV-RT7cd4a1&#x27;, &#x27;&lt;no title&gt;&#x27;, &#x27;&lt;no title&gt;&#x27;, &#x27;&lt;no title&gt;&#x27;, &#x27;🛒 Đơn đa kênh DH5 (shopee) — 261.000 đ&#x27;, &#x27;&lt;no title&gt;&#x27;, &#x27;&lt;no title&gt;&#x27;, &#x27;&lt;no title&gt;&#x27;, &#x27;🛒 Đơn đa kênh DH6 (tiktok) — 174.000 đ&#x27;, &#x27;🔴 CHẶN OVERSELL — CAO-1KG&#x27;, &#x27;📦 Đơn DH5 (shopee) giao thành công — 261.000 đ&#x27;, &#x27;&lt;no title&gt;&#x27;, &#x27;&lt;no title&gt;&#x27;, &#x27;&lt;no title&gt;&#x27;, &#x27;&lt;no title&gt;&#x27;, &#x27;&lt;no title&gt;&#x27;, &#x27;&lt;no title&gt;&#x27;, &#x27;&lt;no title&gt;&#x27;, &#x27;&lt;no title&gt;&#x27;, &#x27;&lt;no title&gt;&#x27;, &#x27;🛒 Đơn đa kênh DH7 (web) — 87.000 đ&#x27;, &#x27;🛒 Đơn đa kênh DH8 (web) — 1.168.000 đ&#x27;, &#x27;🛒 Đơn đa kênh DH9 (web) — 63.000 đ&#x27;]</div>
+<table><thead><tr><th>#</th><th>Kịch bản</th><th>Request</th><th>Kỳ vọng</th><th>Kết quả thật</th><th>Bằng chứng DB</th><th>Verdict</th></tr></thead>
+<tbody><tr class="r-ok">
+          <td>1</td><td>POST không token</td>
+          <td><code>POST http://localhost:5678/webhook/pos-event</code><br><small>token: không</small></td>
+          <td>400 Unauthorized</td>
+          <td><b>HTTP 400</b><br><small>{&quot;error&quot;:&quot;Unauthorized: thieu hoac sai header x-anser-token&quot;,&quot;status&quot;:400}</small></td>
+          <td><small></small></td>
+          <td><span class="ok">PASS</span></td></tr><tr class="r-ok">
+          <td>2</td><td>POST token sai</td>
+          <td><code>POST http://localhost:5678/webhook/pos-event</code><br><small>token: có</small></td>
+          <td>400 Unauthorized</td>
+          <td><b>HTTP 400</b><br><small>{&quot;error&quot;:&quot;Unauthorized: thieu hoac sai header x-anser-token&quot;,&quot;status&quot;:400}</small></td>
+          <td><small></small></td>
+          <td><span class="ok">PASS</span></td></tr><tr class="r-ok">
+          <td>3</td><td>POST token đúng, payload đúng</td>
+          <td><code>POST http://localhost:5678/webhook/pos-event</code><br><small>token: có</small></td>
+          <td>201 + row DB mới</td>
+          <td><b>HTTP 201</b><br><small>{&quot;status&quot;:&quot;ok&quot;,&quot;id&quot;:1,&quot;device&quot;:&quot;POS-Store01-T1&quot;,&quot;event&quot;:&quot;sale&quot;,&quot;timestamp&quot;:&quot;2026-07-11 16:12:25.457508+00:00&quot;}</small></td>
+          <td><small>iot_events: 0→1 rows | last row: 1|POS-Store01-T1|sale</small></td>
+          <td><span class="ok">PASS</span></td></tr><tr class="r-ok">
+          <td>6</td><td>Retry cùng idempotency_key</td>
+          <td><code>POST http://localhost:5678/webhook/pos-event</code><br><small>token: có</small></td>
+          <td>Chỉ 1 row (deduped)</td>
+          <td><b>HTTP 201</b><br><small>{&quot;status&quot;:&quot;ok&quot;,&quot;id&quot;:1,&quot;device&quot;:&quot;POS-Store01-T1&quot;,&quot;event&quot;:&quot;sale&quot;,&quot;timestamp&quot;:&quot;2026-07-11 16:12:25.457508+00:00&quot;}</small></td>
+          <td><small>rows với key này: 1 | tổng iot_events không đổi: 1→1</small></td>
+          <td><span class="ok">PASS</span></td></tr><tr class="r-ok">
+          <td>4</td><td>Thiếu trường required (device_id)</td>
+          <td><code>POST http://localhost:5678/webhook/pos-event</code><br><small>token: có</small></td>
+          <td>400 nêu rõ trường thiếu</td>
+          <td><b>HTTP 400</b><br><small>{&quot;error&quot;:&quot;Missing required fields: device_id, event_type&quot;,&quot;status&quot;:400}</small></td>
+          <td><small></small></td>
+          <td><span class="ok">PASS</span></td></tr><tr class="r-ok">
+          <td>5</td><td>SQL injection trong ?date=</td>
+          <td><code>GET http://localhost:8001/daily-sales?date=&#x27;; DROP TABLE sales;--</code><br><small>token: không</small></td>
+          <td>Vô hiệu, bảng sales nguyên vẹn</td>
+          <td><b>HTTP 500</b><br><small>{&quot;detail&quot;:&quot;invalid input syntax for type date: \&quot;&#x27;; DROP TABLE sales;--\&quot;\nLINE 6: ...                WHERE created_at::date = COALESCE(&#x27;&#x27;&#x27;; DROP ...\n                                                 </small></td>
+          <td><small>sales rows: 34→34 (bảng còn nguyên)</small></td>
+          <td><span class="ok">PASS</span></td></tr><tr class="r-ok">
+          <td>9</td><td>Query ?date= rỗng</td>
+          <td><code>GET http://localhost:8001/daily-sales?date=</code><br><small>token: không</small></td>
+          <td>Fallback CURRENT_DATE, không 500</td>
+          <td><b>HTTP 200</b><br><small>{&quot;date&quot;:&quot;today&quot;,&quot;summary&quot;:{&quot;total_orders&quot;:6,&quot;total_revenue&quot;:1974000.0,&quot;unique_staff&quot;:2},&quot;top_products&quot;:[{&quot;product_name&quot;:&quot;Trà atiso túi lọc (50 túi)&quot;,&quot;qty_sold&quot;:13,&quot;revenue&quot;:1131000.0},{&quot;product_name&quot;:</small></td>
+          <td><small></small></td>
+          <td><span class="ok">PASS</span></td></tr><tr class="r-ok">
+          <td>11</td><td>Low-stock theo ngưỡng RIÊNG từng SP</td>
+          <td><code>GET http://localhost:8001/low-stock</code><br><small>token: không</small></td>
+          <td>Bông atiso 400gr xuất hiện (12&lt;15 riêng, dù &gt;10 chung)</td>
+          <td><b>HTTP 200</b><br><small>{&quot;threshold&quot;:null,&quot;count&quot;:2,&quot;items&quot;:[{&quot;id&quot;:2,&quot;name&quot;:&quot;Cao atisô lá khô 1kg&quot;,&quot;code&quot;:&quot;CAO-1KG&quot;,&quot;stock_quantity&quot;:5,&quot;low_stock_threshold&quot;:10,&quot;price&quot;:843000.0,&quot;category&quot;:&quot;Cao atiso&quot;},{&quot;id&quot;:3,&quot;name&quot;:&quot;Bông at</small></td>
+          <td><small>SP cảnh báo: [&#x27;Cao atisô lá khô 1kg&#x27;, &#x27;Bông atiso sấy khô 400gr&#x27;]</small></td>
+          <td><span class="ok">PASS</span></td></tr><tr class="r-ok">
+          <td>12</td><td>OCR hóa đơn khớp tổng</td>
+          <td><code>POST http://localhost:5678/webhook/invoice-ocr</code><br><small>token: có</small></td>
+          <td>200 + ghi import_transactions</td>
+          <td><b>HTTP 200</b><br><small>{&quot;status&quot;:&quot;imported&quot;,&quot;import_id&quot;:1,&quot;total&quot;:11200000}</small></td>
+          <td><small>import_transactions: 0→1</small></td>
+          <td><span class="ok">PASS</span></td></tr><tr class="r-ok">
+          <td>13</td><td>OCR hóa đơn lệch tổng</td>
+          <td><code>POST http://localhost:5678/webhook/invoice-ocr</code><br><small>token: có</small></td>
+          <td>422 + pending_review, KHÔNG ghi kho</td>
+          <td><b>HTTP 422</b><br><small>{&quot;status&quot;:&quot;pending_review&quot;,&quot;review_id&quot;:1,&quot;difference&quot;:-10200001}</small></td>
+          <td><small>pending_review: 0→1 | import KHÔNG tăng: 1→1</small></td>
+          <td><span class="ok">PASS</span></td></tr><tr class="r-ok">
+          <td>14</td><td>Khách hàng mới (bug &#x27;coalesce&#x27; đã vá)</td>
+          <td><code>POST http://localhost:5678/webhook/new-customer</code><br><small>token: có</small></td>
+          <td>201 + row customers</td>
+          <td><b>HTTP 201</b><br><small>{&quot;status&quot;:&quot;ok&quot;,&quot;id&quot;:7,&quot;code&quot;:&quot;KH0007&quot;,&quot;name&quot;:&quot;Khach Evidence&quot;}</small></td>
+          <td><small>customers: 6→7</small></td>
+          <td><span class="ok">PASS</span></td></tr><tr class="r-ok">
+          <td>15</td><td>Notifier đa kênh — gửi Zalo</td>
+          <td><code>POST http://localhost:5678/webhook/notify</code><br><small>token: có</small></td>
+          <td>200 + mock nhận path /zalo</td>
+          <td><b>HTTP 200</b><br><small>{&quot;status&quot;:&quot;sent&quot;,&quot;channel&quot;:&quot;zalo&quot;}</small></td>
+          <td><small></small></td>
+          <td><span class="ok">PASS</span></td></tr><tr class="r-ok">
+          <td>16</td><td>QT7 đăng bài KM (caption chờ duyệt)</td>
+          <td><code>POST http://localhost:5678/webhook/promo-post</code><br><small>token: có</small></td>
+          <td>200 pending_approval + log social_posts</td>
+          <td><b>HTTP 200</b><br><small>{&quot;status&quot;:&quot;pending_approval&quot;,&quot;caption&quot;:&quot;[mock-brain] Phản hồi giả lập cho: Viết 1 caption Facebook ngắn, hấp dẫn cho các sản phẩm đang khuyến mãi: Trà atiso túi lọc (50 túi) giảm 10%, Linh chi lát 400</small></td>
+          <td><small>social_posts: 0→1</small></td>
+          <td><span class="ok">PASS</span></td></tr><tr class="r-ok">
+          <td>17</td><td>QT8 đơn marketplace mới</td>
+          <td><code>POST http://localhost:5678/webhook/marketplace-order</code><br><small>token: có</small></td>
+          <td>201 + tạo sale + marketplace_orders++</td>
+          <td><b>HTTP 201</b><br><small>{&quot;status&quot;:&quot;imported&quot;,&quot;sale_id&quot;:35,&quot;deduped&quot;:false}</small></td>
+          <td><small>marketplace_orders: 0→1</small></td>
+          <td><span class="ok">PASS</span></td></tr><tr class="r-ok">
+          <td>18</td><td>QT8 đơn marketplace TRÙNG</td>
+          <td><code>POST http://localhost:5678/webhook/marketplace-order</code><br><small>token: có</small></td>
+          <td>duplicate, không tạo thêm</td>
+          <td><b>HTTP 201</b><br><small>{&quot;status&quot;:&quot;duplicate&quot;,&quot;sale_id&quot;:null,&quot;deduped&quot;:true}</small></td>
+          <td><small>marketplace_orders không đổi: 1→1</small></td>
+          <td><span class="ok">PASS</span></td></tr><tr class="r-ok">
+          <td>19</td><td>QT6 gợi ý nhập (moving-avg)</td>
+          <td><code>RUN retail_forecast_suggest_reorder</code><br><small>token: không</small></td>
+          <td>Sinh draft PO trong DB</td>
+          <td><b>HTTP run</b><br><small>drafts=1</small></td>
+          <td><small>purchase_orders_draft: 0→1</small></td>
+          <td><span class="ok">PASS</span></td></tr><tr class="r-ok">
+          <td>20</td><td>QT9 nhắc nợ (opt-in + PII mask)</td>
+          <td><code>RUN retail_debt_reminder</code><br><small>token: không</small></td>
+          <td>Gửi khách opt-in; KHÔNG gửi opt-out</td>
+          <td><b>HTTP run</b><br><small>reminders=1</small></td>
+          <td><small>debt_reminders: 0→1 | gửi khách opt-out (KH9002): 0 (phải 0)</small></td>
+          <td><span class="ok">PASS</span></td></tr><tr class="r-ok">
+          <td>21</td><td>QT10 đồng bộ giá đối thủ</td>
+          <td><code>RUN retail_competitor_price_sync</code><br><small>token: không</small></td>
+          <td>Ghi competitor_prices + cảnh báo</td>
+          <td><b>HTTP run</b><br><small>rows=5</small></td>
+          <td><small>competitor_prices: 0→5</small></td>
+          <td><span class="ok">PASS</span></td></tr><tr class="r-ok">
+          <td>22</td><td>PII masking SĐT trong thông báo</td>
+          <td><code>CHECK discord-mock captured</code><br><small>token: không</small></td>
+          <td>SĐT bị che (chứa &#x27;X&#x27;, không lộ số gốc)</td>
+          <td><b>HTTP inspect</b><br><small>masked</small></td>
+          <td><small>embed &#x27;Khách hàng mới&#x27; có SĐT dạng XXXXXXX001</small></td>
+          <td><span class="ok">PASS</span></td></tr><tr class="r-ok">
+          <td>23</td><td>E2 nhập lô nông hộ (OCR phiếu cân)</td>
+          <td><code>POST http://localhost:5678/webhook/material-intake</code><br><small>token: có</small></td>
+          <td>201 + lô mới + tồn bông tươi +300kg + còn ~19h cửa sổ 24h</td>
+          <td><b>HTTP 201</b><br><small>{&quot;status&quot;:&quot;inserted&quot;,&quot;lot_code&quot;:&quot;LOT-EV-1b3d1d&quot;,&quot;deduped&quot;:false,&quot;window_status&quot;:&quot;ok&quot;,&quot;hours_left&quot;:19,&quot;order_linked&quot;:false}</small></td>
+          <td><small>material_batches: 4→5 | tồn BONG-TUOI: 0.000→300.000 (+300)</small></td>
+          <td><span class="ok">PASS</span></td></tr><tr class="r-ok">
+          <td>24</td><td>E2 lô TRÙNG lot_code</td>
+          <td><code>POST http://localhost:5678/webhook/material-intake</code><br><small>token: có</small></td>
+          <td>duplicate, không nhập trùng</td>
+          <td><b>HTTP 201</b><br><small>{&quot;status&quot;:&quot;duplicate&quot;,&quot;lot_code&quot;:&quot;LOT-EV-1b3d1d&quot;,&quot;deduped&quot;:true,&quot;window_status&quot;:null,&quot;hours_left&quot;:null,&quot;order_linked&quot;:false}</small></td>
+          <td><small>material_batches không đổi: 5→5</small></td>
+          <td><span class="ok">PASS</span></td></tr><tr class="r-ok">
+          <td>25</td><td>E2 lô tươi QUÁ cửa sổ 24h</td>
+          <td><code>POST http://localhost:5678/webhook/material-intake</code><br><small>token: có</small></td>
+          <td>201 + window_status=overdue (cảnh báo mất cynarin)</td>
+          <td><b>HTTP 201</b><br><small>{&quot;status&quot;:&quot;inserted&quot;,&quot;lot_code&quot;:&quot;LOT-EV-d338d0&quot;,&quot;deduped&quot;:false,&quot;window_status&quot;:&quot;overdue&quot;,&quot;hours_left&quot;:-6,&quot;order_linked&quot;:false}</small></td>
+          <td><small>đồng hồ 24h tính từ harvest_date, code thuần</small></td>
+          <td><span class="ok">PASS</span></td></tr><tr class="r-ok">
+          <td>26</td><td>E2 phiếu cân LỆCH tổng</td>
+          <td><code>POST http://localhost:5678/webhook/material-intake</code><br><small>token: có</small></td>
+          <td>422 + pending_review, tồn KHÔNG đổi (sai tiền trả nông hộ)</td>
+          <td><b>HTTP 422</b><br><small>{&quot;status&quot;:&quot;pending_review&quot;,&quot;review_id&quot;:2}</small></td>
+          <td><small>tồn BONG-TUOI không đổi: 600.000=600.000 | pending material_intake: 0→1</small></td>
+          <td><span class="ok">PASS</span></td></tr><tr class="r-ok">
+          <td>27</td><td>QT1 OCR đơn A → lệnh SX (LLM buffer)</td>
+          <td><code>POST http://localhost:5678/webhook/customer-order-ocr</code><br><small>token: có</small></td>
+          <td>201 draft + qty_to_produce=510 (500×1.02)</td>
+          <td><b>HTTP 201</b><br><small>{&quot;status&quot;:&quot;created&quot;,&quot;order_code&quot;:&quot;EV-PO-459ff7&quot;,&quot;qty_to_produce&quot;:510,&quot;deduped&quot;:false}</small></td>
+          <td><small>production_orders: 3→4 | qty_to_produce=510 (đặt 500 hộp trà túi lọc)</small></td>
+          <td><span class="ok">PASS</span></td></tr><tr class="r-ok">
+          <td>28</td><td>QT1 đơn A TRÙNG order_code</td>
+          <td><code>POST http://localhost:5678/webhook/customer-order-ocr</code><br><small>token: có</small></td>
+          <td>duplicate, không tạo thêm</td>
+          <td><b>HTTP 201</b><br><small>{&quot;status&quot;:&quot;duplicate&quot;,&quot;order_code&quot;:&quot;EV-PO-459ff7&quot;,&quot;qty_to_produce&quot;:510,&quot;deduped&quot;:true}</small></td>
+          <td><small>production_orders không đổi: 4→4</small></td>
+          <td><span class="ok">PASS</span></td></tr><tr class="r-ok">
+          <td>29</td><td>QT2 BOM ĐẢO yield (khô thiếu ÷ yield = tươi cần mua)</td>
+          <td><code>POST http://localhost:5678/webhook/production-approved</code><br><small>token: có</small></td>
+          <td>LA mua=124kg TƯƠI ((51−20)/0.25) + tem đủ→0 + 3 mẻ + method=bom</td>
+          <td><b>HTTP 200</b><br><small>{&quot;status&quot;:&quot;generated&quot;,&quot;requirement_id&quot;:10,&quot;estimation_method&quot;:&quot;bom&quot;,&quot;batches_suggested&quot;:3,&quot;to_buy&quot;:[{&quot;code&quot;:&quot;LA&quot;,&quot;to_buy&quot;:124},{&quot;code&quot;:&quot;TUI-LOC&quot;,&quot;to_buy&quot;:20500},{&quot;code&quot;:&quot;HOP-TL&quot;,&quot;to_buy&quot;:210},{&quot;code&quot;:</small></td>
+          <td><small>LA to_buy=124 kg tươi (kỳ vọng 124.0) | TEM-QR=0 (kỳ vọng 0) | số mẻ=3 (kỳ vọng 3)</small></td>
+          <td><span class="ok">PASS</span></td></tr><tr class="r-ok">
+          <td>30</td><td>QT2 thiếu BOM (TRA-GUNG) → LLM fallback</td>
+          <td><code>POST http://localhost:5678/webhook/production-approved</code><br><small>token: có</small></td>
+          <td>estimation_method=llm_fallback + cờ duyệt tay</td>
+          <td><b>HTTP 200</b><br><small>{&quot;status&quot;:&quot;generated&quot;,&quot;requirement_id&quot;:11,&quot;estimation_method&quot;:&quot;llm_fallback&quot;,&quot;batches_suggested&quot;:null,&quot;to_buy&quot;:[{&quot;code&quot;:&quot;TRA-XANH&quot;,&quot;to_buy&quot;:24},{&quot;code&quot;:&quot;GUNG&quot;,&quot;to_buy&quot;:1.5},{&quot;code&quot;:&quot;TUI-LOC&quot;,&quot;to_buy&quot;:</small></td>
+          <td><small>DB estimation_method=llm_fallback</small></td>
+          <td><span class="ok">PASS</span></td></tr><tr class="r-ok">
+          <td>31</td><td>E2 nhập app + mua theo đơn (không OCR)</td>
+          <td><code>POST http://localhost:5678/webhook/material-intake</code><br><small>token: có</small></td>
+          <td>201 + tồn lá tươi +124kg + status=materials_received</td>
+          <td><b>HTTP 201</b><br><small>{&quot;status&quot;:&quot;inserted&quot;,&quot;lot_code&quot;:&quot;LOT-EV-28c6a2&quot;,&quot;deduped&quot;:false,&quot;window_status&quot;:&quot;ok&quot;,&quot;hours_left&quot;:21,&quot;order_linked&quot;:true}</small></td>
+          <td><small>tồn LA-TUOI: 0.000→124.000 (+124) | requirement: materials_received</small></td>
+          <td><span class="ok">PASS</span></td></tr><tr class="r-ok">
+          <td>32</td><td>F1 bắt đầu mẻ (trong cửa sổ 24h)</td>
+          <td><code>POST http://localhost:5678/webhook/batch-process</code><br><small>token: có</small></td>
+          <td>201 started + production_batches++ + hours_left ~21h</td>
+          <td><b>HTTP 201</b><br><small>{&quot;status&quot;:&quot;started&quot;,&quot;id&quot;:18,&quot;batch_code&quot;:&quot;MEB-EV-602450&quot;,&quot;deduped&quot;:false,&quot;hours_since_harvest&quot;:3,&quot;window_status&quot;:&quot;ok&quot;,&quot;hours_left&quot;:21}</small></td>
+          <td><small>production_batches: 5→6</small></td>
+          <td><span class="ok">PASS</span></td></tr><tr class="r-ok">
+          <td>33</td><td>F1 mẻ TRÙNG batch_code</td>
+          <td><code>POST http://localhost:5678/webhook/batch-process</code><br><small>token: có</small></td>
+          <td>duplicate, không tạo thêm</td>
+          <td><b>HTTP 201</b><br><small>{&quot;status&quot;:&quot;duplicate&quot;,&quot;deduped&quot;:true,&quot;batch_code&quot;:&quot;MEB-EV-602450&quot;}</small></td>
+          <td><small>production_batches không đổi: 6→6</small></td>
+          <td><span class="ok">PASS</span></td></tr><tr class="r-ok">
+          <td>34</td><td>F1 nhật ký công đoạn (xao 110°C)</td>
+          <td><code>POST http://localhost:5678/webhook/batch-process</code><br><small>token: có</small></td>
+          <td>logged + batch_process_log++</td>
+          <td><b>HTTP 201</b><br><small>{&quot;status&quot;:&quot;logged&quot;,&quot;log_id&quot;:2,&quot;stage&quot;:&quot;xao&quot;}</small></td>
+          <td><small>batch_process_log: 1→2</small></td>
+          <td><span class="ok">PASS</span></td></tr><tr class="r-ok">
+          <td>35</td><td>F1 độ ẩm 9.2% CHƯA đạt → sấy tiếp</td>
+          <td><code>POST http://localhost:5678/webhook/batch-process</code><br><small>token: có</small></td>
+          <td>moisture_fail + KHÔNG có HSD (nguy cơ nấm mốc)</td>
+          <td><b>HTTP 201</b><br><small>{&quot;status&quot;:&quot;moisture_fail&quot;,&quot;batch_code&quot;:&quot;MEB-EV-602450&quot;,&quot;moisture_pct&quot;:9.2,&quot;max_allowed&quot;:8,&quot;action&quot;:&quot;sấy tiếp rồi đo lại&quot;}</small></td>
+          <td><small>expiry_date sau lần đo fail: NULL (phải NULL)</small></td>
+          <td><span class="ok">PASS</span></td></tr><tr class="r-ok">
+          <td>36</td><td>F1 độ ẩm 6.5% ĐẠT → HSD 12 tháng</td>
+          <td><code>POST http://localhost:5678/webhook/batch-process</code><br><small>token: có</small></td>
+          <td>completed + expiry_date=+12 tháng + qc=pending_lab</td>
+          <td><b>HTTP 201</b><br><small>{&quot;status&quot;:&quot;completed&quot;,&quot;batch_code&quot;:&quot;MEB-EV-602450&quot;,&quot;moisture_pct&quot;:6.5,&quot;shelf_months&quot;:12,&quot;expiry_date&quot;:&quot;2027-07-11&quot;,&quot;qc_status&quot;:&quot;pending_lab&quot;,&quot;note&quot;:&quot;chờ kiểm nghiệm dược liệu (F2) trước khi mở bán&quot;}</small></td>
+          <td><small>DB mẻ MEB-EV-602450: moisture|expiry|qc = 6.50|2027-07-11|pending_lab</small></td>
+          <td><span class="ok">PASS</span></td></tr><tr class="r-ok">
+          <td>37</td><td>F2 kiểm nghiệm ĐẠT (cynarin 2.8%, mốc 40)</td>
+          <td><code>POST http://localhost:5678/webhook/lab-result</code><br><small>token: có</small></td>
+          <td>passed + sellable=true + qc=passed</td>
+          <td><b>HTTP 201</b><br><small>{&quot;status&quot;:&quot;passed&quot;,&quot;batch_code&quot;:&quot;MEB-EV-602450&quot;,&quot;test_id&quot;:1,&quot;sellable&quot;:true,&quot;reasons&quot;:[],&quot;investigate&quot;:null}</small></td>
+          <td><small>DB qc_status=passed | phiếu kiểm nghiệm gắn vào lô</small></td>
+          <td><span class="ok">PASS</span></td></tr><tr class="r-ok">
+          <td>38</td><td>F2 KHÔNG ĐẠT (mốc 150 CFU/g) → chặn xuất</td>
+          <td><code>POST http://localhost:5678/webhook/lab-result</code><br><small>token: có</small></td>
+          <td>failed + qc=failed + điều tra về nông hộ/vùng trồng</td>
+          <td><b>HTTP 201</b><br><small>{&quot;status&quot;:&quot;failed&quot;,&quot;batch_code&quot;:&quot;MEB-EV-32015c&quot;,&quot;test_id&quot;:2,&quot;sellable&quot;:false,&quot;reasons&quot;:[&quot;nấm mốc 150 CFU/g ≥ 100&quot;],&quot;investigate&quot;:{&quot;lot_code&quot;:&quot;LOT-EV-28c6a2&quot;,&quot;farmer&quot;:&quot;HTX Thuận Phát&quot;,&quot;region_grown&quot;:&quot;Đ</small></td>
+          <td><small>DB qc_status=failed | investigate → HTX Thuận Phát, Đà Lạt - Xuân Thọ</small></td>
+          <td><span class="ok">PASS</span></td></tr><tr class="r-ok">
+          <td>39</td><td>QT6 hao hụt sấy 80.8% NHƯNG đúng định mức → KHÔNG báo động</td>
+          <td><code>POST http://localhost:5678/webhook/shift-report</code><br><small>token: có</small></td>
+          <td>yield thực≈19.2% / định mức 20% → lệch 4% &lt;15% → warn=false (vá báo động giả)</td>
+          <td><b>HTTP 200</b><br><small>{&quot;order&quot;:&quot;DH-A-102&quot;,&quot;yield_actual_pct&quot;:19.2,&quot;yield_std_pct&quot;:20,&quot;yield_deviation_pct&quot;:4,&quot;ng_pct&quot;:2.44,&quot;profit_pct&quot;:92.72,&quot;warn&quot;:false}</small></td>
+          <td><small>số khớp tính tay: True | production_reports: 0→1</small></td>
+          <td><span class="ok">PASS</span></td></tr><tr class="r-ok">
+          <td>40</td><td>QT6 lệch định mức THẬT → cảnh báo đỏ</td>
+          <td><code>POST http://localhost:5678/webhook/shift-report</code><br><small>token: có</small></td>
+          <td>lệch 20% &gt;15% → warn=true; NG≈1.64%; lãi≈90.93%</td>
+          <td><b>HTTP 200</b><br><small>{&quot;order&quot;:&quot;DH-A-101&quot;,&quot;yield_actual_pct&quot;:20,&quot;yield_std_pct&quot;:25,&quot;yield_deviation_pct&quot;:20,&quot;ng_pct&quot;:1.64,&quot;profit_pct&quot;:90.93,&quot;warn&quot;:true}</small></td>
+          <td><small>số khớp tính tay: True</small></td>
+          <td><span class="ok">PASS</span></td></tr><tr class="r-ok">
+          <td>41</td><td>QT7 báo cáo ĐR (kỳ+đơn+khu vực)</td>
+          <td><code>GET+RUN http://localhost:8001/dr-report + manuf_dr_report_periodic</code><br><small>token: không</small></td>
+          <td>3 chỉ số + ≥2 khu vực (Đà Lạt/TP.HCM) + ≥2 đơn; workflow chạy</td>
+          <td><b>HTTP 200</b><br><small>{&quot;period&quot;:&quot;month&quot;,&quot;chi_phi_B&quot;:21276000.0,&quot;doanh_thu&quot;:306330000.0,&quot;loi_nhuan&quot;:285054000.0,&quot;loi_nhuan_pct&quot;:93.05,&quot;ngan_sach_khu_vuc&quot;:[{&quot;region&quot;:&quot;Đà Lạt&quot;,&quot;cost_vnd&quot;:11076000.0,&quot;revenue_vnd&quot;:166170000.0,&quot;</small></td>
+          <td><small>ĐR hợp lệ: True | workflow run: True</small></td>
+          <td><span class="ok">PASS</span></td></tr><tr class="r-ok">
+          <td>42</td><td>C1 tạo đơn → VietQR động</td>
+          <td><code>POST http://localhost:5678/webhook/order-create</code><br><small>token: có</small></td>
+          <td>201 + tổng 174.000 (code tính) + QR nhúng &#x27;NGOCDUY DH{id}&#x27;</td>
+          <td><b>HTTP 201</b><br><small>{&quot;status&quot;:&quot;created&quot;,&quot;order_no&quot;:&quot;DH1&quot;,&quot;total_amount&quot;:174000,&quot;transfer_content&quot;:&quot;NGOCDUY DH1&quot;,&quot;qr_url&quot;:&quot;https://img.vietqr.io/image/MB-09xxxxx596-compact2.png?amount=174000&amp;addInfo=NGOCDUY+DH1&amp;accountNa</small></td>
+          <td><small>channel_orders: 0→1 | DH1 tổng=174000 | QR hợp lệ: True</small></td>
+          <td><span class="ok">PASS</span></td></tr><tr class="r-ok">
+          <td>43</td><td>C1→B1: SePay khớp → paid + HĐĐT tự phát hành</td>
+          <td><code>POST http://localhost:5678/webhook/sepay-webhook</code><br><small>token: không</small></td>
+          <td>matched + paid + VAT 8%: 161.111,11 + 12.888,89 + mã CQT</td>
+          <td><b>HTTP 200</b><br><small>{&quot;status&quot;:&quot;ok&quot;,&quot;action&quot;:&quot;matched&quot;,&quot;order_no&quot;:&quot;DH1&quot;,&quot;einvoice&quot;:&quot;issued&quot;,&quot;invoice_no&quot;:&quot;ND26-00001&quot;}</small></td>
+          <td><small>payment_status=paid | einvoice: ND26-00001|8.00|161111.11|12888.89|CQT-9989E62B5543 | VAT kiểm tay khớp: True</small></td>
+          <td><span class="ok">PASS</span></td></tr><tr class="r-ok">
+          <td>44</td><td>C1 SePay retry TRÙNG tx id</td>
+          <td><code>POST http://localhost:5678/webhook/sepay-webhook</code><br><small>token: không</small></td>
+          <td>duplicate, không double-paid/double-invoice</td>
+          <td><b>HTTP 200</b><br><small>{&quot;status&quot;:&quot;ok&quot;,&quot;action&quot;:&quot;duplicate&quot;,&quot;reason&quot;:null,&quot;suggested_order&quot;:null}</small></td>
+          <td><small>einvoices không đổi: 1→1</small></td>
+          <td><span class="ok">PASS</span></td></tr><tr class="r-ok">
+          <td>45</td><td>C1 SePay SAI API key</td>
+          <td><code>POST http://localhost:5678/webhook/sepay-webhook</code><br><small>token: không</small></td>
+          <td>401 Unauthorized</td>
+          <td><b>HTTP 401</b><br><small>{&quot;error&quot;:&quot;Unauthorized: sai SePay API key&quot;,&quot;status&quot;:401}</small></td>
+          <td><small>SEPAY_API_KEY cấu hình: có</small></td>
+          <td><span class="ok">PASS</span></td></tr><tr class="r-ok">
+          <td>46</td><td>C1 CK LỆCH tiền (500k vs đơn 843k)</td>
+          <td><code>POST http://localhost:5678/webhook/sepay-webhook</code><br><small>token: không</small></td>
+          <td>review + payment_pending++ + đơn VẪN unpaid</td>
+          <td><b>HTTP 200</b><br><small>{&quot;status&quot;:&quot;ok&quot;,&quot;action&quot;:&quot;review&quot;,&quot;reason&quot;:&quot;lệch tiền: CK 500,000 ≠ đơn 843,000&quot;,&quot;suggested_order&quot;:&quot;DH2&quot;}</small></td>
+          <td><small>payment_pending: 0→1 | đơn DH2: unpaid</small></td>
+          <td><span class="ok">PASS</span></td></tr><tr class="r-ok">
+          <td>47</td><td>B1 NCC HĐĐT lỗi (simulate 503)</td>
+          <td><code>POST http://localhost:8001/einvoice-issue</code><br><small>token: không</small></td>
+          <td>queued + einvoice_pending++ + KHÔNG có HĐ rác</td>
+          <td><b>HTTP 201</b><br><small>{&quot;status&quot;:&quot;queued&quot;,&quot;pending_id&quot;:1,&quot;reason&quot;:&quot;NCC HĐĐT lỗi (HTTP 503) — đã vào hàng đợi phát hành lại&quot;}</small></td>
+          <td><small>einvoice_pending: 0→1 | einvoices cho DH3: 0 (phải 0)</small></td>
+          <td><span class="ok">PASS</span></td></tr><tr class="r-ok">
+          <td>48</td><td>B1 điều chỉnh HĐ (KHÔNG hủy)</td>
+          <td><code>POST http://localhost:5678/webhook/einvoice-adjust</code><br><small>token: có</small></td>
+          <td>HĐ mới trỏ HĐ gốc; gốc → &#x27;adjusted&#x27; nhưng VẪN tồn tại</td>
+          <td><b>HTTP 201</b><br><small>{&quot;status&quot;:&quot;adjusted&quot;,&quot;new_invoice_no&quot;:&quot;ND26-00002&quot;,&quot;original_invoice_no&quot;:&quot;ND26-00001&quot;,&quot;original_status&quot;:&quot;adjusted (vẫn lưu vết, không xóa)&quot;,&quot;tax_authority_code&quot;:&quot;CQT-1F3A0A0FA66E&quot;,&quot;total&quot;:174000}</small></td>
+          <td><small>einvoices: 1→2 (+1, không xóa) | gốc status=adjusted | HĐ điều chỉnh trỏ gốc: 1</small></td>
+          <td><span class="ok">PASS</span></td></tr><tr class="r-ok">
+          <td>49</td><td>B1 backup HĐĐT 2 đích + checksum</td>
+          <td><code>POST+RUN http://localhost:8001/einvoice-backup-run + retail_einvoice_backup</code><br><small>token: không</small></td>
+          <td>targets_ok=2 + mock nhận /drive-backup + /s3-backup + checksum khớp</td>
+          <td><b>HTTP 200</b><br><small>{&quot;status&quot;:&quot;backed_up&quot;,&quot;count&quot;:2,&quot;checksum&quot;:&quot;3c581a2437c676d740f2c39fc6454d79207719c8e947caa3576ce909ed7d5cf8&quot;,&quot;targets&quot;:[{&quot;target&quot;:&quot;drive-backup&quot;,&quot;http&quot;:204,&quot;ok&quot;:true},{&quot;target&quot;:&quot;s3-backup&quot;,&quot;http&quot;:204</small></td>
+          <td><small>checksum=3c581a2437c676d7… | 2 đích nhận đúng checksum: True | workflow run: True</small></td>
+          <td><span class="ok">PASS</span></td></tr><tr class="r-ok">
+          <td>50</td><td>B1 VAT theo ngày: 2027 → 10% (hết NQ 204/2025)</td>
+          <td><code>POST http://localhost:8001/einvoice-issue</code><br><small>token: không</small></td>
+          <td>vat_rate=10% + 79.090,91 + 7.909,09 (kiểm tay)</td>
+          <td><b>HTTP 201</b><br><small>{&quot;status&quot;:&quot;issued&quot;,&quot;invoice_no&quot;:&quot;ND26-00003&quot;,&quot;tax_authority_code&quot;:&quot;CQT-C478C5BB6B66&quot;,&quot;vat_rate&quot;:10.0,&quot;subtotal&quot;:79090.91,&quot;vat_amount&quot;:7909.09,&quot;total&quot;:87000.0,&quot;checksum&quot;:&quot;506f41e576503fefa2b104dde5d86b</small></td>
+          <td><small>số khớp tính tay: True</small></td>
+          <td><span class="ok">PASS</span></td></tr><tr class="r-ok">
+          <td>51</td><td>A1 nhập lô tay (hàng thương mại)</td>
+          <td><code>POST http://localhost:5678/webhook/lot-intake</code><br><small>token: có</small></td>
+          <td>201 + lô mới + stock = SUM(lô) = 150</td>
+          <td><b>HTTP 201</b><br><small>{&quot;status&quot;:&quot;inserted&quot;,&quot;lot_code&quot;:&quot;LOT-EV-RT7cd4a1&quot;,&quot;sku&quot;:&quot;TRA-TN80&quot;,&quot;qty&quot;:50,&quot;expiry_date&quot;:&quot;2027-01-31&quot;,&quot;stock_after&quot;:150}</small></td>
+          <td><small>tồn TRA-TN80 sau sync: 150 (100 seed + 50 lô mới)</small></td>
+          <td><span class="ok">PASS</span></td></tr><tr class="r-ok">
+          <td>52</td><td>A1 chuỗi F2 ĐẠT → TỰ nhập kho bán</td>
+          <td><code>CHECK product_lots WHERE lot_code=MEB-EV-602450</code><br><small>token: không</small></td>
+          <td>lô = mẻ SX: sku TRA-TL50, qty 300, source=production, có HSD</td>
+          <td><b>HTTP query</b><br><small>TRA-TL50|300|production|2027-07-11</small></td>
+          <td><small>lô từ sản xuất: TRA-TL50|300|production|2027-07-11 (traceability về mẻ + HSD từ độ ẩm)</small></td>
+          <td><span class="ok">PASS</span></td></tr><tr class="r-ok">
+          <td>53</td><td>A1 đơn Shopee → FEFO (lô cận hạn trước)</td>
+          <td><code>POST http://localhost:5678/webhook/channel-order</code><br><small>token: có</small></td>
+          <td>chuẩn hóa payload Shopee + trừ LOT-RT-A (HSD 2026-10) ×3</td>
+          <td><b>HTTP 201</b><br><small>{&quot;status&quot;:&quot;allocated&quot;,&quot;order_no&quot;:&quot;DH5&quot;,&quot;channel&quot;:&quot;shopee&quot;,&quot;total_amount&quot;:261000,&quot;allocations&quot;:[{&quot;sku&quot;:&quot;TRA-TL50&quot;,&quot;lot_code&quot;:&quot;LOT-RT-A&quot;,&quot;qty&quot;:3,&quot;expiry_date&quot;:&quot;2026-10-01&quot;}],&quot;new_stock&quot;:{&quot;TRA-TL50&quot;:337}</small></td>
+          <td><small>LOT-RT-A: 15→12 | đơn DH5 | tồn mới đẩy 3 kênh</small></td>
+          <td><span class="ok">PASS</span></td></tr><tr class="r-ok">
+          <td>54</td><td>A1 đơn kênh TRÙNG (webhook sàn retry)</td>
+          <td><code>POST http://localhost:5678/webhook/channel-order</code><br><small>token: có</small></td>
+          <td>duplicate, không trừ tồn lần 2</td>
+          <td><b>HTTP 200</b><br><small>{&quot;action&quot;:&quot;duplicate&quot;,&quot;deduped&quot;:true,&quot;order_no&quot;:&quot;DH5&quot;}</small></td>
+          <td><small>channel_orders không đổi: 5→5</small></td>
+          <td><span class="ok">PASS</span></td></tr><tr class="r-ok">
+          <td>55</td><td>A1 đơn QUÀ TẶNG → lô HSD XA nhất</td>
+          <td><code>POST http://localhost:5678/webhook/channel-order</code><br><small>token: có</small></td>
+          <td>gán lô SX MEB-EV-602450 (HSD 2027-07, xa nhất) + DB is_gift=t</td>
+          <td><b>HTTP 201</b><br><small>{&quot;status&quot;:&quot;allocated&quot;,&quot;order_no&quot;:&quot;DH6&quot;,&quot;channel&quot;:&quot;tiktok&quot;,&quot;total_amount&quot;:174000,&quot;allocations&quot;:[{&quot;sku&quot;:&quot;TRA-TL50&quot;,&quot;lot_code&quot;:&quot;MEB-EV-602450&quot;,&quot;qty&quot;:2,&quot;expiry_date&quot;:&quot;2027-07-11&quot;}],&quot;new_stock&quot;:{&quot;TRA-TL50&quot;</small></td>
+          <td><small>DB is_gift=t | lô gán: MEB-EV-602450 (khách mua quà cần HSD xa — đảo FEFO)</small></td>
+          <td><span class="ok">PASS</span></td></tr><tr class="r-ok">
+          <td>56</td><td>A1 CHẶN OVERSELL (2 kênh giành lô cuối)</td>
+          <td><code>POST http://localhost:5678/webhook/channel-order</code><br><small>token: có</small></td>
+          <td>409 oversell_blocked + tồn KHÔNG đổi (rollback)</td>
+          <td><b>HTTP 409</b><br><small>{&quot;action&quot;:&quot;oversell_blocked&quot;,&quot;sku&quot;:&quot;CAO-1KG&quot;,&quot;need&quot;:99,&quot;available&quot;:5,&quot;reason&quot;:&quot;tồn theo lô không đủ: cần 99, còn 5&quot;}</small></td>
+          <td><small>tồn lô CAO-1KG không đổi: 5=5</small></td>
+          <td><span class="ok">PASS</span></td></tr><tr class="r-ok">
+          <td>57</td><td>A1 đơn sàn DELIVERED → mới xuất HĐĐT</td>
+          <td><code>POST http://localhost:5678/webhook/channel-delivered</code><br><small>token: có</small></td>
+          <td>trước giao: 0 HĐ; sau giao: 1 HĐ + fulfillment=delivered</td>
+          <td><b>HTTP 200</b><br><small>{&quot;status&quot;:&quot;delivered&quot;,&quot;order_no&quot;:&quot;DH5&quot;,&quot;einvoice&quot;:&quot;issued&quot;,&quot;invoice_no&quot;:&quot;ND26-00004&quot;}</small></td>
+          <td><small>einvoices đơn DH5: 0→1 | fulfillment=delivered (giảm điều chỉnh COD hoàn/hủy)</small></td>
+          <td><span class="ok">PASS</span></td></tr><tr class="r-ok">
+          <td>58</td><td>A1 đồng bộ tồn ngược 3 kênh</td>
+          <td><code>CHECK http://localhost:9099/_captured</code><br><small>token: không</small></td>
+          <td>web + Shopee + TikTok đều nhận stock_update (chống oversell)</td>
+          <td><b>HTTP 200</b><br><small>{&quot;count&quot;: 240, &quot;items&quot;: [{&quot;path&quot;: &quot;/discord-webhook&quot;, &quot;title&quot;: &quot;⚠️ Can xac nhan thu cong — HD lech tong&quot;, &quot;payload&quot;: {&quot;embeds&quot;: [{&quot;title&quot;: &quot;⚠️ Can xac nhan thu cong — HD lech tong&quot;, &quot;color&quot;: 16744448,</small></td>
+          <td><small>bán 1 kênh → tồn mới đẩy lên MỌI kênh</small></td>
+          <td><span class="ok">PASS</span></td></tr><tr class="r-ok">
+          <td>59</td><td>A1 kênh web — poll WooCommerce (shape API thật)</td>
+          <td><code>POST+RUN http://localhost:8300/_add + retail_woo_poll</code><br><small>token: không</small></td>
+          <td>đơn Woo mới → poll → channel_orders + FEFO lô TRA-TN80</td>
+          <td><b>HTTP 201</b><br><small>DH9|web|63000.00</small></td>
+          <td><small>channel_orders: DH9|web|63000.00 | allocation: LOT-RT-F x3 | đổi site thật = 3 dòng .env</small></td>
+          <td><span class="ok">PASS</span></td></tr></tbody></table>
+<h2 style="font-size:18px;margin-top:24px">n8n executions (bằng chứng workflow chạy trong engine)</h2>
+<table><thead><tr><th>startedAt</th><th>Workflow</th><th>mode</th><th>status</th></tr></thead>
+<tbody><tr><td>2026-07-11T16:15:41</td><td><b>shared_notify</b></td>
+          <td>webhook</td><td style="color:#067647;font-weight:700">success</td></tr><tr><td>2026-07-11T16:15:41</td><td><b>shared_notify</b></td>
+          <td>webhook</td><td style="color:#067647;font-weight:700">success</td></tr><tr><td>2026-07-11T16:15:41</td><td><b>shared_notify</b></td>
+          <td>webhook</td><td style="color:#067647;font-weight:700">success</td></tr><tr><td>2026-07-11T16:15:41</td><td><b>retail_channel_order_sync</b></td>
+          <td>webhook</td><td style="color:#067647;font-weight:700">success</td></tr><tr><td>2026-07-11T16:15:41</td><td><b>retail_channel_order_sync</b></td>
+          <td>webhook</td><td style="color:#067647;font-weight:700">success</td></tr><tr><td>2026-07-11T16:15:41</td><td><b>retail_channel_order_sync</b></td>
+          <td>webhook</td><td style="color:#067647;font-weight:700">success</td></tr><tr><td>2026-07-11T16:15:41</td><td><b>retail_woo_poll</b></td>
+          <td>manual</td><td style="color:#067647;font-weight:700">success</td></tr><tr><td>2026-07-11T16:15:28</td><td><b>shared_notify</b></td>
+          <td>webhook</td><td style="color:#067647;font-weight:700">success</td></tr><tr><td>2026-07-11T16:15:28</td><td><b>retail_channel_delivered</b></td>
+          <td>webhook</td><td style="color:#067647;font-weight:700">success</td></tr><tr><td>2026-07-11T16:15:25</td><td><b>shared_notify</b></td>
+          <td>webhook</td><td style="color:#067647;font-weight:700">success</td></tr><tr><td>2026-07-11T16:15:25</td><td><b>retail_channel_order_sync</b></td>
+          <td>webhook</td><td style="color:#067647;font-weight:700">success</td></tr><tr><td>2026-07-11T16:15:23</td><td><b>shared_notify</b></td>
+          <td>webhook</td><td style="color:#067647;font-weight:700">success</td></tr><tr><td>2026-07-11T16:15:22</td><td><b>retail_channel_order_sync</b></td>
+          <td>webhook</td><td style="color:#067647;font-weight:700">success</td></tr><tr><td>2026-07-11T16:15:20</td><td><b>retail_channel_order_sync</b></td>
+          <td>webhook</td><td style="color:#067647;font-weight:700">success</td></tr><tr><td>2026-07-11T16:15:18</td><td><b>shared_notify</b></td>
+          <td>webhook</td><td style="color:#067647;font-weight:700">success</td></tr><tr><td>2026-07-11T16:15:18</td><td><b>retail_channel_order_sync</b></td>
+          <td>webhook</td><td style="color:#067647;font-weight:700">success</td></tr><tr><td>2026-07-11T16:15:15</td><td><b>shared_notify</b></td>
+          <td>webhook</td><td style="color:#067647;font-weight:700">success</td></tr><tr><td>2026-07-11T16:15:15</td><td><b>retail_lot_intake</b></td>
+          <td>webhook</td><td style="color:#067647;font-weight:700">success</td></tr><tr><td>2026-07-11T16:15:05</td><td><b>shared_notify</b></td>
+          <td>webhook</td><td style="color:#067647;font-weight:700">success</td></tr><tr><td>2026-07-11T16:15:05</td><td><b>retail_einvoice_backup</b></td>
+          <td>manual</td><td style="color:#067647;font-weight:700">success</td></tr><tr><td>2026-07-11T16:14:53</td><td><b>shared_notify</b></td>
+          <td>webhook</td><td style="color:#067647;font-weight:700">success</td></tr><tr><td>2026-07-11T16:14:53</td><td><b>retail_einvoice_adjust</b></td>
+          <td>webhook</td><td style="color:#067647;font-weight:700">success</td></tr><tr><td>2026-07-11T16:14:46</td><td><b>shared_notify</b></td>
+          <td>webhook</td><td style="color:#067647;font-weight:700">success</td></tr><tr><td>2026-07-11T16:14:46</td><td><b>retail_sepay_payment</b></td>
+          <td>webhook</td><td style="color:#067647;font-weight:700">success</td></tr><tr><td>2026-07-11T16:14:44</td><td><b>retail_order_payment_qr</b></td>
+          <td>webhook</td><td style="color:#067647;font-weight:700">success</td></tr><tr><td>2026-07-11T16:14:42</td><td><b>retail_sepay_payment</b></td>
+          <td>webhook</td><td style="color:#067647;font-weight:700">success</td></tr><tr><td>2026-07-11T16:14:39</td><td><b>retail_sepay_payment</b></td>
+          <td>webhook</td><td style="color:#067647;font-weight:700">success</td></tr><tr><td>2026-07-11T16:14:36</td><td><b>shared_notify</b></td>
+          <td>webhook</td><td style="color:#067647;font-weight:700">success</td></tr><tr><td>2026-07-11T16:14:36</td><td><b>retail_sepay_payment</b></td>
+          <td>webhook</td><td style="color:#067647;font-weight:700">success</td></tr><tr><td>2026-07-11T16:14:34</td><td><b>retail_order_payment_qr</b></td>
+          <td>webhook</td><td style="color:#067647;font-weight:700">success</td></tr></tbody></table>
+<p class="meta">Raw transcript đầy đủ: <code>tests/evidence/transcript.txt</code>. Tự tái chạy: <code>python tests/smoke/gen_evidence.py</code></p>
+</div></body></html>

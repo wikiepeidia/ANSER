@@ -1,0 +1,438 @@
+======================================================================
+ANSER Automation V2 (Trà/Cao Atiso) — Test Matrix Evidence @ 2026-07-11 23:11:52
+======================================================================
+[health] n8n: HTTP 200 {"status":"ok"}
+[health] rag_service: HTTP 200 {"status":"ok","version":"0.6.0"}
+[health] discord-mock: HTTP 200 {"status": "ok"}
+
+[#1] POST không token
+    POST http://localhost:5678/webhook/pos-event  (token: không)
+    body: {...}
+    → HTTP 400 | {"error":"Unauthorized: thieu hoac sai header x-anser-token","status":400}
+    KỲ VỌNG: 400 Unauthorized  →  ✅ PASS
+
+[#2] POST token sai
+    POST http://localhost:5678/webhook/pos-event  (token: có)
+    body: {...}
+    → HTTP 400 | {"error":"Unauthorized: thieu hoac sai header x-anser-token","status":400}
+    KỲ VỌNG: 400 Unauthorized  →  ✅ PASS
+
+[#3] POST token đúng, payload đúng
+    POST http://localhost:5678/webhook/pos-event  (token: có)
+    body: {"amount": 265000, "invoice_no": "INV-EVID-1", "cashier": "evidence"}
+    → HTTP 201 | {"status":"ok","id":1,"device":"POS-Store01-T1","event":"sale","timestamp":"2026-07-11 16:12:25.457508+00:00"}
+    evidence: iot_events: 0→1 rows | last row: 1|POS-Store01-T1|sale
+    KỲ VỌNG: 201 + row DB mới  →  ✅ PASS
+
+[#6] Retry cùng idempotency_key
+    POST http://localhost:5678/webhook/pos-event  (token: có)
+    body: idempotency_key=evid-ffa3b09a3f02 (lần 2)
+    → HTTP 201 | {"status":"ok","id":1,"device":"POS-Store01-T1","event":"sale","timestamp":"2026-07-11 16:12:25.457508+00:00"}
+    evidence: rows với key này: 1 | tổng iot_events không đổi: 1→1
+    KỲ VỌNG: Chỉ 1 row (deduped)  →  ✅ PASS
+
+[#4] Thiếu trường required (device_id)
+    POST http://localhost:5678/webhook/pos-event  (token: có)
+    body: {"payload":{"amount":1}}
+    → HTTP 400 | {"error":"Missing required fields: device_id, event_type","status":400}
+    KỲ VỌNG: 400 nêu rõ trường thiếu  →  ✅ PASS
+
+[#5] SQL injection trong ?date=
+    GET http://localhost:8001/daily-sales?date='; DROP TABLE sales;--  (token: không)
+    → HTTP 500 | {"detail":"invalid input syntax for type date: \"'; DROP TABLE sales;--\"\nLINE 6: ...                WHERE created_at::date = COALESCE('''; DROP ...\n         
+    evidence: sales rows: 34→34 (bảng còn nguyên)
+    KỲ VỌNG: Vô hiệu, bảng sales nguyên vẹn  →  ✅ PASS
+
+[#9] Query ?date= rỗng
+    GET http://localhost:8001/daily-sales?date=  (token: không)
+    → HTTP 200 | {"date":"today","summary":{"total_orders":6,"total_revenue":1974000.0,"unique_staff":2},"top_products":[{"product_name":"Trà atiso túi lọc (50 túi)","qty_sold":
+    KỲ VỌNG: Fallback CURRENT_DATE, không 500  →  ✅ PASS
+
+[#11] Low-stock theo ngưỡng RIÊNG từng SP
+    GET http://localhost:8001/low-stock  (token: không)
+    → HTTP 200 | {"threshold":null,"count":2,"items":[{"id":2,"name":"Cao atisô lá khô 1kg","code":"CAO-1KG","stock_quantity":5,"low_stock_threshold":10,"price":843000.0,"catego
+    evidence: SP cảnh báo: ['Cao atisô lá khô 1kg', 'Bông atiso sấy khô 400gr']
+    KỲ VỌNG: Bông atiso 400gr xuất hiện (12<15 riêng, dù >10 chung)  →  ✅ PASS
+
+[#12] OCR hóa đơn khớp tổng
+    POST http://localhost:5678/webhook/invoice-ocr  (token: có)
+    body: {"scenario":"ok"}
+    → HTTP 200 | {"status":"imported","import_id":1,"total":11200000}
+    evidence: import_transactions: 0→1
+    KỲ VỌNG: 200 + ghi import_transactions  →  ✅ PASS
+
+[#13] OCR hóa đơn lệch tổng
+    POST http://localhost:5678/webhook/invoice-ocr  (token: có)
+    body: {"scenario":"mismatch"}
+    → HTTP 422 | {"status":"pending_review","review_id":1,"difference":-10200001}
+    evidence: pending_review: 0→1 | import KHÔNG tăng: 1→1
+    KỲ VỌNG: 422 + pending_review, KHÔNG ghi kho  →  ✅ PASS
+
+[#14] Khách hàng mới (bug 'coalesce' đã vá)
+    POST http://localhost:5678/webhook/new-customer  (token: có)
+    body: {"name":"Khach Evidence"}
+    → HTTP 201 | {"status":"ok","id":7,"code":"KH0007","name":"Khach Evidence"}
+    evidence: customers: 6→7
+    KỲ VỌNG: 201 + row customers  →  ✅ PASS
+
+[#15] Notifier đa kênh — gửi Zalo
+    POST http://localhost:5678/webhook/notify  (token: có)
+    body: {"channel":"zalo",...}
+    → HTTP 200 | {"status":"sent","channel":"zalo"}
+    KỲ VỌNG: 200 + mock nhận path /zalo  →  ✅ PASS
+
+[#16] QT7 đăng bài KM (caption chờ duyệt)
+    POST http://localhost:5678/webhook/promo-post  (token: có)
+    body: {}
+    → HTTP 200 | {"status":"pending_approval","caption":"[mock-brain] Phản hồi giả lập cho: Viết 1 caption Facebook ngắn, hấp dẫn cho các sản phẩm đang khuyến mãi: Trà atiso túi
+    evidence: social_posts: 0→1
+    KỲ VỌNG: 200 pending_approval + log social_posts  →  ✅ PASS
+
+[#17] QT8 đơn marketplace mới
+    POST http://localhost:5678/webhook/marketplace-order  (token: có)
+    body: {"external_order_id":"SHOPEE-7ee1487a"}
+    → HTTP 201 | {"status":"imported","sale_id":35,"deduped":false}
+    evidence: marketplace_orders: 0→1
+    KỲ VỌNG: 201 + tạo sale + marketplace_orders++  →  ✅ PASS
+
+[#18] QT8 đơn marketplace TRÙNG
+    POST http://localhost:5678/webhook/marketplace-order  (token: có)
+    body: {"external_order_id":"SHOPEE-7ee1487a"} (lần 2)
+    → HTTP 201 | {"status":"duplicate","sale_id":null,"deduped":true}
+    evidence: marketplace_orders không đổi: 1→1
+    KỲ VỌNG: duplicate, không tạo thêm  →  ✅ PASS
+
+[#19] QT6 gợi ý nhập (moving-avg)
+    RUN retail_forecast_suggest_reorder  (token: không)
+    body: manual trigger
+    → HTTP run | drafts=1
+    evidence: purchase_orders_draft: 0→1
+    KỲ VỌNG: Sinh draft PO trong DB  →  ✅ PASS
+
+[#20] QT9 nhắc nợ (opt-in + PII mask)
+    RUN retail_debt_reminder  (token: không)
+    body: manual trigger
+    → HTTP run | reminders=1
+    evidence: debt_reminders: 0→1 | gửi khách opt-out (KH9002): 0 (phải 0)
+    KỲ VỌNG: Gửi khách opt-in; KHÔNG gửi opt-out  →  ✅ PASS
+
+[#21] QT10 đồng bộ giá đối thủ
+    RUN retail_competitor_price_sync  (token: không)
+    body: manual trigger
+    → HTTP run | rows=5
+    evidence: competitor_prices: 0→5
+    KỲ VỌNG: Ghi competitor_prices + cảnh báo  →  ✅ PASS
+
+[#22] PII masking SĐT trong thông báo
+    CHECK discord-mock captured  (token: không)
+    → HTTP inspect | masked
+    evidence: embed 'Khách hàng mới' có SĐT dạng XXXXXXX001
+    KỲ VỌNG: SĐT bị che (chứa 'X', không lộ số gốc)  →  ✅ PASS
+
+[#23] E2 nhập lô nông hộ (OCR phiếu cân)
+    POST http://localhost:5678/webhook/material-intake  (token: có)
+    body: {"scenario":"weighslip","lot_code":"LOT-EV-1b3d1d","harvest_hours_ago":5}
+    → HTTP 201 | {"status":"inserted","lot_code":"LOT-EV-1b3d1d","deduped":false,"window_status":"ok","hours_left":19,"order_linked":false}
+    evidence: material_batches: 4→5 | tồn BONG-TUOI: 0.000→300.000 (+300)
+    KỲ VỌNG: 201 + lô mới + tồn bông tươi +300kg + còn ~19h cửa sổ 24h  →  ✅ PASS
+
+[#24] E2 lô TRÙNG lot_code
+    POST http://localhost:5678/webhook/material-intake  (token: có)
+    body: {"lot_code":"LOT-EV-1b3d1d"} (lần 2)
+    → HTTP 201 | {"status":"duplicate","lot_code":"LOT-EV-1b3d1d","deduped":true,"window_status":null,"hours_left":null,"order_linked":false}
+    evidence: material_batches không đổi: 5→5
+    KỲ VỌNG: duplicate, không nhập trùng  →  ✅ PASS
+
+[#25] E2 lô tươi QUÁ cửa sổ 24h
+    POST http://localhost:5678/webhook/material-intake  (token: có)
+    body: {"lot_code":"LOT-EV-d338d0","harvest_hours_ago":30}
+    → HTTP 201 | {"status":"inserted","lot_code":"LOT-EV-d338d0","deduped":false,"window_status":"overdue","hours_left":-6,"order_linked":false}
+    evidence: đồng hồ 24h tính từ harvest_date, code thuần
+    KỲ VỌNG: 201 + window_status=overdue (cảnh báo mất cynarin)  →  ✅ PASS
+
+[#26] E2 phiếu cân LỆCH tổng
+    POST http://localhost:5678/webhook/material-intake  (token: có)
+    body: {"scenario":"weighslip_mismatch"}
+    → HTTP 422 | {"status":"pending_review","review_id":2}
+    evidence: tồn BONG-TUOI không đổi: 600.000=600.000 | pending material_intake: 0→1
+    KỲ VỌNG: 422 + pending_review, tồn KHÔNG đổi (sai tiền trả nông hộ)  →  ✅ PASS
+
+[#27] QT1 OCR đơn A → lệnh SX (LLM buffer)
+    POST http://localhost:5678/webhook/customer-order-ocr  (token: có)
+    body: {"order_code":"EV-PO-459ff7"}
+    → HTTP 201 | {"status":"created","order_code":"EV-PO-459ff7","qty_to_produce":510,"deduped":false}
+    evidence: production_orders: 3→4 | qty_to_produce=510 (đặt 500 hộp trà túi lọc)
+    KỲ VỌNG: 201 draft + qty_to_produce=510 (500×1.02)  →  ✅ PASS
+
+[#28] QT1 đơn A TRÙNG order_code
+    POST http://localhost:5678/webhook/customer-order-ocr  (token: có)
+    body: {"order_code":"EV-PO-459ff7"} (lần 2)
+    → HTTP 201 | {"status":"duplicate","order_code":"EV-PO-459ff7","qty_to_produce":510,"deduped":true}
+    evidence: production_orders không đổi: 4→4
+    KỲ VỌNG: duplicate, không tạo thêm  →  ✅ PASS
+
+[#29] QT2 BOM ĐẢO yield (khô thiếu ÷ yield = tươi cần mua)
+    POST http://localhost:5678/webhook/production-approved  (token: có)
+    body: {"order_code":"EV-PO-459ff7"}
+    → HTTP 200 | {"status":"generated","requirement_id":10,"estimation_method":"bom","batches_suggested":3,"to_buy":[{"code":"LA","to_buy":124},{"code":"TUI-LOC","to_buy":20500}
+    evidence: LA to_buy=124 kg tươi (kỳ vọng 124.0) | TEM-QR=0 (kỳ vọng 0) | số mẻ=3 (kỳ vọng 3)
+    KỲ VỌNG: LA mua=124kg TƯƠI ((51−20)/0.25) + tem đủ→0 + 3 mẻ + method=bom  →  ✅ PASS
+
+[#30] QT2 thiếu BOM (TRA-GUNG) → LLM fallback
+    POST http://localhost:5678/webhook/production-approved  (token: có)
+    body: {"order_code":"EV-TG-366eaf"}
+    → HTTP 200 | {"status":"generated","requirement_id":11,"estimation_method":"llm_fallback","batches_suggested":null,"to_buy":[{"code":"TRA-XANH","to_buy":24},{"code":"GUNG","
+    evidence: DB estimation_method=llm_fallback
+    KỲ VỌNG: estimation_method=llm_fallback + cờ duyệt tay  →  ✅ PASS
+
+[#31] E2 nhập app + mua theo đơn (không OCR)
+    POST http://localhost:5678/webhook/material-intake  (token: có)
+    body: {"lot_code":"LOT-EV-28c6a2","qty_kg":124,"order_code":"EV-PO-459ff7"}
+    → HTTP 201 | {"status":"inserted","lot_code":"LOT-EV-28c6a2","deduped":false,"window_status":"ok","hours_left":21,"order_linked":true}
+    evidence: tồn LA-TUOI: 0.000→124.000 (+124) | requirement: materials_received
+    KỲ VỌNG: 201 + tồn lá tươi +124kg + status=materials_received  →  ✅ PASS
+
+[#32] F1 bắt đầu mẻ (trong cửa sổ 24h)
+    POST http://localhost:5678/webhook/batch-process  (token: có)
+    body: {"event":"start","batch_code":"MEB-EV-602450","lot":"LOT-EV-28c6a2"}
+    → HTTP 201 | {"status":"started","id":18,"batch_code":"MEB-EV-602450","deduped":false,"hours_since_harvest":3,"window_status":"ok","hours_left":21}
+    evidence: production_batches: 5→6
+    KỲ VỌNG: 201 started + production_batches++ + hours_left ~21h  →  ✅ PASS
+
+[#33] F1 mẻ TRÙNG batch_code
+    POST http://localhost:5678/webhook/batch-process  (token: có)
+    body: {"batch_code":"MEB-EV-602450"} (lần 2)
+    → HTTP 201 | {"status":"duplicate","deduped":true,"batch_code":"MEB-EV-602450"}
+    evidence: production_batches không đổi: 6→6
+    KỲ VỌNG: duplicate, không tạo thêm  →  ✅ PASS
+
+[#34] F1 nhật ký công đoạn (xao 110°C)
+    POST http://localhost:5678/webhook/batch-process  (token: có)
+    body: {"event":"stage","stage":"xao","temp_c":110}
+    → HTTP 201 | {"status":"logged","log_id":2,"stage":"xao"}
+    evidence: batch_process_log: 1→2
+    KỲ VỌNG: logged + batch_process_log++  →  ✅ PASS
+
+[#35] F1 độ ẩm 9.2% CHƯA đạt → sấy tiếp
+    POST http://localhost:5678/webhook/batch-process  (token: có)
+    body: {"event":"complete","moisture_pct":9.2}
+    → HTTP 201 | {"status":"moisture_fail","batch_code":"MEB-EV-602450","moisture_pct":9.2,"max_allowed":8,"action":"sấy tiếp rồi đo lại"}
+    evidence: expiry_date sau lần đo fail: NULL (phải NULL)
+    KỲ VỌNG: moisture_fail + KHÔNG có HSD (nguy cơ nấm mốc)  →  ✅ PASS
+
+[#36] F1 độ ẩm 6.5% ĐẠT → HSD 12 tháng
+    POST http://localhost:5678/webhook/batch-process  (token: có)
+    body: {"event":"complete","moisture_pct":6.5}
+    → HTTP 201 | {"status":"completed","batch_code":"MEB-EV-602450","moisture_pct":6.5,"shelf_months":12,"expiry_date":"2027-07-11","qc_status":"pending_lab","note":"chờ kiểm ng
+    evidence: DB mẻ MEB-EV-602450: moisture|expiry|qc = 6.50|2027-07-11|pending_lab
+    KỲ VỌNG: completed + expiry_date=+12 tháng + qc=pending_lab  →  ✅ PASS
+
+[#37] F2 kiểm nghiệm ĐẠT (cynarin 2.8%, mốc 40)
+    POST http://localhost:5678/webhook/lab-result  (token: có)
+    body: {"batch_code":"MEB-EV-602450","cynarin_pct":2.8,"mold_cfu_g":40}
+    → HTTP 201 | {"status":"passed","batch_code":"MEB-EV-602450","test_id":1,"sellable":true,"reasons":[],"investigate":null}
+    evidence: DB qc_status=passed | phiếu kiểm nghiệm gắn vào lô
+    KỲ VỌNG: passed + sellable=true + qc=passed  →  ✅ PASS
+
+[#38] F2 KHÔNG ĐẠT (mốc 150 CFU/g) → chặn xuất
+    POST http://localhost:5678/webhook/lab-result  (token: có)
+    body: {"batch_code":"MEB-EV-32015c","mold_cfu_g":150}
+    → HTTP 201 | {"status":"failed","batch_code":"MEB-EV-32015c","test_id":2,"sellable":false,"reasons":["nấm mốc 150 CFU/g ≥ 100"],"investigate":{"lot_code":"LOT-EV-28c6a2","fa
+    evidence: DB qc_status=failed | investigate → HTX Thuận Phát, Đà Lạt - Xuân Thọ
+    KỲ VỌNG: failed + qc=failed + điều tra về nông hộ/vùng trồng  →  ✅ PASS
+
+[#39] QT6 hao hụt sấy 80.8% NHƯNG đúng định mức → KHÔNG báo động
+    POST http://localhost:5678/webhook/shift-report  (token: có)
+    body: {"order_code":"DH-A-102"}
+    → HTTP 200 | {"order":"DH-A-102","yield_actual_pct":19.2,"yield_std_pct":20,"yield_deviation_pct":4,"ng_pct":2.44,"profit_pct":92.72,"warn":false}
+    evidence: số khớp tính tay: True | production_reports: 0→1
+    KỲ VỌNG: yield thực≈19.2% / định mức 20% → lệch 4% <15% → warn=false (vá báo động giả)  →  ✅ PASS
+
+[#40] QT6 lệch định mức THẬT → cảnh báo đỏ
+    POST http://localhost:5678/webhook/shift-report  (token: có)
+    body: {"order_code":"DH-A-101"}
+    → HTTP 200 | {"order":"DH-A-101","yield_actual_pct":20,"yield_std_pct":25,"yield_deviation_pct":20,"ng_pct":1.64,"profit_pct":90.93,"warn":true}
+    evidence: số khớp tính tay: True
+    KỲ VỌNG: lệch 20% >15% → warn=true; NG≈1.64%; lãi≈90.93%  →  ✅ PASS
+
+[#41] QT7 báo cáo ĐR (kỳ+đơn+khu vực)
+    GET+RUN http://localhost:8001/dr-report + manuf_dr_report_periodic  (token: không)
+    → HTTP 200 | {"period":"month","chi_phi_B":21276000.0,"doanh_thu":306330000.0,"loi_nhuan":285054000.0,"loi_nhuan_pct":93.05,"ngan_sach_khu_vuc":[{"region":"Đà Lạt","cost_vnd
+    evidence: ĐR hợp lệ: True | workflow run: True
+    KỲ VỌNG: 3 chỉ số + ≥2 khu vực (Đà Lạt/TP.HCM) + ≥2 đơn; workflow chạy  →  ✅ PASS
+
+[#42] C1 tạo đơn → VietQR động
+    POST http://localhost:5678/webhook/order-create  (token: có)
+    body: {"items":[{TRA-TL50 x2 @87000}]}
+    → HTTP 201 | {"status":"created","order_no":"DH1","total_amount":174000,"transfer_content":"NGOCDUY DH1","qr_url":"https://img.vietqr.io/image/MB-09xxxxx596-compact2.png?amo
+    evidence: channel_orders: 0→1 | DH1 tổng=174000 | QR hợp lệ: True
+    KỲ VỌNG: 201 + tổng 174.000 (code tính) + QR nhúng 'NGOCDUY DH{id}'  →  ✅ PASS
+
+[#43] C1→B1: SePay khớp → paid + HĐĐT tự phát hành
+    POST http://localhost:5678/webhook/sepay-webhook  (token: không)
+    body: {"id":378647444,"content":"NGOCDUY DH1","transferAmount":174000}
+    → HTTP 200 | {"status":"ok","action":"matched","order_no":"DH1","einvoice":"issued","invoice_no":"ND26-00001"}
+    evidence: payment_status=paid | einvoice: ND26-00001|8.00|161111.11|12888.89|CQT-9989E62B5543 | VAT kiểm tay khớp: True
+    KỲ VỌNG: matched + paid + VAT 8%: 161.111,11 + 12.888,89 + mã CQT  →  ✅ PASS
+
+[#44] C1 SePay retry TRÙNG tx id
+    POST http://localhost:5678/webhook/sepay-webhook  (token: không)
+    body: {"id":378647444} (lần 2)
+    → HTTP 200 | {"status":"ok","action":"duplicate","reason":null,"suggested_order":null}
+    evidence: einvoices không đổi: 1→1
+    KỲ VỌNG: duplicate, không double-paid/double-invoice  →  ✅ PASS
+
+[#45] C1 SePay SAI API key
+    POST http://localhost:5678/webhook/sepay-webhook  (token: không)
+    body: {...}
+    → HTTP 401 | {"error":"Unauthorized: sai SePay API key","status":401}
+    evidence: SEPAY_API_KEY cấu hình: có
+    KỲ VỌNG: 401 Unauthorized  →  ✅ PASS
+
+[#46] C1 CK LỆCH tiền (500k vs đơn 843k)
+    POST http://localhost:5678/webhook/sepay-webhook  (token: không)
+    body: {"content":"NGOCDUY DH2","transferAmount":500000}
+    → HTTP 200 | {"status":"ok","action":"review","reason":"lệch tiền: CK 500,000 ≠ đơn 843,000","suggested_order":"DH2"}
+    evidence: payment_pending: 0→1 | đơn DH2: unpaid
+    KỲ VỌNG: review + payment_pending++ + đơn VẪN unpaid  →  ✅ PASS
+
+[#47] B1 NCC HĐĐT lỗi (simulate 503)
+    POST http://localhost:8001/einvoice-issue  (token: không)
+    body: {"order_no":"DH3","simulate":"fail"}
+    → HTTP 201 | {"status":"queued","pending_id":1,"reason":"NCC HĐĐT lỗi (HTTP 503) — đã vào hàng đợi phát hành lại"}
+    evidence: einvoice_pending: 0→1 | einvoices cho DH3: 0 (phải 0)
+    KỲ VỌNG: queued + einvoice_pending++ + KHÔNG có HĐ rác  →  ✅ PASS
+
+[#48] B1 điều chỉnh HĐ (KHÔNG hủy)
+    POST http://localhost:5678/webhook/einvoice-adjust  (token: có)
+    body: {"original_invoice_no":"ND26-00001","reason":"sai tên người mua"}
+    → HTTP 201 | {"status":"adjusted","new_invoice_no":"ND26-00002","original_invoice_no":"ND26-00001","original_status":"adjusted (vẫn lưu vết, không xóa)","tax_authority_code"
+    evidence: einvoices: 1→2 (+1, không xóa) | gốc status=adjusted | HĐ điều chỉnh trỏ gốc: 1
+    KỲ VỌNG: HĐ mới trỏ HĐ gốc; gốc → 'adjusted' nhưng VẪN tồn tại  →  ✅ PASS
+
+[#49] B1 backup HĐĐT 2 đích + checksum
+    POST+RUN http://localhost:8001/einvoice-backup-run + retail_einvoice_backup  (token: không)
+    body: {}
+    → HTTP 200 | {"status":"backed_up","count":2,"checksum":"3c581a2437c676d740f2c39fc6454d79207719c8e947caa3576ce909ed7d5cf8","targets":[{"target":"drive-backup","http":204,"ok
+    evidence: checksum=3c581a2437c676d7… | 2 đích nhận đúng checksum: True | workflow run: True
+    KỲ VỌNG: targets_ok=2 + mock nhận /drive-backup + /s3-backup + checksum khớp  →  ✅ PASS
+
+[#50] B1 VAT theo ngày: 2027 → 10% (hết NQ 204/2025)
+    POST http://localhost:8001/einvoice-issue  (token: không)
+    body: {"order_no":"DH4","issue_date":"2027-01-15"}
+    → HTTP 201 | {"status":"issued","invoice_no":"ND26-00003","tax_authority_code":"CQT-C478C5BB6B66","vat_rate":10.0,"subtotal":79090.91,"vat_amount":7909.09,"total":87000.0,"c
+    evidence: số khớp tính tay: True
+    KỲ VỌNG: vat_rate=10% + 79.090,91 + 7.909,09 (kiểm tay)  →  ✅ PASS
+
+[#51] A1 nhập lô tay (hàng thương mại)
+    POST http://localhost:5678/webhook/lot-intake  (token: có)
+    body: {"sku":"TRA-TN80","lot_code":"LOT-EV-RT7cd4a1","qty":50}
+    → HTTP 201 | {"status":"inserted","lot_code":"LOT-EV-RT7cd4a1","sku":"TRA-TN80","qty":50,"expiry_date":"2027-01-31","stock_after":150}
+    evidence: tồn TRA-TN80 sau sync: 150 (100 seed + 50 lô mới)
+    KỲ VỌNG: 201 + lô mới + stock = SUM(lô) = 150  →  ✅ PASS
+
+[#52] A1 chuỗi F2 ĐẠT → TỰ nhập kho bán
+    CHECK product_lots WHERE lot_code=MEB-EV-602450  (token: không)
+    → HTTP query | TRA-TL50|300|production|2027-07-11
+    evidence: lô từ sản xuất: TRA-TL50|300|production|2027-07-11 (traceability về mẻ + HSD từ độ ẩm)
+    KỲ VỌNG: lô = mẻ SX: sku TRA-TL50, qty 300, source=production, có HSD  →  ✅ PASS
+
+[#53] A1 đơn Shopee → FEFO (lô cận hạn trước)
+    POST http://localhost:5678/webhook/channel-order  (token: có)
+    body: {"channel":"shopee","order_sn":"SPa10be9",...}
+    → HTTP 201 | {"status":"allocated","order_no":"DH5","channel":"shopee","total_amount":261000,"allocations":[{"sku":"TRA-TL50","lot_code":"LOT-RT-A","qty":3,"expiry_date":"20
+    evidence: LOT-RT-A: 15→12 | đơn DH5 | tồn mới đẩy 3 kênh
+    KỲ VỌNG: chuẩn hóa payload Shopee + trừ LOT-RT-A (HSD 2026-10) ×3  →  ✅ PASS
+
+[#54] A1 đơn kênh TRÙNG (webhook sàn retry)
+    POST http://localhost:5678/webhook/channel-order  (token: có)
+    body: {"order_sn":"SPa10be9"} (lần 2)
+    → HTTP 200 | {"action":"duplicate","deduped":true,"order_no":"DH5"}
+    evidence: channel_orders không đổi: 5→5
+    KỲ VỌNG: duplicate, không trừ tồn lần 2  →  ✅ PASS
+
+[#55] A1 đơn QUÀ TẶNG → lô HSD XA nhất
+    POST http://localhost:5678/webhook/channel-order  (token: có)
+    body: {"channel":"tiktok","order_id":"TT2b8aa6","is_gift":true}
+    → HTTP 201 | {"status":"allocated","order_no":"DH6","channel":"tiktok","total_amount":174000,"allocations":[{"sku":"TRA-TL50","lot_code":"MEB-EV-602450","qty":2,"expiry_date
+    evidence: DB is_gift=t | lô gán: MEB-EV-602450 (khách mua quà cần HSD xa — đảo FEFO)
+    KỲ VỌNG: gán lô SX MEB-EV-602450 (HSD 2027-07, xa nhất) + DB is_gift=t  →  ✅ PASS
+
+[#56] A1 CHẶN OVERSELL (2 kênh giành lô cuối)
+    POST http://localhost:5678/webhook/channel-order  (token: có)
+    body: {"channel":"web","qty":99} (tồn 5)
+    → HTTP 409 | {"action":"oversell_blocked","sku":"CAO-1KG","need":99,"available":5,"reason":"tồn theo lô không đủ: cần 99, còn 5"}
+    evidence: tồn lô CAO-1KG không đổi: 5=5
+    KỲ VỌNG: 409 oversell_blocked + tồn KHÔNG đổi (rollback)  →  ✅ PASS
+
+[#57] A1 đơn sàn DELIVERED → mới xuất HĐĐT
+    POST http://localhost:5678/webhook/channel-delivered  (token: có)
+    body: {"order_no":"DH5"}
+    → HTTP 200 | {"status":"delivered","order_no":"DH5","einvoice":"issued","invoice_no":"ND26-00004"}
+    evidence: einvoices đơn DH5: 0→1 | fulfillment=delivered (giảm điều chỉnh COD hoàn/hủy)
+    KỲ VỌNG: trước giao: 0 HĐ; sau giao: 1 HĐ + fulfillment=delivered  →  ✅ PASS
+
+[#58] A1 đồng bộ tồn ngược 3 kênh
+    CHECK http://localhost:9099/_captured  (token: không)
+    → HTTP 200 | {"count": 240, "items": [{"path": "/discord-webhook", "title": "⚠️ Can xac nhan thu cong — HD lech tong", "payload": {"embeds": [{"title": "⚠️ Can xac nhan thu 
+    evidence: bán 1 kênh → tồn mới đẩy lên MỌI kênh
+    KỲ VỌNG: web + Shopee + TikTok đều nhận stock_update (chống oversell)  →  ✅ PASS
+
+[#59] A1 kênh web — poll WooCommerce (shape API thật)
+    POST+RUN http://localhost:8300/_add + retail_woo_poll  (token: không)
+    body: {"sku":"TRA-TN80","qty":3} (Woo id=10003)
+    → HTTP 201 | DH9|web|63000.00
+    evidence: channel_orders: DH9|web|63000.00 | allocation: LOT-RT-F x3 | đổi site thật = 3 dòng .env
+    KỲ VỌNG: đơn Woo mới → poll → channel_orders + FEFO lô TRA-TN80  →  ✅ PASS
+
+[discord-mock] đã nhận 50 thông báo qua 7 kênh: ['/discord-webhook', '/drive-backup', '/google-docs', '/s3-backup', '/shopee-stock', '/tiktok-stock', '/woo-stock']
+
+[DB snapshot]
+    iot_events: 1 rows
+    customers: 7 rows
+    import_transactions: 1 rows
+    pending_review: 2 rows
+    workflow_errors: 0 rows
+    purchase_orders_draft: 1 rows
+    marketplace_orders: 1 rows
+    debt_reminders: 1 rows
+    material_batches: 7 rows
+    production_batches: 7 rows
+    batch_process_log: 6 rows
+    lab_test_results: 2 rows
+    production_reports: 2 rows
+
+[docker compose ps]
+NAME                  STATUS                   PORTS
+anser-chroma          Up 5 hours               127.0.0.1:8000->8000/tcp
+anser-discord-mock    Up 5 hours (healthy)     127.0.0.1:9099->9099/tcp
+anser-einvoice-mock   Up 7 minutes (healthy)   127.0.0.1:8200->8200/tcp
+anser-mock-brain      Up 5 hours (healthy)     127.0.0.1:8100->8100/tcp
+anser-n8n             Up 4 minutes             127.0.0.1:5678->5678/tcp
+anser-nginx           Up 5 hours               127.0.0.1:5679->80/tcp
+anser-rag             Up 7 minutes (healthy)   127.0.0.1:8001->8001/tcp
+anser-test-pg         Up 4 minutes (healthy)   127.0.0.1:15432->5432/tcp
+anser-woo-mock        Up 7 minutes (healthy)   127.0.0.1:8300->8300/tcp
+
+[n8n executions] 30 lần chạy trong engine, 30 success
+    success  webhook  2026-07-11T16:15:41  shared_notify
+    success  webhook  2026-07-11T16:15:41  shared_notify
+    success  webhook  2026-07-11T16:15:41  shared_notify
+    success  webhook  2026-07-11T16:15:41  retail_channel_order_sync
+    success  webhook  2026-07-11T16:15:41  retail_channel_order_sync
+    success  webhook  2026-07-11T16:15:41  retail_channel_order_sync
+    success  manual   2026-07-11T16:15:41  retail_woo_poll
+    success  webhook  2026-07-11T16:15:28  shared_notify
+    success  webhook  2026-07-11T16:15:28  retail_channel_delivered
+    success  webhook  2026-07-11T16:15:25  shared_notify
+    success  webhook  2026-07-11T16:15:25  retail_channel_order_sync
+    success  webhook  2026-07-11T16:15:23  shared_notify
+    success  webhook  2026-07-11T16:15:22  retail_channel_order_sync
+    success  webhook  2026-07-11T16:15:20  retail_channel_order_sync
+    success  webhook  2026-07-11T16:15:18  shared_notify
+
+[poller] retail_sepay_poll + retail_woo_poll: đã bật lại
+
+======================================================================
+KẾT QUẢ: 56/56 PASS
+======================================================================
