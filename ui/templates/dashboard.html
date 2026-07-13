@@ -24,7 +24,7 @@
                 <h2>Xin chào, {{ user.name or user.email.split('@')[0] }}</h2>
             </div>
             <div class="launch-cta">
-                <a href="{{ url_for('pages.workspace_builder') }}" class="btn btn-primary rounded-pill">
+                <a href="{{ url_for('pages.scenarios') }}" class="btn btn-primary rounded-pill">
                     <i class="fas fa-plus me-2"></i>Dự án mới
                 </a>
             </div>
@@ -90,13 +90,13 @@
                 </div>
                 <div class="collection-grid">
                     <!-- Thẻ quy trình mới -->
-                    <a href="{{ url_for('pages.workspace_builder') }}" class="collection-card">
+                    <a href="{{ url_for('pages.scenarios') }}" class="collection-card">
                         <div class="collection-icon gradient-indigo">
                             <i class="fas fa-plus"></i>
                         </div>
                         <div class="collection-body">
                             <h4>Quy trình mới</h4>
-                            <p>Tạo quy trình tự động hóa từ đầu</p>
+                            <p>Chọn template và triển khai tự động hóa</p>
                         </div>
                         <div class="collection-cta">Tạo <i class="fas fa-arrow-right ms-1"></i></div>
                     </a>

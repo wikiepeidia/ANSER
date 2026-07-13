@@ -109,20 +109,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // THIS IS THE LOGIC THAT PREVENTS JSON DUMPING
     function renderWorkflowCard(text, id) {
-        let btnHtml = '';
-        if (id && id !== 'undefined') {
-            btnHtml = `<a href="/workspace/builder?load=${id}" class="wf-btn">Open Builder</a>`;
-        } else {
-            btnHtml = `<span class="wf-btn" style="opacity:0.5; cursor:not-allowed;">ID Missing - Check History</span>`;
-        }
-
         const div = document.createElement('div');
         div.className = 'ai-message ai-message-bot';
         div.innerHTML = `
             <div class="workflow-card">
                 <div class="wf-title">✅ Automation Created</div>
                 <div class="wf-desc">${typeof marked !== 'undefined' ? marked.parse(text) : text}</div>
-                ${btnHtml}
             </div>`;
         messagesContainer.appendChild(div);
         scrollToBottom();

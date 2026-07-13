@@ -192,12 +192,6 @@ def scenarios():
     return render_template('scenarios.html', user=current_user)
 
 
-@page_bp.route('/workspace/builder')
-@login_required
-def workspace_builder():
-    return redirect(url_for('pages.scenarios'))
-
-
 @page_bp.route('/iot-monitor')
 @login_required
 def iot_monitor():

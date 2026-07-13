@@ -68,7 +68,7 @@ def google_authorize():
             conn.commit()
             conn.close()
             flash('Google account connected successfully!', 'success')
-            return redirect(url_for('pages.workspace_builder'))
+            return redirect(url_for('pages.scenarios'))
 
         name = user_info.get('name', 'Google User')
         conn = db_manager.get_connection()

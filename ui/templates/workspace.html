@@ -86,13 +86,13 @@
                         <span class="collection-cta">Mở trang</span>
                     </button>
                     <button type="button" class="collection-card"
-                        onclick="location.href='{{ url_for('pages.workspace_builder') }}'">
+                        onclick="location.href='{{ url_for('pages.scenarios') }}'">
                         <div class="collection-icon gradient-indigo"><i class="fas fa-diagram-project"></i></div>
                         <div class="collection-body">
                             <h4>Xây dựng quy trình</h4>
-                            <p>Kéo thả kịch bản tự động hóa và lưu bản nháp.</p>
+                            <p>Chọn template và triển khai tự động hóa.</p>
                         </div>
-                        <span class="collection-cta"><i class="fas fa-tools"></i> Đến trình xây dựng</span>
+                        <span class="collection-cta"><i class="fas fa-tools"></i> Xem template</span>
                     </button>
                 </div>
             </div>
@@ -154,15 +154,6 @@
                         <span class="collection-cta">Mở trang</span>
                     </button>
                     <button type="button" class="collection-card"
-                        onclick="location.href='{{ url_for('pages.workspace_builder') }}'">
-                        <div class="collection-icon gradient-indigo"><i class="fas fa-tools"></i></div>
-                        <div class="collection-body">
-                            <h4>Quy trình</h4>
-                            <p>Xây dựng và chỉnh sửa quy trình tự động hóa.</p>
-                        </div>
-                        <span class="collection-cta">Mở trang</span>
-                    </button>
-                    <button type="button" class="collection-card"
                         onclick="location.href='{{ url_for('pages.se_auto_import') }}'">
                         <div class="collection-icon gradient-gold"><i class="fas fa-sync-alt"></i></div>
                         <div class="collection-body">
@@ -203,7 +194,6 @@
 
 {% block scripts %}
 {{ super() }}
-<script src="{{ url_for('static', filename='js/workspace_scenario.js') }}"></script>
 <script>
     function redirectToWallet(hash) {
         let url = '/wallet';
