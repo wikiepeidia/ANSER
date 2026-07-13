@@ -120,6 +120,7 @@ PG_DDL: dict[str, str] = {
             id SERIAL PRIMARY KEY,
             email TEXT UNIQUE NOT NULL,
             password TEXT NOT NULL,
+            password_version INTEGER DEFAULT 0,
             name TEXT,
             role TEXT DEFAULT 'user',
             avatar TEXT,
@@ -127,6 +128,7 @@ PG_DDL: dict[str, str] = {
             first_name TEXT,
             last_name TEXT,
             google_token TEXT,
+            google_email TEXT,
             manager_id INTEGER,
             subscription_expires_at TEXT,
             created_at TIMESTAMPTZ DEFAULT NOW(),
@@ -185,7 +187,8 @@ PG_DDL: dict[str, str] = {
             description TEXT,
             created_by INTEGER,
             created_at TIMESTAMPTZ DEFAULT NOW(),
-            updated_at TIMESTAMPTZ DEFAULT NOW()
+            updated_at TIMESTAMPTZ DEFAULT NOW(),
+            image_url TEXT
         )""",
 
     "warehouses": """
@@ -236,7 +239,7 @@ PG_DDL: dict[str, str] = {
         CREATE TABLE IF NOT EXISTS export_transactions (
             id SERIAL PRIMARY KEY,
             code TEXT,
-            customer_name TEXT,
+            customer_id INTEGER,
             total_amount DOUBLE PRECISION DEFAULT 0,
             notes TEXT,
             status TEXT DEFAULT 'completed',
