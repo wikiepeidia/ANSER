@@ -212,6 +212,27 @@ PG_DDL: dict[str, str] = {
             UNIQUE(warehouse_id, product_id)
         )""",
 
+    "warehouses": """
+        CREATE TABLE IF NOT EXISTS warehouses (
+            id SERIAL PRIMARY KEY,
+            name TEXT NOT NULL,
+            low_stock_threshold INTEGER DEFAULT 10,
+            discord_webhook_url TEXT,
+            is_active INTEGER DEFAULT 1,
+            created_by INTEGER,
+            created_at TIMESTAMPTZ DEFAULT NOW()
+        )""",
+
+    "warehouse_stock": """
+        CREATE TABLE IF NOT EXISTS warehouse_stock (
+            id SERIAL PRIMARY KEY,
+            warehouse_id INTEGER NOT NULL,
+            product_id INTEGER NOT NULL,
+            stock_quantity INTEGER DEFAULT 0,
+            updated_at TIMESTAMPTZ DEFAULT NOW(),
+            UNIQUE(warehouse_id, product_id)
+        )""",
+
     "import_transactions": """
         CREATE TABLE IF NOT EXISTS import_transactions (
             id SERIAL PRIMARY KEY,

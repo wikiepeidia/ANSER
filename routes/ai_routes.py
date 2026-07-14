@@ -6,18 +6,29 @@ import time
 
 import requests
 import redis
-from rq import Queue
+from rq import Queue, Worker
 from flask import Blueprint, jsonify, request, current_app
 from flask_login import current_user, login_required
 
-from core.database import Database
 from core.services.service_errors import ServiceValidationError
 from core.config import Config
 from core.logger import get_logger
+from core.security import safe_api_error, validate_upload
 
 logger = get_logger(__name__)
 
 ai_bp = Blueprint("ai", __name__)
+
+AI_UPLOAD_EXTENSIONS = {'png', 'jpg', 'jpeg', 'webp', 'pdf'}
+AI_UPLOAD_MIMETYPES = {'image/png', 'image/jpeg', 'image/webp', 'application/pdf'}
+
+
+def _rq_worker_available(redis_conn):
+    try:
+        return bool(Worker.all(connection=redis_conn))
+    except Exception as exc:
+        logger.warning("Could not inspect RQ workers: %s", exc)
+        return False
 
 
 @ai_bp.route('/api/ai/upload', methods=['POST'])
@@ -27,6 +38,11 @@ def ai_upload():
         return jsonify({'error': 'No file'}), 400
 
     file = request.files['file']
+    try:
+        validate_upload(file, AI_UPLOAD_EXTENSIONS, AI_UPLOAD_MIMETYPES)
+    except ValueError as e:
+        return jsonify({'error': str(e)}), 400
+
     try:
         hf_base_url = os.environ.get('HF_BASE_URL', '').rstrip('/')
 
@@ -56,10 +72,10 @@ def ai_upload():
 
             return jsonify(resp_data)
 
-        return jsonify({'error': f"Upload Failed: {response.text}"}), response.status_code
+        return jsonify({'error': 'Upload failed'}), response.status_code
 
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return safe_api_error(logger, exc=e)
 
 
 @ai_bp.route('/api/ai/chat', methods=['POST'])
@@ -84,6 +100,9 @@ def ai_chat():
     
     try:
         redis_conn = redis.from_url(Config.REDIS_URL)
+        if not Config.ALLOW_AI_QUEUE_WITHOUT_WORKER and not _rq_worker_available(redis_conn):
+            logger.error("AI chat queue has no active RQ workers")
+            return jsonify({'error': 'AI worker unavailable'}), 503
         q = Queue(connection=redis_conn)
         q.enqueue(background_ai_job, current_user.id, msg, job_data['job_id'])
     except Exception as e:
@@ -133,7 +152,7 @@ def ai_job_status(job_id):
         return jsonify(job_data)
     except Exception as e:
         logger.error("Error fetching job status for %s: %s", job_id, e)
-        return jsonify({'status': 'failed', 'error': str(e)}), 500
+        return jsonify({'status': 'failed', 'error': 'Unable to fetch job status'}), 500
 
 
 @ai_bp.route('/api/ai/history', methods=['DELETE'])
@@ -145,7 +164,7 @@ def clear_chat_history():
         current_app.extensions['ai_chat_service'].clear_chat_history_rows(conn, current_user.id)
         return jsonify({'status': 'success', 'message': 'Đã xóa lịch sử'})
     except Exception as e:
-        return jsonify({'status': 'error', 'message': str(e)}), 500
+        return safe_api_error(logger, exc=e)
     finally:
         if conn:
             conn.close()

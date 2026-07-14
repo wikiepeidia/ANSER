@@ -17,6 +17,7 @@ class Config:
     DATABASE_PATH = os.environ.get('DATABASE_PATH', 'group_project_ai_ml.db')
     POSTGRES_URL = os.environ.get('POSTGRES_URL')
     REDIS_URL = os.environ.get('REDIS_URL', 'redis://localhost:6379/0')
+    ALLOW_AI_QUEUE_WITHOUT_WORKER = os.environ.get('ALLOW_AI_QUEUE_WITHOUT_WORKER', 'False').lower() == 'true'
     USE_POSTGRES = bool(POSTGRES_URL) or os.environ.get('USE_POSTGRES', 'False').lower() == 'true'
     
     # Site domain and base URL (override with env vars)

@@ -8,6 +8,7 @@ load_dotenv()
 
 from flask import Flask, jsonify, redirect, request, flash, url_for
 from werkzeug.middleware.proxy_fix import ProxyFix
+from werkzeug.exceptions import HTTPException
 from flask_wtf.csrf import CSRFError, generate_csrf
 from flask_talisman import Talisman
 from authlib.integrations.flask_client import OAuth
@@ -21,8 +22,11 @@ from core.config import Config
 from core.automation_engine import AutomationEngine
 from core.agent_middleware import AgentMiddleware
 from core.services import ai_chat_service, workflow_service
+from core.logger import get_logger
+from core.security import env_flag, is_local_environment, safe_api_error
 
 sys.stdout.reconfigure(encoding='utf-8')
+logger = get_logger(__name__)
 
 # Allow OAuth over HTTP only in local development
 if os.environ.get('FLASK_ENV') == 'development':
@@ -75,13 +79,29 @@ def create_app(config_object=None):
     flask_app.config['SECRET_KEY'] = _secret
     flask_app.config['WTF_CSRF_ENABLED'] = True
     flask_app.secret_key = flask_app.config['SECRET_KEY']
-    flask_app.config['SESSION_COOKIE_SECURE'] = False
-    flask_app.config['PREFERRED_URL_SCHEME'] = 'http'
+    local_runtime = is_local_environment(cfg)
+    if not os.environ.get('FLASK_ENV') and not os.environ.get('APP_ENV') and not getattr(cfg, 'TESTING', False):
+        logger.warning(
+            "FLASK_ENV/APP_ENV not set — defaulting to production-safe mode "
+            "(secure cookies, rate limiting, forced HTTPS). If this is local "
+            "development, set FLASK_ENV=development in .env."
+        )
+    secure_runtime = not local_runtime
+    session_cookie_secure = env_flag('SESSION_COOKIE_SECURE', secure_runtime)
+    ratelimit_enabled = env_flag('RATELIMIT_ENABLED', secure_runtime)
+    force_https = env_flag('FORCE_HTTPS', secure_runtime)
+    hsts_enabled = env_flag('STRICT_TRANSPORT_SECURITY', secure_runtime)
+
+    flask_app.config['SESSION_COOKIE_SECURE'] = session_cookie_secure
+    flask_app.config['SESSION_COOKIE_HTTPONLY'] = True
+    flask_app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+    flask_app.config['PREFERRED_URL_SCHEME'] = 'https' if force_https else 'http'
     flask_app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=7)
     flask_app.config['SESSION_REFRESH_EACH_REQUEST'] = True
     flask_app.config['JSON_AS_ASCII'] = False
-    flask_app.config['RATELIMIT_ENABLED'] = False
+    flask_app.config['RATELIMIT_ENABLED'] = ratelimit_enabled
     flask_app.config['RATELIMIT_DEFAULT_LIMITS'] = ['20000 per day', '5000 per hour']
+    flask_app.config['MAX_CONTENT_LENGTH'] = int(os.environ.get('MAX_CONTENT_LENGTH', 16 * 1024 * 1024))
     flask_app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0  # disable static file cache in dev
 
     # ── OAuth ──────────────────────────────────────────────────────────────
@@ -90,7 +110,7 @@ def create_app(config_object=None):
     # ── Talisman ───────────────────────────────────────────────────────────
     Talisman(
         flask_app,
-        force_https=False,
+        force_https=force_https,
         content_security_policy={
             'default-src': ["'self'"],
             'script-src': [
@@ -122,10 +142,10 @@ def create_app(config_object=None):
             'object-src': ["'none'"],
             'frame-ancestors': ["'none'"],
         },
-        strict_transport_security=False,  # HTTP local dev — enable in prod via reverse proxy
+        strict_transport_security=hsts_enabled,
         frame_options='DENY',
         x_content_type_options=True,
-        session_cookie_secure=False,  # must be False when running on HTTP
+        session_cookie_secure=session_cookie_secure,
         force_file_save=False,
     )
 
@@ -192,9 +212,20 @@ def create_app(config_object=None):
         return dict(csrf_token=lambda: generate_csrf())
 
     # ── Error handlers ────────────────────────────────────────────────────
+    csrf_auth_first_paths = {
+        '/api/admin/subscription/auto-renew',
+        '/api/admin/subscription/extend',
+        '/api/admin/wallet/withdraw',
+        '/api/products/import-excel/preview',
+        '/api/products/import-excel',
+        '/api/workflow/execute',
+    }
+
     @flask_app.errorhandler(CSRFError)
     def handle_csrf_error(error):
         if request.path.startswith('/api/'):
+            if request.path in csrf_auth_first_paths and not current_user.is_authenticated:
+                return jsonify({'success': False, 'message': 'Unauthorized - please login'}), 401
             return jsonify({'success': False, 'message': 'CSRF token missing or invalid'}), 400
         flash('Security check failed. Please refresh the page and try again.', 'error')
         referer = request.referrer or url_for('auth.signin')
@@ -203,7 +234,13 @@ def create_app(config_object=None):
     @flask_app.errorhandler(Exception)
     def handle_api_exception(error):
         if request.path.startswith('/api/'):
-            return jsonify({'success': False, 'message': str(error)}), 500
+            if isinstance(error, HTTPException):
+                code = error.code or 500
+                if code < 500:
+                    return jsonify({'success': False, 'message': error.description}), code
+            return safe_api_error(logger, exc=error)
+        if isinstance(error, HTTPException):
+            return error
         raise error
 
 

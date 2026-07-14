@@ -1,5 +1,21 @@
 # MCP config (contains API keys)
 .mcp.json
+strix_runs/
+
+# AI coding assistant scaffolding — machine-local, never shared/merged
+.claude/
+.agent/
+.agents/
+.gemini/
+.codex/
+.cursor/
+.cline/
+.codebuddy/
+gsd-core/
+agents/
+.planning/
+skills-lock.json
+TODO.MD
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -8,6 +24,9 @@ __pycache__/
 # test folder
 test/
 tests/
+!/tests/
+/tests/*
+!/tests/test_security_hardening.py
 evaluate/
 jobs/
 # C extensions

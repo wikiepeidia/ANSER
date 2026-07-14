@@ -544,6 +544,20 @@ class Database:
         finally:
             conn.close()
 
+    def update_google_account(self, user_id, token_json, google_email, avatar=None):
+        conn = self.get_connection()
+        try:
+            return self._user_repo(conn).update_google_account(user_id, token_json, google_email, avatar)
+        finally:
+            conn.close()
+
+    def upsert_google_user(self, email, name, avatar, token_json, hashed_password):
+        conn = self.get_connection()
+        try:
+            return self._user_repo(conn).upsert_google_user(email, name, avatar, token_json, hashed_password)
+        finally:
+            conn.close()
+
     # Activity
 
     def get_recent_activities(self, limit=20):

@@ -205,6 +205,82 @@ class UserRepo:
             self.conn.rollback()
             raise
 
+    def update_google_account(self, user_id, token_json, google_email, avatar=None):
+        c = self.conn.cursor()
+        try:
+            columns = ['google_token = ?']
+            values = [token_json]
+            if self._has_column(c, 'users', 'google_email'):
+                columns.append('google_email = ?')
+                values.append(google_email)
+            if avatar is not None and self._has_column(c, 'users', 'avatar'):
+                columns.append('avatar = ?')
+                values.append(avatar)
+            values.append(user_id)
+            c.execute(f"UPDATE users SET {', '.join(columns)} WHERE id = ?", tuple(values))
+            self.conn.commit()
+            return c.rowcount > 0
+        except Exception:
+            self.conn.rollback()
+            raise
+
+    def upsert_google_user(self, email, name, avatar, token_json, hashed_password):
+        c = self.conn.cursor()
+        try:
+            c.execute('SELECT id, role, email FROM users WHERE email = ?', (email,))
+            row = c.fetchone()
+            if row is None and self._has_column(c, 'users', 'google_email'):
+                c.execute('SELECT id, role, email FROM users WHERE google_email = ?', (email,))
+                row = c.fetchone()
+
+            if row:
+                user_id = row['id']
+                self.update_google_account(user_id, token_json, email, avatar)
+                return {
+                    'id': user_id,
+                    'role': row['role'],
+                    'created': False,
+                    'first_name': (name.split(' ')[0] if name else 'Google'),
+                }
+
+            names = (name or 'Google User').split(' ')
+            first_name = names[0]
+            last_name = ' '.join(names[1:]) if len(names) > 1 else ''
+
+            cols = ['email', 'password', 'name', 'role']
+            vals = [email, hashed_password, name, 'manager']
+            placeholders = ['?', '?', '?', '?']
+
+            optional_values = {
+                'first_name': first_name,
+                'last_name': last_name,
+                'avatar': avatar,
+                'google_token': token_json,
+                'google_email': email,
+                'password_version': 1,
+            }
+            for column, value in optional_values.items():
+                if self._has_column(c, 'users', column):
+                    cols.append(column)
+                    vals.append(value)
+                    placeholders.append('?')
+
+            c.execute(
+                f"INSERT INTO users ({', '.join(cols)}) VALUES ({', '.join(placeholders)})",
+                tuple(vals),
+            )
+            user_id = c.lastrowid
+            c.execute(
+                'INSERT INTO workspaces (user_id, name, type, description) VALUES (?, ?, ?, ?)',
+                (user_id, f"{first_name}'s Personal Workspace", 'personal',
+                 'Your personal productivity space'),
+            )
+            self.conn.commit()
+            return {'id': user_id, 'role': 'manager', 'created': True, 'first_name': first_name}
+        except Exception:
+            self.conn.rollback()
+            raise
+
     # ── helpers ──────────────────────────────────────────────────────────────
 
     def _standardize_user(self, row, include_password=False, include_created_at=False):
