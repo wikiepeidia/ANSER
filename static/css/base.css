@@ -179,7 +179,7 @@ img {
 
 .sidebar.collapsed .sidebar__item {
   justify-content: center;
-  padding: 12px 0;
+  padding: 12px 18px;
 }
 
 .sidebar.collapsed .sidebar__toggle i {
@@ -248,24 +248,24 @@ img {
   cursor: pointer;
 }
 
-/* Hover slide effect */
+/* Hover slide effect - cover full item uniformly */
 .sidebar__item::before {
   content: "";
   position: absolute;
   top: 0;
   right: 0;
   bottom: 0;
-  left: -20px; /* Kéo dài thêm 20px về phía dot */
+  left: 0;
   background-color: var(--sidebar-item-hover-bg);
-  transform: translateX(-101%);
-  transition: transform var(--transition-normal);
+  opacity: 0;
+  transition: opacity var(--transition-fast);
   border-radius: 8px;
   z-index: -1;
 }
 
 .sidebar__item:hover::before,
 .sidebar__item.active::before {
-  transform: translateX(0);
+  opacity: 1;
 }
 
 .sidebar__item:hover {
@@ -358,7 +358,8 @@ img {
 .sidebar__submenu-item::before {
   content: "";
   position: absolute;
-  left: 8px; /* Cách mép trong của khung hover 8px */
+  left: 8px;
+  /* Cách mép trong của khung hover 8px */
   top: 50%;
   transform: translateY(-50%);
   width: 4px;
@@ -574,4 +575,3 @@ img {
 .content__header {
   margin-bottom: 4px;
 }
-

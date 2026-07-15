@@ -91,10 +91,10 @@
    ============================== */
 [data-theme="dark"] {
   /* Sidebar */
-  --sidebar-bg: #1B1F2A;
+  --sidebar-bg: #0D1117;
   --sidebar-width: 240px;
-  --sidebar-item-hover-bg: #252A38;
-  --sidebar-item-active-bg: #2E3448;
+  --sidebar-item-hover-bg: #161B22;
+  --sidebar-item-active-bg: #1C2128;
   --sidebar-item-active-color: #FDBF2D;
   --sidebar-item-color: rgba(255, 255, 255, 0.75);
   --sidebar-icon-color: rgba(255, 255, 255, 0.5);

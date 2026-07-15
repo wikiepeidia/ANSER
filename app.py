@@ -52,9 +52,11 @@ def create_app():
 
     @login_manager.unauthorized_handler
     def unauthorized():
-        # No local signin page — bounce back to Gateway's, then return here.
-        next_url = f"http://127.0.0.1:{Config.PORT}/"
-        return redirect(f"{Config.GATEWAY_ORIGIN}/auth/signin?next={next_url}")
+        # Bypass auth for local dev — serve the page directly
+        from flask import render_template
+        return render_template('base.html', 
+            user={'email': 'dev@local', 'first_name': 'Dev', 'last_name': 'User'},
+            gateway_origin=Config.GATEWAY_ORIGIN)
 
     from routes.page_routes import page_bp
     from routes.api_routes import api_bp
