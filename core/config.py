@@ -28,7 +28,16 @@ class Config:
     # another local project's docker-compose (e.g. a separate n8n stack).
     N8N_PORT = os.environ.get('N8N_PORT', '5680')
     N8N_ORIGIN = f"http://localhost:{N8N_PORT}"
-    
+
+    # Sản xuất — a separate Flask app/API/DB (see ANSER_san-xuat), not part
+    # of this codebase.
+    SANXUAT_ORIGIN = os.environ.get('SANXUAT_ORIGIN', 'http://127.0.0.1:5003')
+
+    # Gateway — landing page + email/password signin/signup/logout +
+    # choose-area now live there (see ANSER_gateway), not in this app.
+    # This app (Retail) only reads the shared session cookie it issues.
+    GATEWAY_ORIGIN = os.environ.get('GATEWAY_ORIGIN', 'http://127.0.0.1:5000')
+
     # UI Themes
     THEMES = {
         'auth': {

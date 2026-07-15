@@ -6,6 +6,7 @@ import uuid
 
 from flask import Blueprint, flash, jsonify, redirect, request, session, url_for
 from flask_login import current_user, login_required, logout_user
+from core.config import Config
 from core.extensions import db_manager
 from core.logger import get_logger
 from core.security import safe_api_error, validate_upload
@@ -34,9 +35,12 @@ EXCEL_MIMETYPES = {
 @main_bp.route('/logout')
 @login_required
 def logout():
+    # Clears the shared session cookie — logs the user out of every mảng,
+    # since Gateway (:5000), Retail (:5002) and Sản xuất (:5003) all trust
+    # the same cookie.
     logout_user()
     flash('Bạn đã đăng xuất thành công.', 'success')
-    return redirect(url_for('auth.signin'))
+    return redirect(f"{Config.GATEWAY_ORIGIN}/auth/signin")
 
 
 # ── Customers ──────────────────────────────────────────────────────────────

@@ -1,5 +1,5 @@
 from functools import wraps
-from flask import session, redirect, url_for, flash, request, jsonify
+from flask import session, redirect, flash, request, jsonify
 from core.google_integration import send_email
 import bcrypt
 from core.logger import get_logger
@@ -120,7 +120,8 @@ class AuthManager:
                     return jsonify({'success': False, 'message': 'Chưa đăng nhập'}), 401
                 
                 flash('Vui lòng đăng nhập để tiếp tục', 'error')
-                return redirect(url_for('auth.signin'))
+                from core.config import Config
+                return redirect(f"{Config.GATEWAY_ORIGIN}/auth/signin")
             return f(*args, **kwargs)
         return decorated_function
     

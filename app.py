@@ -6,7 +6,7 @@ from datetime import timedelta
 from dotenv import load_dotenv
 load_dotenv()
 
-from flask import Flask, jsonify, redirect, request, flash, url_for
+from flask import Flask, jsonify, redirect, request, flash
 from werkzeug.middleware.proxy_fix import ProxyFix
 from werkzeug.exceptions import HTTPException
 from flask_wtf.csrf import CSRFError, generate_csrf
@@ -151,7 +151,8 @@ def create_app(config_object=None):
 
     # ── Extensions ────────────────────────────────────────────────────────
     login_manager.init_app(flask_app)
-    login_manager.login_view = 'auth.signin'
+    # No local login_view — signin now lives on the Gateway app (see
+    # login_unauthorized() below), not in this codebase.
     csrf.init_app(flask_app)
     limiter.init_app(flask_app)
     flask_app.extensions['database'] = db_manager
@@ -178,7 +179,10 @@ def create_app(config_object=None):
         if path.startswith('/api/') or accepts_json or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return jsonify({'success': False, 'message': 'Unauthorized - please login'}), 401
         flash('Please log in to continue', 'error')
-        return redirect(url_for('auth.signin'))
+        # No local signin page anymore — bounce to the Gateway app, with a
+        # `next` back here so login lands the user right back where they were.
+        next_url = request.url
+        return redirect(f"{Config.GATEWAY_ORIGIN}/auth/signin?next={next_url}")
 
     @login_manager.user_loader
     def load_user(user_id):
@@ -228,7 +232,7 @@ def create_app(config_object=None):
                 return jsonify({'success': False, 'message': 'Unauthorized - please login'}), 401
             return jsonify({'success': False, 'message': 'CSRF token missing or invalid'}), 400
         flash('Security check failed. Please refresh the page and try again.', 'error')
-        referer = request.referrer or url_for('auth.signin')
+        referer = request.referrer or f"{Config.GATEWAY_ORIGIN}/auth/signin"
         return redirect(referer)
 
     @flask_app.errorhandler(Exception)
@@ -245,7 +249,7 @@ def create_app(config_object=None):
 
 
     # ── Blueprint registration ─────────────────────────────────────────────
-    from routes.auth_routes import auth_bp
+    # No auth_bp here — signin/signup/logout live on the Gateway app now.
     from routes.main_routes import main_bp
     from routes.page_routes import page_bp
     from routes.sales_routes import sales_bp
@@ -262,7 +266,6 @@ def create_app(config_object=None):
     from routes.n8n_api import n8n_api_bp
     from routes.admin_warehouse_routes import admin_warehouse_bp
 
-    flask_app.register_blueprint(auth_bp,         url_prefix='/auth')
     flask_app.register_blueprint(page_bp)
     flask_app.register_blueprint(main_bp)
     flask_app.register_blueprint(sales_bp)
@@ -318,6 +321,6 @@ if __name__ == '__main__':
     if not db_manager.use_postgres:
         db_manager.init_database()
     threading.Thread(target=run_n8n, daemon=True).start()
-    port = int(os.environ.get('PORT', 5000))
+    port = int(os.environ.get('PORT', 5002))
     app.run(host='127.0.0.1', port=port, debug=False, use_reloader=False,
             load_dotenv=False, threaded=True)

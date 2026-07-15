@@ -39,14 +39,12 @@ def _settings_config():
 
 @page_bp.route('/')
 def index():
+    # No local landing/choose-area anymore — those live on the Gateway app.
+    # You only ever land here already authenticated (Gateway sent you), but
+    # handle a stray direct hit gracefully either way.
     if current_user.is_authenticated:
         return redirect(url_for('pages.workspace'))
-    return render_template('landing.html')
-
-
-@page_bp.route('/landing')
-def landing():
-    return render_template('landing.html')
+    return redirect(Config.GATEWAY_ORIGIN)
 
 
 @page_bp.route('/admin')

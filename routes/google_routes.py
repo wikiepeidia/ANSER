@@ -7,6 +7,7 @@ from flask_login import current_user, login_required, login_user
 
 from core import google_integration
 from core.auth import AuthManager
+from core.config import Config
 from core.models import User
 from core.logger import get_logger
 
@@ -59,7 +60,7 @@ def google_authorize():
         if session.pop('google_connect_mode', False):
             if not current_user.is_authenticated:
                 flash('Session expired during connection. Please login again.', 'error')
-                return redirect(url_for('auth.signin'))
+                return redirect(f"{Config.GATEWAY_ORIGIN}/auth/signin")
             token_json = json.dumps(normalized_token)
             current_app.extensions['database'].update_google_account(current_user.id, token_json, email)
             flash('Google account connected successfully!', 'success')
@@ -105,7 +106,7 @@ def google_authorize():
     except Exception as e:
         logger.error("OAuth error: %s", e, exc_info=True)
         flash('Google login failed. Please try again.', 'error')
-        return redirect(url_for('auth.signin'))
+        return redirect(f"{Config.GATEWAY_ORIGIN}/auth/signin")
 
 
 @google_bp.route('/api/google/files', methods=['GET'])
