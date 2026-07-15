@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ANSER - Định hình tương lai bán lẻ</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        /* --- LINEAR.APP TRUE BLACK THEME --- */
+        :root {
+            --bg-void: #000000; --bg-surface: #0a0a0a; --bg-elevated: #121212;
+            --text-high: #ffffff; --text-med: #a1a1aa; --text-low: #52525b;
+            --border-subtle: rgba(255, 255, 255, 0.08); --border-hover: rgba(255, 255, 255, 0.15);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        /* CRITICAL FIX: Removed overflow-x: hidden from HTML to prevent Scrollbar hijacking */
+        body {
+            background-color: var(--bg-void); color: var(--text-high);
+            font-family: 'Inter', sans-serif; overflow-x: hidden;
+        }
+
+        a { text-decoration: none; }
+
+        .navbar {
+            position: fixed; top: 0; left: 0; width: 100%;
+            padding: 16px 8%; display: flex; justify-content: space-between; align-items: center;
+            background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            z-index: 1000; border-bottom: 1px solid transparent; transition: border-color 0.4s ease;
+        }
+        .navbar.scrolled { border-bottom: 1px solid var(--border-subtle); }
+        .navbar-logo { font-size: 1.2rem; font-weight: 700; color: var(--text-high); display: flex; align-items: center; gap: 8px; }
+        .navbar-links { display: flex; gap: 32px; align-items: center; }
+        .nav-item { color: var(--text-med); font-weight: 500; font-size: 0.9rem; transition: color 0.2s ease; }
+        .nav-item:hover { color: var(--text-high); }
+        .btn-primary { background: var(--text-high); color: var(--bg-void); padding: 8px 16px; border-radius: 6px; font-weight: 600; font-size: 0.9rem; transition: all 0.2s ease; }
+        .btn-primary:hover { background: #e0e0e0; transform: translateY(-1px); }
+
+        .hero { min-height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; position: relative; padding: 0 5%; }
+        .hero-glow { position: absolute; top: -10%; left: 50%; transform: translateX(-50%); width: 800px; height: 600px; background: radial-gradient(circle, rgba(255,255,255,0.06) 0%, transparent 60%); z-index: -1; border-radius: 50%; pointer-events: none; }
+        .hero-badge { background: rgba(255,255,255,0.03); border: 1px solid var(--border-subtle); color: var(--text-med); padding: 6px 14px; border-radius: 100px; font-size: 0.85rem; font-weight: 500; margin-bottom: 30px; }
+        .hero-title { font-size: clamp(3.5rem, 7vw, 7rem); font-weight: 800; line-height: 1.05; letter-spacing: -0.04em; margin-bottom: 24px; max-width: 900px; }
+        .hero-subtitle { font-size: 1.25rem; color: var(--text-med); max-width: 600px; margin: 0 auto 40px; line-height: 1.6; }
+
+        .section-wrapper { padding: 160px 8%; max-width: 1400px; margin: 0 auto; position: relative; }
+        .section-title { text-align: center; font-size: 3.5rem; font-weight: 800; margin-bottom: 100px; }
+        .bento-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 24px; }
+        
+        .card { background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: 16px; padding: 40px; transition: border-color 0.3s, background 0.3s; display: flex; flex-direction: column; }
+        .card:hover { border-color: var(--border-hover); background: var(--bg-elevated); }
+        .card.span-8 { grid-column: span 8; min-height: 400px; }
+        .card.span-4 { grid-column: span 4; min-height: 400px; }
+        .card.span-6 { grid-column: span 6; min-height: 350px; }
+        @media (max-width: 900px) { .card.span-8, .card.span-4, .card.span-6 { grid-column: span 12; } }
+
+        .card-icon { width: 48px; height: 48px; border-radius: 12px; background: rgba(255,255,255,0.03); display: flex; justify-content: center; align-items: center; font-size: 1.2rem; margin-bottom: 24px; border: 1px solid var(--border-subtle); }
+        .card h3 { font-size: 1.5rem; font-weight: 600; margin-bottom: 12px; }
+        .card p { color: var(--text-med); line-height: 1.6; font-size: 1rem; }
+
+        .abstract-container { margin-top: auto; padding-top: 40px; width: 100%; }
+        .laser-box { height: 100px; border: 1px solid var(--border-subtle); border-radius: 8px; background: var(--bg-void); position: relative; overflow: hidden; display: flex; align-items: center; padding: 0 20px; }
+        .laser-line { position: absolute; top: 0; left: 0; width: 100%; height: 2px; background: #ffffff; box-shadow: 0 0 15px #ffffff; }
+        .chart-box { display: flex; align-items: flex-end; gap: 8px; height: 120px; border-bottom: 1px solid var(--border-subtle); }
+        .chart-bar { flex: 1; background: rgba(255,255,255,0.1); border-radius: 4px 4px 0 0; }
+        .chart-bar.active { background: #ffffff; box-shadow: 0 0 20px rgba(255,255,255,0.2); }
+        .workflow-box { display: flex; gap: 12px; align-items: center; }
+        .workflow-node { width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--border-hover); display: flex; justify-content: center; align-items: center; font-size: 0.8rem; }
+        .workflow-line { flex: 1; height: 1px; background: var(--border-subtle); }
+
+        .footer { border-top: 1px solid var(--border-subtle); padding: 160px 8% 40px; text-align: center; }
+        .footer h2 { font-size: 4rem; font-weight: 800; letter-spacing: -2px; margin-bottom: 40px; }
+        .footer-bottom { margin-top: 120px; padding-top: 30px; border-top: 1px solid var(--border-subtle); display: flex; justify-content: space-between; color: var(--text-low); font-size: 0.9rem; }
+
+        /* ERROR BANNER STYLES */
+        #error-banner {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; background: #dc2626; color: white;
+            text-align: center; padding: 15px; z-index: 9999; font-weight: bold; font-family: monospace;
+        }
+
+        /* INITIAL GSAP STATES */
+        .hero-fade, .section-fade { opacity: 0; transform: translateY(30px); }
+        .gsap-pop-card { opacity: 0; transform: translateY(100px) scale(0.85); }
+    </style>
+</head>
+<body>
+
+    <div id="error-banner">⚠️ DIAGNOSTIC ALERT: Your browser or Adblocker blocked the GSAP Animation Library from loading. Animations are disabled.</div>
+
+    <header class="navbar">
+        <a href="#" class="navbar-logo"><i class="fas fa-layer-group"></i> ANSER</a>
+        <div class="navbar-links">
+            <a href="#features" class="nav-item">Tính năng</a>
+            <a href="{{ url_for('auth.signin') if 'auth.signin' in request.endpoint else '/auth/signin' }}" class="nav-item">Đăng nhập</a>
+            <a href="{{ url_for('auth.signup') if 'auth.signup' in request.endpoint else '/auth/signup' }}" class="btn-primary">Bắt đầu</a>
+        </div>
+    </header>
+
+    <section class="hero">
+        <div class="hero-glow"></div>
+        <div class="hero-badge hero-fade">ANSER Engine v2.0</div>
+        <h1 class="hero-title hero-fade">Chuẩn hóa dữ liệu.<br>Dự báo tương lai.</h1>
+        <p class="hero-subtitle hero-fade">Hệ điều hành tối thượng cho doanh nghiệp bán lẻ. Nhận dạng hóa đơn OCR, dự đoán tồn kho LSTM và AI Agent hoàn toàn tự động.</p>
+        
+        <div class="hero-fade">
+            <a href="{{ url_for('auth.signup') if 'auth.signup' in request.endpoint else '/auth/signup' }}" class="btn-primary" style="padding: 14px 28px; font-size: 1rem; margin-top: 16px;">
+                Tạo không gian làm việc
+            </a>
+        </div>
+    </section>
+
+    <section id="features" class="section-wrapper">
+        <h2 class="section-title section-fade">Hệ sinh thái tự động</h2>
+
+        <div class="bento-grid">
+            
+            <div class="card span-8 gsap-pop-card">
+                <div class="card-icon"><i class="fas fa-file-invoice"></i></div>
+                <h3>Thị giác máy tính OCR</h3>
+                <p>Quét, đọc và trích xuất dữ liệu từ hàng ngàn biên lai. Biến hình ảnh tĩnh thành dữ liệu JSON ngay lập tức.</p>
+                <div class="abstract-container">
+                    <div class="laser-box">
+                        <div class="laser-line"></div>
+                        <span style="color: var(--text-low); font-family: monospace;">{ "status": "extracted", "id": "INV-1029", "total": "5,000,000" }</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card span-4 gsap-pop-card">
+                <div class="card-icon"><i class="fab fa-google"></i></div>
+                <h3>Đồng bộ Google</h3>
+                <p>Kết nối mượt mà với Sheets và Drive. Dữ liệu của bạn luôn được cập nhật liên tục.</p>
+                <div class="abstract-container">
+                    <div style="height: 100px; border: 1px solid var(--border-subtle); border-radius: 8px; background: var(--bg-void); display: flex; flex-direction: column; gap: 8px; padding: 16px;">
+                        <div style="height: 12px; width: 80%; background: rgba(255,255,255,0.1); border-radius: 4px;"></div>
+                        <div style="height: 12px; width: 60%; background: rgba(255,255,255,0.1); border-radius: 4px;"></div>
+                        <div style="height: 12px; width: 90%; background: rgba(255,255,255,0.1); border-radius: 4px;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card span-6 gsap-pop-card">
+                <div class="card-icon"><i class="fas fa-robot"></i></div>
+                <h3>AI Agents Độc Lập</h3>
+                <p>Lực lượng lao động số hoạt động 24/7 để phân tích dữ liệu và lên kế hoạch kinh doanh.</p>
+                <div class="abstract-container">
+                    <div class="workflow-box">
+                        <div class="workflow-node"><i class="fas fa-check"></i></div><div class="workflow-line"></div>
+                        <div class="workflow-node" style="border-color: #fff; background: #fff; color: #000;"><i class="fas fa-sync fa-spin"></i></div><div class="workflow-line"></div>
+                        <div class="workflow-node" style="border-color: var(--border-subtle); color: var(--text-low);"><i class="fas fa-lock"></i></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card span-6 gsap-pop-card">
+                <div class="card-icon"><i class="fas fa-chart-line"></i></div>
+                <h3>Dự Báo LSTM</h3>
+                <p>Mạng nơ-ron quét qua dữ liệu lịch sử để dự đoán nhu cầu thị trường, chấm dứt tình trạng cháy hàng.</p>
+                <div class="abstract-container">
+                    <div class="chart-box">
+                        <div class="chart-bar gsap-bar" style="height: 30%;"></div>
+                        <div class="chart-bar gsap-bar" style="height: 50%;"></div>
+                        <div class="chart-bar gsap-bar" style="height: 40%;"></div>
+                        <div class="chart-bar gsap-bar" style="height: 70%;"></div>
+                        <div class="chart-bar gsap-bar active" style="height: 90%;"></div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <footer class="footer">
+        <h2 class="section-fade">Bắt đầu kỷ nguyên mới.</h2>
+        <a href="{{ url_for('auth.signup') if 'auth.signup' in request.endpoint else '/auth/signup' }}" class="btn-primary section-fade" style="padding: 16px 40px; font-size: 1.1rem; background: #fff; color: #000;">Triển khai ANSER ngay</a>
+        <div class="footer-bottom"><span>© 2026 ANSER.</span><span>Hệ thống: Online</span></div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.2/dist/gsap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.2/dist/ScrollTrigger.min.js"></script>
+
+    <script>
+        gsap.registerPlugin(ScrollTrigger);
+
+        window.addEventListener('load', () => {
+            
+            // 1. Hero Reveal
+            gsap.fromTo(".hero-fade", 
+                { autoAlpha: 0, y: 30 },
+                { autoAlpha: 1, y: 0, duration: 1, stagger: 0.15, ease: "power3.out" }
+            );
+
+            // 2. Navbar Blur Trigger
+            window.addEventListener('scroll', () => {
+                if (window.scrollY > 50) {
+                    document.querySelector('.navbar').classList.add('scrolled');
+                } else {
+                    document.querySelector('.navbar').classList.remove('scrolled');
+                }
+            });
+
+            // 3. THE SCRUB POP-IN (LINEAR STYLE)
+            gsap.utils.toArray('.gsap-pop-card').forEach(card => {
+                gsap.fromTo(card,
+                    { opacity: 0, scale: 0.85, y: 50 },
+                    {
+                        opacity: 1, scale: 1, y: 0,
+                        ease: "none",
+                        scrollTrigger: {
+                            trigger: card,
+                            start: "top 95%",
+                            end: "top 60%",
+                            scrub: 1,
+                            markers: false // <--- THIS REMOVES THE LINES STICKING OUT
+                        }
+                    }
+                );
+            });
+
+            // 4. Section Fades
+            gsap.utils.toArray('.section-fade').forEach(el => {
+                gsap.fromTo(el,
+                    { opacity: 0, y: 40 },
+                    { 
+                        opacity: 1, y: 0, duration: 0.8, ease: "power3.out",
+                        scrollTrigger: {
+                            trigger: el,
+                            start: "top 85%",
+                            toggleActions: "play none none reverse"
+                        }
+                    }
+                );
+            });
+
+            // 5. Internal Animations
+            gsap.to(".laser-line", { top: "100%", duration: 2, ease: "none", repeat: -1, yoyo: true });
+            
+            gsap.from(".gsap-bar", {
+                height: 0, duration: 1.5, stagger: 0.1, ease: "power3.out",
+                scrollTrigger: { trigger: ".chart-box", start: "top 85%" }
+            });
+        });
+    </script>
+</body>
+</html>

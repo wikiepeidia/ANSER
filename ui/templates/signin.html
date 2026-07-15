@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+
+{% block title %}Đăng nhập - ANSER{% endblock %}
+
+{% block body_class %}auth-page{% endblock %}
+
+{% block styles %}
+{{ super() }}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/auth_signin.css') }}">
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script src="{{ url_for('static', filename='js/auth_signin.js') }}" defer></script>
+{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="auth-left">
+        <div class="brand-logo">
+            <i class="fas fa-rocket"></i>
+        </div>
+        <h1 class="brand-title">ANSER</h1>
+        <p class="brand-subtitle">
+            Hệ thống quản lý thông minh giúp tổ chức công việc hiệu quả với cấu trúc phân lớp và các kênh kết nối mạnh mẽ.
+        </p>
+        <div class="feature-list">
+            <div class="feature-item">
+                <div class="feature-icon"><i class="fas fa-users"></i></div>
+                <div class="feature-content">
+                    <h4>Quản lý khách hàng</h4>
+                    <p>Quản lý khách hàng và giữ liên hệ của bạn luôn ngăn nắp.</p>
+                </div>
+            </div>
+            <div class="feature-item">
+                <div class="feature-icon"><i class="fas fa-box"></i></div>
+                <div class="feature-content">
+                    <h4>Quản lý sản phẩm & kho hàng</h4>
+                    <p>Theo dõi sản phẩm, tồn kho và biến động tại một nơi duy nhất.</p>
+                </div>
+            </div>
+            <div class="feature-item">
+                <div class="feature-icon"><i class="fas fa-magic"></i></div>
+                <div class="feature-content">
+                    <h4>Tự động hóa thông minh</h4>
+                    <p>Tự động hóa các tác vụ thường ngày và nhận báo cáo thông minh, sẵn sàng dùng.</p>
+                </div>
+            </div>
+            <div class="feature-item">
+                <div class="feature-icon"><i class="fas fa-chart-line"></i></div>
+                <div class="feature-content">
+                    <h4>Báo cáo & phân tích</h4>
+                    <p>Theo dõi hiệu suất với dashboard rõ ràng và các insight giá trị.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="auth-right">
+        <div class="auth-header">
+            <h2 class="auth-title">Chào mừng trở lại!</h2>
+            <p class="auth-subtitle">Đăng nhập để tiếp tục sử dụng không gian làm việc</p>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        {% for category, message in messages %}
+        <div class="alert alert-{{ category }}">
+            {{ message }}
+        </div>
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
+
+        <form method="POST" action="{{ url_for('auth.signin', next=request.args.get('next')) if request.args.get('next') else url_for('auth.signin') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="form-group">
+                <label for="email" class="form-label">Email</label>
+                <input type="email" id="email" name="email" class="form-input" placeholder="Nhập địa chỉ email của bạn"
+                    required>
+            </div>
+
+            <div class="form-group">
+                <label for="password" class="form-label">Mật khẩu</label>
+                <input type="password" id="password" name="password" class="form-input" placeholder="Nhập mật khẩu"
+                    required>
+            </div>
+
+            <button type="submit" class="auth-btn">Đăng nhập</button>
+        </form>
+
+        <!-- Google OAuth vẫn sống ở Retail (chưa tách sang Gateway) — link chéo sang đó -->
+        <a href="{{ retail_origin }}/auth/login/google" class="google-signin-btn">
+            <svg viewBox="0 0 24 24" width="20" height="20" xmlns="http://www.w3.org/2000/svg">
+                <g transform="matrix(1, 0, 0, 1, 0, 0)">
+                    <path fill="#EA4335"
+                        d="M5.266 9.765A7.077 7.077 0 0 1 12 4.909c1.69 0 3.218.6 4.418 1.582L19.91 3C17.782 1.145 15.055 0 12 0 7.27 0 3.198 2.698 1.24 6.65l4.026 3.115Z" />
+                    <path fill="#34A853"
+                        d="M16.04 18.013c-1.09.703-2.474 1.078-4.04 1.078a7.077 7.077 0 0 1-6.723-4.823l-4.04 3.067A11.965 11.965 0 0 0 12 24c2.933 0 5.735-1.043 7.834-3l-3.793-2.987Z" />
+                    <path fill="#4A90E2"
+                        d="M19.834 21c2.195-2.048 3.62-5.096 3.62-9 0-.71-.109-1.473-.272-2.182H12v4.637h6.436c-.317 1.559-1.17 2.766-2.395 3.558L19.834 21Z" />
+                    <path fill="#FBBC05"
+                        d="M5.277 14.268A7.12 7.12 0 0 1 4.909 12c0-.782.125-1.533.357-2.235L1.24 6.65A11.934 11.934 0 0 0 0 12c0 1.92.445 3.73 1.237 5.335l4.04-3.067Z" />
+                </g>
+            </svg>
+            <span>Đăng nhập bằng Google</span>
+        </a>
+
+        <div class="auth-switch">
+            Chưa có tài khoản? <a href="{{ url_for('auth.signup') }}">Tạo tài khoản</a>
+        </div>
+
+        <div class="demo-section">
+            <div class="demo-title">
+                <i class="fas fa-gamepad"></i>
+                Dùng thử tài khoản demo
+            </div>
+            <div class="demo-accounts">
+                <div class="demo-account" data-demo-email="admin@fun.com" data-demo-password="admin123">
+                    <div class="demo-role">
+                        <i class="fas fa-crown"></i>
+                        Quản trị viên
+                    </div>
+                    <div class="demo-email">admin@fun.com / admin123</div>
+                </div>
+                <div class="demo-account" data-demo-email="manager@fun.com" data-demo-password="manager123">
+                    <div class="demo-role">
+                        <i class="fas fa-user-shield"></i>
+                        Quản lý
+                    </div>
+                    <div class="demo-email">manager@fun.com / manager123</div>
+                </div>
+                <div class="demo-account" data-demo-email="user@fun.com" data-demo-password="user123">
+                    <div class="demo-role">
+                        <i class="fas fa-user"></i>
+                        Người dùng
+                    </div>
+                    <div class="demo-email">user@fun.com / user123</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
