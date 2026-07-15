@@ -1,0 +1,185 @@
+<!-- import.html — Phiếu nhập kho (nối /api/imports thật) -->
+<div class="content__header">
+  <h1 class="content__title">Nhập sản phẩm</h1>
+  <p class="content__subtitle">Tạo phiếu nhập kho hàng</p>
+</div>
+
+<div class="form-card">
+  <div class="form-card__header">
+    <h3><i class="fa-solid fa-file-invoice"></i> Thông tin phiếu nhập</h3>
+  </div>
+  <div class="form-card__body">
+    <div class="form-group">
+      <label>Nhà cung cấp</label>
+      <input type="text" id="importSupplier" placeholder="Nhập tên nhà cung cấp" />
+    </div>
+    <div class="form-group">
+      <label>Ghi chú</label>
+      <textarea id="importNotes" rows="2" placeholder="Ghi chú phiếu nhập (nếu có)"></textarea>
+    </div>
+  </div>
+</div>
+
+<div class="form-card">
+  <div class="form-card__header">
+    <h3><i class="fa-solid fa-boxes-stacked"></i> Danh sách sản phẩm nhập</h3>
+    <button class="btn btn--outline btn--sm" id="btnAddImportItem">
+      <i class="fa-solid fa-plus"></i> Thêm sản phẩm
+    </button>
+  </div>
+  <div class="table-card__body">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Mã SP</th><th>Tên sản phẩm (nếu SP mới)</th>
+          <th>Số lượng</th><th>Đơn giá (₫)</th><th>Thành tiền (₫)</th><th></th>
+        </tr>
+      </thead>
+      <tbody id="importItemsBody">
+        <tr class="import-item-row">
+          <td><input type="text" class="table-input import-code" placeholder="SP-001" /></td>
+          <td><input type="text" class="table-input import-name" placeholder="Tên sản phẩm (SP mới)" /></td>
+          <td><input type="number" class="table-input import-qty" value="1" min="1" /></td>
+          <td><input type="number" class="table-input import-price" value="0" min="0" /></td>
+          <td class="item-total import-total">0 ₫</td>
+          <td><button class="action-btn action-btn--danger btn-remove-row"><i class="fa-solid fa-trash"></i></button></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="form-summary">
+    <div class="form-summary__row"><span>Tổng số sản phẩm:</span><strong id="totalImportItems">1 loại</strong></div>
+    <div class="form-summary__row"><span>Tổng số lượng:</span><strong id="totalImportQty">0 chiếc</strong></div>
+    <div class="form-summary__row form-summary__row--total"><span>Tổng tiền:</span><strong id="totalImportAmount">0 ₫</strong></div>
+  </div>
+  <div class="form-card__footer">
+    <button class="btn btn--primary" id="btnConfirmImport">
+      <i class="fa-solid fa-check"></i> Xác nhận nhập kho
+    </button>
+  </div>
+</div>
+
+<div class="table-card">
+  <div class="table-card__header">
+    <h3>Lịch sử nhập kho gần đây</h3>
+  </div>
+  <div class="table-card__body">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Mã phiếu</th><th>Ngày</th><th>Nhà cung cấp</th>
+          <th class="num">Tổng tiền</th><th>Trạng thái</th>
+        </tr>
+      </thead>
+      <tbody id="importHistoryBody">
+        <tr><td colspan="5" style="text-align:center;color:var(--text-muted)">Đang tải...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+(async function () {
+  function recomputeImportTotals() {
+    const rows = document.querySelectorAll("#importItemsBody .import-item-row");
+    let totalQty = 0, totalAmt = 0;
+    rows.forEach(r => {
+      const qty = parseInt(r.querySelector(".import-qty")?.value) || 0;
+      const price = parseInt(r.querySelector(".import-price")?.value) || 0;
+      const total = qty * price;
+      const totalCell = r.querySelector(".import-total");
+      if (totalCell) totalCell.textContent = Helpers.formatVND(total);
+      totalQty += qty;
+      totalAmt += total;
+    });
+    document.getElementById("totalImportItems").textContent = rows.length + " loại";
+    document.getElementById("totalImportQty").textContent = totalQty + " chiếc";
+    document.getElementById("totalImportAmount").textContent = Helpers.formatVND(totalAmt);
+  }
+
+  document.querySelectorAll("#importItemsBody input").forEach(inp => {
+    inp.addEventListener("input", recomputeImportTotals);
+  });
+
+  document.addEventListener("click", (e) => {
+    if (e.target.closest(".btn-remove-row")) {
+      const row = e.target.closest("tr");
+      const body = document.getElementById("importItemsBody");
+      if (row && body.querySelectorAll(".import-item-row").length > 1) {
+        row.remove();
+        recomputeImportTotals();
+      }
+    }
+  });
+
+  document.getElementById("btnAddImportItem").addEventListener("click", () => {
+    const tbody = document.getElementById("importItemsBody");
+    const tr = document.createElement("tr");
+    tr.className = "import-item-row";
+    tr.innerHTML = `
+      <td><input type="text" class="table-input import-code" placeholder="SP-xxx" /></td>
+      <td><input type="text" class="table-input import-name" placeholder="Tên sản phẩm (SP mới)" /></td>
+      <td><input type="number" class="table-input import-qty" value="1" min="1" /></td>
+      <td><input type="number" class="table-input import-price" value="0" min="0" /></td>
+      <td class="item-total import-total">0 ₫</td>
+      <td><button class="action-btn action-btn--danger btn-remove-row"><i class="fa-solid fa-trash"></i></button></td>
+    `;
+    tbody.appendChild(tr);
+    tr.querySelectorAll("input").forEach(inp => inp.addEventListener("input", recomputeImportTotals));
+    recomputeImportTotals();
+  });
+
+  document.getElementById("btnConfirmImport").addEventListener("click", async () => {
+    const rows = document.querySelectorAll("#importItemsBody .import-item-row");
+    const items = Array.from(rows).map(r => ({
+      code: r.querySelector(".import-code").value.trim(),
+      name: r.querySelector(".import-name").value.trim(),
+      qty: parseInt(r.querySelector(".import-qty").value) || 0,
+      price: parseInt(r.querySelector(".import-price").value) || 0,
+    })).filter(it => (it.code || it.name) && it.qty > 0);
+
+    if (!items.length) {
+      showToast("Cần ít nhất 1 sản phẩm hợp lệ (mã hoặc tên + số lượng)", "warning");
+      return;
+    }
+
+    const btn = document.getElementById("btnConfirmImport");
+    btn.disabled = true;
+    try {
+      await Store.createImport({
+        supplierName: document.getElementById("importSupplier").value.trim(),
+        notes: document.getElementById("importNotes").value.trim(),
+        items,
+      });
+      showToast("Đã xác nhận nhập kho!");
+      await Store.loadProducts();
+      Router.loadPage("import");
+    } catch (err) {
+      showToast(err.message || "Lỗi tạo phiếu nhập", "error");
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  async function renderHistory() {
+    const body = document.getElementById("importHistoryBody");
+    const imports = await Store.loadImports();
+    if (!imports.length) {
+      body.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--text-muted)">Chưa có phiếu nhập nào</td></tr>`;
+      return;
+    }
+    body.innerHTML = imports.slice(0, 10).map(t => `
+      <tr>
+        <td>${Helpers.tableAvatar(t.code, t.code, "")}</td>
+        <td>${Helpers.formatDate(t.created_at)}</td>
+        <td>${Helpers.escapeHtml(t.supplier_name || "—")}</td>
+        <td class="num" title="${Helpers.formatVND(t.total_amount)}">${Helpers.formatVNDShort(t.total_amount)}</td>
+        <td><span class="pill pill--green">${Helpers.escapeHtml(t.status || "completed")}</span></td>
+      </tr>
+    `).join("");
+  }
+
+  recomputeImportTotals();
+  await renderHistory();
+})();
+</script>

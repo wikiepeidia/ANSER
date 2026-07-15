@@ -1,1 +1,6 @@
 .claude/
+.env
+*.db
+__pycache__/
+*.pyc
+.vscode/

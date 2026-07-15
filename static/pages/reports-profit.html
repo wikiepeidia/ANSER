@@ -1,0 +1,140 @@
+<!-- reports-profit.html — Báo cáo lợi nhuận -->
+<div class="content__header">
+  <h1 class="content__title">Báo cáo lợi nhuận</h1>
+  <p class="content__subtitle">Theo dõi biên lợi nhuận gộp &amp; ròng, phân tích theo sản phẩm và nhà máy</p>
+</div>
+
+<div class="report-toolbar">
+  <div class="chart-card__actions">
+    <button class="chart-btn active">Quý này</button>
+    <button class="chart-btn">Năm</button>
+  </div>
+  <div class="report-toolbar__right">
+    <button class="btn btn--outline" onclick="Router.printSection('profitPage', 'Báo cáo lợi nhuận')"><i class="fa-solid fa-print"></i> In</button>
+    <button class="btn btn--primary" onclick="Router.exportProfitCSV(profitFactoriesData)"><i class="fa-solid fa-file-export"></i> Xuất CSV</button>
+  </div>
+</div>
+
+  <div id="profitPage">
+  <div class="stats-grid stats-grid--4 report-stats">
+    <div class="stat-card"><div class="stat-card__icon stat-card__icon--green"><i class="fa-solid fa-coins"></i></div><div class="stat-card__info"><span class="stat-card__label">Lợi nhuận ròng</span><span class="stat-card__value">186.4M <span class="stat-card__unit">₫</span></span><span class="stat-card__change stat-card__change--up"><i class="fa-solid fa-arrow-up"></i> 12.4%</span></div></div>
+    <div class="stat-card"><div class="stat-card__icon stat-card__icon--blue"><i class="fa-solid fa-percent"></i></div><div class="stat-card__info"><span class="stat-card__label">Biên LN ròng</span><span class="stat-card__value">28.7 <span class="stat-card__unit">%</span></span><span class="stat-card__change stat-card__change--up"><i class="fa-solid fa-arrow-up"></i> +1.8 điểm</span></div></div>
+    <div class="stat-card"><div class="stat-card__icon stat-card__icon--orange"><i class="fa-solid fa-chart-line"></i></div><div class="stat-card__info"><span class="stat-card__label">Doanh thu</span><span class="stat-card__value">649M <span class="stat-card__unit">₫</span></span><span class="stat-card__change stat-card__change--up"><i class="fa-solid fa-arrow-up"></i> Quý này</span></div></div>
+    <div class="stat-card"><div class="stat-card__icon stat-card__icon--red"><i class="fa-solid fa-money-bill-wave"></i></div><div class="stat-card__info"><span class="stat-card__label">Chi phí</span><span class="stat-card__value">462.6M <span class="stat-card__unit">₫</span></span><span class="stat-card__change stat-card__change--down"><i class="fa-solid fa-arrow-down"></i> NVL + vận hành</span></div></div>
+  </div>
+
+  <div class="charts-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px">
+    <!-- Lợi nhuận 6 tháng gần nhất -->
+    <div class="chart-card">
+      <div class="chart-card__header">
+        <div class="chart-card__title-group">
+          <h3>Lợi nhuận 6 tháng gần nhất</h3>
+          <span class="chart-card__subtitle">Đơn vị: triệu đ</span>
+        </div>
+        <div class="bar-chart__legend bar-chart__legend--inline">
+          <span class="legend-item"><span class="legend-dot legend-dot--profit"></span> Lợi nhuận</span>
+          <span class="legend-item"><span class="legend-dot legend-dot--revenue"></span> Doanh thu</span>
+        </div>
+      </div>
+      <div class="chart-card__body">
+        <div class="bar-chart bar-chart--grouped bar-chart--profit">
+          <div class="bar-chart__inner">
+            <div class="bar-chart__y-axis">
+              <span style="top:0%">150tr</span><span style="top:10%">135tr</span><span style="top:20%">120tr</span><span style="top:30%">105tr</span><span style="top:40%">90tr</span><span style="top:50%">75tr</span><span style="top:60%">60tr</span><span style="top:70%">45tr</span><span style="top:80%">30tr</span><span style="top:90%">15tr</span><span style="top:100%">0tr</span>
+            </div>
+            <div class="bar-chart__plot">
+              <div class="bar-chart__grid">
+                <div class="bar-chart__grid-line" style="top:0%"></div><div class="bar-chart__grid-line" style="top:10%"></div><div class="bar-chart__grid-line" style="top:20%"></div><div class="bar-chart__grid-line" style="top:30%"></div><div class="bar-chart__grid-line" style="top:40%"></div><div class="bar-chart__grid-line" style="top:50%"></div><div class="bar-chart__grid-line" style="top:60%"></div><div class="bar-chart__grid-line" style="top:70%"></div><div class="bar-chart__grid-line" style="top:80%"></div><div class="bar-chart__grid-line" style="top:90%"></div><div class="bar-chart__grid-line bar-chart__grid-line--base" style="top:100%"></div>
+              </div>
+              <div class="bar-chart__bars" id="profitReportBars"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Top 5 sản phẩm -->
+    <div class="table-card">
+      <div class="table-card__header"><h3>Top 5 sản phẩm</h3></div>
+      <div class="table-card__body">
+        <table class="data-table">
+          <thead><tr><th>SẢN PHẨM</th><th style="text-align:right">BIÊN LN</th></tr></thead>
+          <tbody>
+            <tr><td>${Helpers.tableAvatar("SP01", "Vỏ hộp kim loại 100x60", "42.8M đ")}</td><td><span class="pill pill--green">32%</span></td></tr>
+            <tr><td>${Helpers.tableAvatar("SP02", "Bulong M8x40 mạ kẽm", "31.2M đ")}</td><td><span class="pill pill--green">41%</span></td></tr>
+            <tr><td>${Helpers.tableAvatar("SP03", "Khay nhựa ABS đen 200g", "28.6M đ")}</td><td><span class="pill pill--green">28%</span></td></tr>
+            <tr><td>${Helpers.tableAvatar("SP04", "Thùng carton 5 lớp", "24.0M đ")}</td><td><span class="pill pill--orange">22%</span></td></tr>
+            <tr><td>${Helpers.tableAvatar("SP05", "Cụm lắp ráp module A", "19.4M đ")}</td><td><span class="pill pill--green">35%</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="alert-card">
+    <h3>Chi tiết lợi nhuận theo nhà máy</h3>
+    <p style="color:var(--text-muted);font-size:13px;margin-bottom:12px">Quý này · đã bao gồm chi phí NVL, nhân công, vận hành</p>
+  </div>
+  <div class="table-card">
+    <div class="table-card__body">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Nhà máy</th><th>Khu vực</th><th class="num">Doanh thu</th>
+            <th class="num">Chi phí</th><th class="num">Lợi nhuận</th><th class="num">Biên LN</th>
+            <th class="num">Xu hướng</th>
+          </tr>
+        </thead>
+        <tbody id="profitFactoriesBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  // Profit chart bars
+  const profitData = [
+    { m: "T2", rev: 95, profit: 22 },
+    { m: "T3", rev: 105, profit: 26 },
+    { m: "T4", rev: 112, profit: 27 },
+    { m: "T5", rev: 121, profit: 30 },
+    { m: "T6", rev: 128, profit: 33 },
+    { m: "T7", rev: 138, profit: 38 },
+  ];
+  document.getElementById("profitReportBars").innerHTML = profitData.map(d => `
+    <div class="bar-chart__group">
+      <div class="bar-chart__pair">
+        <div class="bar-chart__item"><span class="bar-chart__bar bar-chart__bar--revenue" style="--h: ${Math.round((d.rev / 150) * 100)}%"></span></div>
+        <div class="bar-chart__item"><span class="bar-chart__bar bar-chart__bar--profit" style="--h: ${Math.round((d.profit / 150) * 100)}%"></span></div>
+      </div>
+      <span class="bar-chart__tooltip bar-chart__tooltip--multi">
+        <span class="bar-chart__tooltip-header">${d.m}</span>
+        <span class="bar-chart__tooltip-row"><span class="bar-chart__tooltip-swatch" style="background:var(--chart-revenue)"></span><span class="bar-chart__tooltip-text">Doanh thu: ${d.rev}tr</span></span>
+        <span class="bar-chart__tooltip-row"><span class="bar-chart__tooltip-swatch" style="background:var(--chart-profit)"></span><span class="bar-chart__tooltip-text">Lợi nhuận: ${d.profit}tr</span></span>
+      </span>
+      <span class="bar-chart__label">${d.m}</span>
+    </div>
+  `).join("");
+
+  // Factories table
+  const factories = [
+    { name: "NM Cơ khí Sài Gòn", region: "Miền Nam", revenue: 96000000, cost: 68400000, profit: 27600000, margin: 28.8, marginColor: "green", trend: 8.2, up: true },
+    { name: "NM Ép nhựa Bình Dương", region: "Miền Nam", revenue: 15200000, cost: 11620000, profit: 3580000, margin: 23.6, marginColor: "green", trend: 3.1, up: true },
+    { name: "NM Lắp ráp Hà Nội", region: "Miền Bắc", revenue: 238000000, cost: 168400000, profit: 69600000, margin: 29.2, marginColor: "green", trend: 14.7, up: true },
+    { name: "NM Bao bì Đà Nẵng", region: "Miền Trung", revenue: 24000000, cost: 18360000, profit: 5640000, margin: 23.5, marginColor: "orange", trend: -2.4, up: false }
+  ];
+  window.profitFactoriesData = factories;
+  document.getElementById("profitFactoriesBody").innerHTML = factories.map(f => `
+    <tr>
+      <td><strong>${f.name}</strong></td>
+      <td><span class="pill pill--blue">${f.region}</span></td>
+      <td class="num" title="${Helpers.formatVND(f.revenue)}">${Helpers.formatVNDShort(f.revenue)}</td>
+      <td class="num" title="${Helpers.formatVND(f.cost)}">${Helpers.formatVNDShort(f.cost)}</td>
+      <td class="num" title="${Helpers.formatVND(f.profit)}"><strong>${Helpers.formatVNDShort(f.profit)}</strong></td>
+      <td class="num"><span class="pill pill--${f.marginColor}">${f.margin}%</span></td>
+      <td class="num">${Helpers.trendPill(Math.abs(f.trend), { up: f.up })}</td>
+    </tr>
+  `).join("");
+})();
+</script>

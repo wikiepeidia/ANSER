@@ -1,0 +1,203 @@
+<!-- export.html — Phiếu xuất kho (nối /api/exports thật) -->
+<div class="content__header">
+  <h1 class="content__title">Xuất sản phẩm</h1>
+  <p class="content__subtitle">Tạo phiếu xuất kho hàng</p>
+</div>
+
+<div class="form-card">
+  <div class="form-card__header">
+    <h3><i class="fa-solid fa-file-invoice-dollar"></i> Thông tin phiếu xuất</h3>
+  </div>
+  <div class="form-card__body">
+    <div class="form-group">
+      <label>Khách hàng</label>
+      <select id="exportCustomer">
+        <option value="">Đang tải danh sách khách hàng...</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Ghi chú</label>
+      <textarea id="exportNotes" rows="2" placeholder="Ghi chú phiếu xuất (nếu có)"></textarea>
+    </div>
+  </div>
+</div>
+
+<div class="form-card">
+  <div class="form-card__header">
+    <h3><i class="fa-solid fa-truck-fast"></i> Danh sách sản phẩm xuất</h3>
+    <button class="btn btn--outline btn--sm" id="btnAddExportItem">
+      <i class="fa-solid fa-plus"></i> Thêm sản phẩm
+    </button>
+  </div>
+  <div class="table-card__body">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Mã SP</th><th>Tên sản phẩm</th>
+          <th>SL xuất</th><th>Đơn giá (₫)</th><th>Thành tiền (₫)</th><th></th>
+        </tr>
+      </thead>
+      <tbody id="exportItemsBody">
+        <tr class="export-item-row">
+          <td><input type="text" class="table-input export-code" placeholder="SP-001" /></td>
+          <td><input type="text" class="table-input export-name" placeholder="Tên sản phẩm" /></td>
+          <td><input type="number" class="table-input export-qty" value="1" min="1" /></td>
+          <td><input type="number" class="table-input export-price" value="0" min="0" /></td>
+          <td class="item-total export-total">0 ₫</td>
+          <td><button class="action-btn action-btn--danger btn-remove-row"><i class="fa-solid fa-trash"></i></button></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="form-summary">
+    <div class="form-summary__row"><span>Tổng số sản phẩm:</span><strong id="totalExportItems">1 loại</strong></div>
+    <div class="form-summary__row"><span>Tổng số lượng xuất:</span><strong id="totalExportQty">0 chiếc</strong></div>
+    <div class="form-summary__row form-summary__row--total"><span>Tổng tiền:</span><strong id="totalExportAmount">0 ₫</strong></div>
+  </div>
+  <div class="form-card__footer">
+    <button class="btn btn--primary" id="btnConfirmExport">
+      <i class="fa-solid fa-check"></i> Xác nhận xuất kho
+    </button>
+  </div>
+</div>
+
+<div class="table-card">
+  <div class="table-card__header">
+    <h3>Lịch sử xuất kho gần đây</h3>
+  </div>
+  <div class="table-card__body">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Mã phiếu</th><th>Ngày</th><th>Khách hàng</th>
+          <th class="num">Tổng tiền</th><th>Trạng thái</th>
+        </tr>
+      </thead>
+      <tbody id="exportHistoryBody">
+        <tr><td colspan="5" style="text-align:center;color:var(--text-muted)">Đang tải...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+(async function () {
+  function recomputeExportTotals() {
+    const rows = document.querySelectorAll("#exportItemsBody .export-item-row");
+    let totalQty = 0, totalAmt = 0;
+    rows.forEach(r => {
+      const qty = parseInt(r.querySelector(".export-qty")?.value) || 0;
+      const price = parseInt(r.querySelector(".export-price")?.value) || 0;
+      const total = qty * price;
+      const totalCell = r.querySelector(".export-total");
+      if (totalCell) totalCell.textContent = Helpers.formatVND(total);
+      totalQty += qty;
+      totalAmt += total;
+    });
+    document.getElementById("totalExportItems").textContent = rows.length + " loại";
+    document.getElementById("totalExportQty").textContent = totalQty + " chiếc";
+    document.getElementById("totalExportAmount").textContent = Helpers.formatVND(totalAmt);
+  }
+
+  document.querySelectorAll("#exportItemsBody input").forEach(inp => {
+    inp.addEventListener("input", recomputeExportTotals);
+  });
+
+  document.addEventListener("click", (e) => {
+    if (e.target.closest(".btn-remove-row")) {
+      const row = e.target.closest("tr");
+      const body = document.getElementById("exportItemsBody");
+      if (row && body.querySelectorAll(".export-item-row").length > 1) {
+        row.remove();
+        recomputeExportTotals();
+      }
+    }
+  });
+
+  document.getElementById("btnAddExportItem").addEventListener("click", () => {
+    const tbody = document.getElementById("exportItemsBody");
+    const tr = document.createElement("tr");
+    tr.className = "export-item-row";
+    tr.innerHTML = `
+      <td><input type="text" class="table-input export-code" placeholder="SP-xxx" /></td>
+      <td><input type="text" class="table-input export-name" placeholder="Tên sản phẩm" /></td>
+      <td><input type="number" class="table-input export-qty" value="1" min="1" /></td>
+      <td><input type="number" class="table-input export-price" value="0" min="0" /></td>
+      <td class="item-total export-total">0 ₫</td>
+      <td><button class="action-btn action-btn--danger btn-remove-row"><i class="fa-solid fa-trash"></i></button></td>
+    `;
+    tbody.appendChild(tr);
+    tr.querySelectorAll("input").forEach(inp => inp.addEventListener("input", recomputeExportTotals));
+    recomputeExportTotals();
+  });
+
+  async function loadCustomerOptions() {
+    const sel = document.getElementById("exportCustomer");
+    const customers = await Store.loadCustomers();
+    if (!customers.length) {
+      sel.innerHTML = `<option value="">Chưa có khách hàng — tạo ở trang Khách hàng trước</option>`;
+      return;
+    }
+    sel.innerHTML = `<option value="">Chọn khách hàng...</option>` +
+      customers.map(c => `<option value="${c.id}">${Helpers.escapeHtml(c.name)}${c.code ? " (" + Helpers.escapeHtml(c.code) + ")" : ""}</option>`).join("");
+  }
+
+  document.getElementById("btnConfirmExport").addEventListener("click", async () => {
+    const customerId = parseInt(document.getElementById("exportCustomer").value) || null;
+    if (!customerId) {
+      showToast("Vui lòng chọn khách hàng", "warning");
+      return;
+    }
+    const rows = document.querySelectorAll("#exportItemsBody .export-item-row");
+    const items = Array.from(rows).map(r => ({
+      code: r.querySelector(".export-code").value.trim(),
+      name: r.querySelector(".export-name").value.trim(),
+      qty: parseInt(r.querySelector(".export-qty").value) || 0,
+      price: parseInt(r.querySelector(".export-price").value) || 0,
+    })).filter(it => (it.code || it.name) && it.qty > 0);
+
+    if (!items.length) {
+      showToast("Cần ít nhất 1 sản phẩm hợp lệ (mã hoặc tên + số lượng)", "warning");
+      return;
+    }
+
+    const btn = document.getElementById("btnConfirmExport");
+    btn.disabled = true;
+    try {
+      await Store.createExport({
+        customerId,
+        notes: document.getElementById("exportNotes").value.trim(),
+        items,
+      });
+      showToast("Đã xác nhận xuất kho!");
+      await Store.loadProducts();
+      Router.loadPage("export");
+    } catch (err) {
+      showToast(err.message || "Lỗi tạo phiếu xuất (kiểm tra tồn kho)", "error");
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  async function renderHistory() {
+    const body = document.getElementById("exportHistoryBody");
+    const exports = await Store.loadExports();
+    if (!exports.length) {
+      body.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--text-muted)">Chưa có phiếu xuất nào</td></tr>`;
+      return;
+    }
+    body.innerHTML = exports.slice(0, 10).map(t => `
+      <tr>
+        <td>${Helpers.tableAvatar(t.code, t.code, "")}</td>
+        <td>${Helpers.formatDate(t.created_at)}</td>
+        <td>${Helpers.escapeHtml(t.customer_name || "—")}</td>
+        <td class="num" title="${Helpers.formatVND(t.total_amount)}">${Helpers.formatVNDShort(t.total_amount)}</td>
+        <td><span class="pill pill--green">${Helpers.escapeHtml(t.status || "completed")}</span></td>
+      </tr>
+    `).join("");
+  }
+
+  recomputeExportTotals();
+  await Promise.all([loadCustomerOptions(), renderHistory()]);
+})();
+</script>

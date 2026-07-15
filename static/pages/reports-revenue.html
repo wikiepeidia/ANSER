@@ -1,0 +1,119 @@
+<!-- reports-revenue.html — Báo cáo doanh thu -->
+<div class="content__header">
+  <h1 class="content__title">Báo cáo doanh thu</h1>
+  <p class="content__subtitle">Tổng quan đơn hàng, doanh thu theo tháng · phân tích theo khách hàng và kênh bán</p>
+</div>
+
+<div class="report-toolbar">
+  <div class="chart-card__actions">
+    <button class="chart-btn active">12 tháng</button>
+    <button class="chart-btn">Quý này</button>
+    <button class="chart-btn">Năm</button>
+  </div>
+  <div class="report-toolbar__right">
+    <button class="btn btn--outline" onclick="Router.printSection('revenuePage', 'Báo cáo doanh thu')"><i class="fa-solid fa-print"></i> In</button>
+    <button class="btn btn--primary" onclick="Router.exportRevenueCSV(topCustomersData)"><i class="fa-solid fa-file-export"></i> Xuất CSV</button>
+  </div>
+</div>
+
+  <div id="revenuePage">
+  <div class="stats-grid stats-grid--4 report-stats">
+    <div class="stat-card">
+      <div class="stat-card__icon stat-card__icon--blue"><i class="fa-solid fa-sack-dollar"></i></div>
+      <div class="stat-card__info"><span class="stat-card__label">Doanh thu tháng</span><span class="stat-card__value">217M <span class="stat-card__unit">₫</span></span><span class="stat-card__change stat-card__change--up"><i class="fa-solid fa-arrow-up"></i> 18.2%</span></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-card__icon stat-card__icon--green"><i class="fa-solid fa-receipt"></i></div>
+      <div class="stat-card__info"><span class="stat-card__label">Đơn hàng</span><span class="stat-card__value">142</span><span class="stat-card__change stat-card__change--up"><i class="fa-solid fa-arrow-up"></i> +24 đơn</span></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-card__icon stat-card__icon--orange"><i class="fa-solid fa-chart-simple"></i></div>
+      <div class="stat-card__info"><span class="stat-card__label">Giá trị TB / đơn</span><span class="stat-card__value">1.53M <span class="stat-card__unit">₫</span></span><span class="stat-card__change stat-card__change--down"><i class="fa-solid fa-arrow-down"></i> 3.4%</span></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-card__icon stat-card__icon--red"><i class="fa-solid fa-users"></i></div>
+      <div class="stat-card__info"><span class="stat-card__label">Khách hàng hoạt động</span><span class="stat-card__value">38</span><span class="stat-card__change stat-card__change--up"><i class="fa-solid fa-arrow-up"></i> +5 mới</span></div>
+    </div>
+  </div>
+
+  <div class="chart-card" style="margin-bottom: 20px">
+    <div class="chart-card__header"><h3>Doanh thu 12 tháng gần nhất</h3></div>
+    <div class="chart-card__body">
+      <div class="line-chart">
+        <div class="line-chart__inner">
+          <div id="revenueLineYAxis"></div>
+          <div class="line-chart__svg-wrap">
+            <div class="line-chart__svg"><svg viewBox="0 0 400 150" preserveAspectRatio="none" id="revenueLineSvg"></svg></div>
+            <div class="line-chart__labels">
+              <span>T1</span><span>T3</span><span>T5</span><span>T7</span><span>T9</span><span>T11</span><span>T12</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="charts-row charts-row--2x2" style="grid-template-columns: 1fr 1.3fr">
+    <div class="chart-card">
+      <div class="chart-card__header"><h3>Doanh thu theo nhà máy</h3></div>
+      <div class="chart-card__body">
+        <div class="horizontal-bar-chart">
+          <div class="h-bar-item"><div class="h-bar-item__label">NM Lắp ráp Hà Nội</div><div class="h-bar-item__track"><div class="h-bar-item__fill" style="--w: 78%"></div></div><div class="h-bar-item__value" title="238,000,000 ₫">238M</div></div>
+          <div class="h-bar-item"><div class="h-bar-item__label">NM Cơ khí Sài Gòn</div><div class="h-bar-item__track"><div class="h-bar-item__fill" style="--w: 32%"></div></div><div class="h-bar-item__value" title="96,000,000 ₫">96M</div></div>
+          <div class="h-bar-item"><div class="h-bar-item__label">NM Bao bì Đà Nẵng</div><div class="h-bar-item__track"><div class="h-bar-item__fill" style="--w: 8%"></div></div><div class="h-bar-item__value" title="24,000,000 ₫">24M</div></div>
+          <div class="h-bar-item"><div class="h-bar-item__label">NM Ép nhựa Bình Dương</div><div class="h-bar-item__track"><div class="h-bar-item__fill" style="--w: 5%"></div></div><div class="h-bar-item__value" title="15,200,000 ₫">15M</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="table-card">
+      <div class="table-card__header"><h3>Top khách hàng</h3></div>
+      <div class="table-card__body">
+        <table class="data-table">
+          <thead><tr><th>Khách hàng</th><th>Khu vực</th><th class="num">Đơn</th><th class="num">Doanh thu</th></tr></thead>
+          <tbody id="topCustomersBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  const topCustomersData = [
+    { name: "Cty TNHH An Phát", region: "Miền Bắc", orders: 28, amount: 124000000 },
+    { name: "Cty CP Việt Hưng", region: "Miền Nam", orders: 21, amount: 86500000 },
+    { name: "Tập đoàn Đại Phát", region: "Toàn quốc", orders: 15, amount: 68200000 },
+    { name: "Cty TNHH Minh Long", region: "Miền Trung", orders: 12, amount: 42800000 },
+    { name: "DN Tư nhân Hòa Bình", region: "Miền Nam", orders: 9, amount: 28400000 },
+  ];
+  window.topCustomersData = topCustomersData;
+  document.getElementById("topCustomersBody").innerHTML = topCustomersData.map(c => `
+    <tr>
+      <td>${Helpers.tableAvatar(c.name.substring(0, 3).toUpperCase(), c.name, c.region)}</td>
+      <td><span class="pill pill--blue">${c.region}</span></td>
+      <td class="num">${c.orders}</td>
+      <td class="num" title="${Helpers.formatVND(c.amount)}">${Helpers.formatVNDShort(c.amount)}</td>
+    </tr>
+  `).join("");
+
+  // Build revenue line chart
+  const values = [105,118,128,142,135,168,195,210,225,248,260,290];
+  document.getElementById("revenueLineYAxis").innerHTML = Helpers.renderYAxis(values);
+  const svg = document.getElementById("revenueLineSvg");
+  const pts = [[0,125],[57,115],[114,100],[171,105],[228,75],[285,60],[342,45],[400,25]].map(p=>({x:p[0],y:p[1]}));
+  svg.innerHTML = `
+    <defs>
+      <linearGradient id="revenueAreaGrad" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="var(--brand-primary)" stop-opacity="0.25" />
+        <stop offset="100%" stop-color="var(--brand-primary)" stop-opacity="0.02" />
+      </linearGradient>
+    </defs>
+    <line x1="0" y1="37.5" x2="400" y2="37.5" stroke="var(--chart-bar-bg)" stroke-width="1" />
+    <line x1="0" y1="75" x2="400" y2="75" stroke="var(--chart-bar-bg)" stroke-width="1" />
+    <line x1="0" y1="112.5" x2="400" y2="112.5" stroke="var(--chart-bar-bg)" stroke-width="1" />
+    <path class="line-chart__area" d="${Helpers.buildAreaPath(pts, 150)}" fill="url(#revenueAreaGrad)" stroke="none" />
+    <path class="line-chart__line" d="${Helpers.buildSmoothPath(pts)}" data-points="${Helpers.pointsToAttr(pts)}" fill="none" stroke="var(--brand-primary)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+    ${pts.map(p => `<circle class="line-chart__dot" cx="${p.x}" cy="${p.y}" r="4" fill="var(--brand-primary)" stroke="var(--bg-card)" stroke-width="1" />`).join("")}
+  `;
+})();
+</script>
