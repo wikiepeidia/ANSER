@@ -100,6 +100,52 @@ const Helpers = {
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   },
 
+  // --- Export Excel (.xlsx via SheetJS) ---
+  exportXLSX(filename, headers, rows, sheetName = "Sheet1") {
+    if (typeof XLSX === "undefined") {
+      window.showToast?.("Không tải được thư viện Excel, vui lòng thử lại", "error");
+      return;
+    }
+    const aoa = [
+      headers.map((h) => h.label),
+      ...rows.map((r) => headers.map((h) => (r[h.key] === null || r[h.key] === undefined) ? "" : r[h.key])),
+    ];
+    const ws = XLSX.utils.aoa_to_sheet(aoa);
+    ws["!cols"] = headers.map((h) => ({ wch: Math.max(12, h.label.length + 2) }));
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, sheetName);
+    XLSX.writeFile(wb, filename);
+  },
+
+  // --- Download an empty Excel template (header row only) ---
+  downloadXLSXTemplate(filename, headers, sheetName = "Mẫu") {
+    this.exportXLSX(filename, headers, [], sheetName);
+  },
+
+  // --- Read an uploaded Excel file, returns Promise<Array<Array<any>>> (raw rows incl. header) ---
+  readXLSXFile(file) {
+    return new Promise((resolve, reject) => {
+      if (typeof XLSX === "undefined") {
+        reject(new Error("Thư viện Excel chưa sẵn sàng"));
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const data = new Uint8Array(e.target.result);
+          const wb = XLSX.read(data, { type: "array" });
+          const ws = wb.Sheets[wb.SheetNames[0]];
+          const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "" });
+          resolve(rows);
+        } catch (err) {
+          reject(err);
+        }
+      };
+      reader.onerror = () => reject(reader.error || new Error("Không đọc được file"));
+      reader.readAsArrayBuffer(file);
+    });
+  },
+
   // --- Print ---
   printElement(elementId, title) {
     const el = document.getElementById(elementId);
@@ -260,6 +306,132 @@ const Helpers = {
         return `<span style="top: ${top.toFixed(1)}%">${format(v)}</span>`;
       })
       .join("")}</div>`;
+  },
+
+  // --- Line chart hover: crosshair + tooltip showing values on mousemove ---
+  // svg: the <svg> element containing the line/area path (with a viewBox)
+  // opts.points: [{x,y}, ...] in SVG viewBox coordinates
+  // opts.values: raw values aligned with points, used for the tooltip text
+  // opts.labels: labels aligned with points, shown as the tooltip header
+  // opts.seriesName / opts.color: legend text + dot color in the tooltip row
+  // opts.formatValue: (value) => string
+  initLineChartHover(svg, opts) {
+    const container = (opts && opts.container) || svg.closest(".line-chart");
+    if (!container || !opts || !opts.points || !opts.points.length) return;
+    const vb = svg.viewBox.baseVal;
+    const vbW = vb && vb.width ? vb.width : 400;
+    const vbH = vb && vb.height ? vb.height : 150;
+    const ns = "http://www.w3.org/2000/svg";
+    const points = opts.points;
+    const values = opts.values || points.map((p) => p.y);
+    const labels = opts.labels || [];
+    const color = opts.color || "var(--brand-primary)";
+    const formatValue = opts.formatValue || ((v) => String(v));
+
+    const rect = document.createElementNS(ns, "rect");
+    rect.setAttribute("class", "line-chart__hover-rect");
+    rect.setAttribute("x", "0");
+    rect.setAttribute("y", "0");
+    rect.setAttribute("width", String(vbW));
+    rect.setAttribute("height", String(vbH));
+    svg.appendChild(rect);
+
+    const guide = document.createElementNS(ns, "line");
+    guide.setAttribute("class", "line-chart__guide");
+    guide.setAttribute("y1", "0");
+    guide.setAttribute("y2", String(vbH));
+    guide.setAttribute("stroke", "var(--chart-bar-bg)");
+    guide.setAttribute("stroke-width", "1");
+    guide.setAttribute("opacity", "0");
+    svg.appendChild(guide);
+
+    const pointOuter = document.createElementNS(ns, "circle");
+    pointOuter.setAttribute("class", "line-chart__point");
+    pointOuter.setAttribute("r", "5");
+    pointOuter.setAttribute("fill", "var(--bg-card)");
+    pointOuter.setAttribute("stroke", color);
+    pointOuter.setAttribute("stroke-width", "2");
+    pointOuter.setAttribute("opacity", "0");
+    svg.appendChild(pointOuter);
+
+    const pointInner = document.createElementNS(ns, "circle");
+    pointInner.setAttribute("class", "line-chart__point-inner");
+    pointInner.setAttribute("r", "2");
+    pointInner.setAttribute("fill", color);
+    pointInner.setAttribute("opacity", "0");
+    svg.appendChild(pointInner);
+
+    let tooltip = container.querySelector(".line-chart__tooltip");
+    if (!tooltip) {
+      tooltip = document.createElement("div");
+      tooltip.className = "line-chart__tooltip";
+      container.appendChild(tooltip);
+    }
+    tooltip.hidden = true;
+
+    const showAt = (index) => {
+      const p = points[index];
+      if (!p) return;
+      guide.setAttribute("x1", String(p.x));
+      guide.setAttribute("x2", String(p.x));
+      guide.setAttribute("opacity", "1");
+      pointOuter.setAttribute("cx", String(p.x));
+      pointOuter.setAttribute("cy", String(p.y));
+      pointOuter.setAttribute("opacity", "1");
+      pointInner.setAttribute("cx", String(p.x));
+      pointInner.setAttribute("cy", String(p.y));
+      pointInner.setAttribute("opacity", "1");
+
+      tooltip.innerHTML = `
+        ${labels[index] ? `<span class="line-chart__tooltip-label">${this.escapeHtml(labels[index])}</span>` : ""}
+        <div class="line-chart__tooltip-rows">
+          <div class="line-chart__tooltip-row">
+            <span class="line-chart__tooltip-dot" style="background:${color}"></span>
+            <span class="line-chart__tooltip-name">${this.escapeHtml(opts.seriesName || "")}</span>
+            <span class="line-chart__tooltip-val">${formatValue(values[index])}</span>
+          </div>
+        </div>
+      `;
+      tooltip.hidden = false;
+
+      const svgRect = svg.getBoundingClientRect();
+      const containerRect = container.getBoundingClientRect();
+      const scaleX = svgRect.width / vbW;
+      const scaleY = svgRect.height / vbH;
+      const pxX = svgRect.left - containerRect.left + p.x * scaleX;
+      const pxY = svgRect.top - containerRect.top + p.y * scaleY;
+      let left = pxX;
+      const half = tooltip.offsetWidth / 2;
+      const maxLeft = container.clientWidth - half;
+      left = Math.min(Math.max(half, left), Math.max(half, maxLeft));
+      tooltip.style.left = `${left}px`;
+      let top = pxY - tooltip.offsetHeight - 14;
+      if (top < 0) top = pxY + 14;
+      tooltip.style.top = `${top}px`;
+    };
+
+    const hide = () => {
+      guide.setAttribute("opacity", "0");
+      pointOuter.setAttribute("opacity", "0");
+      pointInner.setAttribute("opacity", "0");
+      tooltip.hidden = true;
+    };
+
+    rect.addEventListener("mousemove", (e) => {
+      const svgRect = svg.getBoundingClientRect();
+      const relX = ((e.clientX - svgRect.left) / svgRect.width) * vbW;
+      let nearest = 0;
+      let minDist = Infinity;
+      points.forEach((p, i) => {
+        const d = Math.abs(p.x - relX);
+        if (d < minDist) {
+          minDist = d;
+          nearest = i;
+        }
+      });
+      showAt(nearest);
+    });
+    rect.addEventListener("mouseleave", hide);
   },
 };
 

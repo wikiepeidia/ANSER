@@ -23,6 +23,7 @@ const Router = {
     Store.loadProducts();
     Store.loadRules();
     Store.loadLogs();
+    Store.loadChatMessages();
 
     // Bind nav events
     this.bindNavEvents();
@@ -149,24 +150,25 @@ const Router = {
     });
   },
 
-  // ============ AUTO LOG GENERATOR ============
+  // ============ AUTOMATION TICK (real check against Store.products) ============
+  // Every 30s, with some probability, evaluate all enabled rules for real
+  // (see Store.runAutomationTick). Replaces the old purely-random log generator.
   startLogGenerator() {
-    const rules = Store.rules.map(r => r.title);
     setInterval(() => {
-      if (Math.random() > 0.7 && rules.length) {
-        const statuses = ["success", "success", "success", "failed", "skipped"];
-        const status = statuses[Math.floor(Math.random() * statuses.length)];
-        const rule = rules[Math.floor(Math.random() * rules.length)];
-        const messages = {
-          success: `Rule kích hoạt thành công, xử lý xong trong ${(Math.random() * 2).toFixed(1)}s`,
-          failed: `Lỗi: timeout khi gọi API (status=${Math.floor(Math.random()*500+500)})`,
-          skipped: `Rule đang tạm dừng, bỏ qua lịch chạy.`,
-        };
-        const now = new Date();
-        const time = `${String(now.getHours()).padStart(2,"0")}:${String(now.getMinutes()).padStart(2,"0")} · hôm nay`;
-        Store.addLog({ status, rule, msg: messages[status], meta: `${rule} · ${(Math.random()*2).toFixed(1)}s`, time });
+      if (Math.random() > 0.5) {
+        Store.runAutomationTick();
       }
     }, 30000);
+  },
+
+  runAutomationNow() {
+    const logs = Store.runAutomationTick();
+    if (!logs.length) {
+      showToast("Không có quy tắc nào đang chạy để kiểm tra", "warning");
+      return;
+    }
+    const triggered = logs.filter(l => l.status !== "skipped").length;
+    showToast(`Đã kiểm tra ${logs.length} quy tắc, ${triggered} quy tắc kích hoạt. Xem lịch sử chạy.`);
   },
 
   // ============ COMMON ACTIONS (called from HTML onclick) ============
@@ -191,6 +193,52 @@ const Router = {
       ],
       rows);
     showToast("Đã xuất danh sách sản phẩm!");
+  },
+
+  exportProductsXLSX() {
+    const rows = Store.products.map(p => ({
+      code: p.code, name: p.name, category: p.category, stock: p.stock,
+      importPrice: p.importPrice, sellPrice: p.sellPrice, status: p.statusText,
+    }));
+    Helpers.exportXLSX(`san-pham-${Helpers.formatDate(new Date()).replace(/\//g, "-")}.xlsx`,
+      [
+        { key: "code", label: "Mã SP" },
+        { key: "name", label: "Tên sản phẩm" },
+        { key: "category", label: "Danh mục" },
+        { key: "stock", label: "Tồn kho" },
+        { key: "importPrice", label: "Giá nhập (₫)" },
+        { key: "sellPrice", label: "Giá bán (₫)" },
+        { key: "status", label: "Trạng thái" },
+      ],
+      rows, "Sản phẩm");
+    showToast("Đã xuất Excel danh sách sản phẩm!");
+  },
+
+  downloadImportTemplateXLSX() {
+    Helpers.downloadXLSXTemplate("mau-nhap-hang.xlsx", [
+      { key: "code", label: "Mã SP" },
+      { key: "name", label: "Tên sản phẩm" },
+      { key: "unit", label: "Đơn vị" },
+      { key: "quantity", label: "Số lượng" },
+      { key: "price", label: "Đơn giá" },
+    ], "Mẫu nhập hàng");
+    showToast("Đã tải mẫu file Excel nhập hàng!");
+  },
+
+  exportLogsXLSX() {
+    const STATUS_LABEL = { success: "Thành công", failed: "Thất bại", skipped: "Bỏ qua" };
+    const rows = Store.logs.map(l => ({
+      time: l.time, rule: l.rule, msg: l.msg, status: STATUS_LABEL[l.status] || l.status,
+    }));
+    Helpers.exportXLSX(`nhat-ky-tu-dong-${Helpers.formatDate(new Date()).replace(/\//g, "-")}.xlsx`,
+      [
+        { key: "time", label: "Thời gian" },
+        { key: "rule", label: "Rule" },
+        { key: "msg", label: "Nội dung" },
+        { key: "status", label: "Trạng thái" },
+      ],
+      rows, "Lịch sử chạy");
+    showToast("Đã xuất Excel nhật ký tự động hoá!");
   },
 
   exportReportOverviewCSV() {

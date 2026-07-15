@@ -167,7 +167,127 @@ const Store = {
     this.logs.unshift(log);
     if (this.logs.length > 200) this.logs = this.logs.slice(0, 200);
     this.saveLogs();
+    window.dispatchEvent(new CustomEvent("anser:log-added", { detail: log }));
     return log;
+  },
+
+  // --- Automation engine (client-side simulation, data-driven where possible) ---
+  // Rules whose trigger references real Store data (stock levels) are evaluated
+  // against Store.products. Rules with no equivalent data in this demo (QC
+  // errors, revenue reports, expiry dates) fall back to a plausible simulated
+  // outcome, same as the previous purely-random log generator.
+  _timeNow() {
+    const now = new Date();
+    return `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")} · hôm nay`;
+  },
+
+  _recordRuleRun(rule, status, msg) {
+    const log = this.addLog({
+      status,
+      rule: rule.title,
+      msg,
+      meta: `${rule.title} · ${(Math.random() * 2).toFixed(1)}s`,
+      time: this._timeNow(),
+    });
+    if (status !== "skipped") {
+      this.updateRule(rule.id, { total: (rule.total || 0) + 1, last: "vừa xong", success: status === "success" ? "100%" : rule.success });
+    } else {
+      this.updateRule(rule.id, { last: "vừa xong" });
+    }
+    return log;
+  },
+
+  // Evaluate a single active rule against real product data when possible.
+  evaluateRule(rule) {
+    const trigger = rule.trigger || "";
+
+    // "Tồn kho = 0" → hết NVL/thành phẩm, tạo đơn mua tự động
+    if (/Tồn kho\s*=\s*0/i.test(trigger)) {
+      const outOfStock = this.products.filter((p) => p.stock === 0);
+      if (outOfStock.length) {
+        const names = outOfStock.map((p) => `${p.name} (${p.code})`).join(", ");
+        return this._recordRuleRun(rule, "success", `Phát hiện ${outOfStock.length} sản phẩm hết hàng: ${names}. Đã tạo đơn mua tự động.`);
+      }
+      return this._recordRuleRun(rule, "skipped", "Không có sản phẩm nào hết hàng — bỏ qua.");
+    }
+
+    // "Tồn kho < ..." / "sắp hết" → cảnh báo tồn kho thấp
+    if (/Tồn kho\s*<|sắp hết/i.test(trigger)) {
+      const low = this.products.filter((p) => p.stock > 0 && p.stock <= 10);
+      if (low.length) {
+        const names = low.map((p) => `${p.name}: còn ${p.stock}`).join("; ");
+        return this._recordRuleRun(rule, "success", `Cảnh báo ${low.length} sản phẩm sắp hết hàng: ${names}`);
+      }
+      return this._recordRuleRun(rule, "skipped", "Tồn kho hiện đều trên ngưỡng an toàn — bỏ qua.");
+    }
+
+    // "HSD" → hạn sử dụng (không có dữ liệu HSD thật trong demo, mô phỏng trên nhóm Thực phẩm)
+    if (/HSD/i.test(trigger)) {
+      const foods = this.products.filter((p) => p.category === "Thực phẩm");
+      if (foods.length && Math.random() > 0.4) {
+        const p = foods[Math.floor(Math.random() * foods.length)];
+        return this._recordRuleRun(rule, "success", `Sản phẩm "${p.name}" sắp hết hạn sử dụng — đã gửi cảnh báo.`);
+      }
+      return this._recordRuleRun(rule, "skipped", "Không có sản phẩm thực phẩm nào sắp hết HSD — bỏ qua.");
+    }
+
+    // "Trạng thái đơn = Đã xác nhận" → tự xuất kho (không có dữ liệu đơn hàng thật, mô phỏng có kiểm soát)
+    if (/Trạng thái đơn/i.test(trigger)) {
+      if (Math.random() > 0.5) {
+        const p = this.products[Math.floor(Math.random() * this.products.length)];
+        return this._recordRuleRun(rule, "success", `Đơn hàng mới xác nhận cho "${p?.name || "sản phẩm"}" — đã tạo phiếu xuất kho tự động.`);
+      }
+      return this._recordRuleRun(rule, "skipped", "Không có đơn hàng nào vừa xác nhận — bỏ qua.");
+    }
+
+    // Fallback: rule không có dữ liệu tương ứng trong demo (VD: báo cáo doanh thu theo giờ cố định, QC)
+    const statuses = ["success", "success", "success", "failed"];
+    const status = statuses[Math.floor(Math.random() * statuses.length)];
+    const msg = status === "success"
+      ? `Rule kích hoạt thành công, xử lý xong trong ${(Math.random() * 2).toFixed(1)}s`
+      : `Lỗi: timeout khi gọi API (status=${Math.floor(Math.random() * 500 + 500)})`;
+    return this._recordRuleRun(rule, status, msg);
+  },
+
+  // Run every enabled rule once. Returns the list of newly created logs.
+  runAutomationTick() {
+    return this.rules
+      .filter((r) => r.checked)
+      .map((r) => this.evaluateRule(r));
+  },
+
+  // --- AI Chat messages (persisted) ---
+  chatMessages: [],
+  loadChatMessages() {
+    const stored = Helpers.load("chatMessages", null);
+    if (stored && Array.isArray(stored) && stored.length) {
+      this.chatMessages = stored;
+    } else {
+      this.chatMessages = [
+        {
+          id: 1,
+          role: "bot",
+          text: "Xin chào! Tôi là trợ lý AI của ANSER. Bạn có thể hỏi tôi về tồn kho, quy tắc tự động hoá, hoặc lịch sử chạy gần đây.",
+          ts: Date.now(),
+        },
+      ];
+      this.saveChatMessages();
+    }
+    return this.chatMessages;
+  },
+  saveChatMessages() {
+    Helpers.save("chatMessages", this.chatMessages);
+  },
+  addChatMessage(msg) {
+    msg.id = Date.now() + Math.floor(Math.random() * 1000);
+    msg.ts = msg.ts || Date.now();
+    this.chatMessages.push(msg);
+    this.saveChatMessages();
+    return msg;
+  },
+  clearChatMessages() {
+    this.chatMessages = [];
+    this.saveChatMessages();
   },
 };
 

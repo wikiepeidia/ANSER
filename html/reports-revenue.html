@@ -98,9 +98,19 @@
 
   // Build revenue line chart
   const values = [105,118,128,142,135,168,195,210,225,248,260,290];
+  const monthLabels = values.map((v, i) => `Tháng ${i + 1}`);
   document.getElementById("revenueLineYAxis").innerHTML = Helpers.renderYAxis(values);
   const svg = document.getElementById("revenueLineSvg");
-  const pts = [[0,125],[57,115],[114,100],[171,105],[228,75],[285,60],[342,45],[400,25]].map(p=>({x:p[0],y:p[1]}));
+
+  const minV = Math.min(...values), maxV = Math.max(...values);
+  const pad = (maxV - minV) * 0.15 || 10;
+  const yMin = minV - pad, yMax = maxV + pad;
+  const topPad = 15, botPad = 15, usableH = 150 - topPad - botPad;
+  const pts = values.map((v, i) => ({
+    x: Helpers._num((i / (values.length - 1)) * 400),
+    y: Helpers._num(topPad + usableH - ((v - yMin) / (yMax - yMin)) * usableH),
+  }));
+
   svg.innerHTML = `
     <defs>
       <linearGradient id="revenueAreaGrad" x1="0" y1="0" x2="0" y2="1">
@@ -115,5 +125,13 @@
     <path class="line-chart__line" d="${Helpers.buildSmoothPath(pts)}" data-points="${Helpers.pointsToAttr(pts)}" fill="none" stroke="var(--brand-primary)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
     ${pts.map(p => `<circle class="line-chart__dot" cx="${p.x}" cy="${p.y}" r="4" fill="var(--brand-primary)" stroke="var(--bg-card)" stroke-width="1" />`).join("")}
   `;
+
+  Helpers.initLineChartHover(svg, {
+    points: pts,
+    values,
+    labels: monthLabels,
+    seriesName: "Doanh thu",
+    formatValue: (v) => Helpers.formatVNDShort(v * 1e6),
+  });
 })();
 </script>

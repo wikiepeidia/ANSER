@@ -247,6 +247,13 @@ document.addEventListener("DOMContentLoaded", () => {
       if (e.key === "Enter") {
         const q = headerSearch.value.trim().toLowerCase();
         if (!q) return;
+        // "Trợ lý AI" is a floating widget, not a page — open it instead of routing
+        if (/(trợ lý|chat|ai\b)/.test(q)) {
+          window.ChatWidget?.open();
+          headerSearch.value = "";
+          headerSearch.blur();
+          return;
+        }
         // Map common keywords to pages
         const route = mapQueryToRoute(q);
         if (route && window.Router) {

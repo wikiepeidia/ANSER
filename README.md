@@ -74,3 +74,5 @@
 ---
 
 *Last updated: 2026-07-08*
+
+link local: http://127.0.0.1:8791/

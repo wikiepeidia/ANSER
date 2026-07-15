@@ -12,7 +12,7 @@
     <button class="chart-btn" data-filter="skipped">Bỏ qua</button>
   </div>
   <div class="report-toolbar__right">
-    <button class="btn btn--outline"><i class="fa-solid fa-file-export"></i> Xuất log</button>
+    <button class="btn btn--outline" onclick="Router.exportLogsXLSX()"><i class="fa-solid fa-file-excel"></i> Xuất Excel</button>
     <button class="btn btn--primary" onclick="showToast('Đã làm mới log!')"><i class="fa-solid fa-rotate"></i> Làm mới</button>
   </div>
 </div>
@@ -74,24 +74,10 @@
     });
   });
 
-  // Simulate a new log every 30 seconds
-  setInterval(() => {
-    if (Math.random() > 0.7) {
-      const statuses = ["success", "success", "success", "failed", "skipped"];
-      const rules = Store.rules.map(r => r.title);
-      const status = statuses[Math.floor(Math.random() * statuses.length)];
-      const rule = rules[Math.floor(Math.random() * rules.length)];
-      const messages = {
-        success: `Rule kích hoạt thành công, xử lý xong trong ${(Math.random() * 2).toFixed(1)}s`,
-        failed: `Lỗi: timeout khi gọi API (status=${Math.floor(Math.random()*500+500)})`,
-        skipped: `Rule đang tạm dừng, bỏ qua lịch chạy.`,
-      };
-      const now = new Date();
-      const time = `${String(now.getHours()).padStart(2,"0")}:${String(now.getMinutes()).padStart(2,"0")} · hôm nay`;
-      Store.addLog({ status, rule, msg: messages[status], meta: `${rule} · ${(Math.random()*2).toFixed(1)}s`, time });
-      const activeFilter = document.querySelector("#logFilterBtns .chart-btn.active")?.dataset.filter || "all";
-      render(activeFilter);
-    }
-  }, 30000);
+  // Re-render whenever the automation engine (Router.startLogGenerator / "Chạy kiểm tra ngay") adds a log
+  window.addEventListener("anser:log-added", () => {
+    const activeFilter = document.querySelector("#logFilterBtns .chart-btn.active")?.dataset.filter || "all";
+    render(activeFilter);
+  });
 })();
 </script>

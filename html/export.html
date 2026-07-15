@@ -52,9 +52,14 @@
 <div class="form-card">
   <div class="form-card__header">
     <h3><i class="fa-solid fa-truck-fast"></i> Danh sách sản phẩm xuất</h3>
-    <button class="btn btn--outline btn--sm" id="btnAddExportItem">
-      <i class="fa-solid fa-plus"></i> Thêm sản phẩm
-    </button>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn--outline btn--sm" id="btnExportItemsExcel">
+        <i class="fa-solid fa-file-excel"></i> Xuất Excel
+      </button>
+      <button class="btn btn--outline btn--sm" id="btnAddExportItem">
+        <i class="fa-solid fa-plus"></i> Thêm sản phẩm
+      </button>
+    </div>
   </div>
   <div class="table-card__body">
     <table class="data-table">
@@ -106,46 +111,46 @@
 <div class="table-card">
   <div class="table-card__header">
     <h3>Lịch sử xuất kho gần đây</h3>
+    <button class="btn btn--outline btn--sm" id="btnExportHistoryExcel">
+      <i class="fa-solid fa-file-excel"></i> Xuất Excel
+    </button>
   </div>
   <div class="table-card__body">
-    <table class="data-table">
+    <table class="data-table" id="exportHistoryTable">
       <thead>
         <tr>
           <th>Mã phiếu</th><th>Ngày</th><th>Khách hàng</th>
           <th class="num">Số sản phẩm</th><th class="num">Tổng tiền</th><th>Trạng thái</th>
         </tr>
       </thead>
-      <tbody>
-        <tr>
-          <td>${Helpers.tableAvatar("#PX-001", "#PX-001", "01/07/2026")}</td>
-          <td>01/07/2026</td>
-          <td>Cửa hàng Laptop Sài Gòn</td>
-          <td class="num">${Helpers.formatNumber(5)} <span class="muted">loại</span></td>
-          <td class="num" title="${Helpers.formatVND(320000000)}">${Helpers.formatVNDShort(320000000)}</td>
-          <td><span class="pill pill--green">Hoàn thành</span></td>
-        </tr>
-        <tr>
-          <td>${Helpers.tableAvatar("#PX-002", "#PX-002", "30/06/2026")}</td>
-          <td>30/06/2026</td>
-          <td>Công ty TechVN</td>
-          <td class="num">${Helpers.formatNumber(3)} <span class="muted">loại</span></td>
-          <td class="num" title="${Helpers.formatVND(180000000)}">${Helpers.formatVNDShort(180000000)}</td>
-          <td><span class="pill pill--green">Hoàn thành</span></td>
-        </tr>
-        <tr>
-          <td>${Helpers.tableAvatar("#PX-003", "#PX-003", "28/06/2026")}</td>
-          <td>28/06/2026</td>
-          <td>Khách lẻ</td>
-          <td class="num">${Helpers.formatNumber(2)} <span class="muted">loại</span></td>
-          <td class="num" title="${Helpers.formatVND(45000000)}">${Helpers.formatVNDShort(45000000)}</td>
-          <td><span class="pill pill--green">Hoàn thành</span></td>
-        </tr>
-      </tbody>
+      <tbody id="exportHistoryBody"></tbody>
     </table>
   </div>
 </div>
 
 <script>
+(function () {
+// Recent export history (demo data, rendered via JS instead of raw HTML)
+const exportHistory = [
+  { code: "PX-001", date: "01/07/2026", customer: "Cửa hàng Laptop Sài Gòn", qty: 5, amount: 320000000 },
+  { code: "PX-002", date: "30/06/2026", customer: "Công ty TechVN", qty: 3, amount: 180000000 },
+  { code: "PX-003", date: "28/06/2026", customer: "Khách lẻ", qty: 2, amount: 45000000 },
+];
+
+function renderExportHistory() {
+  document.getElementById("exportHistoryBody").innerHTML = exportHistory.map(h => `
+    <tr>
+      <td>${Helpers.tableAvatar("#" + h.code, "#" + h.code, h.date)}</td>
+      <td>${h.date}</td>
+      <td>${Helpers.escapeHtml(h.customer)}</td>
+      <td class="num">${Helpers.formatNumber(h.qty)} <span class="muted">loại</span></td>
+      <td class="num" title="${Helpers.formatVND(h.amount)}">${Helpers.formatVNDShort(h.amount)}</td>
+      <td><span class="pill pill--green">Hoàn thành</span></td>
+    </tr>
+  `).join("");
+}
+renderExportHistory();
+
 function recomputeExportTotals() {
   const rows = document.querySelectorAll("#exportItemsBody .export-item-row");
   let totalItems = rows.length;
@@ -195,5 +200,72 @@ document.getElementById("btnAddExportItem").addEventListener("click", () => {
   recomputeExportTotals();
 });
 
+// Export the current phiếu xuất (draft item list) to Excel
+document.getElementById("btnExportItemsExcel").addEventListener("click", () => {
+  const rows = document.querySelectorAll("#exportItemsBody .export-item-row");
+  if (!rows.length) {
+    showToast("Chưa có sản phẩm nào để xuất", "warning");
+    return;
+  }
+  const items = Array.from(rows).map(r => {
+    const inputs = r.querySelectorAll(".table-input");
+    const qty = parseInt(r.querySelector(".export-qty")?.value) || 0;
+    const price = parseInt(r.querySelector(".export-price")?.value) || 0;
+    return {
+      code: inputs[0]?.value || "",
+      name: inputs[1]?.value || "",
+      unit: inputs[2]?.value || "",
+      stock: r.querySelector(".stock-val")?.textContent.trim() || "",
+      qty,
+      price,
+      total: qty * price,
+    };
+  });
+  Helpers.exportXLSX(`phieu-xuat-kho-${Helpers.formatDate(new Date()).replace(/\//g, "-")}.xlsx`,
+    [
+      { key: "code", label: "Mã SP" },
+      { key: "name", label: "Tên sản phẩm" },
+      { key: "unit", label: "Đơn vị" },
+      { key: "stock", label: "Tồn kho" },
+      { key: "qty", label: "SL xuất" },
+      { key: "price", label: "Đơn giá (₫)" },
+      { key: "total", label: "Thành tiền (₫)" },
+    ],
+    items, "Phiếu xuất kho");
+  showToast("Đã xuất Excel phiếu xuất kho!");
+});
+
+// Export the "Lịch sử xuất kho gần đây" table to Excel
+document.getElementById("btnExportHistoryExcel").addEventListener("click", () => {
+  const rows = document.querySelectorAll("#exportHistoryTable tbody tr");
+  if (!rows.length) {
+    showToast("Không có lịch sử xuất kho để xuất", "warning");
+    return;
+  }
+  const items = Array.from(rows).map(r => {
+    const cells = r.querySelectorAll("td");
+    return {
+      code: cells[0]?.querySelector("strong")?.textContent.trim() || cells[0]?.textContent.trim() || "",
+      date: cells[1]?.textContent.trim() || "",
+      customer: cells[2]?.textContent.trim() || "",
+      qty: cells[3]?.textContent.replace(/\s+/g, " ").trim() || "",
+      amount: cells[4]?.getAttribute("title") || cells[4]?.textContent.trim() || "",
+      status: cells[5]?.textContent.trim() || "",
+    };
+  });
+  Helpers.exportXLSX(`lich-su-xuat-kho-${Helpers.formatDate(new Date()).replace(/\//g, "-")}.xlsx`,
+    [
+      { key: "code", label: "Mã phiếu" },
+      { key: "date", label: "Ngày" },
+      { key: "customer", label: "Khách hàng" },
+      { key: "qty", label: "Số sản phẩm" },
+      { key: "amount", label: "Tổng tiền (₫)" },
+      { key: "status", label: "Trạng thái" },
+    ],
+    items, "Lịch sử xuất kho");
+  showToast("Đã xuất Excel lịch sử xuất kho!");
+});
+
 recomputeExportTotals();
+})();
 </script>

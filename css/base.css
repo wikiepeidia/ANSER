@@ -565,10 +565,26 @@ img {
    ============================== */
 .content {
   flex: 1;
-  padding: 28px;
+  /* Extra bottom padding reserves room for the fixed AI chat widget
+     (56px button + margin) so it never overlaps table rows/actions. */
+  padding: 28px 28px 104px;
   display: flex;
   flex-direction: column;
   gap: 24px;
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* Flexbox quirk: a flex item's default min-width is based on its content's
+   natural size, so a wide table inside a card can silently force .content
+   (and the whole page) wider than the viewport instead of scrolling inside
+   its own card. Force every direct child to respect the container width —
+   any wide table then scrolls via its own .table-card__body/.form-card
+   (overflow: hidden + overflow-x: auto on the inner wrapper) instead of
+   pushing the header/sidebar off-screen. */
+.content > * {
+  min-width: 0;
+  max-width: 100%;
 }
 
 .content__header {

@@ -40,6 +40,25 @@
 
 <div class="form-card">
   <div class="form-card__header">
+    <h3><i class="fa-solid fa-file-excel"></i> Nhập hàng loạt từ Excel</h3>
+    <button class="btn btn--outline btn--sm" onclick="Router.downloadImportTemplateXLSX()">
+      <i class="fa-solid fa-download"></i> Tải file mẫu
+    </button>
+  </div>
+  <div class="form-card__body">
+    <p style="font-size:13px;color:var(--text-secondary);margin-bottom:10px">
+      Tải file mẫu, điền dữ liệu (Mã SP, Tên sản phẩm, Đơn vị, Số lượng, Đơn giá) rồi tải lên để tự động điền vào danh sách bên dưới — không cần nhập tay từng dòng.
+    </p>
+    <input type="file" id="importExcelFile" accept=".xlsx,.xls" style="display:none" />
+    <button class="btn btn--primary" id="btnUploadImportExcel" type="button">
+      <i class="fa-solid fa-upload"></i> Tải lên file Excel
+    </button>
+    <span id="importExcelStatus" style="margin-left:10px;font-size:13px;color:var(--text-secondary)"></span>
+  </div>
+</div>
+
+<div class="form-card">
+  <div class="form-card__header">
     <h3><i class="fa-solid fa-boxes-stacked"></i> Danh sách sản phẩm nhập</h3>
     <button class="btn btn--outline btn--sm" id="btnAddImportItem">
       <i class="fa-solid fa-plus"></i> Thêm sản phẩm
@@ -93,46 +112,60 @@
 <div class="table-card">
   <div class="table-card__header">
     <h3>Lịch sử nhập kho gần đây</h3>
+    <button class="btn btn--outline btn--sm" id="btnImportHistoryExcel">
+      <i class="fa-solid fa-file-excel"></i> Xuất Excel
+    </button>
   </div>
   <div class="table-card__body">
-    <table class="data-table">
+    <table class="data-table" id="importHistoryTable">
       <thead>
         <tr>
           <th>Mã phiếu</th><th>Ngày</th><th>Nhà cung cấp</th>
           <th class="num">Số sản phẩm</th><th class="num">Tổng tiền</th><th>Trạng thái</th>
         </tr>
       </thead>
-      <tbody>
-        <tr>
-          <td>${Helpers.tableAvatar("#PN-001", "#PN-001", "01/07/2026")}</td>
-          <td>01/07/2026</td>
-          <td>Công ty TNHH ABC</td>
-          <td class="num">${Helpers.formatNumber(3)} <span class="muted">loại</span></td>
-          <td class="num" title="${Helpers.formatVND(890000000)}">${Helpers.formatVNDShort(890000000)}</td>
-          <td><span class="pill pill--green">Hoàn thành</span></td>
-        </tr>
-        <tr>
-          <td>${Helpers.tableAvatar("#PN-002", "#PN-002", "30/06/2026")}</td>
-          <td>30/06/2026</td>
-          <td>Nhà cung cấp XYZ</td>
-          <td class="num">${Helpers.formatNumber(2)} <span class="muted">loại</span></td>
-          <td class="num" title="${Helpers.formatVND(450000000)}">${Helpers.formatVNDShort(450000000)}</td>
-          <td><span class="pill pill--green">Hoàn thành</span></td>
-        </tr>
-        <tr>
-          <td>${Helpers.tableAvatar("#PN-003", "#PN-003", "28/06/2026")}</td>
-          <td>28/06/2026</td>
-          <td>Cửa hàng TechStore</td>
-          <td class="num">${Helpers.formatNumber(5)} <span class="muted">loại</span></td>
-          <td class="num" title="${Helpers.formatVND(1200000000)}">${Helpers.formatVNDShort(1200000000)}</td>
-          <td><span class="pill pill--green">Hoàn thành</span></td>
-        </tr>
-      </tbody>
+      <tbody id="importHistoryBody"></tbody>
     </table>
   </div>
 </div>
 
 <script>
+(function () {
+// Recent import history (demo data, rendered via JS instead of raw HTML)
+const importHistory = [
+  { code: "PN-001", date: "01/07/2026", supplier: "Công ty TNHH ABC", qty: 3, amount: 890000000 },
+  { code: "PN-002", date: "30/06/2026", supplier: "Nhà cung cấp XYZ", qty: 2, amount: 450000000 },
+  { code: "PN-003", date: "28/06/2026", supplier: "Cửa hàng TechStore", qty: 5, amount: 1200000000 },
+];
+
+function renderImportHistory() {
+  document.getElementById("importHistoryBody").innerHTML = importHistory.map(h => `
+    <tr>
+      <td>${Helpers.tableAvatar("#" + h.code, "#" + h.code, h.date)}</td>
+      <td>${h.date}</td>
+      <td>${Helpers.escapeHtml(h.supplier)}</td>
+      <td class="num">${Helpers.formatNumber(h.qty)} <span class="muted">loại</span></td>
+      <td class="num" title="${Helpers.formatVND(h.amount)}">${Helpers.formatVNDShort(h.amount)}</td>
+      <td><span class="pill pill--green">Hoàn thành</span></td>
+    </tr>
+  `).join("");
+}
+renderImportHistory();
+
+document.getElementById("btnImportHistoryExcel").addEventListener("click", () => {
+  Helpers.exportXLSX(`lich-su-nhap-kho-${Helpers.formatDate(new Date()).replace(/\//g, "-")}.xlsx`,
+    [
+      { key: "code", label: "Mã phiếu" },
+      { key: "date", label: "Ngày" },
+      { key: "supplier", label: "Nhà cung cấp" },
+      { key: "qty", label: "Số sản phẩm" },
+      { key: "amount", label: "Tổng tiền (₫)" },
+      { key: "status", label: "Trạng thái" },
+    ],
+    importHistory.map(h => ({ ...h, status: "Hoàn thành" })), "Lịch sử nhập kho");
+  showToast("Đã xuất Excel lịch sử nhập kho!");
+});
+
 // Recompute import totals
 function recomputeImportTotals() {
   const rows = document.querySelectorAll("#importItemsBody .import-item-row");
@@ -166,24 +199,76 @@ document.addEventListener("click", (e) => {
   }
 });
 
-// Add row
-document.getElementById("btnAddImportItem").addEventListener("click", () => {
-  const tbody = document.getElementById("importItemsBody");
+// Build one item row (used by both "Add row" and Excel import)
+function buildImportRow({ code = "", name = "", unit = "Chiếc", qty = 0, price = 0 } = {}) {
   const tr = document.createElement("tr");
   tr.className = "import-item-row";
   tr.innerHTML = `
-    <td><input type="text" class="table-input" placeholder="SP-xxx" /></td>
-    <td><input type="text" class="table-input" placeholder="Tên sản phẩm" /></td>
-    <td><input type="text" class="table-input" value="Chiếc" /></td>
-    <td><input type="number" class="table-input import-qty" value="0" /></td>
-    <td><input type="number" class="table-input import-price" value="0" /></td>
-    <td class="item-total import-total">0 ₫</td>
+    <td><input type="text" class="table-input" placeholder="SP-xxx" value="${Helpers.escapeHtml(code)}" /></td>
+    <td><input type="text" class="table-input" placeholder="Tên sản phẩm" value="${Helpers.escapeHtml(name)}" /></td>
+    <td><input type="text" class="table-input" value="${Helpers.escapeHtml(unit)}" /></td>
+    <td><input type="number" class="table-input import-qty" value="${qty}" /></td>
+    <td><input type="number" class="table-input import-price" value="${price}" /></td>
+    <td class="item-total import-total">${Helpers.formatVND(qty * price)}</td>
     <td><button class="action-btn action-btn--danger btn-remove-row"><i class="fa-solid fa-trash"></i></button></td>
   `;
-  tbody.appendChild(tr);
   tr.querySelectorAll("input").forEach(inp => inp.addEventListener("input", recomputeImportTotals));
+  return tr;
+}
+
+// Add row
+document.getElementById("btnAddImportItem").addEventListener("click", () => {
+  const tbody = document.getElementById("importItemsBody");
+  tbody.appendChild(buildImportRow());
   recomputeImportTotals();
 });
 
+// Import from Excel — parses uploaded .xlsx and replaces the item list
+const importExcelInput = document.getElementById("importExcelFile");
+const importExcelStatus = document.getElementById("importExcelStatus");
+document.getElementById("btnUploadImportExcel").addEventListener("click", () => importExcelInput.click());
+importExcelInput.addEventListener("change", async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  try {
+    const rows = await Helpers.readXLSXFile(file);
+    const dataRows = rows.slice(1); // skip header row
+    const items = [];
+    const errors = [];
+    dataRows.forEach((row, idx) => {
+      const [code, name, unit, quantity, price] = row;
+      if (!code && !name) return; // skip blank row
+      if (!code) { errors.push(`Dòng ${idx + 2}: thiếu Mã SP`); return; }
+      const qty = Number(quantity);
+      const unitPrice = Number(price);
+      if (!quantity || isNaN(qty)) { errors.push(`Dòng ${idx + 2}: số lượng không hợp lệ`); return; }
+      if (!price || isNaN(unitPrice)) { errors.push(`Dòng ${idx + 2}: đơn giá không hợp lệ`); return; }
+      items.push({ code: String(code).trim(), name: name ? String(name).trim() : "", unit: unit ? String(unit).trim() : "Chiếc", qty, price: unitPrice });
+    });
+
+    if (!items.length) {
+      importExcelStatus.textContent = "Không tìm thấy dòng dữ liệu hợp lệ trong file.";
+      showToast("File Excel không có dữ liệu hợp lệ", "warning");
+      return;
+    }
+
+    const tbody = document.getElementById("importItemsBody");
+    tbody.innerHTML = "";
+    items.forEach(item => tbody.appendChild(buildImportRow(item)));
+    recomputeImportTotals();
+
+    const summary = `Đã nhập ${items.length} dòng từ Excel` + (errors.length ? `, bỏ qua ${errors.length} dòng lỗi.` : ".");
+    importExcelStatus.textContent = summary + (errors.length ? ` (${errors.slice(0, 3).join("; ")}${errors.length > 3 ? "…" : ""})` : "");
+    showToast(summary, errors.length ? "warning" : "success");
+  } catch (err) {
+    console.error("Import Excel failed:", err);
+    importExcelStatus.textContent = "Lỗi đọc file: " + err.message;
+    showToast("Không đọc được file Excel", "error");
+  } finally {
+    importExcelInput.value = ""; // allow re-upload of same file
+  }
+});
+
 recomputeImportTotals();
+})();
 </script>
