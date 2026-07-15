@@ -6,10 +6,10 @@
 
 <div class="report-toolbar" id="reportsToolbar">
   <div class="chart-card__actions">
-    <button class="chart-btn" data-range="7d">7 ngày</button>
-    <button class="chart-btn active" data-range="30d">30 ngày</button>
-    <button class="chart-btn" data-range="thisMonth">Tháng này</button>
-    <button class="chart-btn" data-range="thisYear">Năm nay</button>
+    <button class="chart-btn" data-period="week">Tuần</button>
+    <button class="chart-btn active" data-period="month">Tháng</button>
+    <button class="chart-btn" data-period="quarter">Quý này</button>
+    <button class="chart-btn" data-period="year">Năm</button>
   </div>
   <div class="report-toolbar__right">
     <button class="btn btn--outline" onclick="Router.printSection('reportsPage', 'Báo cáo tổng quan')">
@@ -180,9 +180,7 @@
                   <line x1="0" y1="75" x2="400" y2="75" stroke="var(--chart-bar-bg)" stroke-width="1" stroke-dasharray="4" />
                 </svg>
               </div>
-              <div class="line-chart__labels">
-                <span>06h</span><span>09h</span><span>12h</span><span>15h</span><span>18h</span><span>21h</span><span>24h</span>
-              </div>
+              <div class="line-chart__labels" id="compareLabels"></div>
             </div>
           </div>
         </div>
@@ -213,7 +211,7 @@
     <!-- Chart 7: Doanh thu theo thời gian -->
     <div class="chart-card">
       <div class="chart-card__header">
-        <h3>Doanh thu theo thời gian</h3>
+        <h3 id="revenueOverTimeTitle">Doanh thu theo thời gian</h3>
       </div>
       <div class="chart-card__body">
         <div class="line-chart">
@@ -223,9 +221,7 @@
               <div class="line-chart__svg">
                 <svg viewBox="0 0 400 150" preserveAspectRatio="none" id="revenueSvg"></svg>
               </div>
-              <div class="line-chart__labels">
-                <span>T2</span><span>T3</span><span>T4</span><span>T5</span><span>T6</span><span>T7</span><span>CN</span>
-              </div>
+              <div class="line-chart__labels" id="revenueLabels"></div>
             </div>
           </div>
         </div>
@@ -266,27 +262,34 @@
   // Update timestamp
   document.getElementById("reportDate").textContent = Helpers.formatDateTime(new Date());
 
-  // Stats computed from Store
+  // Stats computed from Store — base figures are per-month, scaled by the selected period
   const totalStock = Store.products.reduce((s, p) => s + p.stock, 0);
   const totalValue = Store.products.reduce((s, p) => s + p.stock * p.importPrice, 0);
-  const stats = [
-    { icon: "fa-solid fa-arrow-down-to-line", color: "blue", label: "Tổng nhập (tháng)", value: "1,279M", unit: "₫", change: "15.3%", up: true },
-    { icon: "fa-solid fa-arrow-up-from-line", color: "orange", label: "Tổng xuất (tháng)", value: "890M", unit: "₫", change: "8.7%", up: true },
-    { icon: "fa-solid fa-coins", color: "green", label: "Doanh thu ước tính", value: "2.1B", unit: "₫", change: "22.1%", up: true },
-    { icon: "fa-solid fa-warehouse", color: "purple", label: "Tồn kho hiện tại", value: Helpers.formatNumber(totalStock), unit: "sp", change: Store.products.length + " mã · " + Helpers.formatVNDShort(totalValue), up: false },
-  ];
-  document.getElementById("reportsStats").innerHTML = stats.map(s => `
-    <div class="stat-card">
-      <div class="stat-card__icon stat-card__icon--${s.color}"><i class="${s.icon}"></i></div>
-      <div class="stat-card__info">
-        <span class="stat-card__label">${s.label}</span>
-        <span class="stat-card__value">${s.value} <span class="stat-card__unit">${s.unit}</span></span>
-        <span class="stat-card__change ${s.up ? 'stat-card__change--up' : 'stat-card__change--down'}">
-          <i class="fa-solid fa-arrow-${s.up ? 'up' : 'down'}"></i> ${s.change}
-        </span>
+  const periodMultiplier = { week: 0.25, month: 1, quarter: 3, year: 12 };
+  const periodLabel = { week: "tuần", month: "tháng", quarter: "quý", year: "năm" };
+
+  function renderStats(period) {
+    const mult = periodMultiplier[period];
+    const label = periodLabel[period];
+    const stats = [
+      { icon: "fa-solid fa-arrow-down-to-line", color: "blue", label: `Tổng nhập (${label})`, value: Helpers.formatVNDShort(1279000000 * mult), unit: "", change: "15.3%", up: true },
+      { icon: "fa-solid fa-arrow-up-from-line", color: "orange", label: `Tổng xuất (${label})`, value: Helpers.formatVNDShort(890000000 * mult), unit: "", change: "8.7%", up: true },
+      { icon: "fa-solid fa-coins", color: "green", label: "Doanh thu ước tính", value: Helpers.formatVNDShort(2100000000 * mult), unit: "", change: "22.1%", up: true },
+      { icon: "fa-solid fa-warehouse", color: "purple", label: "Tồn kho hiện tại", value: Helpers.formatNumber(totalStock), unit: "sp", change: Store.products.length + " mã · " + Helpers.formatVNDShort(totalValue), up: false },
+    ];
+    document.getElementById("reportsStats").innerHTML = stats.map(s => `
+      <div class="stat-card">
+        <div class="stat-card__icon stat-card__icon--${s.color}"><i class="${s.icon}"></i></div>
+        <div class="stat-card__info">
+          <span class="stat-card__label">${s.label}</span>
+          <span class="stat-card__value">${s.value} <span class="stat-card__unit">${s.unit}</span></span>
+          <span class="stat-card__change ${s.up ? 'stat-card__change--up' : 'stat-card__change--down'}">
+            <i class="fa-solid fa-arrow-${s.up ? 'up' : 'down'}"></i> ${s.change}
+          </span>
+        </div>
       </div>
-    </div>
-  `).join("");
+    `).join("");
+  }
 
   // Profit chart bars
   const profitData = [
@@ -318,39 +321,86 @@
   const compareSvg = document.querySelector(".line-chart--compare svg");
   const yest = [[0,100],[57,85],[114,95],[171,70],[228,60],[285,75],[342,80],[400,85]].map(p=>({x:p[0],y:p[1]}));
   const today = [[0,110],[57,90],[114,85],[171,55],[228,35],[285,50],[342,30],[400,25]].map(p=>({x:p[0],y:p[1]}));
+  const compareYest = [58,66,62,74,80,72,68,64];
+  const compareToday = [65,72,74,86,95,88,92,98];
+  const compareHours = today.map((_, i) => `${Math.round((i * 24) / (today.length - 1))}h`);
   compareSvg.insertAdjacentHTML("beforeend", `
     <path class="line-chart__area" d="${Helpers.buildAreaPath(today, 150)}" fill="url(#compareAreaGrad)" stroke="none" />
-    <path class="line-chart__line line-chart__line--yesterday" d="${Helpers.buildSmoothPath(yest)}" data-points="${Helpers.pointsToAttr(yest)}" fill="none" stroke="var(--text-muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="6 4" />
-    <path class="line-chart__line line-chart__line--today" d="${Helpers.buildSmoothPath(today)}" data-points="${Helpers.pointsToAttr(today)}" fill="none" stroke="var(--brand-primary)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
-    ${yest.map(p => `<circle class="line-chart__dot" cx="${p.x}" cy="${p.y}" r="4" fill="var(--bg-card)" stroke="var(--text-muted)" stroke-width="1" />`).join("")}
-    ${today.map(p => `<circle class="line-chart__dot" cx="${p.x}" cy="${p.y}" r="4" fill="var(--brand-primary)" stroke="var(--bg-card)" stroke-width="1" />`).join("")}
+    <path class="line-chart__line line-chart__line--yesterday" d="${Helpers.buildSmoothPath(yest)}" data-points="${Helpers.pointsToAttr(yest)}" fill="none" stroke="var(--text-muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="6 4" vector-effect="non-scaling-stroke" />
+    <path class="line-chart__line line-chart__line--today" d="${Helpers.buildSmoothPath(today)}" data-points="${Helpers.pointsToAttr(today)}" fill="none" stroke="var(--brand-primary)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke" />
   `);
-
-  // Revenue line chart
-  document.getElementById("revenueYAxis").innerHTML = Helpers.renderYAxis([120,140,128,165,190,178,205]);
-  const revenueSvg = document.getElementById("revenueSvg");
-  const revenuePts = [[0,120],[66,90],[133,100],[200,60],[266,40],[333,55],[400,30]].map(p=>({x:p[0],y:p[1]}));
-  revenueSvg.innerHTML = `
-    <defs>
-      <linearGradient id="doanhThuAreaGrad" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="var(--brand-primary)" stop-opacity="0.2" />
-        <stop offset="100%" stop-color="var(--brand-primary)" stop-opacity="0" />
-      </linearGradient>
-    </defs>
-    <line x1="0" y1="37.5" x2="400" y2="37.5" stroke="var(--chart-bar-bg)" stroke-width="1" />
-    <line x1="0" y1="75" x2="400" y2="75" stroke="var(--chart-bar-bg)" stroke-width="1" />
-    <line x1="0" y1="112.5" x2="400" y2="112.5" stroke="var(--chart-bar-bg)" stroke-width="1" />
-    <path class="line-chart__area" d="${Helpers.buildAreaPath(revenuePts, 150)}" fill="url(#doanhThuAreaGrad)" stroke="none" />
-    <path class="line-chart__line" d="${Helpers.buildSmoothPath(revenuePts)}" data-points="${Helpers.pointsToAttr(revenuePts)}" fill="none" stroke="var(--brand-primary)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
-    ${revenuePts.map(p => `<circle class="line-chart__dot" cx="${p.x}" cy="${p.y}" r="4" fill="var(--brand-primary)" stroke="var(--bg-card)" stroke-width="1" />`).join("")}
-  `;
-
-  // Range buttons
-  document.querySelectorAll("#reportsToolbar .chart-btn").forEach(btn => {
-    btn.addEventListener("click", () => {
-      document.querySelectorAll("#reportsToolbar .chart-btn").forEach(b => b.classList.remove("active"));
-      btn.classList.add("active");
-    });
+  compareSvg.parentElement.insertAdjacentHTML("beforeend", Helpers.renderDotMarkers(yest, 400, 150, { fill: "var(--bg-card)", borderColor: "var(--text-muted)" }));
+  compareSvg.parentElement.insertAdjacentHTML("beforeend", Helpers.renderDotMarkers(today, 400, 150));
+  const compareLabelsEl = document.getElementById("compareLabels");
+  compareLabelsEl.classList.add("line-chart__labels--aligned");
+  compareLabelsEl.innerHTML = Helpers.renderAlignedLabels(today, 400, compareHours);
+  Helpers.initLineChartHover(compareSvg, {
+    labels: compareHours,
+    formatValue: (v) => Helpers.formatVNDShort(v * 1e6),
+    series: [
+      { points: yest, values: compareYest, seriesName: "Hôm qua", color: "var(--text-muted)" },
+      { points: today, values: compareToday, seriesName: "Hôm nay", color: "var(--brand-primary)" },
+    ],
   });
+
+  // Revenue line chart — 4 period views (values in triệu đồng)
+  const revenueMonthValues = [120,132,128,145,160,171,190,178,205,198,215,230];
+  const revenueMonthIndex = new Date().getMonth();
+  const revenueQuarterIndex = Math.floor(revenueMonthIndex / 3);
+  const revenueQuarterMonths = [0, 1, 2, 3].map(q => revenueMonthValues.slice(q * 3, q * 3 + 3));
+
+  const revenuePeriods = {
+    week: {
+      title: "Doanh thu theo thời gian (7 ngày)",
+      values: [120,140,128,165,190,178,205],
+      labels: ["T2","T3","T4","T5","T6","T7","CN"],
+      tooltipLabels: ["Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7", "Chủ nhật"],
+    },
+    month: {
+      title: "Doanh thu theo thời gian (12 tháng)",
+      values: revenueMonthValues,
+      labels: revenueMonthValues.map((v, i) => `T${i + 1}`),
+      tooltipLabels: revenueMonthValues.map((v, i) => `Tháng ${i + 1}`),
+    },
+    quarter: {
+      title: `Doanh thu theo thời gian (quý ${revenueQuarterIndex + 1})`,
+      values: revenueQuarterMonths[revenueQuarterIndex],
+      labels: revenueQuarterMonths[revenueQuarterIndex].map((v, i) => `T${revenueQuarterIndex * 3 + i + 1}`),
+      tooltipLabels: revenueQuarterMonths[revenueQuarterIndex].map((v, i) => `Tháng ${revenueQuarterIndex * 3 + i + 1}`),
+    },
+    year: {
+      title: "Doanh thu theo thời gian (theo quý)",
+      values: revenueQuarterMonths.map(q => q.reduce((s, v) => s + v, 0)),
+      labels: ["Q1", "Q2", "Q3", "Q4"],
+      tooltipLabels: ["Quý 1", "Quý 2", "Quý 3", "Quý 4"],
+    },
+  };
+
+  const revenueSvg = document.getElementById("revenueSvg");
+  const revenueYAxisEl = document.getElementById("revenueYAxis");
+  const revenueLabelsEl = document.getElementById("revenueLabels");
+
+  function renderRevenueOverTime(period) {
+    const { title, values, labels, tooltipLabels } = revenuePeriods[period];
+    document.getElementById("revenueOverTimeTitle").textContent = title;
+    Helpers.renderLineChart(revenueSvg, {
+      values, labels, tooltipLabels,
+      yAxisEl: revenueYAxisEl, labelsEl: revenueLabelsEl,
+      seriesName: "Doanh thu",
+      formatValue: (v) => Helpers.formatVNDShort(v * 1e6),
+      yAxisScale: 1e6,
+      gradientId: "doanhThuAreaGrad",
+    });
+  }
+
+  function renderForPeriod(period) {
+    renderStats(period);
+    renderRevenueOverTime(period);
+  }
+
+  renderForPeriod("month");
+
+  // Period buttons (Tuần / Tháng / Quý này / Năm)
+  Helpers.wirePeriodButtons(document.getElementById("reportsToolbar"), renderForPeriod);
 })();
 </script>

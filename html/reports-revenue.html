@@ -4,11 +4,12 @@
   <p class="content__subtitle">Tổng quan đơn hàng, doanh thu theo tháng · phân tích theo khách hàng và kênh bán</p>
 </div>
 
-<div class="report-toolbar">
+<div class="report-toolbar" id="revenueToolbar">
   <div class="chart-card__actions">
-    <button class="chart-btn active">12 tháng</button>
-    <button class="chart-btn">Quý này</button>
-    <button class="chart-btn">Năm</button>
+    <button class="chart-btn" data-period="week">Tuần</button>
+    <button class="chart-btn active" data-period="month">12 tháng</button>
+    <button class="chart-btn" data-period="quarter">Quý này</button>
+    <button class="chart-btn" data-period="year">Năm</button>
   </div>
   <div class="report-toolbar__right">
     <button class="btn btn--outline" onclick="Router.printSection('revenuePage', 'Báo cáo doanh thu')"><i class="fa-solid fa-print"></i> In</button>
@@ -37,16 +38,14 @@
   </div>
 
   <div class="chart-card" style="margin-bottom: 20px">
-    <div class="chart-card__header"><h3>Doanh thu 12 tháng gần nhất</h3></div>
+    <div class="chart-card__header"><h3 id="revenueLineTitle">Doanh thu 12 tháng gần nhất</h3></div>
     <div class="chart-card__body">
       <div class="line-chart">
         <div class="line-chart__inner">
           <div id="revenueLineYAxis"></div>
           <div class="line-chart__svg-wrap">
             <div class="line-chart__svg"><svg viewBox="0 0 400 150" preserveAspectRatio="none" id="revenueLineSvg"></svg></div>
-            <div class="line-chart__labels">
-              <span>T1</span><span>T3</span><span>T5</span><span>T7</span><span>T9</span><span>T11</span><span>T12</span>
-            </div>
+            <div class="line-chart__labels" id="revenueLineLabels"></div>
           </div>
         </div>
       </div>
@@ -96,42 +95,56 @@
     </tr>
   `).join("");
 
-  // Build revenue line chart
-  const values = [105,118,128,142,135,168,195,210,225,248,260,290];
-  const monthLabels = values.map((v, i) => `Tháng ${i + 1}`);
-  document.getElementById("revenueLineYAxis").innerHTML = Helpers.renderYAxis(values);
+  // Revenue trend chart — 4 period views (values in triệu đồng)
+  const monthValues = [105,118,128,142,135,168,195,210,225,248,260,290];
+  const monthIndex = new Date().getMonth(); // 0-based
+  const quarterIndex = Math.floor(monthIndex / 3);
+  const quarterMonths = [0, 1, 2, 3].map(q => monthValues.slice(q * 3, q * 3 + 3));
+
+  const periods = {
+    week: {
+      title: "Doanh thu 7 ngày gần nhất",
+      values: [32, 29, 35, 41, 38, 45, 52],
+      labels: ["T2", "T3", "T4", "T5", "T6", "T7", "CN"],
+      tooltipLabels: ["Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7", "Chủ nhật"],
+    },
+    month: {
+      title: "Doanh thu 12 tháng gần nhất",
+      values: monthValues,
+      labels: monthValues.map((v, i) => `T${i + 1}`),
+      tooltipLabels: monthValues.map((v, i) => `Tháng ${i + 1}`),
+    },
+    quarter: {
+      title: `Doanh thu quý ${quarterIndex + 1} này`,
+      values: quarterMonths[quarterIndex],
+      labels: quarterMonths[quarterIndex].map((v, i) => `T${quarterIndex * 3 + i + 1}`),
+      tooltipLabels: quarterMonths[quarterIndex].map((v, i) => `Tháng ${quarterIndex * 3 + i + 1}`),
+    },
+    year: {
+      title: "Doanh thu theo quý trong năm",
+      values: quarterMonths.map(q => q.reduce((s, v) => s + v, 0)),
+      labels: ["Q1", "Q2", "Q3", "Q4"],
+      tooltipLabels: ["Quý 1", "Quý 2", "Quý 3", "Quý 4"],
+    },
+  };
+
   const svg = document.getElementById("revenueLineSvg");
+  const yAxisEl = document.getElementById("revenueLineYAxis");
+  const labelsEl = document.getElementById("revenueLineLabels");
 
-  const minV = Math.min(...values), maxV = Math.max(...values);
-  const pad = (maxV - minV) * 0.15 || 10;
-  const yMin = minV - pad, yMax = maxV + pad;
-  const topPad = 15, botPad = 15, usableH = 150 - topPad - botPad;
-  const pts = values.map((v, i) => ({
-    x: Helpers._num((i / (values.length - 1)) * 400),
-    y: Helpers._num(topPad + usableH - ((v - yMin) / (yMax - yMin)) * usableH),
-  }));
+  function renderRevenueChart(period) {
+    const { title, values, labels, tooltipLabels } = periods[period];
+    document.getElementById("revenueLineTitle").textContent = title;
+    Helpers.renderLineChart(svg, {
+      values, labels, tooltipLabels, yAxisEl, labelsEl,
+      seriesName: "Doanh thu",
+      formatValue: (v) => Helpers.formatVNDShort(v * 1e6),
+      yAxisScale: 1e6,
+      gradientId: "revenueAreaGrad",
+    });
+  }
 
-  svg.innerHTML = `
-    <defs>
-      <linearGradient id="revenueAreaGrad" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="var(--brand-primary)" stop-opacity="0.25" />
-        <stop offset="100%" stop-color="var(--brand-primary)" stop-opacity="0.02" />
-      </linearGradient>
-    </defs>
-    <line x1="0" y1="37.5" x2="400" y2="37.5" stroke="var(--chart-bar-bg)" stroke-width="1" />
-    <line x1="0" y1="75" x2="400" y2="75" stroke="var(--chart-bar-bg)" stroke-width="1" />
-    <line x1="0" y1="112.5" x2="400" y2="112.5" stroke="var(--chart-bar-bg)" stroke-width="1" />
-    <path class="line-chart__area" d="${Helpers.buildAreaPath(pts, 150)}" fill="url(#revenueAreaGrad)" stroke="none" />
-    <path class="line-chart__line" d="${Helpers.buildSmoothPath(pts)}" data-points="${Helpers.pointsToAttr(pts)}" fill="none" stroke="var(--brand-primary)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
-    ${pts.map(p => `<circle class="line-chart__dot" cx="${p.x}" cy="${p.y}" r="4" fill="var(--brand-primary)" stroke="var(--bg-card)" stroke-width="1" />`).join("")}
-  `;
-
-  Helpers.initLineChartHover(svg, {
-    points: pts,
-    values,
-    labels: monthLabels,
-    seriesName: "Doanh thu",
-    formatValue: (v) => Helpers.formatVNDShort(v * 1e6),
-  });
+  renderRevenueChart("month");
+  Helpers.wirePeriodButtons(document.getElementById("revenueToolbar"), renderRevenueChart);
 })();
 </script>

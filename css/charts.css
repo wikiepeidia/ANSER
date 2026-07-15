@@ -197,8 +197,50 @@
 }
 
 .line-chart__svg {
+  position: relative;
   height: 150px;
   width: 100%;
+}
+
+/* HTML-based point markers, positioned by percentage over .line-chart__svg.
+   The chart SVG uses preserveAspectRatio="none" (independent x/y scaling) so an
+   SVG <circle> drawn in viewBox units gets stretched into an oval by the browser.
+   Fixed-pixel-size markers sidestep that distortion entirely. */
+.line-chart__dot-marker,
+.line-chart__point-marker,
+.line-chart__point-marker-inner {
+  position: absolute;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.line-chart__point-marker,
+.line-chart__point-marker-inner {
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.line-chart__dot-marker {
+  width: 7px;
+  height: 7px;
+}
+
+.line-chart__point-marker {
+  width: 11px;
+  height: 11px;
+  background: var(--bg-card);
+  border: 2px solid var(--brand-primary);
+}
+
+.line-chart__point-marker-inner {
+  width: 4px;
+  height: 4px;
+}
+
+.line-chart__point-marker--active,
+.line-chart__point-marker-inner--active {
+  opacity: 1;
 }
 
 .line-chart__svg svg {
@@ -216,6 +258,23 @@
   font-size: 11px;
   color: var(--text-muted);
   transition: color var(--transition-normal);
+}
+
+/* Variant where each label sits at the exact x% of its data point (set inline via
+   style="left:…%") instead of being flex-distributed — guarantees the label lines
+   up with its dot/marker even when point spacing isn't perfectly even. */
+.line-chart__labels--aligned {
+  position: relative;
+  display: block;
+  height: 14px;
+  padding: 0;
+}
+
+.line-chart__labels--aligned span {
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+  white-space: nowrap;
 }
 
 /* Line chart wrapper with Y-axis labels */

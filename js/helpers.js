@@ -261,6 +261,21 @@ const Helpers = {
     return Math.round(v * 100) / 100;
   },
 
+  // --- Map a series of values onto evenly-spaced {x,y} points inside a viewBox,
+  // leaving topPad/botPad of vertical breathing room above/below the data range ---
+  computeLinePoints(values, vbW = 400, vbH = 150, opts = {}) {
+    const { topPad = 15, botPad = 15 } = opts;
+    const minV = Math.min(...values), maxV = Math.max(...values);
+    const pad = (maxV - minV) * 0.15 || 10;
+    const yMin = minV - pad, yMax = maxV + pad;
+    const usableH = vbH - topPad - botPad;
+    const denom = Math.max(values.length - 1, 1);
+    return values.map((v, i) => ({
+      x: this._num((i / denom) * vbW),
+      y: this._num(topPad + usableH - ((v - yMin) / (yMax - yMin)) * usableH),
+    }));
+  },
+
   // --- Y-axis labels for line charts ---
   computeYAxis(valuesArr, count = 5) {
     const all = (valuesArr || []).flat().filter((v) => typeof v === "number" && !isNaN(v));
@@ -308,25 +323,79 @@ const Helpers = {
       .join("")}</div>`;
   },
 
+  // --- X-axis labels positioned at the exact x% of each data point (see
+  // .line-chart__labels--aligned in charts.css) — keeps labels lined up with their
+  // dot/marker even when the flex space-between distribution wouldn't match. ---
+  // points: [{x,y}...] in the chart's SVG viewBox coordinates; vbW: viewBox width
+  renderAlignedLabels(points, vbW, labels) {
+    return (points || [])
+      .map((p, i) => {
+        const left = (p.x / vbW) * 100;
+        return `<span style="left:${left}%">${this.escapeHtml((labels && labels[i]) || "")}</span>`;
+      })
+      .join("");
+  },
+
+  // --- Static point markers for a line chart, as HTML (see .line-chart__dot-marker
+  // in charts.css for why these aren't plain SVG <circle> elements) ---
+  // points: [{x,y}...] in the chart's SVG viewBox coordinates
+  // vbW/vbH: the SVG viewBox width/height (e.g. 400, 150)
+  renderDotMarkers(points, vbW, vbH, opts = {}) {
+    const fill = opts.fill || "var(--brand-primary)";
+    const borderColor = opts.borderColor || "var(--bg-card)";
+    const size = opts.size || 7;
+    return (points || [])
+      .map((p) => {
+        const left = (p.x / vbW) * 100;
+        const top = (p.y / vbH) * 100;
+        return `<span class="line-chart__dot-marker" style="left:${left}%; top:${top}%; width:${size}px; height:${size}px; background:${fill}; border:1.5px solid ${borderColor};"></span>`;
+      })
+      .join("");
+  },
+
+  // --- Remove markers/tooltip left over from a previous render of the same chart
+  // (dot markers and the hover tooltip live outside the <svg> itself, so replacing
+  // svg.innerHTML alone doesn't clear them) ---
+  clearLineChartMarkers(svg) {
+    const host = svg.parentElement;
+    if (!host) return;
+    host.querySelectorAll(".line-chart__dot-marker, .line-chart__point-marker, .line-chart__point-marker-inner").forEach((el) => el.remove());
+    const container = svg.closest(".line-chart");
+    if (container) {
+      container.querySelectorAll(".line-chart__tooltip").forEach((el) => el.remove());
+    }
+  },
+
   // --- Line chart hover: crosshair + tooltip showing values on mousemove ---
-  // svg: the <svg> element containing the line/area path (with a viewBox)
-  // opts.points: [{x,y}, ...] in SVG viewBox coordinates
-  // opts.values: raw values aligned with points, used for the tooltip text
-  // opts.labels: labels aligned with points, shown as the tooltip header
-  // opts.seriesName / opts.color: legend text + dot color in the tooltip row
+  // svg: the <svg> element containing the line/area path(s) (with a viewBox)
+  // opts.series: [{ points: [{x,y}...], values, seriesName, color }, ...] — one entry per line,
+  //   all sharing the same x positions. For a single line, pass opts.points/values/seriesName/color
+  //   directly instead of opts.series.
+  // opts.labels: labels aligned with points (by index), shown as the tooltip header
   // opts.formatValue: (value) => string
   initLineChartHover(svg, opts) {
-    const container = (opts && opts.container) || svg.closest(".line-chart");
-    if (!container || !opts || !opts.points || !opts.points.length) return;
+    const { points, values, seriesName, color, series: seriesOpt, container: containerOpt, labels: labelsOpt, formatValue: formatValueOpt } = opts;
+    const container = containerOpt || svg.closest(".line-chart");
+    const series = (seriesOpt || [{ points, values, seriesName, color }]).map((s) => ({
+      ...s,
+      color: s.color || "var(--brand-primary)",
+    }));
+    if (!container || !series[0].points || !series[0].points.length) return;
     const vb = svg.viewBox.baseVal;
     const vbW = vb && vb.width ? vb.width : 400;
     const vbH = vb && vb.height ? vb.height : 150;
     const ns = "http://www.w3.org/2000/svg";
-    const points = opts.points;
-    const values = opts.values || points.map((p) => p.y);
-    const labels = opts.labels || [];
-    const color = opts.color || "var(--brand-primary)";
-    const formatValue = opts.formatValue || ((v) => String(v));
+    const refPoints = series[0].points;
+    const labels = labelsOpt || [];
+    const formatValue = formatValueOpt || ((v) => String(v));
+
+    // svg viewBox uses preserveAspectRatio="none" (independent x/y scaling), so SVG
+    // <circle> markers get stretched into ovals. HTML markers positioned by percentage
+    // over the SVG's own box render as true fixed-size circles regardless of scaling.
+    const markerHost = svg.parentElement;
+    if (markerHost && getComputedStyle(markerHost).position === "static") {
+      markerHost.style.position = "relative";
+    }
 
     const rect = document.createElementNS(ns, "rect");
     rect.setAttribute("class", "line-chart__hover-rect");
@@ -342,24 +411,23 @@ const Helpers = {
     guide.setAttribute("y2", String(vbH));
     guide.setAttribute("stroke", "var(--chart-bar-bg)");
     guide.setAttribute("stroke-width", "1");
+    guide.setAttribute("vector-effect", "non-scaling-stroke");
     guide.setAttribute("opacity", "0");
     svg.appendChild(guide);
 
-    const pointOuter = document.createElementNS(ns, "circle");
-    pointOuter.setAttribute("class", "line-chart__point");
-    pointOuter.setAttribute("r", "5");
-    pointOuter.setAttribute("fill", "var(--bg-card)");
-    pointOuter.setAttribute("stroke", color);
-    pointOuter.setAttribute("stroke-width", "2");
-    pointOuter.setAttribute("opacity", "0");
-    svg.appendChild(pointOuter);
+    const markers = series.map((s) => {
+      const pointOuter = document.createElement("span");
+      pointOuter.className = "line-chart__point-marker";
+      pointOuter.style.borderColor = s.color;
+      markerHost.appendChild(pointOuter);
 
-    const pointInner = document.createElementNS(ns, "circle");
-    pointInner.setAttribute("class", "line-chart__point-inner");
-    pointInner.setAttribute("r", "2");
-    pointInner.setAttribute("fill", color);
-    pointInner.setAttribute("opacity", "0");
-    svg.appendChild(pointInner);
+      const pointInner = document.createElement("span");
+      pointInner.className = "line-chart__point-marker-inner";
+      pointInner.style.background = s.color;
+      markerHost.appendChild(pointInner);
+
+      return { pointOuter, pointInner };
+    });
 
     let tooltip = container.querySelector(".line-chart__tooltip");
     if (!tooltip) {
@@ -369,33 +437,44 @@ const Helpers = {
     }
     tooltip.hidden = true;
 
-    const showAt = (index) => {
-      const p = points[index];
+    // svgRect/containerRect are read (layout) before tooltip.innerHTML is written below —
+    // reading them again afterwards would force a second layout flush on every mousemove.
+    const showAt = (index, svgRect, containerRect) => {
+      const p = refPoints[index];
       if (!p) return;
       guide.setAttribute("x1", String(p.x));
       guide.setAttribute("x2", String(p.x));
       guide.setAttribute("opacity", "1");
-      pointOuter.setAttribute("cx", String(p.x));
-      pointOuter.setAttribute("cy", String(p.y));
-      pointOuter.setAttribute("opacity", "1");
-      pointInner.setAttribute("cx", String(p.x));
-      pointInner.setAttribute("cy", String(p.y));
-      pointInner.setAttribute("opacity", "1");
+
+      const rows = series.map((s, i) => {
+        const sp = s.points[index];
+        const { pointOuter, pointInner } = markers[i];
+        if (sp) {
+          const left = `${(sp.x / vbW) * 100}%`;
+          const top = `${(sp.y / vbH) * 100}%`;
+          pointOuter.style.left = left;
+          pointOuter.style.top = top;
+          pointOuter.classList.add("line-chart__point-marker--active");
+          pointInner.style.left = left;
+          pointInner.style.top = top;
+          pointInner.classList.add("line-chart__point-marker-inner--active");
+        }
+        const val = s.values ? s.values[index] : sp && sp.y;
+        return `
+          <div class="line-chart__tooltip-row">
+            <span class="line-chart__tooltip-dot" style="background:${s.color}"></span>
+            <span class="line-chart__tooltip-name">${this.escapeHtml(s.seriesName || "")}</span>
+            <span class="line-chart__tooltip-val">${formatValue(val)}</span>
+          </div>
+        `;
+      }).join("");
 
       tooltip.innerHTML = `
         ${labels[index] ? `<span class="line-chart__tooltip-label">${this.escapeHtml(labels[index])}</span>` : ""}
-        <div class="line-chart__tooltip-rows">
-          <div class="line-chart__tooltip-row">
-            <span class="line-chart__tooltip-dot" style="background:${color}"></span>
-            <span class="line-chart__tooltip-name">${this.escapeHtml(opts.seriesName || "")}</span>
-            <span class="line-chart__tooltip-val">${formatValue(values[index])}</span>
-          </div>
-        </div>
+        <div class="line-chart__tooltip-rows">${rows}</div>
       `;
       tooltip.hidden = false;
 
-      const svgRect = svg.getBoundingClientRect();
-      const containerRect = container.getBoundingClientRect();
       const scaleX = svgRect.width / vbW;
       const scaleY = svgRect.height / vbH;
       const pxX = svgRect.left - containerRect.left + p.x * scaleX;
@@ -412,8 +491,10 @@ const Helpers = {
 
     const hide = () => {
       guide.setAttribute("opacity", "0");
-      pointOuter.setAttribute("opacity", "0");
-      pointInner.setAttribute("opacity", "0");
+      markers.forEach(({ pointOuter, pointInner }) => {
+        pointOuter.classList.remove("line-chart__point-marker--active");
+        pointInner.classList.remove("line-chart__point-marker-inner--active");
+      });
       tooltip.hidden = true;
     };
 
@@ -422,16 +503,77 @@ const Helpers = {
       const relX = ((e.clientX - svgRect.left) / svgRect.width) * vbW;
       let nearest = 0;
       let minDist = Infinity;
-      points.forEach((p, i) => {
+      refPoints.forEach((p, i) => {
         const d = Math.abs(p.x - relX);
         if (d < minDist) {
           minDist = d;
           nearest = i;
         }
       });
-      showAt(nearest);
+      showAt(nearest, svgRect, container.getBoundingClientRect());
     });
     rect.addEventListener("mouseleave", hide);
+  },
+
+  // --- Full single-series line chart render: Y-axis + gradient/line/area SVG +
+  // dot markers + aligned x-axis labels + hover tooltip, as one atomic call so a
+  // re-render (e.g. switching Tuần/Quý/Năm) can't forget a step (like clearing the
+  // previous render's markers) — each piece above started out as a separate call
+  // repeated in every report page until this wrapped them together. ---
+  // config: { values, labels, tooltipLabels, seriesName, formatValue, gradientId,
+  //           color, vbW, vbH, yAxisEl, labelsEl, yAxisScale }
+  renderLineChart(svg, config) {
+    const {
+      values, labels, tooltipLabels, seriesName = "", formatValue = (v) => String(v),
+      gradientId, color = "var(--brand-primary)", vbW = 400, vbH = 150,
+      yAxisEl, labelsEl, yAxisScale = 1,
+    } = config;
+
+    if (yAxisEl) yAxisEl.innerHTML = this.renderYAxis(values.map((v) => v * yAxisScale));
+
+    const pts = this.computeLinePoints(values, vbW, vbH);
+
+    svg.innerHTML = `
+      <defs>
+        <linearGradient id="${gradientId}" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="${color}" stop-opacity="0.22" />
+          <stop offset="100%" stop-color="${color}" stop-opacity="0.02" />
+        </linearGradient>
+      </defs>
+      <line x1="0" y1="${vbH * 0.25}" x2="${vbW}" y2="${vbH * 0.25}" stroke="var(--chart-bar-bg)" stroke-width="1" vector-effect="non-scaling-stroke" />
+      <line x1="0" y1="${vbH * 0.5}" x2="${vbW}" y2="${vbH * 0.5}" stroke="var(--chart-bar-bg)" stroke-width="1" vector-effect="non-scaling-stroke" />
+      <line x1="0" y1="${vbH * 0.75}" x2="${vbW}" y2="${vbH * 0.75}" stroke="var(--chart-bar-bg)" stroke-width="1" vector-effect="non-scaling-stroke" />
+      <path class="line-chart__area" d="${this.buildAreaPath(pts, vbH)}" fill="url(#${gradientId})" stroke="none" />
+      <path class="line-chart__line" d="${this.buildSmoothPath(pts)}" data-points="${this.pointsToAttr(pts)}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke" />
+    `;
+
+    this.clearLineChartMarkers(svg);
+    svg.parentElement.insertAdjacentHTML("beforeend", this.renderDotMarkers(pts, vbW, vbH, { fill: color }));
+
+    if (labelsEl) {
+      labelsEl.classList.add("line-chart__labels--aligned");
+      labelsEl.innerHTML = this.renderAlignedLabels(pts, vbW, labels);
+    }
+
+    this.initLineChartHover(svg, {
+      points: pts, values, labels: tooltipLabels || labels, seriesName, formatValue, color,
+    });
+
+    return pts;
+  },
+
+  // --- Wire a toolbar's period buttons (Tuần/Quý này/Năm...) once: caches the
+  // button list, toggles .active, and calls onSelect(period) on click ---
+  wirePeriodButtons(toolbarEl, onSelect) {
+    if (!toolbarEl) return;
+    const buttons = Array.from(toolbarEl.querySelectorAll(".chart-btn[data-period]"));
+    buttons.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        buttons.forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+        onSelect(btn.dataset.period, btn);
+      });
+    });
   },
 };
 
