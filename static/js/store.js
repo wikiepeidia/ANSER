@@ -184,6 +184,41 @@ const Store = {
     }
   },
 
+  // --- AI Chat messages (persisted in localStorage — the widget itself is
+  // a local pattern-matched assistant, not a real LLM call) ---
+  chatMessages: [],
+  loadChatMessages() {
+    const stored = Helpers.load("chatMessages", null);
+    if (stored && Array.isArray(stored) && stored.length) {
+      this.chatMessages = stored;
+    } else {
+      this.chatMessages = [
+        {
+          id: 1,
+          role: "bot",
+          text: "Xin chào! Tôi là trợ lý AI của ANSER Sản xuất. Bạn có thể hỏi tôi về tồn kho, hoặc quy trình n8n đang chạy.",
+          ts: Date.now(),
+        },
+      ];
+      this.saveChatMessages();
+    }
+    return this.chatMessages;
+  },
+  saveChatMessages() {
+    Helpers.save("chatMessages", this.chatMessages);
+  },
+  addChatMessage(msg) {
+    msg.id = Date.now() + Math.floor(Math.random() * 1000);
+    msg.ts = msg.ts || Date.now();
+    this.chatMessages.push(msg);
+    this.saveChatMessages();
+    return msg;
+  },
+  clearChatMessages() {
+    this.chatMessages = [];
+    this.saveChatMessages();
+  },
+
 };
 
 // Expose to window for inline handlers

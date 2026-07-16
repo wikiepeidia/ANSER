@@ -21,6 +21,7 @@ const Router = {
     // Products come from the real ANSER API. Automation (rules/logs) is
     // loaded per-page directly from the n8n API, not preloaded here.
     await Store.loadProducts();
+    Store.loadChatMessages();
 
     // Bind nav events
     this.bindNavEvents();
