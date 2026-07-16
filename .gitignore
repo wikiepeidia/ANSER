@@ -4,3 +4,4 @@
 __pycache__/
 *.pyc
 .vscode/
+.n8n_sx_creds.json

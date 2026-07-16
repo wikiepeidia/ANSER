@@ -26,8 +26,16 @@ class Config:
     AUTH_POSTGRES_URL = os.environ.get('POSTGRES_URL')
     AUTH_USE_POSTGRES = bool(AUTH_POSTGRES_URL)
 
-    # San Xuat's own business database — fully separate from Gateway/Retail's
+    # San Xuat's own business database — fully separate from Gateway/Retail's.
+    # SQLite by default; set SANXUAT_POSTGRES_URL to use its own Neon database
+    # instead (a DIFFERENT database than AUTH_POSTGRES_URL/POSTGRES_URL above —
+    # never the same one, that would defeat the point of keeping it separate).
     SANXUAT_DATABASE_PATH = os.environ.get('SANXUAT_DATABASE_PATH', 'san_xuat.db')
+    SANXUAT_POSTGRES_URL = os.environ.get('SANXUAT_POSTGRES_URL')
+    SANXUAT_USE_POSTGRES = bool(SANXUAT_POSTGRES_URL)
 
     PORT = int(os.environ.get('PORT', 5003))
     GATEWAY_ORIGIN = os.environ.get('GATEWAY_ORIGIN', 'http://127.0.0.1:5000')
+
+    # Own n8n instance (docker-compose.yml), separate from ANSER's (port 5680)
+    N8N_ORIGIN = os.environ.get('N8N_ORIGIN', 'http://127.0.0.1:5681')

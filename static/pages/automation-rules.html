@@ -1,91 +1,293 @@
-<!-- automation-rules.html — Quy tắc tự động hoá -->
+<!-- automation-rules.html — Quy tắc tự động hoá, dữ liệu thật từ n8n Sản xuất -->
 <div class="content__header">
   <h1 class="content__title">Quy tắc tự động hoá</h1>
-  <p class="content__subtitle">Thiết lập và quản lý các quy tắc tự động cho kho hàng</p>
+  <p class="content__subtitle">Mỗi quy tắc dưới đây là một quy trình n8n thật (cổng riêng của Sản xuất) — bật/tắt ở đây là bật/tắt quy trình thật.</p>
 </div>
 
 <div class="report-toolbar">
-  <div class="chart-card__actions">
-    <button class="chart-btn active">Đang chạy</button>
-    <button class="chart-btn">Tạm dừng</button>
-    <button class="chart-btn">Tất cả</button>
+  <div class="chart-card__actions" id="ruleFilterBtns">
+    <button class="chart-btn active" data-filter="all">Tất cả</button>
+    <button class="chart-btn" data-filter="active">Đang chạy</button>
+    <button class="chart-btn" data-filter="paused">Tạm dừng</button>
   </div>
   <div class="report-toolbar__right">
-    <button class="btn btn--outline" onclick="showToast('Đã lưu cấu hình!')"><i class="fa-solid fa-floppy-disk"></i> Lưu</button>
-    <button class="btn btn--primary" id="btnAddRule"><i class="fa-solid fa-plus"></i> Tạo quy tắc</button>
+    <span class="sc-status" id="n8nStatus" style="margin-right:8px;">
+      <span class="sc-status-dot"></span>
+      <span id="n8nStatusText">Đang kết nối...</span>
+    </span>
+    <button class="btn btn--outline" onclick="refreshRules()"><i class="fa-solid fa-rotate"></i> Làm mới</button>
+    <button class="btn btn--primary" onclick="toggleRuleTemplates()"><i class="fa-solid fa-plus"></i> Tạo quy tắc</button>
   </div>
 </div>
 
 <div class="stats-grid stats-grid--4">
   <div class="stat-card"><div class="stat-card__icon stat-card__icon--green"><i class="fa-solid fa-play"></i></div><div class="stat-card__info"><span class="stat-card__label">Đang chạy</span><span class="stat-card__value" id="activeRules">0</span><span class="stat-card__change stat-card__change--up"><i class="fa-solid fa-arrow-up"></i> Hoạt động</span></div></div>
   <div class="stat-card"><div class="stat-card__icon stat-card__icon--orange"><i class="fa-solid fa-pause"></i></div><div class="stat-card__info"><span class="stat-card__label">Tạm dừng</span><span class="stat-card__value" id="pausedRules">0</span><span class="stat-card__change stat-card__change--down"><i class="fa-solid fa-arrow-down"></i> Không chạy</span></div></div>
-  <div class="stat-card"><div class="stat-card__icon stat-card__icon--blue"><i class="fa-solid fa-bolt"></i></div><div class="stat-card__info"><span class="stat-card__label">Tổng lượt chạy</span><span class="stat-card__value" id="totalRuns">0</span><span class="stat-card__change stat-card__change--up"><i class="fa-solid fa-arrow-up"></i> Tăng</span></div></div>
-  <div class="stat-card"><div class="stat-card__icon stat-card__icon--green"><i class="fa-solid fa-circle-check"></i></div><div class="stat-card__info"><span class="stat-card__label">Tỉ lệ thành công</span><span class="stat-card__value" id="successRate">98%</span><span class="stat-card__change stat-card__change--up"><i class="fa-solid fa-arrow-up"></i> Ổn định</span></div></div>
+  <div class="stat-card"><div class="stat-card__icon stat-card__icon--blue"><i class="fa-solid fa-bolt"></i></div><div class="stat-card__info"><span class="stat-card__label">Tổng số quy tắc</span><span class="stat-card__value" id="totalRules">0</span><span class="stat-card__change stat-card__change--up"><i class="fa-solid fa-arrow-up"></i> n8n</span></div></div>
+  <div class="stat-card"><div class="stat-card__icon stat-card__icon--green"><i class="fa-solid fa-circle-check"></i></div><div class="stat-card__info"><span class="stat-card__label">Tỉ lệ thành công (gần đây)</span><span class="stat-card__value" id="successRate">—</span><span class="stat-card__change stat-card__change--up"><i class="fa-solid fa-arrow-up"></i> Lần chạy gần nhất</span></div></div>
 </div>
 
-<div class="rule-list" id="ruleList"></div>
+<!-- Template panel — click để deploy quy tắc mới (workflow n8n thật) -->
+<div id="ruleTplPanel" class="scenario-templates-panel is-collapsed">
+  <div class="scenario-templates-label">
+    Mẫu quy tắc sản xuất (nguồn: demo_wokflow/manuf) — bấm để tạo quy tắc mới
+  </div>
+  <div class="sc-tpl-viewport">
+    <button class="sc-tpl-nav prev" data-ruletpl-dir="prev" aria-label="Cuộn trái"><i class="fa-solid fa-chevron-left"></i></button>
+    <div class="sc-tpl-grid" id="ruleTplGrid">
+      <div class="sc-tpl-loading">Đang tải...</div>
+    </div>
+    <button class="sc-tpl-nav next" data-ruletpl-dir="next" aria-label="Cuộn phải"><i class="fa-solid fa-chevron-right"></i></button>
+  </div>
+</div>
+
+<div id="ruleLoading" class="sc-loading"><i class="fa-solid fa-spinner fa-spin"></i> Đang tải quy tắc...</div>
+<div id="ruleEmpty" class="empty-state" style="display:none;">
+  <div class="empty-icon"><i class="fa-solid fa-list-check"></i></div>
+  <h3 class="empty-title">Chưa có quy tắc nào</h3>
+  <p class="empty-description">Bấm "Tạo quy tắc" để chọn 1 mẫu và triển khai thành quy trình n8n thật.</p>
+</div>
+<div class="scenarios-grid" id="ruleList" style="display:none;"></div>
 
 <script>
-(function() {
-  function renderRules() {
-    const rules = Store.rules;
-    const active = rules.filter(r => r.checked).length;
-    const paused = rules.length - active;
-    const totalRuns = rules.reduce((s, r) => s + (r.total || 0), 0);
-    document.getElementById("activeRules").textContent = active;
-    document.getElementById("pausedRules").textContent = paused;
-    document.getElementById("totalRuns").textContent = Helpers.formatNumber(totalRuns);
+(function () {
+  const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+  const statusEl = document.getElementById('n8nStatus');
+  const statusTxt = document.getElementById('n8nStatusText');
+  const ruleList = document.getElementById('ruleList');
+  const ruleLoading = document.getElementById('ruleLoading');
+  const ruleEmpty = document.getElementById('ruleEmpty');
+  const tplGrid = document.getElementById('ruleTplGrid');
+  let currentFilter = 'all';
+  let workflowsCache = [];
 
-    document.getElementById("ruleList").innerHTML = rules.map(r => `
-      <div class="rule-card rule-card--${r.color}" data-id="${r.id}">
-        <div class="rule-card__icon"><i class="${r.icon}"></i></div>
-        <div class="rule-card__body">
-          <div class="rule-card__head">
-            <h3>${Helpers.escapeHtml(r.title)}</h3>
-            <span class="pill pill--${r.checked ? 'green' : 'orange'}">${r.status}</span>
-          </div>
-          <p class="rule-card__desc">${Helpers.escapeHtml(r.desc)}</p>
-          <div class="rule-card__meta">
-            <span><i class="fa-solid fa-clock"></i> ${Helpers.escapeHtml(r.freq)}</span>
-            <span><i class="fa-solid fa-bolt"></i> Lần cuối: ${Helpers.escapeHtml(r.last)}</span>
-            <span><i class="fa-solid fa-hashtag"></i> ${Helpers.formatNumber(r.total || 0)} lượt</span>
-            ${r.success ? `<span><i class="fa-solid fa-check"></i> ${Helpers.escapeHtml(r.success)}</span>` : ''}
-          </div>
-        </div>
-        <div class="rule-card__actions">
-          <label class="toggle">
-            <input type="checkbox" data-id="${r.id}" class="rule-toggle" ${r.checked ? "checked" : ""}>
+  function esc(s) {
+    const d = document.createElement('div');
+    d.textContent = s == null ? '' : s;
+    return d.innerHTML;
+  }
+
+  async function checkStatus() {
+    try {
+      const r = await fetch('/api/n8n/status');
+      const d = await r.json();
+      statusEl.className = 'sc-status ' + (d.online ? 'online' : 'offline');
+      statusTxt.textContent = d.online ? 'n8n trực tuyến' : 'n8n ngoại tuyến';
+    } catch {
+      statusEl.className = 'sc-status offline';
+      statusTxt.textContent = 'Không kết nối';
+    }
+  }
+
+  function renderStats(workflows) {
+    const active = workflows.filter(w => w.active).length;
+    const paused = workflows.length - active;
+    document.getElementById('activeRules').textContent = active;
+    document.getElementById('pausedRules').textContent = paused;
+    document.getElementById('totalRules').textContent = workflows.length;
+  }
+
+  async function renderSuccessRate() {
+    try {
+      const r = await fetch('/api/n8n/executions?limit=20');
+      const d = await r.json();
+      if (d.success && d.executions.length) {
+        const ok = d.executions.filter(e => e.status === 'success').length;
+        document.getElementById('successRate').textContent = Math.round(ok / d.executions.length * 100) + '%';
+      } else {
+        document.getElementById('successRate').textContent = '—';
+      }
+    } catch {
+      document.getElementById('successRate').textContent = '—';
+    }
+  }
+
+  function applyFilter(workflows) {
+    if (currentFilter === 'active') return workflows.filter(w => w.active);
+    if (currentFilter === 'paused') return workflows.filter(w => !w.active);
+    return workflows;
+  }
+
+  function renderList() {
+    const filtered = applyFilter(workflowsCache);
+    if (!filtered.length) {
+      ruleList.style.display = 'none';
+      ruleEmpty.style.display = 'block';
+      return;
+    }
+    ruleEmpty.style.display = 'none';
+    ruleList.style.display = 'grid';
+    ruleList.innerHTML = filtered.map(wf => `
+      <div class="sc-wf-card" data-id="${wf.id}">
+        <div class="sc-wf-header">
+          <div class="sc-wf-name">${esc(wf.name)}</div>
+          <label class="toggle" title="${wf.active ? 'Tắt quy tắc' : 'Bật quy tắc'}">
+            <input type="checkbox" class="rule-toggle" data-id="${wf.id}" ${wf.active ? 'checked' : ''}>
             <span class="toggle__slider"></span>
           </label>
-          <button class="action-btn rule-edit" data-id="${r.id}" title="Sửa"><i class="fa-solid fa-pen"></i></button>
-          <button class="action-btn action-btn--danger rule-delete" data-id="${r.id}" title="Xoá"><i class="fa-solid fa-trash"></i></button>
+        </div>
+        <div class="sc-wf-meta">
+          <span class="sc-wf-meta-item"><i class="fa-solid fa-diagram-project"></i> ${wf.nodes} nút</span>
+          <span class="sc-wf-meta-item"><i class="fa-solid fa-clock"></i> ${wf.updatedAt ? new Date(wf.updatedAt).toLocaleString('vi-VN') : ''}</span>
+        </div>
+        <div class="sc-wf-actions">
+          <button class="sc-wf-btn run" onclick="wfRunFromRule('${wf.id}', this)"><i class="fa-solid fa-play"></i> Chạy thử</button>
+          <button class="sc-wf-btn delete" onclick="wfDeleteFromRule('${wf.id}', '${esc(wf.name)}')"><i class="fa-solid fa-trash"></i> Xoá</button>
         </div>
       </div>
-    `).join("");
+    `).join('');
 
-    // Wire toggle
-    document.querySelectorAll(".rule-toggle").forEach(t => {
-      t.addEventListener("change", (e) => {
-        const id = parseInt(e.target.dataset.id);
-        Store.updateRule(id, { checked: e.target.checked, status: e.target.checked ? "Đang chạy" : "Tạm dừng" });
-        renderRules();
+    document.querySelectorAll('.rule-toggle').forEach(t => {
+      t.addEventListener('change', async (e) => {
+        const id = e.target.dataset.id;
+        const active = e.target.checked;
+        try {
+          const r = await fetch(`/api/n8n/workflows/${id}/activate`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+            body: JSON.stringify({ active }),
+          });
+          const d = await r.json();
+          if (!d.success) {
+            showToast(d.error || 'Không thể cập nhật', 'error');
+            e.target.checked = !active;
+            return;
+          }
+          showToast(active ? 'Đã bật quy tắc' : 'Đã tắt quy tắc');
+          loadWorkflows();
+        } catch {
+          showToast('Không kết nối được n8n', 'error');
+          e.target.checked = !active;
+        }
       });
     });
-    // Edit/Delete
-    document.querySelectorAll(".rule-edit").forEach(b => b.addEventListener("click", e => {
-      const id = parseInt(e.currentTarget.dataset.id);
-      Router.editRule(id);
-    }));
-    document.querySelectorAll(".rule-delete").forEach(b => b.addEventListener("click", e => {
-      const id = parseInt(e.currentTarget.dataset.id);
-      if (confirm("Bạn có chắc muốn xoá quy tắc này?")) {
-        Store.deleteRule(id);
-        renderRules();
-      }
-    }));
   }
-  renderRules();
 
-  document.getElementById("btnAddRule").addEventListener("click", () => Router.editRule(null));
+  window.wfRunFromRule = async function (id, btn) {
+    const orig = btn.innerHTML;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+    btn.disabled = true;
+    try {
+      const r = await fetch(`/api/n8n/workflows/${id}/run`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+        body: JSON.stringify({ testData: { source: 'ANSER-SanXuat', test: true } }),
+      });
+      const d = await r.json();
+      showToast(d.success ? (d.message || 'Đã chạy') : (d.error || 'Lỗi'), d.success ? 'success' : 'error');
+    } catch {
+      showToast('Không kết nối được n8n', 'error');
+    }
+    btn.innerHTML = orig;
+    btn.disabled = false;
+  };
+
+  window.wfDeleteFromRule = async function (id, name) {
+    if (!confirm('Xoá quy tắc "' + name + '"? Không thể hoàn tác.')) return;
+    try {
+      const r = await fetch('/api/n8n/workflows/' + id, { method: 'DELETE', headers: { 'X-CSRFToken': csrfToken } });
+      const d = await r.json();
+      if (d.success) { showToast('Đã xoá quy tắc'); loadWorkflows(); }
+      else showToast('Lỗi: ' + (d.error || 'Không xác định'), 'error');
+    } catch {
+      showToast('Không kết nối được n8n', 'error');
+    }
+  };
+
+  async function loadWorkflows() {
+    ruleLoading.style.display = 'block';
+    ruleList.style.display = 'none';
+    ruleEmpty.style.display = 'none';
+    try {
+      const r = await fetch('/api/n8n/workflows');
+      const d = await r.json();
+      ruleLoading.style.display = 'none';
+      workflowsCache = d.success ? d.workflows : [];
+      renderStats(workflowsCache);
+      renderList();
+    } catch {
+      ruleLoading.style.display = 'none';
+      ruleEmpty.style.display = 'block';
+    }
+  }
+
+  window.refreshRules = function () {
+    checkStatus();
+    loadWorkflows();
+    renderSuccessRate();
+  };
+
+  document.querySelectorAll('#ruleFilterBtns .chart-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#ruleFilterBtns .chart-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentFilter = btn.dataset.filter;
+      renderList();
+    });
+  });
+
+  // ── Templates (deploy = "tạo quy tắc mới") ──
+  window.toggleRuleTemplates = function () {
+    document.getElementById('ruleTplPanel').classList.toggle('is-collapsed');
+  };
+
+  async function loadTemplates() {
+    tplGrid.innerHTML = '<div class="sc-tpl-loading">Đang tải...</div>';
+    try {
+      const r = await fetch('/api/n8n/templates');
+      const d = await r.json();
+      if (!d.success || !d.templates.length) {
+        tplGrid.innerHTML = '<div class="sc-tpl-empty">Chưa có mẫu nào.</div>';
+        return;
+      }
+      tplGrid.innerHTML = d.templates.map(t => `
+        <div class="sc-tpl-card" tabindex="0" data-slug="${t.slug}" onclick="deployRuleTemplate(this, '${t.slug}')">
+          <div class="sc-tpl-icon" style="background:${t.color}"><i class="fa-solid ${t.icon}"></i></div>
+          <div>
+            <div class="sc-tpl-name">${esc(t.label)}</div>
+            <div class="sc-tpl-desc">${esc(t.desc)}</div>
+          </div>
+        </div>
+      `).join('');
+    } catch {
+      tplGrid.innerHTML = '<div class="sc-tpl-empty">Không tải được mẫu.</div>';
+    }
+  }
+
+  window.deployRuleTemplate = async function (card, slug) {
+    if (card.classList.contains('deploying') || card.classList.contains('deployed')) return;
+    card.classList.add('deploying');
+    try {
+      const r = await fetch('/api/n8n/templates/deploy', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+        body: JSON.stringify({ slug }),
+      });
+      const d = await r.json();
+      card.classList.remove('deploying');
+      if (d.success) {
+        card.classList.add('deployed');
+        showToast(d.existing ? 'Quy tắc đã tồn tại' : 'Đã tạo quy tắc mới!');
+        loadWorkflows();
+      } else {
+        showToast('Lỗi: ' + (d.error || 'Không xác định'), 'error');
+      }
+    } catch {
+      card.classList.remove('deploying');
+      showToast('Không kết nối được n8n', 'error');
+    }
+  };
+
+  document.querySelectorAll('[data-ruletpl-dir]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const step = Math.max(240, tplGrid.clientWidth * 0.7);
+      tplGrid.scrollBy({ left: (btn.dataset.ruletplDir === 'next' ? 1 : -1) * step, behavior: 'smooth' });
+    });
+  });
+
+  checkStatus();
+  loadWorkflows();
+  loadTemplates();
+  renderSuccessRate();
 })();
 </script>

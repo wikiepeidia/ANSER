@@ -15,6 +15,8 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/charts.css') }}" />
   <link rel="stylesheet" href="{{ url_for('static', filename='css/notifications.css') }}" />
   <link rel="stylesheet" href="{{ url_for('static', filename='css/automation.css') }}" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/workflows.css') }}" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/scenarios_n8n.css') }}" />
   <!-- Font Awesome -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
     integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA=="
@@ -280,103 +282,6 @@
   <div class="toast" id="toast">
     <i class="fa-solid fa-check-circle toast__icon"></i>
     <span class="toast__message" id="toastMessage">Thành công!</span>
-  </div>
-
-  <!-- Rule Modal -->
-  <div class="modal" id="ruleModal">
-    <div class="modal__overlay" id="ruleOverlay"></div>
-    <div class="modal__content">
-      <div class="modal__header">
-        <h2 id="ruleModalTitle">Tạo quy tắc mới</h2>
-        <button class="modal__close" id="ruleClose">
-          <i class="fa-solid fa-xmark"></i>
-        </button>
-      </div>
-      <div class="modal__body">
-        <form id="ruleForm">
-          <div class="form-group">
-            <label for="ruleTitle">Tên quy tắc *</label>
-            <input type="text" id="ruleTitle" placeholder="VD: Cảnh báo NVL sắp hết" required />
-          </div>
-          <div class="form-group">
-            <label for="ruleDesc">Mô tả</label>
-            <textarea id="ruleDesc" rows="2" placeholder="Mô tả chi tiết về quy tắc"></textarea>
-          </div>
-          <div class="form-row form-row--2">
-            <div class="form-group">
-              <label for="ruleIcon">Biểu tượng</label>
-              <select id="ruleIcon">
-                <option value="fa-solid fa-triangle-exclamation">⚠️ Cảnh báo</option>
-                <option value="fa-solid fa-bug">🐛 Lỗi</option>
-                <option value="fa-solid fa-box-open">📦 Kho</option>
-                <option value="fa-solid fa-arrow-trend-up">📈 Tăng trưởng</option>
-                <option value="fa-solid fa-truck">🚚 Vận chuyển</option>
-                <option value="fa-solid fa-clock">⏰ Thời gian</option>
-                <option value="fa-solid fa-bell">🔔 Thông báo</option>
-                <option value="fa-solid fa-coins">💰 Tài chính</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label for="ruleColor">Màu sắc</label>
-              <select id="ruleColor">
-                <option value="blue">Xanh dương</option>
-                <option value="green">Xanh lá</option>
-                <option value="orange">Cam</option>
-                <option value="red">Đỏ</option>
-                <option value="purple">Tím</option>
-              </select>
-            </div>
-          </div>
-          <div class="form-group">
-            <label for="ruleTrigger">Điều kiện kích hoạt *</label>
-            <input type="text" id="ruleTrigger" placeholder="VD: Tồn kho < 30% min" required />
-          </div>
-          <div class="form-group">
-            <label for="ruleAction">Hành động *</label>
-            <input type="text" id="ruleAction" placeholder="VD: Gửi email + Zalo OA" required />
-          </div>
-          <div class="form-row form-row--2">
-            <div class="form-group">
-              <label for="ruleFreq">Tần suất</label>
-              <select id="ruleFreq">
-                <option value="Realtime">Realtime</option>
-                <option value="Mỗi 30 phút">Mỗi 30 phút</option>
-                <option value="Hằng giờ">Hằng giờ</option>
-                <option value="Hằng ngày 07:00">Hằng ngày 07:00</option>
-                <option value="Hằng ngày 08:00">Hằng ngày 08:00</option>
-                <option value="Hằng ngày 20:00">Hằng ngày 20:00</option>
-                <option value="Hằng tuần">Hằng tuần</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label for="ruleChannel">Kênh gửi</label>
-              <select id="ruleChannel">
-                <option value="email">Email</option>
-                <option value="zalo">Zalo OA</option>
-                <option value="email+zalo">Email + Zalo</option>
-                <option value="internal">Nội bộ (không gửi)</option>
-              </select>
-            </div>
-          </div>
-          <div class="form-row form-row--2">
-            <div class="form-group">
-              <label for="ruleThreshold">Ngưỡng kích hoạt (nếu có)</label>
-              <input type="number" id="ruleThreshold" placeholder="VD: 30" min="0" />
-            </div>
-            <div class="form-group" style="justify-content:flex-end">
-              <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding-top:24px">
-                <input type="checkbox" id="ruleActive" checked />
-                <span>Kích hoạt ngay</span>
-              </label>
-            </div>
-          </div>
-          <div class="modal__footer">
-            <button type="button" class="btn btn--outline" id="btnCancelRuleModal">Huỷ</button>
-            <button type="submit" class="btn btn--primary">Lưu quy tắc</button>
-          </div>
-        </form>
-      </div>
-    </div>
   </div>
 
   <!-- Scripts: shared utilities + nav/loader -->

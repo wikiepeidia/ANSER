@@ -1,0 +1,29 @@
+services:
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: sanxuat-n8n
+    restart: unless-stopped
+    ports:
+      - "${N8N_PORT:-8681}:5678"
+    environment:
+      - N8N_SECURE_COOKIE=false
+      - GENERIC_TIMEZONE=Asia/Ho_Chi_Minh
+      # N8N_SECURE_COOKIE=false required for HTTP (non-HTTPS) communication
+      # Without this, n8n reports webhook URLs using its internal port (5678)
+      # instead of the actual host-mapped port, which breaks manual testing.
+      - WEBHOOK_URL=http://localhost:${N8N_PORT:-8681}/
+      # Templates call back into San Xuat's own Flask app (host, not container)
+      # via host.docker.internal — these env vars are read inside the imported
+      # workflow JSON as {{ $env.RAG_BASE_URL }} etc.
+      - RAG_BASE_URL=http://host.docker.internal:5003/api/n8n/internal/rag
+      - BRAIN_BASE_URL=http://host.docker.internal:5003/api/n8n/internal/brain
+      - NOTIFY_URL=http://host.docker.internal:5003/api/n8n/internal/notify
+      - DOCS_URL=http://host.docker.internal:5003/api/n8n/internal/notify
+      - ANSER_WEBHOOK_TOKEN=sanxuat-dev-token
+    volumes:
+      - n8n_sx_data:/home/node/.n8n
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+volumes:
+  n8n_sx_data:

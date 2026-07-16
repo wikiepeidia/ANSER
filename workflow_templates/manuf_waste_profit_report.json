@@ -1,0 +1,140 @@
+{
+  "name": "manuf_waste_profit_report",
+  "nodes": [
+    {
+      "parameters": { "httpMethod": "POST", "path": "shift-report", "responseMode": "responseNode", "options": {} },
+      "id": "wp-webhook",
+      "name": "Trigger Shift Report",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [180, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $input.first().json;\nconst expected = $env.ANSER_WEBHOOK_TOKEN || '';\nif (expected && ((raw.headers || {})['x-anser-token'] || '') !== expected) {\n  return [{ json: { valid: false, error: 'Unauthorized' } }];\n}\nconst b = (raw.body && typeof raw.body === 'object') ? raw.body : raw;\nif (!b.order_code) return [{ json: { valid: false, error: 'Missing required field: order_code' } }];\nreturn [{ json: { valid: true, order_code: String(b.order_code) } }];"
+      },
+      "id": "wp-verify",
+      "name": "Verify Anser Token",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [400, 300]
+    },
+    {
+      "parameters": { "conditions": { "boolean": [{ "value1": "={{ $json.valid }}", "value2": true }] } },
+      "id": "wp-if",
+      "name": "Authorized?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [640, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $env.RAG_BASE_URL }}/batch-report?order_code={{ $json.order_code }}",
+        "authentication": "none",
+        "options": {}
+      },
+      "id": "wp-report",
+      "name": "Get Batch Report (deterministic)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [880, 200],
+      "retryOnFail": true, "maxTries": 3, "waitBetweenTries": 1000
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.BRAIN_BASE_URL }}/chat",
+        "authentication": "none",
+        "sendBody": true, "contentType": "raw", "rawContentType": "application/json",
+        "body": "={{ JSON.stringify({ route: 'TECHNICAL', prompt: 'Trà/cao atiso: hao hụt sấy tươi→khô là BÌNH THƯỜNG. Yield thực ' + $json.yield_actual_pct + '% so định mức ' + $json.yield_std_pct + '% (lệch ' + $json.yield_deviation_pct + '%), NG ' + $json.ng_pct + '%. Giải thích ngắn nguyên nhân phần LỆCH ĐỊNH MỨC cho đơn ' + $json.ref }) }}",
+        "options": {}
+      },
+      "id": "wp-brain",
+      "name": "Explain Cause (Brain)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [1120, 200],
+      "retryOnFail": true, "maxTries": 2, "waitBetweenTries": 1500
+    },
+    {
+      "parameters": {
+        "jsCode": "const rep = $('Get Batch Report (deterministic)').first().json;\nconst explain = $input.first().json.text || '';\nconst fmt = n => new Intl.NumberFormat('vi-VN').format(n);\n// Trà/cao atiso: hao hụt sấy tươi→khô là BÌNH THƯỜNG (không báo động).\n// Cảnh báo khi yield thực LỆCH quá định mức (rag tính warn_yield) hoặc NG >3%.\nconst warn = rep.warn_yield === true || rep.ng_pct > 3;\nconst report_body = JSON.stringify({ scope: 'order', ref: rep.ref, yield_actual_pct: rep.yield_actual_pct, yield_deviation_pct: rep.yield_deviation_pct, ng_pct: rep.ng_pct, cost_vnd: rep.cost_vnd, revenue_vnd: rep.revenue_vnd, profit_pct: rep.profit_pct, ai_explanation: explain });\nconst notify_body = JSON.stringify({ channel: 'discord', title: (warn ? '🔴' : '🟢') + ' Báo cáo SX đơn ' + rep.ref, color: warn ? 15158332 : 3066993, description: explain, fields: [ { name: 'Yield tươi→khô (thực/định mức)', value: rep.yield_actual_pct + '% / ' + rep.yield_std_pct + '%', inline: true }, { name: 'Lệch định mức', value: rep.yield_deviation_pct + '%' + (rep.warn_yield ? ' ⚠️' : ''), inline: true }, { name: 'Phế phẩm (NG)', value: rep.ng_pct + '%', inline: true }, { name: 'Sản lượng', value: rep.output_units + ' đv (' + rep.output_kg + ' kg khô / ' + rep.input_kg + ' kg tươi)', inline: true }, { name: 'Giá vốn', value: fmt(rep.cost_vnd) + ' đ', inline: true }, { name: 'Doanh thu', value: fmt(rep.revenue_vnd) + ' đ', inline: true }, { name: 'Lãi', value: rep.profit_pct + '%', inline: true } ] });\nconst resp = JSON.stringify({ order: rep.ref, yield_actual_pct: rep.yield_actual_pct, yield_std_pct: rep.yield_std_pct, yield_deviation_pct: rep.yield_deviation_pct, ng_pct: rep.ng_pct, profit_pct: rep.profit_pct, warn });\nreturn [{ json: { report_body, notify_body, resp } }];"
+      },
+      "id": "wp-build",
+      "name": "Build Report + Notice",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1360, 200]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.RAG_BASE_URL }}/production-report-insert",
+        "authentication": "none",
+        "sendBody": true, "contentType": "raw", "rawContentType": "application/json",
+        "body": "={{ $json.report_body }}",
+        "options": {}
+      },
+      "id": "wp-save",
+      "name": "Save Production Report",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [1600, 200],
+      "retryOnFail": true, "maxTries": 3, "waitBetweenTries": 1000
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.NOTIFY_URL }}",
+        "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": { "parameters": [{ "name": "x-anser-token", "value": "={{ $env.ANSER_WEBHOOK_TOKEN }}" }] },
+        "sendBody": true, "contentType": "raw", "rawContentType": "application/json",
+        "body": "={{ $('Build Report + Notice').first().json.notify_body }}",
+        "options": {}
+      },
+      "id": "wp-notify",
+      "name": "Notify Manager",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [1840, 200]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $('Build Report + Notice').first().json.resp }}",
+        "options": { "responseCode": 200 }
+      },
+      "id": "wp-resp-200",
+      "name": "Respond 200",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [2080, 200]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ error: $json.error, status: 400 }) }}",
+        "options": { "responseCode": 400 }
+      },
+      "id": "wp-resp-400",
+      "name": "Respond 400",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [880, 420]
+    }
+  ],
+  "connections": {
+    "Trigger Shift Report": { "main": [[{ "node": "Verify Anser Token", "type": "main", "index": 0 }]] },
+    "Verify Anser Token": { "main": [[{ "node": "Authorized?", "type": "main", "index": 0 }]] },
+    "Authorized?": { "main": [[{ "node": "Get Batch Report (deterministic)", "type": "main", "index": 0 }], [{ "node": "Respond 400", "type": "main", "index": 0 }]] },
+    "Get Batch Report (deterministic)": { "main": [[{ "node": "Explain Cause (Brain)", "type": "main", "index": 0 }]] },
+    "Explain Cause (Brain)": { "main": [[{ "node": "Build Report + Notice", "type": "main", "index": 0 }]] },
+    "Build Report + Notice": { "main": [[{ "node": "Save Production Report", "type": "main", "index": 0 }]] },
+    "Save Production Report": { "main": [[{ "node": "Notify Manager", "type": "main", "index": 0 }]] },
+    "Notify Manager": { "main": [[{ "node": "Respond 200", "type": "main", "index": 0 }]] }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" }
+}

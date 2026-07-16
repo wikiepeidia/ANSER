@@ -1,7 +1,13 @@
-<!-- automation-logs.html — Lịch sử chạy tự động -->
+<!-- automation-logs.html — Lịch sử chạy tự động, dữ liệu thật từ n8n Sản xuất -->
+<style>
+  .log-status { display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px; border-radius:50%; font-size:.72rem; }
+  .log-status--success { background: var(--badge-green-bg); color: var(--stat-green-icon); }
+  .log-status--failed  { background: var(--badge-red-bg); color: var(--stat-red-icon); }
+  .log-status--other   { background: var(--badge-orange-bg); color: var(--stat-orange-icon); }
+</style>
 <div class="content__header">
   <h1 class="content__title">Lịch sử chạy tự động</h1>
-  <p class="content__subtitle">Theo dõi các lần chạy rule tự động, lỗi và kết quả thực thi</p>
+  <p class="content__subtitle">Lịch sử chạy thật của các quy tắc (quy trình n8n) — lấy trực tiếp từ n8n của Sản xuất</p>
 </div>
 
 <div class="report-toolbar">
@@ -9,63 +15,106 @@
     <button class="chart-btn active" data-filter="all">Tất cả</button>
     <button class="chart-btn" data-filter="success">Thành công</button>
     <button class="chart-btn" data-filter="failed">Thất bại</button>
-    <button class="chart-btn" data-filter="skipped">Bỏ qua</button>
+    <button class="chart-btn" data-filter="other">Khác</button>
   </div>
   <div class="report-toolbar__right">
-    <button class="btn btn--outline"><i class="fa-solid fa-file-export"></i> Xuất log</button>
-    <button class="btn btn--primary" onclick="showToast('Đã làm mới log!')"><i class="fa-solid fa-rotate"></i> Làm mới</button>
+    <button class="btn btn--primary" onclick="loadExecLogs()"><i class="fa-solid fa-rotate"></i> Làm mới</button>
   </div>
 </div>
 
 <div class="stats-grid stats-grid--4">
-  <div class="stat-card"><div class="stat-card__icon stat-card__icon--green"><i class="fa-solid fa-circle-check"></i></div><div class="stat-card__info"><span class="stat-card__label">Thành công</span><span class="stat-card__value" id="successCount">0</span><span class="stat-card__change stat-card__change--up"><i class="fa-solid fa-arrow-up"></i> 24h</span></div></div>
+  <div class="stat-card"><div class="stat-card__icon stat-card__icon--green"><i class="fa-solid fa-circle-check"></i></div><div class="stat-card__info"><span class="stat-card__label">Thành công</span><span class="stat-card__value" id="successCount">0</span><span class="stat-card__change stat-card__change--up"><i class="fa-solid fa-arrow-up"></i> Gần đây</span></div></div>
   <div class="stat-card"><div class="stat-card__icon stat-card__icon--red"><i class="fa-solid fa-circle-xmark"></i></div><div class="stat-card__info"><span class="stat-card__label">Thất bại</span><span class="stat-card__value" id="failedCount">0</span><span class="stat-card__change stat-card__change--alert"><i class="fa-solid fa-triangle-exclamation"></i> Cần xem</span></div></div>
-  <div class="stat-card"><div class="stat-card__icon stat-card__icon--orange"><i class="fa-solid fa-forward"></i></div><div class="stat-card__info"><span class="stat-card__label">Bỏ qua</span><span class="stat-card__value" id="skippedCount">0</span><span class="stat-card__change stat-card__change--down"><i class="fa-solid fa-clock"></i> Tạm dừng</span></div></div>
-  <div class="stat-card"><div class="stat-card__icon stat-card__icon--blue"><i class="fa-solid fa-bolt"></i></div><div class="stat-card__info"><span class="stat-card__label">Tổng lượt</span><span class="stat-card__value" id="totalCount">0</span><span class="stat-card__change stat-card__change--up"><i class="fa-solid fa-clock"></i> 24h qua</span></div></div>
+  <div class="stat-card"><div class="stat-card__icon stat-card__icon--orange"><i class="fa-solid fa-forward"></i></div><div class="stat-card__info"><span class="stat-card__label">Khác</span><span class="stat-card__value" id="otherCount">0</span><span class="stat-card__change stat-card__change--down"><i class="fa-solid fa-clock"></i> Đang chạy/huỷ</span></div></div>
+  <div class="stat-card"><div class="stat-card__icon stat-card__icon--blue"><i class="fa-solid fa-bolt"></i></div><div class="stat-card__info"><span class="stat-card__label">Tổng lượt</span><span class="stat-card__value" id="totalCount">0</span><span class="stat-card__change stat-card__change--up"><i class="fa-solid fa-clock"></i> Gần đây</span></div></div>
 </div>
 
 <div class="table-card">
-  <div class="table-card__header"><h3>Nhật ký chạy gần đây</h3></div>
+  <div class="table-card__header"><h3>Nhật ký chạy gần đây (n8n)</h3></div>
   <div class="table-card__body">
-    <table class="data-table">
-      <thead><tr><th style="width:32px"></th><th>Thời gian</th><th>Rule</th><th>Nội dung</th><th>Trạng thái</th></tr></thead>
+    <div id="logsLoading" class="sc-loading"><i class="fa-solid fa-spinner fa-spin"></i> Đang tải...</div>
+    <table class="data-table" id="logsTable" style="display:none;">
+      <thead><tr><th style="width:32px"></th><th>Thời gian</th><th>Quy tắc (workflow)</th><th>Thời lượng</th><th>Trạng thái</th></tr></thead>
       <tbody id="logsBody"></tbody>
     </table>
+    <div id="logsEmpty" class="empty-state" style="display:none;">
+      <div class="empty-icon"><i class="fa-solid fa-clock-rotate-left"></i></div>
+      <h3 class="empty-title">Chưa có lượt chạy nào</h3>
+      <p class="empty-description">Chạy thử một quy tắc ở trang "Quy tắc" để lịch sử xuất hiện ở đây.</p>
+    </div>
   </div>
 </div>
 
 <script>
-(function() {
+(function () {
   const STATUS_META = {
-    success: { icon: "fa-check", color: "green", label: "Thành công" },
-    failed: { icon: "fa-xmark", color: "red", label: "Thất bại" },
-    skipped: { icon: "fa-forward", color: "orange", label: "Bỏ qua" },
+    success: { icon: "fa-check", color: "green", label: "Thành công", bucket: "success" },
+    error:   { icon: "fa-xmark", color: "red", label: "Thất bại", bucket: "failed" },
+    crashed: { icon: "fa-xmark", color: "red", label: "Lỗi", bucket: "failed" },
+    running: { icon: "fa-spinner", color: "blue", label: "Đang chạy", bucket: "other" },
+    waiting: { icon: "fa-clock", color: "orange", label: "Đang chờ", bucket: "other" },
+    canceled:{ icon: "fa-ban", color: "orange", label: "Đã huỷ", bucket: "other" },
   };
+  function meta(status) {
+    return STATUS_META[status] || { icon: "fa-question", color: "orange", label: status || "Không rõ", bucket: "other" };
+  }
+  function duration(startedAt, stoppedAt) {
+    if (!startedAt || !stoppedAt) return '—';
+    const s = (new Date(stoppedAt) - new Date(startedAt)) / 1000;
+    return s < 1 ? Math.round(s * 1000) + 'ms' : s.toFixed(1) + 's';
+  }
+
+  let execs = [];
 
   function render(filter) {
-    const logs = filter === "all" ? Store.logs : Store.logs.filter(l => l.status === filter);
-    document.getElementById("successCount").textContent = Store.logs.filter(l => l.status === "success").length;
-    document.getElementById("failedCount").textContent = Store.logs.filter(l => l.status === "failed").length;
-    document.getElementById("skippedCount").textContent = Store.logs.filter(l => l.status === "skipped").length;
-    document.getElementById("totalCount").textContent = Store.logs.length;
-    document.getElementById("logsBody").innerHTML = logs.map(l => {
-      const m = STATUS_META[l.status];
+    const filtered = filter === "all" ? execs : execs.filter(e => meta(e.status).bucket === filter);
+    document.getElementById("successCount").textContent = execs.filter(e => meta(e.status).bucket === "success").length;
+    document.getElementById("failedCount").textContent = execs.filter(e => meta(e.status).bucket === "failed").length;
+    document.getElementById("otherCount").textContent = execs.filter(e => meta(e.status).bucket === "other").length;
+    document.getElementById("totalCount").textContent = execs.length;
+
+    const table = document.getElementById("logsTable");
+    const empty = document.getElementById("logsEmpty");
+    if (!filtered.length) {
+      table.style.display = 'none';
+      empty.style.display = 'block';
+      return;
+    }
+    empty.style.display = 'none';
+    table.style.display = 'table';
+    document.getElementById("logsBody").innerHTML = filtered.map(ex => {
+      const m = meta(ex.status);
+      const time = ex.startedAt ? new Date(ex.startedAt).toLocaleString('vi-VN') : '—';
       return `
         <tr>
-          <td><span class="log-status log-status--${l.status}"><i class="fa-solid ${m.icon}"></i></span></td>
-          <td>${l.time}</td>
-          <td><strong>${Helpers.escapeHtml(l.rule)}</strong></td>
-          <td>${Helpers.escapeHtml(l.msg)}</td>
+          <td><span class="log-status log-status--${m.bucket}"><i class="fa-solid ${m.icon}"></i></span></td>
+          <td>${time}</td>
+          <td><strong>${Helpers.escapeHtml(ex.workflowName)}</strong></td>
+          <td>${duration(ex.startedAt, ex.stoppedAt)}</td>
           <td><span class="pill pill--${m.color}">${m.label}</span></td>
         </tr>
       `;
     }).join("");
   }
 
-  // Initial render
-  render("all");
+  window.loadExecLogs = async function () {
+    document.getElementById('logsLoading').style.display = 'block';
+    document.getElementById('logsTable').style.display = 'none';
+    document.getElementById('logsEmpty').style.display = 'none';
+    try {
+      const r = await fetch('/api/n8n/executions?limit=50');
+      const d = await r.json();
+      document.getElementById('logsLoading').style.display = 'none';
+      execs = d.success ? d.executions : [];
+      const activeFilter = document.querySelector("#logFilterBtns .chart-btn.active")?.dataset.filter || "all";
+      render(activeFilter);
+    } catch {
+      document.getElementById('logsLoading').style.display = 'none';
+      execs = [];
+      render('all');
+    }
+  };
 
-  // Filter buttons
   document.querySelectorAll("#logFilterBtns .chart-btn").forEach(btn => {
     btn.addEventListener("click", () => {
       document.querySelectorAll("#logFilterBtns .chart-btn").forEach(b => b.classList.remove("active"));
@@ -74,24 +123,6 @@
     });
   });
 
-  // Simulate a new log every 30 seconds
-  setInterval(() => {
-    if (Math.random() > 0.7) {
-      const statuses = ["success", "success", "success", "failed", "skipped"];
-      const rules = Store.rules.map(r => r.title);
-      const status = statuses[Math.floor(Math.random() * statuses.length)];
-      const rule = rules[Math.floor(Math.random() * rules.length)];
-      const messages = {
-        success: `Rule kích hoạt thành công, xử lý xong trong ${(Math.random() * 2).toFixed(1)}s`,
-        failed: `Lỗi: timeout khi gọi API (status=${Math.floor(Math.random()*500+500)})`,
-        skipped: `Rule đang tạm dừng, bỏ qua lịch chạy.`,
-      };
-      const now = new Date();
-      const time = `${String(now.getHours()).padStart(2,"0")}:${String(now.getMinutes()).padStart(2,"0")} · hôm nay`;
-      Store.addLog({ status, rule, msg: messages[status], meta: `${rule} · ${(Math.random()*2).toFixed(1)}s`, time });
-      const activeFilter = document.querySelector("#logFilterBtns .chart-btn.active")?.dataset.filter || "all";
-      render(activeFilter);
-    }
-  }, 30000);
+  loadExecLogs();
 })();
 </script>

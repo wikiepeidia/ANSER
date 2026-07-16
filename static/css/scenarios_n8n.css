@@ -1,0 +1,236 @@
+/* ── n8n Integration styles (supplements scenarios.css) ── */
+
+.sc-status {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 4px 12px; border-radius: 20px;
+    font-size: .78rem; font-weight: 600;
+}
+.sc-status.online { background: rgba(76,175,80,.1); color: #4CAF50; }
+.sc-status.offline { background: rgba(244,67,54,.1); color: #F44336; }
+.sc-status-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    animation: sc-pulse 2s infinite;
+}
+.sc-status.online .sc-status-dot { background: #4CAF50; }
+.sc-status.offline .sc-status-dot { background: #F44336; }
+@keyframes sc-pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+/* ── Templates ─────────────────────────────────────────────
+   Wrapped in a fixed-width container so the inner grid can
+   scroll horizontally without pushing the rest of the page. */
+.sc-tpl-viewport {
+    width: 100%;
+    max-width: var(--scenario-row-max, 1440px);
+    margin: 0 auto;
+    position: relative;
+}
+.sc-tpl-grid {
+    display: flex;
+    gap: 12px;
+    padding: 4px 2px 14px;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    /* Snap each card into place when the user finishes a drag/swipe */
+    scroll-snap-type: x proximity;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0,0,0,.25) transparent;
+    cursor: grab;
+    user-select: none;
+    outline: none;
+}
+.sc-tpl-grid.is-dragging {
+    cursor: grabbing;
+    scroll-behavior: auto;          /* stop smooth-jump during drag */
+    scroll-snap-type: none;          /* no snap mid-drag */
+}
+.sc-tpl-grid::-webkit-scrollbar { height: 8px; }
+.sc-tpl-grid::-webkit-scrollbar-thumb {
+    background: rgba(0,0,0,.25);
+    border-radius: 4px;
+}
+.sc-tpl-grid::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,.4); }
+.sc-tpl-grid::-webkit-scrollbar-track { background: transparent; }
+/* Auto-hide scrollbar when content fits — no scroll needed */
+.sc-tpl-grid:not(.has-overflow)::-webkit-scrollbar { height: 0; }
+.sc-tpl-grid:not(.has-overflow) { scrollbar-width: none; }
+
+.sc-tpl-card {
+    flex: 0 0 210px;
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 14px; border-radius: var(--scenario-radius-sm, 10px);
+    border: 1px solid var(--scenario-border, #eee);
+    background: var(--scenario-card-soft, #fafafa);
+    cursor: pointer;
+    scroll-snap-align: start;
+    transition: border-color var(--scenario-transition, 0.2s ease),
+                box-shadow var(--scenario-transition, 0.2s ease),
+                transform var(--scenario-transition, 0.2s ease);
+}
+.sc-tpl-card:hover { border-color: #FF6B35; box-shadow: 0 2px 12px rgba(255,107,53,.12); transform: translateY(-1px); }
+.sc-tpl-card:focus-visible {
+    outline: 2px solid #FF6B35;
+    outline-offset: 2px;
+    border-color: #FF6B35;
+}
+.sc-tpl-card.deploying { opacity: .6; pointer-events: none; }
+.sc-tpl-card.deployed { border-color: #4CAF50; }
+.sc-tpl-icon {
+    width: 36px; height: 36px; border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: .9rem; flex-shrink: 0;
+}
+.sc-tpl-name { font-size: .8rem; font-weight: 600; color: var(--scenario-text, #333); }
+.sc-tpl-desc { font-size: .7rem; color: var(--scenario-muted, #999); margin-top: 2px; }
+.sc-tpl-loading { color: #aaa; font-size: .85rem; padding: 16px 4px; }
+
+/* Skeleton shimmer for the loading state */
+.sc-tpl-skeleton {
+    display: flex; gap: 12px; padding: 4px 2px;
+}
+.sc-tpl-skeleton .sc-tpl-skel-card {
+    flex: 0 0 210px; height: 60px;
+    border-radius: var(--scenario-radius-sm, 10px);
+    background: linear-gradient(90deg,
+        var(--scenario-card-soft, #f4f6fb) 0%,
+        rgba(255,255,255,.6) 50%,
+        var(--scenario-card-soft, #f4f6fb) 100%);
+    background-size: 200% 100%;
+    animation: sc-skel 1.4s ease-in-out infinite;
+}
+@keyframes sc-skel {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+/* Empty state for templates */
+.sc-tpl-empty {
+    color: var(--scenario-muted, #888);
+    font-size: .9rem;
+    padding: 24px 8px;
+    text-align: center;
+    border: 1px dashed var(--scenario-border, #eee);
+    border-radius: var(--scenario-radius-md, 14px);
+    width: 100%;
+}
+
+/* Optional left/right arrow buttons */
+.sc-tpl-nav {
+    position: absolute; top: 50%; transform: translateY(-50%);
+    width: 32px; height: 32px; border-radius: 50%;
+    background: var(--scenario-panel, #fff);
+    border: 1px solid var(--scenario-border, #eee);
+    color: var(--scenario-muted, #666);
+    box-shadow: 0 4px 12px rgba(0,0,0,.08);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; z-index: 2;
+    transition: opacity var(--scenario-transition, 0.2s ease),
+                background var(--scenario-transition, 0.2s ease);
+    opacity: 0;
+}
+/* Hide arrows while the whole panel is collapsed */
+.scenario-templates-panel.is-collapsed .sc-tpl-nav { display: none; }
+.sc-tpl-viewport:hover .sc-tpl-nav { opacity: 1; }
+.sc-tpl-nav:hover { background: var(--scenario-card-soft, #fafafa); }
+.sc-tpl-nav:disabled { opacity: 0 !important; cursor: default; }
+.sc-tpl-nav.prev { left: -6px; }
+.sc-tpl-nav.next { right: -6px; }
+
+/* Workflow card */
+.sc-wf-card {
+    background: var(--scenario-card-bg, #fff);
+    border-radius: var(--scenario-radius-lg, 18px);
+    border: 1px solid var(--scenario-border, #eee);
+    padding: 24px;
+    transition: transform var(--scenario-transition, 0.2s ease),
+                box-shadow var(--scenario-transition, 0.2s ease),
+                border-color var(--scenario-transition, 0.2s ease);
+    box-shadow: 0 4px 15px rgba(15,23,42,.06);
+}
+.sc-wf-card:hover { box-shadow: 0 8px 30px rgba(15,23,42,.12); transform: translateY(-2px); }
+.sc-wf-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.sc-wf-name { font-size: 1rem; font-weight: 700; color: var(--scenario-text, #1a1a2e); }
+.sc-wf-badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 3px 10px; border-radius: 20px;
+    font-size: .72rem; font-weight: 600; cursor: pointer; border: none;
+    transition: filter var(--scenario-transition, 0.2s ease);
+}
+.sc-wf-badge.on { background: rgba(76,175,80,.12); color: #388E3C; }
+.sc-wf-badge.off { background: rgba(158,158,158,.12); color: #888; }
+.sc-wf-meta { display: flex; gap: 16px; margin-bottom: 14px; flex-wrap: wrap; }
+.sc-wf-meta-item { font-size: .78rem; color: var(--scenario-muted, #999); display: flex; align-items: center; gap: 5px; }
+.sc-wf-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.sc-wf-btn {
+    padding: 8px 16px; border-radius: var(--scenario-radius-sm, 10px); border: none;
+    font-size: .82rem; font-weight: 600; cursor: pointer;
+    transition: background var(--scenario-transition, 0.2s ease),
+                color var(--scenario-transition, 0.2s ease),
+                transform var(--scenario-transition, 0.2s ease);
+    display: inline-flex; align-items: center; gap: 6px;
+}
+.sc-wf-btn:hover { transform: translateY(-1px); }
+.sc-wf-btn.run { background: #FF6B35; color: #fff; }
+.sc-wf-btn.run:hover { background: #e55a28; }
+.sc-wf-btn.run.running { background: #FF9800; }
+.sc-wf-btn.history { background: var(--scenario-card-soft, #f0f0f0); color: var(--scenario-text, #333); }
+.sc-wf-btn.delete { background: var(--scenario-card-soft, #f0f0f0); color: #E53935; }
+.sc-wf-btn.delete:hover { background: #FFEBEE; }
+
+/* Executions */
+.sc-exec-panel { margin-top: 14px; border-top: 1px solid var(--scenario-border, #eee); padding-top: 12px; display: none; }
+.sc-exec-panel.open { display: block; }
+.sc-exec-item { display: flex; align-items: center; gap: 10px; padding: 5px 0; font-size: .78rem; color: var(--scenario-muted, #666); }
+.sc-exec-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.sc-exec-dot.success { background: #4CAF50; }
+.sc-exec-dot.error { background: #F44336; }
+.sc-exec-dot.running, .sc-exec-dot.new { background: #FF9800; animation: sc-pulse 1s infinite; }
+.sc-exec-dot.waiting, .sc-exec-dot.unknown { background: #9E9E9E; }
+.sc-exec-empty { color: #ccc; font-size: .78rem; font-style: italic; }
+
+/* Toast */
+.sc-toast {
+    position: fixed; bottom: 24px; right: 24px;
+    padding: 12px 20px; border-radius: var(--scenario-radius-sm, 10px);
+    color: #fff; font-size: .85rem; font-weight: 500;
+    box-shadow: 0 4px 20px rgba(0,0,0,.2);
+    z-index: 9999; opacity: 0; transform: translateY(10px);
+    transition: opacity .3s ease, transform .3s ease;
+    pointer-events: none;
+}
+.sc-toast.show { opacity: 1; transform: translateY(0); }
+.sc-toast.ok { background: #4CAF50; }
+.sc-toast.err { background: #F44336; }
+
+/* Run result panel */
+.sc-run-result {
+    display: none;
+    margin-top: 14px;
+    border-top: 1px solid var(--scenario-border, #eee);
+    padding-top: 12px;
+}
+.sc-result-header {
+    font-size: .85rem; font-weight: 600;
+    display: flex; align-items: center; gap: 6px;
+    margin-bottom: 8px;
+}
+.sc-result-header.ok { color: #4CAF50; }
+.sc-result-header.err { color: #F44336; }
+.sc-result-body {
+    background: var(--scenario-card-soft, #f5f5f5);
+    border-radius: 8px;
+    padding: 12px;
+    font-size: .78rem;
+    font-family: 'Consolas', 'Monaco', monospace;
+    color: var(--scenario-text, #333);
+    overflow-x: auto;
+    max-height: 200px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+    margin: 0;
+}
+
+.sc-loading { text-align: center; padding: 48px; color: var(--scenario-muted, #aaa); font-size: .9rem; }

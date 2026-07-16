@@ -1,0 +1,117 @@
+{
+  "name": "manuf_batch_process_log",
+  "nodes": [
+    {
+      "parameters": { "httpMethod": "POST", "path": "batch-process", "responseMode": "responseNode", "options": {} },
+      "id": "bp-webhook",
+      "name": "Receive Batch Event",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [180, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $input.first().json;\nconst expected = $env.ANSER_WEBHOOK_TOKEN || '';\nif (expected && ((raw.headers || {})['x-anser-token'] || '') !== expected) {\n  return [{ json: { valid: false, error: 'Unauthorized' } }];\n}\nconst b = (raw.body && typeof raw.body === 'object') ? raw.body : raw;\nconst miss = [];\nif (!b.batch_code) miss.push('batch_code');\nif (!b.event) miss.push('event (start|stage|complete)');\nif (miss.length) return [{ json: { valid: false, error: 'Missing required fields: ' + miss.join(', ') } }];\n// Nguồn: cảm biến IoT (nhiệt/độ ẩm) hoặc app/tablet tại xưởng — cùng một webhook\nreturn [{ json: { valid: true, event: String(b.event), batch_code: String(b.batch_code), request_body: JSON.stringify({ event: b.event, batch_code: b.batch_code, order_code: b.order_code || null, material_lot_code: b.material_lot_code || null, input_material_kg: b.input_material_kg || 0, shift: b.shift || null, source: b.source || 'manual', stage: b.stage || null, temp_c: b.temp_c ?? null, duration_min: b.duration_min ?? null, operator: b.operator || null, note: b.note || null, output_units: b.output_units || 0, ng_units: b.ng_units || 0, moisture_pct: b.moisture_pct ?? null, material_cost_vnd: b.material_cost_vnd || 0, labor_cost_vnd: b.labor_cost_vnd || 0 }) } }];"
+      },
+      "id": "bp-verify",
+      "name": "Verify + Validate",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [400, 300]
+    },
+    {
+      "parameters": { "conditions": { "boolean": [{ "value1": "={{ $json.valid }}", "value2": true }] } },
+      "id": "bp-authz",
+      "name": "Valid?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [620, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.RAG_BASE_URL }}/process-event",
+        "authentication": "none",
+        "sendBody": true, "contentType": "raw", "rawContentType": "application/json",
+        "body": "={{ $json.request_body }}",
+        "options": {}
+      },
+      "id": "bp-event",
+      "name": "Process Event (idempotent)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [860, 200],
+      "retryOnFail": true, "maxTries": 3, "waitBetweenTries": 1000
+    },
+    {
+      "parameters": {
+        "jsCode": "const d = $input.first().json;\nconst bc = $('Verify + Validate').first().json.batch_code;\n// Chỉ notify các mốc quan trọng; log công đoạn thường (stage) chạy êm\nlet notify_needed = true, title = '', color = 3066993, desc = '';\nswitch (d.status) {\n  case 'started':\n    if (d.window_status === 'overdue') { title = '🔴 MẺ ' + bc + ' — NVL QUÁ CỬA SỔ 24H'; color = 15158332; desc = 'Lô nguyên liệu đã quá hạn chế biến ' + Math.abs(d.hours_left ?? 0) + 'h — nguy cơ giảm cynarin. Cân nhắc chuyển hướng sản phẩm.'; }\n    else if (d.window_status === 'urgent') { title = '🟠 Bắt đầu mẻ ' + bc + ' — còn ' + d.hours_left + 'h cửa sổ 24h'; color = 15105570; desc = 'Ưu tiên chế biến liên tục, không để gián đoạn.'; }\n    else { title = '🏭 Bắt đầu mẻ ' + bc; desc = d.window_status === 'ok' ? ('Trong cửa sổ 24h (còn ' + d.hours_left + 'h).') : 'Nguyên liệu khô — không ràng buộc 24h.'; }\n    break;\n  case 'duplicate':\n    title = '🔁 Mẻ trùng batch_code (bỏ qua)'; color = 10197915; desc = 'Gateway/tablet gửi lại — không tạo trùng.';\n    break;\n  case 'moisture_fail':\n    title = '🟠 Mẻ ' + bc + ' — độ ẩm ' + d.moisture_pct + '% CHƯA ĐẠT'; color = 15105570; desc = 'Vượt ngưỡng ' + d.max_allowed + '% → nguy cơ nấm mốc. **Sấy tiếp rồi đo lại** — mẻ chưa được chốt.';\n    break;\n  case 'completed':\n    title = '🟢 Mẻ ' + bc + ' hoàn thành — độ ẩm ' + d.moisture_pct + '%, HSD ' + d.shelf_months + ' tháng';\n    desc = 'HSD: **' + d.expiry_date + '** (độ ẩm quyết định). Trạng thái: chờ kiểm nghiệm dược liệu (F2) — CHƯA mở bán.';\n    break;\n  default:\n    notify_needed = false; // 'logged' — ghi công đoạn thường\n}\nconst notify_body = JSON.stringify({ channel: 'discord', title, color, description: desc });\nconst resp = JSON.stringify(d);\nreturn [{ json: { notify_needed, notify_body, resp } }];"
+      },
+      "id": "bp-build",
+      "name": "Build Notice",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1100, 200]
+    },
+    {
+      "parameters": { "conditions": { "boolean": [{ "value1": "={{ $json.notify_needed }}", "value2": true }] } },
+      "id": "bp-need",
+      "name": "Notify Needed?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [1340, 200]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.NOTIFY_URL }}",
+        "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": { "parameters": [{ "name": "x-anser-token", "value": "={{ $env.ANSER_WEBHOOK_TOKEN }}" }] },
+        "sendBody": true, "contentType": "raw", "rawContentType": "application/json",
+        "body": "={{ $json.notify_body }}",
+        "options": {}
+      },
+      "id": "bp-notify",
+      "name": "Notify Production",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [1580, 100]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $('Build Notice').first().json.resp }}",
+        "options": { "responseCode": 201 }
+      },
+      "id": "bp-resp-201",
+      "name": "Respond 201",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1800, 200]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ error: $json.error, status: 400 }) }}",
+        "options": { "responseCode": 400 }
+      },
+      "id": "bp-resp-400",
+      "name": "Respond 400",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [860, 440]
+    }
+  ],
+  "connections": {
+    "Receive Batch Event": { "main": [[{ "node": "Verify + Validate", "type": "main", "index": 0 }]] },
+    "Verify + Validate": { "main": [[{ "node": "Valid?", "type": "main", "index": 0 }]] },
+    "Valid?": { "main": [[{ "node": "Process Event (idempotent)", "type": "main", "index": 0 }], [{ "node": "Respond 400", "type": "main", "index": 0 }]] },
+    "Process Event (idempotent)": { "main": [[{ "node": "Build Notice", "type": "main", "index": 0 }]] },
+    "Build Notice": { "main": [[{ "node": "Notify Needed?", "type": "main", "index": 0 }]] },
+    "Notify Needed?": { "main": [[{ "node": "Notify Production", "type": "main", "index": 0 }], [{ "node": "Respond 201", "type": "main", "index": 0 }]] },
+    "Notify Production": { "main": [[{ "node": "Respond 201", "type": "main", "index": 0 }]] }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" }
+}

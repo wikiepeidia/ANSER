@@ -1,0 +1,204 @@
+{
+  "name": "manuf_ocr_customer_order",
+  "nodes": [
+    {
+      "parameters": { "httpMethod": "POST", "path": "customer-order-ocr", "responseMode": "responseNode", "options": {} },
+      "id": "co-webhook",
+      "name": "Receive Order Upload",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [180, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $input.first().json;\nconst expected = $env.ANSER_WEBHOOK_TOKEN || '';\nif (expected && ((raw.headers || {})['x-anser-token'] || '') !== expected) {\n  return [{ json: { valid: false, error: 'Unauthorized' } }];\n}\nconst b = (raw.body && typeof raw.body === 'object') ? raw.body : raw;\nreturn [{ json: { valid: true, scenario: b.scenario || 'order', order_code_override: b.order_code || null } }];"
+      },
+      "id": "co-verify",
+      "name": "Verify Anser Token",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [400, 300]
+    },
+    {
+      "parameters": { "conditions": { "boolean": [{ "value1": "={{ $json.valid }}", "value2": true }] } },
+      "id": "co-authz",
+      "name": "Authorized?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [620, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.BRAIN_BASE_URL }}/upload?scenario={{ $json.scenario }}",
+        "authentication": "none",
+        "options": { "timeout": 45000 }
+      },
+      "id": "co-ocr",
+      "name": "Call Brain OCR Order",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [840, 200]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.BRAIN_BASE_URL }}/mcp/validate-invoice",
+        "authentication": "none",
+        "sendBody": true, "contentType": "raw", "rawContentType": "application/json",
+        "body": "={{ JSON.stringify({ items: $json.items, total: $json.total }) }}",
+        "options": {}
+      },
+      "id": "co-validate",
+      "name": "Validate Order Total",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [1060, 200]
+    },
+    {
+      "parameters": { "conditions": { "boolean": [{ "value1": "={{ $json.is_valid }}", "value2": true }] } },
+      "id": "co-isvalid",
+      "name": "Order Valid?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [1280, 200]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.BRAIN_BASE_URL }}/chat",
+        "authentication": "none",
+        "sendBody": true, "contentType": "raw", "rawContentType": "application/json",
+        "body": "={{ JSON.stringify({ route: 'TECHNICAL', prompt: 'Tu don hang nay tinh SL SP can san xuat theo ma SKU', context: { infer_production: { items: $('Call Brain OCR Order').first().json.items } } }) }}",
+        "options": {}
+      },
+      "id": "co-infer",
+      "name": "Infer Production Qty (Brain)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [1500, 100],
+      "retryOnFail": true, "maxTries": 2, "waitBetweenTries": 1500
+    },
+    {
+      "parameters": {
+        "jsCode": "const ocr = $('Call Brain OCR Order').first().json;\nconst inf = ($input.first().json.inference || {}).items || [];\nconst first = ocr.items[0] || {};\nconst inferred = inf.find(x => x.sku === first.sku) || {};\nconst override = $('Verify Anser Token').first().json.order_code_override;\nconst order_code = override || ocr.doc_no;\nconst payload = {\n  order_code,\n  customer_code: ocr.customer_code,\n  product_code: first.sku,\n  product_name: first.name,\n  qty_ordered: first.qty || 0,\n  qty_to_produce: inferred.qty_to_produce || first.qty || 0,\n  unit_price: first.unit_price || 0,\n  region: ocr.region || null,\n  deadline: ocr.deadline || null\n};\nreturn [{ json: { order_code, request_body: JSON.stringify(payload), qty_ordered: payload.qty_ordered, qty_to_produce: payload.qty_to_produce, deadline: payload.deadline } }];"
+      },
+      "id": "co-build-order",
+      "name": "Build Production Order",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1720, 100]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.RAG_BASE_URL }}/production-order-insert",
+        "authentication": "none",
+        "sendBody": true, "contentType": "raw", "rawContentType": "application/json",
+        "body": "={{ $json.request_body }}",
+        "options": {}
+      },
+      "id": "co-insert",
+      "name": "Insert Production Order",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [1940, 100],
+      "retryOnFail": true, "maxTries": 3, "waitBetweenTries": 1000
+    },
+    {
+      "parameters": {
+        "jsCode": "const db = $input.first().json;\nconst o = $('Build Production Order').first().json;\nconst dup = db.deduped === true;\nconst notify_body = JSON.stringify({ channel: 'discord', title: dup ? '🔁 Đơn A trùng (bỏ qua)' : '📄 Đơn mới từ khách A', color: dup ? 10197915 : 3447003, fields: [ { name: 'Đơn', value: o.order_code, inline: true }, { name: 'SL đặt', value: String(o.qty_ordered), inline: true }, { name: 'SL cần SX (AI)', value: String(o.qty_to_produce), inline: true }, { name: 'Deadline', value: o.deadline || '—', inline: true }, { name: 'Trạng thái', value: 'draft — chờ duyệt', inline: true } ] });\nconst resp = JSON.stringify({ status: db.status, order_code: o.order_code, qty_to_produce: o.qty_to_produce, deduped: dup });\nreturn [{ json: { notify_body, resp } }];"
+      },
+      "id": "co-build-notice",
+      "name": "Build Notice",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2160, 100]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.NOTIFY_URL }}",
+        "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": { "parameters": [{ "name": "x-anser-token", "value": "={{ $env.ANSER_WEBHOOK_TOKEN }}" }] },
+        "sendBody": true, "contentType": "raw", "rawContentType": "application/json",
+        "body": "={{ $json.notify_body }}",
+        "options": {}
+      },
+      "id": "co-notify",
+      "name": "Notify Production Manager",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [2380, 100]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $('Build Notice').first().json.resp }}",
+        "options": { "responseCode": 201 }
+      },
+      "id": "co-resp-201",
+      "name": "Respond 201",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [2600, 100]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.RAG_BASE_URL }}/pending-review",
+        "authentication": "none",
+        "sendBody": true, "contentType": "raw", "rawContentType": "application/json",
+        "body": "={{ JSON.stringify({ kind: 'customer_order', reason: 'Lech tong ' + $json.difference + ' VND', ocr_total: $json.ocr_total, calculated_total: $json.calculated_total, raw_payload: $('Call Brain OCR Order').first().json }) }}",
+        "options": {}
+      },
+      "id": "co-pending",
+      "name": "Insert Pending Review",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [1500, 320],
+      "retryOnFail": true, "maxTries": 3, "waitBetweenTries": 1000
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ status: 'pending_review', review_id: $json.id }) }}",
+        "options": { "responseCode": 422 }
+      },
+      "id": "co-resp-422",
+      "name": "Respond 422",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1720, 320]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ error: $json.error, status: 400 }) }}",
+        "options": { "responseCode": 400 }
+      },
+      "id": "co-resp-400",
+      "name": "Respond 400",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [840, 440]
+    }
+  ],
+  "connections": {
+    "Receive Order Upload": { "main": [[{ "node": "Verify Anser Token", "type": "main", "index": 0 }]] },
+    "Verify Anser Token": { "main": [[{ "node": "Authorized?", "type": "main", "index": 0 }]] },
+    "Authorized?": { "main": [[{ "node": "Call Brain OCR Order", "type": "main", "index": 0 }], [{ "node": "Respond 400", "type": "main", "index": 0 }]] },
+    "Call Brain OCR Order": { "main": [[{ "node": "Validate Order Total", "type": "main", "index": 0 }]] },
+    "Validate Order Total": { "main": [[{ "node": "Order Valid?", "type": "main", "index": 0 }]] },
+    "Order Valid?": { "main": [[{ "node": "Infer Production Qty (Brain)", "type": "main", "index": 0 }], [{ "node": "Insert Pending Review", "type": "main", "index": 0 }]] },
+    "Infer Production Qty (Brain)": { "main": [[{ "node": "Build Production Order", "type": "main", "index": 0 }]] },
+    "Build Production Order": { "main": [[{ "node": "Insert Production Order", "type": "main", "index": 0 }]] },
+    "Insert Production Order": { "main": [[{ "node": "Build Notice", "type": "main", "index": 0 }]] },
+    "Build Notice": { "main": [[{ "node": "Notify Production Manager", "type": "main", "index": 0 }]] },
+    "Notify Production Manager": { "main": [[{ "node": "Respond 201", "type": "main", "index": 0 }]] },
+    "Insert Pending Review": { "main": [[{ "node": "Respond 422", "type": "main", "index": 0 }]] }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" }
+}

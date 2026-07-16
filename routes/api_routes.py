@@ -1,6 +1,6 @@
 """API routes for San Xuat's own business data — fully separate from ANSER."""
 import secrets
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from flask import Blueprint, jsonify, request
 from flask_login import current_user, login_required
@@ -289,8 +289,11 @@ def dashboard_stats():
             'SELECT COALESCE(SUM(total_amount), 0) AS v FROM export_transactions WHERE created_at >= ?',
             (start_of_month,),
         ).fetchone()['v']
+        today_start = datetime.now().strftime('%Y-%m-%d 00:00:00')
+        tomorrow_start = (datetime.now() + timedelta(days=1)).strftime('%Y-%m-%d 00:00:00')
         new_orders = conn.execute(
-            'SELECT COUNT(*) AS c FROM export_transactions WHERE date(created_at) = date("now")'
+            'SELECT COUNT(*) AS c FROM export_transactions WHERE created_at >= ? AND created_at < ?',
+            (today_start, tomorrow_start),
         ).fetchone()['c']
         return jsonify({'success': True, 'revenue': revenue, 'new_orders': new_orders, 'active_projects': 0})
     finally:

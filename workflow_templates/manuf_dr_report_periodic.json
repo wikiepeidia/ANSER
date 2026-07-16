@@ -1,0 +1,94 @@
+{
+  "name": "manuf_dr_report_periodic",
+  "nodes": [
+    {
+      "parameters": { "rule": { "interval": [{ "field": "days", "daysInterval": 1, "triggerAtHour": 23 }] } },
+      "id": "dr-trigger",
+      "name": "Daily 23h",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [180, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $env.RAG_BASE_URL }}/dr-report?period=month",
+        "authentication": "none",
+        "options": {}
+      },
+      "id": "dr-fetch",
+      "name": "Get DR Report (deterministic)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [420, 300],
+      "retryOnFail": true, "maxTries": 3, "waitBetweenTries": 1000
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.BRAIN_BASE_URL }}/chat",
+        "authentication": "none",
+        "sendBody": true, "contentType": "raw", "rawContentType": "application/json",
+        "body": "={{ JSON.stringify({ route: 'GENERAL', prompt: 'Viết tóm tắt báo cáo ĐR kỳ này: chi phí B ' + $json.chi_phi_B + ', doanh thu ' + $json.doanh_thu + ', lợi nhuận ' + $json.loi_nhuan + ' (' + $json.loi_nhuan_pct + '%). KHÔNG thay đổi số.' }) }}",
+        "options": {}
+      },
+      "id": "dr-brain",
+      "name": "Summarize (Brain)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [660, 300],
+      "retryOnFail": true, "maxTries": 2, "waitBetweenTries": 1500
+    },
+    {
+      "parameters": {
+        "jsCode": "const r = $('Get DR Report (deterministic)').first().json;\nconst summary = $input.first().json.text || '';\nconst fmt = n => new Intl.NumberFormat('vi-VN').format(n);\nconst regionLines = (r.ngan_sach_khu_vuc || []).map(x => `• ${x.region}: chi phí ${fmt(x.cost_vnd)} đ, LN ${x.profit_pct}%`).join('\\n');\nconst orderLines = (r.loi_nhuan_theo_don || []).map(x => `• ${x.order_code}: LN ${x.profit_pct}% (${fmt(x.revenue_vnd - x.cost_vnd)} đ)`).join('\\n');\n// Stub xuất Google Docs — thay $env.DOCS_URL bằng Body /api/google/docs-create ở prod\nconst docs_body = JSON.stringify({ template: 'DR_report', period: r.period, data: r, summary });\nconst notify_body = JSON.stringify({ channel: 'discord', title: '📊 Báo cáo ĐR kỳ (' + r.period + ')', color: 3447003, description: summary, fields: [ { name: 'Chi phí B', value: fmt(r.chi_phi_B) + ' đ', inline: true }, { name: 'Doanh thu', value: fmt(r.doanh_thu) + ' đ', inline: true }, { name: 'Lợi nhuận', value: fmt(r.loi_nhuan) + ' đ (' + r.loi_nhuan_pct + '%)', inline: true }, { name: 'Ngân sách khu vực', value: regionLines || '—', inline: false }, { name: 'LN theo đơn A', value: orderLines || '—', inline: false } ] });\nreturn [{ json: { docs_body, notify_body } }];"
+      },
+      "id": "dr-build",
+      "name": "Build Report + Notice",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.DOCS_URL }}",
+        "authentication": "none",
+        "sendBody": true, "contentType": "raw", "rawContentType": "application/json",
+        "body": "={{ $json.docs_body }}",
+        "options": {}
+      },
+      "id": "dr-docs",
+      "name": "Export Google Docs (stub)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [1140, 200]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.NOTIFY_URL }}",
+        "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": { "parameters": [{ "name": "x-anser-token", "value": "={{ $env.ANSER_WEBHOOK_TOKEN }}" }] },
+        "sendBody": true, "contentType": "raw", "rawContentType": "application/json",
+        "body": "={{ $('Build Report + Notice').first().json.notify_body }}",
+        "options": {}
+      },
+      "id": "dr-notify",
+      "name": "Notify Management",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [1380, 200]
+    }
+  ],
+  "connections": {
+    "Daily 23h": { "main": [[{ "node": "Get DR Report (deterministic)", "type": "main", "index": 0 }]] },
+    "Get DR Report (deterministic)": { "main": [[{ "node": "Summarize (Brain)", "type": "main", "index": 0 }]] },
+    "Summarize (Brain)": { "main": [[{ "node": "Build Report + Notice", "type": "main", "index": 0 }]] },
+    "Build Report + Notice": { "main": [[{ "node": "Export Google Docs (stub)", "type": "main", "index": 0 }]] },
+    "Export Google Docs (stub)": { "main": [[{ "node": "Notify Management", "type": "main", "index": 0 }]] }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" }
+}

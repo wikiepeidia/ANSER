@@ -1,0 +1,139 @@
+/* Workflows (n8n) page — trimmed from ANSER's scenarios.css.
+   Only content/grid/card rules are kept; sidebar/shell rules are dropped
+   since this page renders inside San Xuat's own SPA shell (base.html),
+   not ANSER's scenario-container layout. */
+:root {
+    --scenario-gradient: linear-gradient(135deg, #003152 0%, #0077b6 100%);
+    --scenario-surface: #f8fafc;
+    --scenario-panel: #ffffff;
+    --scenario-border: #e5e7eb;
+    --scenario-muted: #64748b;
+    --scenario-text: #003152;
+    --scenario-accent: #0077b6;
+    --scenario-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+    --scenario-card-bg: #ffffff;
+    --scenario-card-soft: #f4f6fb;
+    --scenario-chip-bg: rgba(0, 119, 182, 0.12);
+    --scenario-gutter: 0px;
+    --scenario-radius-lg: 18px;
+    --scenario-radius-md: 14px;
+    --scenario-radius-sm: 10px;
+    --scenario-transition: 0.25s cubic-bezier(0.25, 0.1, 0.25, 1);
+    --scenario-row-max: 1440px;
+}
+
+.content-header {
+    padding: var(--scenario-gutter);
+    display: flex;
+    justify-content: space-between;
+    gap: 24px;
+    align-items: flex-start;
+    width: 100%;
+    box-sizing: border-box;
+    margin-bottom: 8px;
+}
+
+.nav-breadcrumb {
+    font-size: 0.85rem;
+    color: var(--scenario-muted);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+.nav-link { color: var(--scenario-accent); text-decoration: none; }
+.nav-link:hover { text-decoration: underline; }
+
+.content-title { font-size: 1.6rem; font-weight: 700; margin-bottom: 8px; color: var(--scenario-text); }
+
+.create-btn {
+    border: none;
+    border-radius: var(--scenario-radius-sm);
+    padding: 12px 20px;
+    background: var(--scenario-gradient);
+    color: #ffffff;
+    font-weight: 600;
+    font-size: 0.95rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    box-shadow: 0 12px 25px rgba(0, 119, 182, 0.2);
+    transition: transform var(--scenario-transition), box-shadow var(--scenario-transition);
+}
+.create-btn:hover { transform: translateY(-2px); }
+
+.btn-secondary {
+    border: 1px solid var(--scenario-border);
+    background: var(--scenario-panel);
+    color: var(--scenario-muted);
+    padding: 12px 20px;
+    border-radius: var(--scenario-radius-sm);
+    font-weight: 600;
+    cursor: pointer;
+    transition: background var(--scenario-transition), color var(--scenario-transition), border-color var(--scenario-transition);
+}
+.btn-secondary:hover { background: var(--scenario-card-soft); }
+
+.content-area {
+    flex: 1;
+    padding: var(--scenario-gutter);
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.scenario-templates-panel {
+    padding: 20px 0;
+    background: var(--scenario-panel);
+    border: 1px solid var(--scenario-border);
+    border-radius: var(--scenario-radius-md);
+    width: 100%;
+    box-sizing: border-box;
+    overflow: hidden;
+    max-height: 500px;
+    margin-bottom: 24px;
+    transition: max-height var(--scenario-transition), padding var(--scenario-transition),
+                border-color var(--scenario-transition), opacity var(--scenario-transition);
+    opacity: 1;
+}
+.scenario-templates-panel.is-collapsed {
+    max-height: 0; padding-top: 0; padding-bottom: 0; border-color: transparent; opacity: 0;
+}
+.scenario-templates-panel .scenario-templates-label {
+    font-size: .78rem; font-weight: 600; color: #999; text-transform: uppercase;
+    letter-spacing: .04em; margin-bottom: 12px; padding: 0 20px;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 80px 24px;
+    background: var(--scenario-panel);
+    border: 1px dashed var(--scenario-border);
+    border-radius: 24px;
+    max-width: 720px;
+    margin: 0 auto;
+    box-shadow: var(--scenario-shadow);
+    width: 100%;
+    box-sizing: border-box;
+}
+.empty-icon {
+    width: 72px; height: 72px; border-radius: 20px;
+    background: var(--scenario-chip-bg); color: var(--scenario-accent);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 32px; margin: 0 auto 20px;
+}
+.empty-title { font-size: 1.5rem; font-weight: 700; margin-bottom: 12px; }
+.empty-description { color: var(--scenario-muted); font-size: 0.95rem; max-width: 520px; margin: 0 auto 28px; line-height: 1.6; }
+.empty-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 16px; }
+
+.scenarios-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
+    width: 100%;
+}
+
+@media (max-width: 600px) {
+    .content-tabs { flex-direction: column; align-items: stretch; }
+    .empty-state { padding: 40px 20px; }
+}

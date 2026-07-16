@@ -10,7 +10,6 @@
  *   - Router.exportProfitCSV(data)
  *   - Router.editProduct(id)
  *   - Router.deleteProduct(id)
- *   - Router.editRule(id)
  */
 
 const Router = {
@@ -19,11 +18,9 @@ const Router = {
 
   // ============ INIT ============
   async init() {
-    // Load stores — products come from the real ANSER API (async);
-    // rules/logs are sample data kept in localStorage.
+    // Products come from the real ANSER API. Automation (rules/logs) is
+    // loaded per-page directly from the n8n API, not preloaded here.
     await Store.loadProducts();
-    Store.loadRules();
-    Store.loadLogs();
 
     // Bind nav events
     this.bindNavEvents();
@@ -37,9 +34,6 @@ const Router = {
       const page = window.location.hash.replace("#", "") || "home";
       if (page !== this.currentPage) this.loadPage(page);
     });
-
-    // Start auto-log generator
-    this.startLogGenerator();
   },
 
   // ============ NAVIGATION ============
@@ -148,26 +142,6 @@ const Router = {
       const group = el.closest(".sidebar__group");
       if (group) group.classList.add("open");
     });
-  },
-
-  // ============ AUTO LOG GENERATOR (sample data only) ============
-  startLogGenerator() {
-    const rules = Store.rules.map(r => r.title);
-    setInterval(() => {
-      if (Math.random() > 0.7 && rules.length) {
-        const statuses = ["success", "success", "success", "failed", "skipped"];
-        const status = statuses[Math.floor(Math.random() * statuses.length)];
-        const rule = rules[Math.floor(Math.random() * rules.length)];
-        const messages = {
-          success: `Rule kích hoạt thành công, xử lý xong trong ${(Math.random() * 2).toFixed(1)}s`,
-          failed: `Lỗi: timeout khi gọi API (status=${Math.floor(Math.random()*500+500)})`,
-          skipped: `Rule đang tạm dừng, bỏ qua lịch chạy.`,
-        };
-        const now = new Date();
-        const time = `${String(now.getHours()).padStart(2,"0")}:${String(now.getMinutes()).padStart(2,"0")} · hôm nay`;
-        Store.addLog({ status, rule, msg: messages[status], meta: `${rule} · ${(Math.random()*2).toFixed(1)}s`, time });
-      }
-    }, 30000);
   },
 
   // ============ COMMON ACTIONS (called from HTML onclick) ============
@@ -331,68 +305,6 @@ const Router = {
     return ({ electronics: "Điện tử", fashion: "Thời trang", home: "Gia dụng", food: "Thực phẩm" })[v] || "Điện tử";
   },
 
-  // ============ RULE MODAL (sample data only) ============
-  editRule(id) {
-    const modal = document.getElementById("ruleModal");
-    const title = document.getElementById("ruleModalTitle");
-    const form = document.getElementById("ruleForm");
-    if (!modal) return;
-    if (id) {
-      const r = Store.rules.find(x => x.id === id);
-      if (r) {
-        title.textContent = "Sửa quy tắc";
-        form.elements.ruleTitle.value = r.title;
-        form.elements.ruleDesc.value = r.desc;
-        form.elements.ruleIcon.value = r.icon;
-        form.elements.ruleColor.value = r.color;
-        form.elements.ruleTrigger.value = r.trigger;
-        form.elements.ruleAction.value = r.action;
-        form.elements.ruleFreq.value = r.freq;
-        form.elements.ruleChannel.value = r.channel;
-        form.elements.ruleThreshold.value = r.threshold || "";
-        form.elements.ruleActive.checked = r.checked;
-        modal.dataset.editId = id;
-      }
-    } else {
-      title.textContent = "Tạo quy tắc mới";
-      form.reset();
-      form.elements.ruleActive.checked = true;
-      delete modal.dataset.editId;
-    }
-    modal.classList.add("open");
-  },
-
-  saveRule(e) {
-    e.preventDefault();
-    const modal = document.getElementById("ruleModal");
-    const form = e.target;
-    const data = {
-      icon: form.elements.ruleIcon.value,
-      color: form.elements.ruleColor.value,
-      title: form.elements.ruleTitle.value.trim(),
-      desc: form.elements.ruleDesc.value.trim(),
-      trigger: form.elements.ruleTrigger.value.trim(),
-      action: form.elements.ruleAction.value.trim(),
-      freq: form.elements.ruleFreq.value,
-      channel: form.elements.ruleChannel.value,
-      threshold: parseInt(form.elements.ruleThreshold.value) || 0,
-      checked: form.elements.ruleActive.checked,
-      status: form.elements.ruleActive.checked ? "Đang chạy" : "Tạm dừng",
-      last: "vừa xong",
-      total: 0,
-      success: "—",
-    };
-    if (!data.title || !data.trigger || !data.action) return;
-    if (modal.dataset.editId) {
-      Store.updateRule(parseInt(modal.dataset.editId), data);
-      showToast("Đã cập nhật quy tắc!");
-    } else {
-      Store.addRule(data);
-      showToast("Đã tạo quy tắc mới!");
-    }
-    modal.classList.remove("open");
-    this.loadPage("automation-rules");
-  },
 };
 
 // Expose for inline handlers

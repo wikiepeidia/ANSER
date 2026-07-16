@@ -198,43 +198,12 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // ========================================
-  // 4. RULE MODAL EVENTS
-  // ========================================
-  const ruleModal = document.getElementById("ruleModal");
-  const ruleClose = document.getElementById("ruleClose");
-  const ruleOverlay = document.getElementById("ruleOverlay");
-  const btnCancelRuleModal = document.getElementById("btnCancelRuleModal");
-  const ruleForm = document.getElementById("ruleForm");
-
-  if (ruleModal && ruleClose) {
-    ruleClose.addEventListener("click", () => ruleModal.classList.remove("open"));
-  }
-  if (ruleModal && ruleOverlay) {
-    ruleOverlay.addEventListener("click", () => ruleModal.classList.remove("open"));
-  }
-  if (btnCancelRuleModal) {
-    btnCancelRuleModal.addEventListener("click", () => ruleModal.classList.remove("open"));
-  }
-  if (ruleForm) {
-    ruleForm.addEventListener("submit", (e) => {
-      e.preventDefault();
-      if (window.Router && typeof window.Router.saveRule === "function") {
-        window.Router.saveRule();
-      } else {
-        showToast("Đã lưu quy tắc!");
-        ruleModal.classList.remove("open");
-      }
-    });
-  }
-
-  // ========================================
-  // 5. CLOSE MODAL ON ESC KEY
+  // 4. CLOSE MODAL ON ESC KEY
   // ========================================
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") {
       productModal?.classList.remove("open");
       deleteModal?.classList.remove("open");
-      document.getElementById("ruleModal")?.classList.remove("open");
       const notiPanel = document.getElementById("notiPanel");
       if (notiPanel) notiPanel.classList.remove("open");
     }
