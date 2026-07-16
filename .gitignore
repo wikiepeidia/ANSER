@@ -384,3 +384,14 @@ GEMINI.md
 # Local security scan outputs
 strix_runs/
 *.sarif
+
+# ======================================================
+# Merged from mixed branch (2026-07-16) — patterns missing here
+# ======================================================
+.mcp.json
+skills-lock.json
+TODO.MD
+.venv-ml/
+.n8n_creds.json
+data/generated_invoices_quantung/*
+data/generated_invoices_quanson/*
