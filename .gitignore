@@ -1,7 +1,7 @@
 # MCP config (contains API keys)
 .mcp.json
 strix_runs/
-
+report/
 # AI coding assistant scaffolding — machine-local, never shared/merged
 .claude/
 .agent/
@@ -399,3 +399,4 @@ group_project_ai_ml.db
 # San Xuất (demo-frontend) app-specific
 # ======================================================
 .n8n_sx_creds.json
+.planning-anser-backup-20260716/config.json
