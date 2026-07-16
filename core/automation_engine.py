@@ -36,7 +36,7 @@ class AutomationEngine:
             time.sleep(60)  # Check every minute
 
     def check_scheduled_automations(self):
-        conn = self.db_manager.get_connection()
+        conn = self.db_manager.get_business_connection()
         c = conn.cursor()
         try:
             # Get active scheduled automations
@@ -98,7 +98,7 @@ class AutomationEngine:
 
     def check_low_stock(self, product_id, current_stock):
         """Called when stock changes"""
-        conn = self.db_manager.get_connection()
+        conn = self.db_manager.get_business_connection()
         c = conn.cursor()
         try:
             c.execute("SELECT created_by FROM products WHERE id = ?", (product_id,))
@@ -151,7 +151,7 @@ class AutomationEngine:
 
     def execute_import_automation(self, auto_id, config, product_id):
         # Create an import transaction
-        conn = self.db_manager.get_connection()
+        conn = self.db_manager.get_business_connection()
         c = conn.cursor()
         try:
             reorder_qty = int(config.get('reorder_quantity', 50))
@@ -201,7 +201,7 @@ class AutomationEngine:
         # For scheduled import, maybe we check all products below a certain threshold?
         # Or just create a dummy import?
         # Let's implement a "Restock all low stock items" logic for scheduled import
-        conn = self.db_manager.get_connection()
+        conn = self.db_manager.get_business_connection()
         c = conn.cursor()
         try:
             threshold = 20 # Default threshold for scheduled check

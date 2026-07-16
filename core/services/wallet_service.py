@@ -104,7 +104,18 @@ def create_withdrawal(conn, user_id, amount, bank_name, account_number, account_
         raise
 
 
-def upgrade_subscription(conn, user_id, plan_key):
+def upgrade_subscription(conn, auth_conn, user_id, plan_key):
+    """`conn` is the business-DB connection (wallets/subscriptions/...),
+    `auth_conn` is the separate shared auth-DB connection (users table).
+
+    These are two physically separate Postgres databases now, so this can't
+    be one atomic transaction the way it was when everything lived in a
+    single DB. Business-side writes commit first, then the users.role /
+    subscription_expires_at update — in that order, because a failure after
+    payment (rare: only on transient DB connectivity) leaves the user
+    correctly charged but not yet upgraded (recoverable via support), which
+    is safer than the reverse order (role upgraded without payment taken).
+    """
     plan = SUBSCRIPTION_PLANS.get(plan_key)
     if not plan:
         raise ValueError('Invalid plan')
@@ -142,10 +153,6 @@ def upgrade_subscription(conn, user_id, plan_key):
                    VALUES (?, ?, ?, ?, ?, 'active', ?)''',
                 (user_id, plan_key, plan['amount'], start_str, end_str, auto_renew),
             )
-        c.execute(
-            "UPDATE users SET role=CASE WHEN role='admin' THEN role ELSE 'manager' END, "
-            'subscription_expires_at=? WHERE id=?', (end_str, user_id)
-        )
         c.execute('UPDATE wallets SET balance=balance-?, updated_at=CURRENT_TIMESTAMP WHERE user_id=?',
                   (plan['amount'], user_id))
         txn_id = f"SUB-{user_id}-{int(datetime.now().timestamp())}"
@@ -165,10 +172,28 @@ def upgrade_subscription(conn, user_id, plan_key):
         conn.commit()
         c.execute('SELECT balance FROM wallets WHERE user_id = ?', (user_id,))
         new_balance = c.fetchone()['balance']
-        return {'new_balance': new_balance, 'expires_at': format_display_datetime(end_str)}
     except Exception:
         conn.rollback()
         raise
+
+    ac = auth_conn.cursor()
+    try:
+        ac.execute(
+            "UPDATE users SET role=CASE WHEN role='admin' THEN role ELSE 'manager' END, "
+            'subscription_expires_at=? WHERE id=?', (end_str, user_id)
+        )
+        auth_conn.commit()
+    except Exception:
+        auth_conn.rollback()
+        import logging
+        logging.getLogger(__name__).critical(
+            'user_id=%s paid for subscription %s (business DB committed) but the '
+            'users.role/subscription_expires_at update failed — needs manual fix',
+            user_id, plan_key, exc_info=True,
+        )
+        raise
+
+    return {'new_balance': new_balance, 'expires_at': format_display_datetime(end_str)}
 
 
 def toggle_auto_renew(conn, user_id, enabled):
@@ -187,23 +212,38 @@ def toggle_auto_renew(conn, user_id, enabled):
         raise
 
 
-def get_pending_transactions(conn):
-    """conn.row_factory phải được set thành sqlite3.Row trước khi gọi hàm này."""
+def get_pending_transactions(conn, auth_conn):
+    """`conn` = business DB (wallet_transactions), `auth_conn` = shared auth
+    DB (users) — two separate databases now, so the user_name/user_email
+    join can't be a single SQL JOIN anymore; resolved in Python instead.
+    conn.row_factory phải được set thành sqlite3.Row trước khi gọi hàm này.
+    """
     c = conn.cursor()
     c.execute(
-        '''SELECT wt.id, wt.user_id, wt.amount, wt.currency, wt.type, wt.status, wt.method,
-                  wt.reference, wt.notes, wt.metadata, wt.created_at,
-                  u.name AS user_name, u.email AS user_email
-           FROM wallet_transactions wt
-           JOIN users u ON wt.user_id = u.id
-           WHERE wt.status = 'pending' ORDER BY wt.created_at ASC'''
+        '''SELECT id, user_id, amount, currency, type, status, method,
+                  reference, notes, metadata, created_at
+           FROM wallet_transactions
+           WHERE status = 'pending' ORDER BY created_at ASC'''
     )
+    rows = c.fetchall()
+
+    user_ids = list({row['user_id'] for row in rows})
+    users_by_id = {}
+    if user_ids:
+        ac = auth_conn.cursor()
+        placeholders = ', '.join(['?'] * len(user_ids))
+        ac.execute(f'SELECT id, name, email FROM users WHERE id IN ({placeholders})', user_ids)
+        users_by_id = {u['id']: u for u in ac.fetchall()}
+
     result = []
-    for row in c.fetchall():
+    for row in rows:
         metadata = parse_metadata(row['metadata'])
+        user = users_by_id.get(row['user_id'])
         result.append({
-            'id': row['id'], 'user_id': row['user_id'], 'user_name': row['user_name'],
-            'user_email': row['user_email'], 'amount': row['amount'], 'currency': row['currency'],
+            'id': row['id'], 'user_id': row['user_id'],
+            'user_name': user['name'] if user else None,
+            'user_email': user['email'] if user else None,
+            'amount': row['amount'], 'currency': row['currency'],
             'type': row['type'], 'status': row['status'], 'method': row['method'],
             'reference': row['reference'], 'notes': row['notes'], 'metadata': metadata,
             'plan_label': metadata.get('plan') or metadata.get('target_plan'),

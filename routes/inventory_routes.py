@@ -47,7 +47,7 @@ def _notify_n8n_order(order_type, data, user_email):
 @login_required
 def api_get_imports():
     """Get all import transactions — scoped to the active warehouse, if one is selected."""
-    conn = current_app.extensions['database'].get_connection()
+    conn = current_app.extensions['database'].get_business_connection()
     c = conn.cursor()
     warehouse_id = session.get('active_warehouse_id')
     query = ('SELECT id, code, supplier_name, total_amount, notes, status, created_by,'
@@ -80,7 +80,7 @@ def api_get_imports():
 def api_create_import():
     """Create a new import transaction."""
     data = request.get_json(silent=True) or {}
-    conn = current_app.extensions['database'].get_connection()
+    conn = current_app.extensions['database'].get_business_connection()
 
     try:
         warehouse_id = session.get('active_warehouse_id')
@@ -110,7 +110,7 @@ def api_create_import():
 @login_required
 def api_get_import_details(import_id):
     """Get import transaction details."""
-    conn = current_app.extensions['database'].get_connection()
+    conn = current_app.extensions['database'].get_business_connection()
 
     try:
         result = inventory_tx_service.get_import_transaction_details(conn, import_id)
@@ -193,7 +193,7 @@ def api_download_import_template():
 @login_required
 def api_get_exports():
     """Get all export transactions — scoped to the active warehouse, if one is selected."""
-    conn = current_app.extensions['database'].get_connection()
+    conn = current_app.extensions['database'].get_business_connection()
     c = conn.cursor()
     warehouse_id = session.get('active_warehouse_id')
     query = (
@@ -231,7 +231,7 @@ def api_get_exports():
 def api_create_export():
     """Create a new export transaction."""
     data = request.get_json(silent=True) or {}
-    conn = current_app.extensions['database'].get_connection()
+    conn = current_app.extensions['database'].get_business_connection()
 
     try:
         warehouse_id = session.get('active_warehouse_id')
@@ -266,7 +266,7 @@ def api_create_export():
 @login_required
 def api_get_export_details(export_id):
     """Get export transaction details."""
-    conn = current_app.extensions['database'].get_connection()
+    conn = current_app.extensions['database'].get_business_connection()
 
     try:
         result = inventory_tx_service.get_export_transaction_details(conn, export_id)

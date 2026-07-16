@@ -117,7 +117,7 @@ def ai_chat():
 def get_chat_history():
     conn = None
     try:
-        conn = current_app.extensions['database'].get_connection()
+        conn = current_app.extensions['database'].get_business_connection()
         history = current_app.extensions['ai_chat_service'].fetch_chat_history(conn, current_user.id, limit=50)
         return jsonify({'history': history})
     except Exception as e:
@@ -160,7 +160,7 @@ def ai_job_status(job_id):
 def clear_chat_history():
     conn = None
     try:
-        conn = current_app.extensions['database'].get_connection()
+        conn = current_app.extensions['database'].get_business_connection()
         current_app.extensions['ai_chat_service'].clear_chat_history_rows(conn, current_user.id)
         return jsonify({'status': 'success', 'message': 'Đã xóa lịch sử'})
     except Exception as e:

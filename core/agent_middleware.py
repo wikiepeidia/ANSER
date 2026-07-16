@@ -28,7 +28,7 @@ class AgentMiddleware:
 
     def _get_db_schema_summary(self):
         try:
-            conn = self.db.get_connection()
+            conn = self.db.get_business_connection()
             c = conn.cursor()
             try:
                 c.execute("SELECT table_name FROM information_schema.tables WHERE table_schema='public'")
@@ -95,7 +95,7 @@ class AgentMiddleware:
 
         final_data = {"nodes": nodes, "edges": edges}
 
-        conn = self.db.get_connection()
+        conn = self.db.get_business_connection()
         c = conn.cursor()
         try:
             js = json.dumps(final_data)

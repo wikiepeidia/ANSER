@@ -19,6 +19,13 @@ class Config:
     REDIS_URL = os.environ.get('REDIS_URL', 'redis://localhost:6379/0')
     ALLOW_AI_QUEUE_WITHOUT_WORKER = os.environ.get('ALLOW_AI_QUEUE_WITHOUT_WORKER', 'False').lower() == 'true'
     USE_POSTGRES = bool(POSTGRES_URL) or os.environ.get('USE_POSTGRES', 'False').lower() == 'true'
+
+    # Business data (products/imports/exports/wallet/workflows/...) lives in
+    # its own Neon database, separate from POSTGRES_URL above (which now
+    # holds only `users` — shared, read by Gateway/Sản xuất too). Falls back
+    # to POSTGRES_URL if unset so existing local/dev setups keep working
+    # unchanged until they're given a BUSINESS_POSTGRES_URL of their own.
+    BUSINESS_POSTGRES_URL = os.environ.get('BUSINESS_POSTGRES_URL') or POSTGRES_URL
     
     # Site domain and base URL (override with env vars)
     SITE_DOMAIN = os.environ.get('SITE_DOMAIN', 'auto-flowai.com')

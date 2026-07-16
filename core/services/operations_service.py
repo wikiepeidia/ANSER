@@ -20,7 +20,7 @@ def get_dashboard_stats(user_id, warehouse_id=None):
     """Dashboard glance numbers. Scoped to a single warehouse/store when
     warehouse_id is given, so a retail chain owner sees that store's own
     revenue instead of the whole chain's combined total."""
-    conn = db_manager.get_connection()
+    conn = db_manager.get_business_connection()
     c = conn.cursor()
     try:
         today = datetime.now()
@@ -46,7 +46,7 @@ def get_dashboard_stats(user_id, warehouse_id=None):
 
 
 def get_report_stats(user_id=None, warehouse_id=None, role='user'):
-    conn = db_manager.get_connection()
+    conn = db_manager.get_business_connection()
     c = conn.cursor()
     try:
         today = datetime.now()
@@ -78,7 +78,7 @@ def get_report_stats(user_id=None, warehouse_id=None, role='user'):
 
 
 def get_scheduled_reports(user_id=None, role='user'):
-    conn = db_manager.get_connection()
+    conn = db_manager.get_business_connection()
     c = conn.cursor()
     try:
         where = ''
@@ -103,7 +103,7 @@ def get_scheduled_reports(user_id=None, role='user'):
 
 
 def create_scheduled_report(name, report_type, frequency, channel, recipients, created_by):
-    conn = db_manager.get_connection()
+    conn = db_manager.get_business_connection()
     c = conn.cursor()
     try:
         c.execute(
@@ -121,7 +121,7 @@ def create_scheduled_report(name, report_type, frequency, channel, recipients, c
 
 
 def delete_scheduled_report(report_id, user_id=None, role='user'):
-    conn = db_manager.get_connection()
+    conn = db_manager.get_business_connection()
     c = conn.cursor()
     try:
         query = 'DELETE FROM scheduled_reports WHERE id = ?'
@@ -141,7 +141,7 @@ def delete_scheduled_report(report_id, user_id=None, role='user'):
 
 
 def get_automations(user_id=None, role='user'):
-    conn = db_manager.get_connection()
+    conn = db_manager.get_business_connection()
     c = conn.cursor()
     try:
         where = ''
@@ -166,7 +166,7 @@ def get_automations(user_id=None, role='user'):
 
 
 def create_automation(name, auto_type, config, created_by):
-    conn = db_manager.get_connection()
+    conn = db_manager.get_business_connection()
     c = conn.cursor()
     config_str = config if isinstance(config, str) else json.dumps(config)
     try:
@@ -183,7 +183,7 @@ def create_automation(name, auto_type, config, created_by):
 
 
 def update_automation(automation_id, data, user_id=None, role='user'):
-    conn = db_manager.get_connection()
+    conn = db_manager.get_business_connection()
     c = conn.cursor()
     try:
         query = 'SELECT id FROM se_automations WHERE id = ?'
@@ -212,7 +212,7 @@ def update_automation(automation_id, data, user_id=None, role='user'):
 
 
 def delete_automation(automation_id, user_id=None, role='user'):
-    conn = db_manager.get_connection()
+    conn = db_manager.get_business_connection()
     c = conn.cursor()
     try:
         query = 'DELETE FROM se_automations WHERE id = ?'

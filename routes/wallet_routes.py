@@ -22,7 +22,7 @@ def wallet_dashboard():
 @wallet_bp.route('/api/user/wallet')
 @login_required
 def api_get_wallet():
-    conn = db_manager.get_connection()
+    conn = db_manager.get_business_connection()
     try:
         data = get_wallet_data(conn, current_user.id)
         return jsonify({'success': True, **data})
@@ -69,7 +69,7 @@ def api_update_settings():
     if not setting_key:
         return jsonify({'success': False, 'message': 'Thiếu khóa cài đặt'}), 400
     try:
-        with db_manager.get_connection() as conn:
+        with db_manager.get_business_connection() as conn:
             cursor = conn.cursor()
             cursor.execute(
                 '''INSERT INTO system_settings (key, value, group_name, updated_at)
@@ -94,7 +94,7 @@ def api_topup_wallet():
     method = (data.get('method') or 'bank_transfer').strip()
     reference = (data.get('reference') or '').strip()[:120]
     note = (data.get('note') or '').strip()[:200]
-    conn = db_manager.get_connection()
+    conn = db_manager.get_business_connection()
     try:
         create_topup_request(conn, current_user.id, amount, method, reference, note)
         return jsonify({'success': True, 'message': 'Yêu cầu nạp tiền đã được gửi. Admin sẽ xác nhận sớm.'})
@@ -122,7 +122,7 @@ def api_admin_withdraw():
     note = (data.get('note') or '').strip()
     if not bank_name or not account_number or not account_name:
         return jsonify({'success': False, 'message': 'Vui lòng cung cấp đầy đủ thông tin ngân hàng'}), 400
-    conn = db_manager.get_connection()
+    conn = db_manager.get_business_connection()
     try:
         create_withdrawal(conn, current_user.id, amount, bank_name, account_number, account_name, note)
         return jsonify({'success': True, 'message': 'Yêu cầu rút tiền đã được gửi.'})
@@ -139,9 +139,10 @@ def api_admin_withdraw():
 def api_upgrade_subscription():
     data = request.get_json() or {}
     plan_key = str(data.get('plan', ''))
-    conn = db_manager.get_connection()
+    conn = db_manager.get_business_connection()
+    auth_conn = db_manager.get_connection()
     try:
-        result = upgrade_subscription(conn, current_user.id, plan_key)
+        result = upgrade_subscription(conn, auth_conn, current_user.id, plan_key)
         return jsonify({'success': True, 'message': 'Nâng cấp thành công.',
                         'balance': result['new_balance'], 'expires_at': result['expires_at']})
     except ValueError as e:
@@ -150,6 +151,7 @@ def api_upgrade_subscription():
         return jsonify({'success': False, 'message': str(e)}), 500
     finally:
         conn.close()
+        auth_conn.close()
 
 
 @wallet_bp.route('/api/user/subscription/auto-renew', methods=['POST'])
@@ -159,7 +161,7 @@ def api_user_toggle_auto_renew():
     enabled = data.get('enabled')
     if enabled is None:
         return jsonify({'success': False, 'message': 'Tham số không hợp lệ: enabled'}), 400
-    conn = db_manager.get_connection()
+    conn = db_manager.get_business_connection()
     try:
         toggle_auto_renew(conn, current_user.id, bool(enabled))
         return jsonify({'success': True, 'message': 'Đã cập nhật tự động gia hạn'})
@@ -176,15 +178,18 @@ def api_user_toggle_auto_renew():
 def api_admin_pending_wallet_transactions():
     if not hasattr(current_user, 'role') or current_user.role != 'admin':
         return jsonify({'success': False, 'message': 'Không có quyền truy cập'}), 403
-    conn = db_manager.get_connection()
+    conn = db_manager.get_business_connection()
     conn.row_factory = sqlite3.Row
+    auth_conn = db_manager.get_connection()
+    auth_conn.row_factory = sqlite3.Row
     try:
-        transactions = get_pending_transactions(conn)
+        transactions = get_pending_transactions(conn, auth_conn)
         return jsonify({'success': True, 'transactions': transactions})
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
     finally:
         conn.close()
+        auth_conn.close()
 
 
 @wallet_bp.route('/api/admin/wallet/pending/<int:transaction_id>', methods=['POST'])
@@ -195,7 +200,7 @@ def api_admin_process_wallet_transaction(transaction_id):
     data = request.get_json() or {}
     action = data.get('action')
     note = (data.get('note') or '').strip()
-    conn = db_manager.get_connection()
+    conn = db_manager.get_business_connection()
     try:
         process_transaction(conn, transaction_id, action,
                             current_user.id, current_user.email, note)

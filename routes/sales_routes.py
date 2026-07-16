@@ -62,7 +62,7 @@ def search_products():
 @login_required
 def api_create_sale():
     data = request.json or {}
-    conn = current_app.extensions['database'].get_connection()
+    conn = current_app.extensions['database'].get_business_connection()
     try:
         create_sale(
             conn, current_user.id, data.get('total_amount'), data.get('amount_given'),
@@ -82,7 +82,7 @@ def api_create_sale():
 def api_get_sales_history():
     search_query = request.args.get('q', '').strip()
     limit = request.args.get('limit', 10, type=int)
-    conn = current_app.extensions['database'].get_connection()
+    conn = current_app.extensions['database'].get_business_connection()
     try:
         history = get_sales_history(conn, current_user.id, search_query, limit,
                                      session.get('active_warehouse_id'))
@@ -96,7 +96,7 @@ def api_get_sales_history():
 @sales_bp.route('/api/sales/history/<int:sale_id>', methods=['DELETE'])
 @login_required
 def api_delete_sale(sale_id):
-    conn = current_app.extensions['database'].get_connection()
+    conn = current_app.extensions['database'].get_business_connection()
     try:
         delete_sale(conn, sale_id, current_user.id)
         return jsonify({'success': True, 'message': 'Xóa giao dịch thành công'})

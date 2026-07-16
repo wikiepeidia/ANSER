@@ -84,7 +84,7 @@ def settings():
     config = _settings_config()
     all_settings = {}
     try:
-        with db_manager.get_connection() as conn:
+        with db_manager.get_business_connection() as conn:
             cursor = conn.cursor()
             cursor.execute('SELECT key, value FROM system_settings')
             for row in cursor.fetchall():

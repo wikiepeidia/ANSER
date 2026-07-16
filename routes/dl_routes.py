@@ -70,7 +70,7 @@ def api_get_product_sales_history(product_id):
     """Lấy chuỗi lịch sử bán hàng của sản phẩm từ chi tiết xuất hàng."""
     conn = None
     try:
-        conn = current_app.extensions['database'].get_connection()
+        conn = current_app.extensions['database'].get_business_connection()
         c = conn.cursor()
 
         c.execute(

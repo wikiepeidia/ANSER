@@ -467,7 +467,7 @@ def execute_workflow(workflow_data, token_info=None):
                 import psycopg2 as _pg
                 import json as _json
                 from core.config import Config as _Cfg
-                db_url = _Cfg.POSTGRES_URL
+                db_url = _Cfg.BUSINESS_POSTGRES_URL
                 if not db_url:
                     result = {"error": "POSTGRES_URL not configured", "status": "failed"}
                 else:
@@ -499,7 +499,7 @@ def execute_workflow(workflow_data, token_info=None):
             elif node_type == 'iot_db_query':
                 import psycopg2 as _pg
                 from core.config import Config as _Cfg
-                db_url = _Cfg.POSTGRES_URL
+                db_url = _Cfg.BUSINESS_POSTGRES_URL
                 if not db_url:
                     result = {"error": "POSTGRES_URL not configured", "status": "failed"}
                 else:

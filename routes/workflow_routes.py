@@ -36,7 +36,7 @@ WORKFLOW_UPLOAD_MIMETYPES = {
 def get_user_workflows():
     conn = None
     try:
-        conn = current_app.extensions['database'].get_connection()
+        conn = current_app.extensions['database'].get_business_connection()
         workflows = current_app.extensions['workflow_service'].list_workflows_for_user(conn, current_user.id)
         return jsonify({'success': True, 'workflows': workflows})
     except Exception as e:
@@ -52,7 +52,7 @@ def save_workflow():
     conn = None
     try:
         payload = request.get_json(silent=True) or {}
-        conn = current_app.extensions['database'].get_connection()
+        conn = current_app.extensions['database'].get_business_connection()
         result = current_app.extensions['workflow_service'].save_workflow_for_user(conn, current_user.id, payload)
         return jsonify({'success': True, 'id': result['id'], 'message': result['message']})
     except Exception as e:
@@ -67,7 +67,7 @@ def save_workflow():
 def delete_workflow(workflow_id):
     conn = None
     try:
-        conn = current_app.extensions['database'].get_connection()
+        conn = current_app.extensions['database'].get_business_connection()
         result = current_app.extensions['workflow_service'].delete_workflow_for_user(conn, current_user.id, workflow_id)
         return jsonify({'success': True, 'message': result['message']})
     except Exception as e:
@@ -82,7 +82,7 @@ def delete_workflow(workflow_id):
 def get_single_workflow(workflow_id):
     conn = None
     try:
-        conn = current_app.extensions['database'].get_connection()
+        conn = current_app.extensions['database'].get_business_connection()
         result = current_app.extensions['workflow_service'].get_workflow_for_user(conn, current_user.id, workflow_id)
         if result:
             return jsonify({'success': True, 'data': result['data'], 'name': result['name']})
@@ -146,7 +146,7 @@ def api_workflow_upload_file():
 
 
 def _get_iot_conn():
-    url = Config.POSTGRES_URL
+    url = Config.BUSINESS_POSTGRES_URL
     if not url:
         raise RuntimeError("POSTGRES_URL not configured")
     return psycopg2.connect(url, cursor_factory=psycopg2.extras.RealDictCursor)

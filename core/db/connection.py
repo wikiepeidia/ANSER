@@ -118,6 +118,8 @@ class Database:
         self.use_postgres = getattr(Config, 'USE_POSTGRES', False)
         self._pg_pool = None
         self._pg_pool_lock = threading.Lock()
+        self._business_pg_pool = None
+        self._business_pg_pool_lock = threading.Lock()
         if not self.use_postgres:
             self.init_database()
 
@@ -135,9 +137,37 @@ class Database:
                 logger.info("PostgreSQL connection pool initialized (min=2, max=10)")
         return self._pg_pool
 
+    def _get_business_pg_pool(self):
+        if self._business_pg_pool is not None:
+            return self._business_pg_pool
+        with self._business_pg_pool_lock:
+            if self._business_pg_pool is None:
+                import psycopg2.pool
+                self._business_pg_pool = psycopg2.pool.ThreadedConnectionPool(
+                    minconn=2, maxconn=10, dsn=Config.BUSINESS_POSTGRES_URL,
+                )
+                logger.info("PostgreSQL business connection pool initialized (min=2, max=10)")
+        return self._business_pg_pool
+
     def get_connection(self):
+        """Connection for the `users` table only (shared auth DB)."""
         if self.use_postgres:
             pool = self._get_pg_pool()
+            return PGShimConnection(pool.getconn(), pool)
+        conn = sqlite3.connect(self.db_path, timeout=30.0)
+        conn.row_factory = sqlite3.Row
+        return conn
+
+    def get_business_connection(self):
+        """Connection for everything except `users` (products, imports,
+        exports, wallet, workflows, chat, activity logs, ...). Points at
+        Config.BUSINESS_POSTGRES_URL, a separate Neon database — falls back
+        to the same connection as get_connection() only if BUSINESS_POSTGRES_URL
+        was never configured (local SQLite dev, or not yet split)."""
+        if self.use_postgres:
+            if Config.BUSINESS_POSTGRES_URL == Config.POSTGRES_URL:
+                return self.get_connection()
+            pool = self._get_business_pg_pool()
             return PGShimConnection(pool.getconn(), pool)
         conn = sqlite3.connect(self.db_path, timeout=30.0)
         conn.row_factory = sqlite3.Row
@@ -147,6 +177,14 @@ class Database:
     def get_db_connection(self):
         """Yield a connection and guarantee it's returned to the pool on exit."""
         conn = self.get_connection()
+        try:
+            yield conn
+        finally:
+            conn.close()
+
+    @contextmanager
+    def get_business_db_connection(self):
+        conn = self.get_business_connection()
         try:
             yield conn
         finally:
@@ -452,9 +490,9 @@ class Database:
     # ── Facade — delegate to repos ─────────────────────────────────────────
     # Each method opens a connection, constructs the repo, delegates, closes.
 
-    def _user_repo(self, conn):
+    def _user_repo(self, conn, business_conn=None):
         from core.db.user_repo import UserRepo
-        return UserRepo(conn)
+        return UserRepo(conn, business_conn)
 
     def _activity_repo(self, conn):
         from core.db.activity_repo import ActivityRepo
@@ -486,12 +524,14 @@ class Database:
 
     def create_user(self, email, password, first_name, last_name, role='user', manager_id=None):
         conn = self.get_connection()
+        business_conn = self.get_business_connection()
         try:
-            return self._user_repo(conn).create_user(
+            return self._user_repo(conn, business_conn).create_user(
                 email, password, first_name, last_name, role, manager_id,
             )
         finally:
             conn.close()
+            business_conn.close()
 
     def update_password(self, user_id, hashed_password, version=1):
         conn = self.get_connection()
@@ -503,7 +543,8 @@ class Database:
     # verify_user is handled by AuthManager.verify_user in core/auth.py
 
     def get_user_workspaces(self, user_id):
-        conn = self.get_connection()
+        # workspaces is a business table despite living in UserRepo/user_repo.py
+        conn = self.get_business_connection()
         try:
             return self._user_repo(conn).get_user_workspaces(user_id)
         finally:
@@ -553,15 +594,19 @@ class Database:
 
     def upsert_google_user(self, email, name, avatar, token_json, hashed_password):
         conn = self.get_connection()
+        business_conn = self.get_business_connection()
         try:
-            return self._user_repo(conn).upsert_google_user(email, name, avatar, token_json, hashed_password)
+            return self._user_repo(conn, business_conn).upsert_google_user(
+                email, name, avatar, token_json, hashed_password,
+            )
         finally:
             conn.close()
+            business_conn.close()
 
     # Activity
 
     def get_recent_activities(self, limit=20):
-        conn = self.get_connection()
+        conn = self.get_business_connection()
         try:
             return self._activity_repo(conn).get_recent_activities(limit)
         finally:
@@ -569,7 +614,7 @@ class Database:
 
     def log_activity(self, user_id, action, details=None, ip_address=None):
         try:
-            conn = self.get_connection()
+            conn = self.get_business_connection()
             try:
                 self._activity_repo(conn).log_activity(user_id, action, details, ip_address)
                 return True
@@ -581,21 +626,21 @@ class Database:
     # AI Chat
 
     def add_ai_message(self, user_id, role, content):
-        conn = self.get_connection()
+        conn = self.get_business_connection()
         try:
             self._chat_repo(conn).add_ai_message(user_id, role, content)
         finally:
             conn.close()
 
     def get_ai_history(self, user_id, limit=6):
-        conn = self.get_connection()
+        conn = self.get_business_connection()
         try:
             return self._chat_repo(conn).get_ai_history(user_id, limit)
         finally:
             conn.close()
 
     def save_attachment(self, user_id, workspace_id, filename, filetype, analysis):
-        conn = self.get_connection()
+        conn = self.get_business_connection()
         try:
             self._chat_repo(conn).save_attachment(user_id, workspace_id, filename, filetype, analysis)
         finally:
@@ -604,42 +649,42 @@ class Database:
     # Workflow / Scenario
 
     def create_workflow(self, user_id, name, data):
-        conn = self.get_connection()
+        conn = self.get_business_connection()
         try:
             return self._workflow_repo(conn).create_workflow(user_id, name, data)
         finally:
             conn.close()
 
     def get_scenarios(self, user_id):
-        conn = self.get_connection()
+        conn = self.get_business_connection()
         try:
             return self._workflow_repo(conn).get_scenarios(user_id)
         finally:
             conn.close()
 
     def get_scenario(self, scenario_id, user_id):
-        conn = self.get_connection()
+        conn = self.get_business_connection()
         try:
             return self._workflow_repo(conn).get_scenario(scenario_id, user_id)
         finally:
             conn.close()
 
     def create_scenario(self, user_id, name, description, active, steps):
-        conn = self.get_connection()
+        conn = self.get_business_connection()
         try:
             return self._workflow_repo(conn).create_scenario(user_id, name, description, active, steps)
         finally:
             conn.close()
 
     def update_scenario(self, scenario_id, user_id, data):
-        conn = self.get_connection()
+        conn = self.get_business_connection()
         try:
             self._workflow_repo(conn).update_scenario(scenario_id, user_id, data)
         finally:
             conn.close()
 
     def delete_scenario(self, scenario_id, user_id):
-        conn = self.get_connection()
+        conn = self.get_business_connection()
         try:
             self._workflow_repo(conn).delete_scenario(scenario_id, user_id)
         finally:

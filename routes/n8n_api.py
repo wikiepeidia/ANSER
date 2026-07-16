@@ -310,7 +310,7 @@ def internal_iot_events():
         return jsonify({'success': False, 'error': 'DB not available', 'events': []})
     limit = request.args.get('limit', 10, type=int)
     try:
-        conn = db.get_connection()
+        conn = db.get_business_connection()
         cursor = conn.cursor()
         if db.use_postgres:
             cursor.execute('SELECT id, device_id, event_type, payload, created_at '
@@ -349,7 +349,7 @@ def internal_warehouses():
     if not db:
         return jsonify({'success': False, 'error': 'DB not available', 'warehouses': []})
     try:
-        conn = db.get_connection()
+        conn = db.get_business_connection()
         cursor = conn.cursor()
         cursor.execute(
             'SELECT id, name, low_stock_threshold, discord_webhook_url '
@@ -378,7 +378,7 @@ def internal_low_stock():
         return jsonify({'success': False, 'error': 'DB not available', 'items': []})
     threshold = request.args.get('threshold', 10, type=int)
     try:
-        conn = db.get_connection()
+        conn = db.get_business_connection()
         cursor = conn.cursor()
         if db.use_postgres:
             cursor.execute(

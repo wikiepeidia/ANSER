@@ -3,7 +3,7 @@ from core.extensions import db_manager
 
 
 def get_workspace_items(workspace_id, user_id):
-    conn = db_manager.get_connection()
+    conn = db_manager.get_business_connection()
     c = conn.cursor()
     try:
         c.execute('SELECT id FROM workspaces WHERE id=? AND user_id=?', (workspace_id, user_id))
@@ -26,7 +26,7 @@ def get_workspace_items(workspace_id, user_id):
 
 
 def create_item(workspace_id, user_id, title, description, item_type, status, priority):
-    conn = db_manager.get_connection()
+    conn = db_manager.get_business_connection()
     c = conn.cursor()
     try:
         c.execute('SELECT id FROM workspaces WHERE id=? AND user_id=?', (workspace_id, user_id))
@@ -47,7 +47,7 @@ def create_item(workspace_id, user_id, title, description, item_type, status, pr
 
 
 def update_item(item_id, user_id, title, description, status, priority):
-    conn = db_manager.get_connection()
+    conn = db_manager.get_business_connection()
     c = conn.cursor()
     try:
         c.execute(
@@ -66,7 +66,7 @@ def update_item(item_id, user_id, title, description, status, priority):
 
 
 def delete_item(item_id, user_id):
-    conn = db_manager.get_connection()
+    conn = db_manager.get_business_connection()
     c = conn.cursor()
     try:
         c.execute('DELETE FROM items WHERE id=? AND assignee_id=?', (item_id, user_id))
@@ -81,7 +81,7 @@ def delete_item(item_id, user_id):
 
 
 def create_workspace(user_id, name, ws_type, description):
-    conn = db_manager.get_connection()
+    conn = db_manager.get_business_connection()
     c = conn.cursor()
     try:
         c.execute(

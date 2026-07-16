@@ -48,7 +48,7 @@ def logout():
 @main_bp.route('/api/customers', methods=['GET'])
 @login_required
 def api_get_customers():
-    conn = db_manager.get_connection()
+    conn = db_manager.get_business_connection()
     try:
         customers = get_all_customers(conn, current_user.id, getattr(current_user, 'role', 'user'))
         return jsonify({'success': True, 'customers': customers})
@@ -62,7 +62,7 @@ def api_create_customer():
     data = request.get_json()
     if not data or 'code' not in data or 'name' not in data:
         return jsonify({'success': False, 'message': 'Thiếu các trường bắt buộc'}), 400
-    conn = db_manager.get_connection()
+    conn = db_manager.get_business_connection()
     try:
         ok, err = create_customer(
             conn, data['code'], data['name'], data.get('phone', ''), data.get('email', ''),
@@ -79,7 +79,7 @@ def api_create_customer():
 @login_required
 def api_update_customer(customer_id):
     data = request.get_json()
-    conn = db_manager.get_connection()
+    conn = db_manager.get_business_connection()
     try:
         update_customer(
             conn, customer_id, data['name'], data.get('phone', ''), data.get('email', ''),
@@ -96,7 +96,7 @@ def api_update_customer(customer_id):
 @main_bp.route('/api/customers/<int:customer_id>', methods=['DELETE'])
 @login_required
 def api_delete_customer(customer_id):
-    conn = db_manager.get_connection()
+    conn = db_manager.get_business_connection()
     try:
         delete_customer(conn, customer_id, current_user.id, getattr(current_user, 'role', 'user'))
         return jsonify({'success': True, 'message': 'Xóa khách hàng thành công'})
@@ -111,7 +111,7 @@ def api_delete_customer(customer_id):
 @main_bp.route('/api/products', methods=['GET'])
 @login_required
 def api_get_products():
-    conn = db_manager.get_connection()
+    conn = db_manager.get_business_connection()
     try:
         products = get_all_products(
             conn, session.get('active_warehouse_id'), current_user.id,
@@ -128,7 +128,7 @@ def api_create_product():
     data = request.get_json()
     if not data or 'code' not in data or 'name' not in data:
         return jsonify({'success': False, 'message': 'Thiếu các trường bắt buộc'}), 400
-    conn = db_manager.get_connection()
+    conn = db_manager.get_business_connection()
     try:
         ok, err = create_product(
             conn, data['code'], data['name'], data.get('category', ''), data.get('unit', 'cái'),
@@ -146,7 +146,7 @@ def api_create_product():
 @login_required
 def api_update_product(product_id):
     data = request.get_json()
-    conn = db_manager.get_connection()
+    conn = db_manager.get_business_connection()
     try:
         update_product(
             conn, product_id, data['name'], data.get('category', ''), data.get('unit', 'cái'),
@@ -163,7 +163,7 @@ def api_update_product(product_id):
 @main_bp.route('/api/products/<int:product_id>', methods=['DELETE'])
 @login_required
 def api_delete_product(product_id):
-    conn = db_manager.get_connection()
+    conn = db_manager.get_business_connection()
     try:
         delete_product(conn, product_id, current_user.id, getattr(current_user, 'role', 'user'))
         return jsonify({'success': True, 'message': 'Xóa sản phẩm thành công'})
@@ -274,7 +274,7 @@ def api_import_products_excel():
             return jsonify({'success': False, 'message': str(e)}), 400
         file_source = f
 
-    conn = db_manager.get_connection()
+    conn = db_manager.get_business_connection()
     try:
         result = import_products_from_excel(conn, file_source, current_user.id, column_map=column_map)
         return jsonify({
@@ -299,7 +299,7 @@ def api_import_products_excel():
 @main_bp.route('/api/warehouses', methods=['GET'])
 @login_required
 def api_list_warehouses_for_switcher():
-    conn = db_manager.get_connection()
+    conn = db_manager.get_business_connection()
     try:
         c = conn.cursor()
         c.execute('SELECT id, name FROM warehouses WHERE is_active = 1 ORDER BY name')

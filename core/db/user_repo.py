@@ -10,8 +10,14 @@ def _is_postgres(conn) -> bool:
 
 
 class UserRepo:
-    def __init__(self, conn):
+    def __init__(self, conn, business_conn=None):
+        """`conn` is the auth-DB connection (users table). `business_conn`
+        is the separate business-DB connection, used only for the "create
+        a default personal workspace" side effect on signup — defaults to
+        `conn` itself so single-connection callers (SQLite dev/tests, where
+        both tables live in the same file) keep working unchanged."""
         self.conn = conn
+        self.business_conn = business_conn if business_conn is not None else conn
 
     def get_user_by_id(self, user_id):
         c = self.conn.cursor()
@@ -95,20 +101,29 @@ class UserRepo:
             query = f"INSERT INTO users ({', '.join(cols)}) VALUES ({', '.join(placeholders)})"
             c.execute(query, tuple(vals))
             user_id = c.lastrowid
-
-            # Create default personal workspace
-            c.execute(
-                'INSERT INTO workspaces (user_id, name, type, description) VALUES (?, ?, ?, ?)',
-                (user_id, f"{first_name}'s Personal Workspace", 'personal', 'Your personal productivity space')
-            )
-
             self.conn.commit()
-            return user_id
         except Exception as e:
             self.conn.rollback()
             if "UNIQUE constraint" in str(e) or "duplicate key" in str(e):
                 raise Exception('Email exists')
             raise
+
+        # Default personal workspace lives in the business DB — a separate
+        # connection now. Created after the user row commits: if this step
+        # fails the user can still sign in and get a workspace later, which
+        # is safer than a workspace existing with no matching user.
+        try:
+            bc = self.business_conn.cursor()
+            bc.execute(
+                'INSERT INTO workspaces (user_id, name, type, description) VALUES (?, ?, ?, ?)',
+                (user_id, f"{first_name}'s Personal Workspace", 'personal', 'Your personal productivity space')
+            )
+            self.business_conn.commit()
+        except Exception:
+            self.business_conn.rollback()
+            logger.error("User %s created but default workspace creation failed", user_id, exc_info=True)
+
+        return user_id
 
     def update_password(self, user_id, hashed_password, version=1):
         c = self.conn.cursor()
@@ -133,12 +148,25 @@ class UserRepo:
 
     def get_user_workspaces(self, user_id):
         c = self.conn.cursor()
-        c.execute(
-            'SELECT id, user_id, name, type, description, is_active, created_at'
-            ' FROM workspaces WHERE user_id = ? ORDER BY created_at',
-            (user_id,),
-        )
-        return c.fetchall()
+        try:
+            # Real Postgres schema uses `status` (text, e.g. 'active'); only
+            # the SQLite dev-schema block has `is_active` (int) — pre-existing
+            # drift between the two, unrelated to which DB this connects to.
+            c.execute(
+                'SELECT id, user_id, name, type, description, is_active, created_at'
+                ' FROM workspaces WHERE user_id = ? ORDER BY created_at',
+                (user_id,),
+            )
+            return c.fetchall()
+        except Exception:
+            self.conn.rollback()
+            c = self.conn.cursor()
+            c.execute(
+                'SELECT id, user_id, name, type, description, status, created_at'
+                ' FROM workspaces WHERE user_id = ? ORDER BY created_at',
+                (user_id,),
+            )
+            return c.fetchall()
 
     def get_all_users_with_permissions(self):
         c = self.conn.cursor()
@@ -270,16 +298,24 @@ class UserRepo:
                 tuple(vals),
             )
             user_id = c.lastrowid
-            c.execute(
+            self.conn.commit()
+        except Exception:
+            self.conn.rollback()
+            raise
+
+        try:
+            bc = self.business_conn.cursor()
+            bc.execute(
                 'INSERT INTO workspaces (user_id, name, type, description) VALUES (?, ?, ?, ?)',
                 (user_id, f"{first_name}'s Personal Workspace", 'personal',
                  'Your personal productivity space'),
             )
-            self.conn.commit()
-            return {'id': user_id, 'role': 'manager', 'created': True, 'first_name': first_name}
+            self.business_conn.commit()
         except Exception:
-            self.conn.rollback()
-            raise
+            self.business_conn.rollback()
+            logger.error("Google user %s created but default workspace creation failed", user_id, exc_info=True)
+
+        return {'id': user_id, 'role': 'manager', 'created': True, 'first_name': first_name}
 
     # ── helpers ──────────────────────────────────────────────────────────────
 

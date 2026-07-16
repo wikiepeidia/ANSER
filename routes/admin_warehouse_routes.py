@@ -19,7 +19,7 @@ def _forbidden():
 def list_warehouses():
     if not hasattr(current_user, 'role') or current_user.role != 'admin':
         return _forbidden()
-    conn = current_app.extensions['database'].get_connection()
+    conn = current_app.extensions['database'].get_business_connection()
     c = conn.cursor()
     c.execute(
         'SELECT id, name, low_stock_threshold, discord_webhook_url, is_active, created_at'
@@ -51,7 +51,7 @@ def create_warehouse():
     threshold = data.get('low_stock_threshold', 10)
     discord_webhook_url = (data.get('discord_webhook_url') or '').strip()
 
-    conn = current_app.extensions['database'].get_connection()
+    conn = current_app.extensions['database'].get_business_connection()
     c = conn.cursor()
     c.execute(
         '''INSERT INTO warehouses (name, low_stock_threshold, discord_webhook_url, created_by)
@@ -76,7 +76,7 @@ def update_warehouse(warehouse_id):
     discord_webhook_url = (data.get('discord_webhook_url') or '').strip()
     is_active = 1 if data.get('is_active', True) else 0
 
-    conn = current_app.extensions['database'].get_connection()
+    conn = current_app.extensions['database'].get_business_connection()
     c = conn.cursor()
     c.execute(
         '''UPDATE warehouses SET name=?, low_stock_threshold=?, discord_webhook_url=?, is_active=?
@@ -93,7 +93,7 @@ def update_warehouse(warehouse_id):
 def delete_warehouse(warehouse_id):
     if not hasattr(current_user, 'role') or current_user.role != 'admin':
         return _forbidden()
-    conn = current_app.extensions['database'].get_connection()
+    conn = current_app.extensions['database'].get_business_connection()
     c = conn.cursor()
     c.execute('DELETE FROM warehouses WHERE id=?', (warehouse_id,))
     conn.commit()
