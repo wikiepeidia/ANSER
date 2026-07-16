@@ -1,0 +1,161 @@
+<!-- production-order-detail.html — Chi tiết đơn hàng sản xuất (mock, localStorage) -->
+<!-- .order-timeline* styles live in static/css/components.css — a leading
+     <style> tag here would be silently dropped by router.js's injectPage()
+     (DOMParser hoists it into the detached doc's <head>, which is never
+     read; only doc.body.innerHTML gets injected). -->
+
+<div class="content__header">
+  <div>
+    <a href="#production-orders" style="color:var(--text-muted);font-size:13px;text-decoration:none">
+      <i class="fa-solid fa-arrow-left"></i> Danh sách đơn hàng
+    </a>
+    <h1 class="content__title" id="odTitle" style="margin-top:6px">Chi tiết đơn hàng</h1>
+    <p class="content__subtitle" id="odSubtitle">Đang tải...</p>
+  </div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap" id="odActions"></div>
+</div>
+
+<div id="odNotFound" style="display:none" class="empty-state">
+  <div class="empty-icon"><i class="fa-solid fa-circle-exclamation"></i></div>
+  <h3 class="empty-title">Không tìm thấy đơn hàng</h3>
+  <p class="empty-description">Đơn hàng có thể đã bị xoá. Quay lại <a href="#production-orders">danh sách đơn hàng</a>.</p>
+</div>
+
+<div id="odContent" style="display:none">
+  <div class="form-card">
+    <div class="form-card__header"><h3><i class="fa-solid fa-circle-info"></i> Thông tin đơn hàng</h3></div>
+    <div class="form-card__body">
+      <div class="form-row">
+        <div class="form-group"><label>Sản phẩm</label><p id="odProduct" style="margin:0;font-weight:600"></p></div>
+        <div class="form-group"><label>Số lượng</label><p id="odQuantity" style="margin:0;font-weight:600"></p></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Khách hàng</label><p id="odCustomer" style="margin:0"></p></div>
+        <div class="form-group"><label>Ngày tạo</label><p id="odCreated" style="margin:0"></p></div>
+      </div>
+      <div class="form-group" id="odApprovedRow" style="display:none">
+        <label>Duyệt bởi</label><p id="odApproved" style="margin:0"></p>
+      </div>
+      <div class="form-group" id="odNotesRow" style="display:none">
+        <label>Ghi chú</label><p id="odNotes" style="margin:0"></p>
+      </div>
+    </div>
+  </div>
+
+  <div class="table-card">
+    <div class="table-card__header">
+      <h3><i class="fa-solid fa-list-check"></i> BOM — Định mức nguyên vật liệu (tính sẵn)</h3>
+    </div>
+    <div class="table-card__body">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Mã NVL</th><th>Nguyên vật liệu</th><th class="num">Định mức/SP</th>
+            <th class="num">Số lượng cần</th><th class="num">Đơn giá</th><th class="num">Thành tiền</th>
+          </tr>
+        </thead>
+        <tbody id="odBomBody"></tbody>
+      </table>
+    </div>
+    <div class="form-summary">
+      <div class="form-summary__row form-summary__row--total">
+        <span>Giá thành ước tính (NVL):</span><strong id="odCost">—</strong>
+      </div>
+    </div>
+    <p id="odBomNote" style="padding:0 20px 16px;margin:0;font-size:12px;color:var(--text-muted)"></p>
+  </div>
+
+  <div class="table-card">
+    <div class="table-card__header"><h3><i class="fa-solid fa-timeline"></i> Nhật ký quy trình</h3></div>
+    <div class="table-card__body" style="padding:20px">
+      <ul class="order-timeline" id="odTimeline"></ul>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  const id = Helpers.load("selectedOrderId", null);
+  const order = id ? Store.getOrderById(id) : null;
+
+  if (!order) {
+    document.getElementById("odNotFound").style.display = "block";
+    document.getElementById("odSubtitle").textContent = "—";
+    return;
+  }
+
+  const s = Store.ORDER_STATUSES[order.status];
+
+  document.getElementById("odContent").style.display = "block";
+  document.getElementById("odTitle").textContent = `Đơn ${order.code}`;
+  document.getElementById("odSubtitle").innerHTML =
+    `<span class="badge badge--${s.badge}"><i class="fa-solid ${s.icon}"></i> ${s.label}</span>`;
+
+  document.getElementById("odProduct").textContent = `${order.productName} (${order.productCode})`;
+  document.getElementById("odQuantity").textContent = `${Helpers.formatNumber(order.quantity)} ${order.unit}`;
+  document.getElementById("odCustomer").textContent = order.customerName || "—";
+  document.getElementById("odCreated").textContent = Helpers.formatDateTime(order.createdAt);
+
+  if (order.approvedBy) {
+    document.getElementById("odApprovedRow").style.display = "block";
+    document.getElementById("odApproved").textContent = `${order.approvedBy} · ${Helpers.formatDateTime(order.approvedAt)}`;
+  }
+  if (order.notes) {
+    document.getElementById("odNotesRow").style.display = "block";
+    document.getElementById("odNotes").textContent = order.notes;
+  }
+
+  // Action buttons: sửa (nếu nháp) + chuyển trạng thái kế tiếp + huỷ
+  const actions = [];
+  if (order.status === "draft") {
+    actions.push(`<button class="btn btn--outline" onclick="Router.editOrder(${order.id})"><i class="fa-solid fa-pen"></i> Sửa</button>`);
+  }
+  const nexts = (Store.ORDER_STATUS_FLOW[order.status] || []).filter((st) => st !== "cancelled");
+  if (nexts.length) {
+    const to = nexts[0];
+    const label = Store.ORDER_TRANSITION_LABELS[`${order.status}>${to}`] || "Chuyển trạng thái";
+    actions.push(`<button class="btn btn--primary" onclick="Router.transitionOrder(${order.id}, '${to}')"><i class="fa-solid fa-arrow-right"></i> ${label}</button>`);
+  }
+  if ((Store.ORDER_STATUS_FLOW[order.status] || []).includes("cancelled")) {
+    actions.push(`<button class="btn btn--outline" onclick="Router.transitionOrder(${order.id}, 'cancelled')"><i class="fa-solid fa-ban"></i> Huỷ đơn</button>`);
+  }
+  if (order.status === "in_progress") {
+    actions.push(`<button class="btn btn--outline" onclick="Router.openBatchEventForm(${order.id})"><i class="fa-solid fa-clipboard-list"></i> Ghi sự kiện</button>`);
+  }
+  document.getElementById("odActions").innerHTML = actions.join("");
+
+  // BOM
+  const bom = Store.getBOMForOrder(order);
+  document.getElementById("odBomBody").innerHTML = bom.map((m) => `
+    <tr>
+      <td>${Helpers.escapeHtml(m.code)}</td>
+      <td>${Helpers.escapeHtml(m.name)}</td>
+      <td class="num">${m.qtyPerUnit} ${Helpers.escapeHtml(m.unit)}</td>
+      <td class="num">${Helpers.formatNumber(m.qty)} ${Helpers.escapeHtml(m.unit)}</td>
+      <td class="num">${Helpers.formatVND(m.unitCost)}</td>
+      <td class="num">${Helpers.formatVND(m.lineCost)}</td>
+    </tr>
+  `).join("");
+  const cost = Store.getOrderCost(order);
+  document.getElementById("odCost").textContent = cost !== null ? Helpers.formatVND(cost) : "Chưa có dữ liệu";
+  document.getElementById("odBomNote").innerHTML = Store.hasCustomBOM(order.productCode)
+    ? `<i class="fa-solid fa-circle-check"></i> Định mức đã được lưu cho sản phẩm này. Chưa gồm chi phí nhân công/khấu hao. <a href="#bom">Sửa định mức</a>`
+    : `<i class="fa-solid fa-circle-info"></i> Chưa có định mức lưu cho sản phẩm này — đang hiện gợi ý tự động. <a href="#bom">Khai báo định mức thật</a>`;
+
+  // Nhật ký quy trình
+  const log = Store.getProcessLog(order.id);
+  document.getElementById("odTimeline").innerHTML = log.slice().reverse().map((l) => {
+    const meta = Store.eventMeta(l.event);
+    return `
+      <li class="order-timeline__item">
+        <span class="order-timeline__dot" style="background:var(--badge-${meta.color}-bg);color:var(--badge-${meta.color}-color)"><i class="fa-solid ${meta.icon}"></i></span>
+        <div class="order-timeline__body">
+          <strong>${Helpers.escapeHtml(l.event)}</strong>
+          ${l.note ? `<span>${Helpers.escapeHtml(l.note)}</span>` : ""}
+          <time>${Helpers.formatDateTime(l.ts)}</time>
+        </div>
+      </li>
+    `;
+  }).join("") || `<p style="color:var(--text-muted)">Chưa có nhật ký</p>`;
+})();
+</script>

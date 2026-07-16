@@ -1,0 +1,168 @@
+<!-- material-batches.html — Danh sách lô nguyên liệu (mock, localStorage) -->
+<div class="content__header">
+  <h1 class="content__title">Lô nguyên liệu</h1>
+  <p class="content__subtitle">Quản lý lô NVL nhập kho · Tổng: <strong id="batchTotal">0</strong> lô</p>
+</div>
+
+<div class="table-card" id="expiryAlertCard" style="display:none;margin-bottom:20px">
+  <div class="table-card__header">
+    <h3><i class="fa-solid fa-triangle-exclamation" style="color:var(--stat-red-icon)"></i> Cảnh báo hạn sử dụng NVL <span class="badge badge--red" id="expiryAlertCount" style="margin-left:8px"></span></h3>
+  </div>
+  <div class="noti-list" id="expiryAlertList"></div>
+</div>
+
+<div class="toolbar">
+  <div class="toolbar__filters">
+    <div class="toolbar__search">
+      <i class="fa-solid fa-magnifying-glass"></i>
+      <input type="text" id="batchSearch" placeholder="Tìm mã lô, NVL, NCC..." />
+    </div>
+    <select class="filter-select" id="filterBatchQC">
+      <option value="">Tất cả trạng thái QC</option>
+    </select>
+  </div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap">
+    <button class="btn btn--outline" id="btnResetBatchSeed" title="Dùng khi trình duyệt đang lưu bộ dữ liệu mẫu cũ">
+      <i class="fa-solid fa-arrows-rotate"></i> Nạp lại dữ liệu mẫu
+    </button>
+    <button class="btn btn--primary" id="btnAddBatch">
+      <i class="fa-solid fa-plus"></i> Thêm lô nguyên liệu
+    </button>
+  </div>
+</div>
+
+<div class="table-card" id="batchesTableCard">
+  <div class="table-card__body">
+    <table class="data-table" id="batchTable">
+      <thead>
+        <tr>
+          <th>Mã lô</th>
+          <th>Nguyên vật liệu</th>
+          <th>Nhà cung cấp</th>
+          <th class="num">Số lượng</th>
+          <th>Hạn dùng</th>
+          <th>Trạng thái QC</th>
+          <th style="width: 190px">Hành động</th>
+        </tr>
+      </thead>
+      <tbody id="batchTableBody"></tbody>
+    </table>
+  </div>
+  <div class="pagination">
+    <span class="pagination__info" id="batchPaginationInfo">Hiển thị 1-8</span>
+    <div class="pagination__controls" id="batchPaginationControls"></div>
+  </div>
+</div>
+
+<script>
+(function () {
+  let currentPage = 1;
+  const PAGE_SIZE = 8;
+
+  const filterQCEl = document.getElementById("filterBatchQC");
+  Object.entries(Store.QC_STATUSES).forEach(([key, s]) => {
+    const opt = document.createElement("option");
+    opt.value = key;
+    opt.textContent = s.label;
+    filterQCEl.appendChild(opt);
+  });
+
+  function filtered() {
+    const q = document.getElementById("batchSearch").value.toLowerCase();
+    const qc = filterQCEl.value;
+    return Store.materialBatches
+      .filter((b) => {
+        if (qc && b.qcStatus !== qc) return false;
+        if (q && !(`${b.code} ${b.materialCode} ${b.materialName} ${b.supplierName}`.toLowerCase().includes(q))) return false;
+        return true;
+      })
+      .sort((a, b) => new Date(b.receivedAt) - new Date(a.receivedAt));
+  }
+
+  function renderRow(b) {
+    const qc = Store.QC_STATUSES[b.qcStatus];
+    const exp = Store.expiryInfo(b.expiryDate);
+    return `
+      <tr data-id="${b.id}">
+        <td>${Helpers.tableAvatar(b.code, b.code, "")}</td>
+        <td>${Helpers.escapeHtml(b.materialName)}<br><span style="color:var(--text-muted);font-size:12px">${Helpers.escapeHtml(b.materialCode)}</span></td>
+        <td>${Helpers.escapeHtml(b.supplierName || "—")}</td>
+        <td class="num">${Helpers.formatNumber(b.quantity)} ${Helpers.escapeHtml(b.unit)}</td>
+        <td>${b.expiryDate ? Helpers.formatDate(b.expiryDate) : "—"}<br><span class="badge badge--${exp.badge}" style="margin-top:4px;display:inline-block">${exp.label}</span></td>
+        <td>
+          <span class="badge badge--${qc.badge}"><i class="fa-solid ${qc.icon}"></i> ${qc.label}</span>
+          ${b.qcStatus === "failed" ? `<br><span class="badge badge--red" style="margin-top:4px;display:inline-block"><i class="fa-solid fa-lock"></i> Đã khoá</span>` : ""}
+        </td>
+        <td>
+          <button class="action-btn" onclick="Router.viewBatch(${b.id})" title="Xem truy xuất"><i class="fa-solid fa-diagram-project"></i></button>
+          ${b.qcStatus === "pending" ? `
+            <button class="action-btn" style="color:var(--stat-blue-icon)" onclick="Router.openQCForm(${b.id})" title="Nhập kết quả kiểm định"><i class="fa-solid fa-clipboard-check"></i></button>
+          ` : ""}
+          <button class="action-btn action-btn--danger" onclick="Router.deleteBatch(${b.id})" title="Xoá"><i class="fa-solid fa-trash"></i></button>
+        </td>
+      </tr>
+    `;
+  }
+
+  function renderTable() {
+    const all = filtered();
+    document.getElementById("batchTotal").textContent = Store.materialBatches.length;
+    const totalPages = Math.max(1, Math.ceil(all.length / PAGE_SIZE));
+    if (currentPage > totalPages) currentPage = totalPages;
+    const start = (currentPage - 1) * PAGE_SIZE;
+    const pageRows = all.slice(start, start + PAGE_SIZE);
+    const tbody = document.getElementById("batchTableBody");
+    tbody.innerHTML = pageRows.length
+      ? pageRows.map(renderRow).join("")
+      : `<tr><td colspan="7" style="text-align:center;color:var(--text-muted)">Không có lô nguyên liệu nào</td></tr>`;
+
+    document.getElementById("batchPaginationInfo").textContent = all.length
+      ? `Hiển thị ${start + 1}-${Math.min(start + PAGE_SIZE, all.length)} / ${all.length}`
+      : "Không có dữ liệu";
+    const ctrls = document.getElementById("batchPaginationControls");
+    let html = `<button class="page-btn" data-pg="${Math.max(1, currentPage - 1)}" ${currentPage === 1 ? "disabled" : ""}><i class="fa-solid fa-chevron-left"></i></button>`;
+    for (let i = 1; i <= totalPages; i++) {
+      html += `<button class="page-btn ${i === currentPage ? "active" : ""}" data-pg="${i}">${i}</button>`;
+    }
+    html += `<button class="page-btn" data-pg="${Math.min(totalPages, currentPage + 1)}" ${currentPage === totalPages ? "disabled" : ""}><i class="fa-solid fa-chevron-right"></i></button>`;
+    ctrls.innerHTML = html;
+    ctrls.querySelectorAll(".page-btn").forEach((b) => {
+      b.addEventListener("click", () => {
+        const p = parseInt(b.dataset.pg);
+        if (p && !isNaN(p)) { currentPage = p; renderTable(); }
+      });
+    });
+  }
+
+  document.getElementById("batchSearch").addEventListener("input", () => { currentPage = 1; renderTable(); });
+  filterQCEl.addEventListener("change", () => { currentPage = 1; renderTable(); });
+
+  document.getElementById("btnAddBatch").addEventListener("click", () => {
+    Router.addBatch();
+  });
+
+  document.getElementById("btnResetBatchSeed").addEventListener("click", () => {
+    Router.resetBatchSeed();
+  });
+
+  // Cảnh báo hạn sử dụng NVL — mock cho GET /api/material-batches/expiring?days=7
+  (function renderExpiryAlert() {
+    const card = document.getElementById("expiryAlertCard");
+    const expiring = Store.getExpiringBatches(7);
+    if (!card || !expiring.length) return;
+    card.style.display = "block";
+    document.getElementById("expiryAlertCount").textContent = expiring.length;
+    document.getElementById("expiryAlertList").innerHTML = expiring.map(({ batch, info }) => `
+      <div class="noti-item" style="cursor:pointer" onclick="Router.viewBatch(${batch.id})">
+        <div class="noti-item__icon noti-item__icon--${info.days < 0 ? "red" : "orange"}"><i class="fa-solid fa-clock"></i></div>
+        <div class="noti-item__content">
+          <strong>${Helpers.escapeHtml(batch.code)} — ${Helpers.escapeHtml(batch.materialName)}</strong>
+          <span>${info.label} · NCC: ${Helpers.escapeHtml(batch.supplierName || "—")}</span>
+        </div>
+      </div>
+    `).join("");
+  })();
+
+  renderTable();
+})();
+</script>

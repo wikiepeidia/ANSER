@@ -63,6 +63,14 @@
   </div>
 </div>
 
+<div class="table-card" id="expiryAlertCard" style="display:none;margin-bottom:20px">
+  <div class="table-card__header">
+    <h3><i class="fa-solid fa-triangle-exclamation" style="color:var(--stat-red-icon)"></i> Cảnh báo hạn sử dụng NVL <span class="badge badge--red" id="expiryAlertCount" style="margin-left:8px"></span></h3>
+    <a href="#material-batches" style="font-size:12.5px;color:var(--brand-primary)">Xem tất cả lô →</a>
+  </div>
+  <div class="noti-list" id="expiryAlertList"></div>
+</div>
+
 <div class="charts-row charts-row--2x2" style="margin-bottom: 20px">
   <!-- Chart 1: Nhập / Xuất 7 ngày -->
   <div class="chart-card">
@@ -489,6 +497,24 @@
   document.getElementById("statTotalProducts").textContent = Helpers.formatNumber(products.length);
   const lowStockCount = products.filter(p => p.stock <= 10).length;
   document.getElementById("statLowStock").textContent = Helpers.formatNumber(lowStockCount);
+
+  // Cảnh báo hạn sử dụng NVL — mock cho GET /api/material-batches/expiring?days=7
+  (function renderExpiryAlert() {
+    const card = document.getElementById("expiryAlertCard");
+    const expiring = Store.getExpiringBatches(7);
+    if (!card || !expiring.length) return;
+    card.style.display = "block";
+    document.getElementById("expiryAlertCount").textContent = expiring.length;
+    document.getElementById("expiryAlertList").innerHTML = expiring.map(({ batch, info }) => `
+      <div class="noti-item" style="cursor:pointer" onclick="Router.viewBatch(${batch.id})">
+        <div class="noti-item__icon noti-item__icon--${info.days < 0 ? "red" : "orange"}"><i class="fa-solid fa-clock"></i></div>
+        <div class="noti-item__content">
+          <strong>${Helpers.escapeHtml(batch.code)} — ${Helpers.escapeHtml(batch.materialName)}</strong>
+          <span>${info.label} · NCC: ${Helpers.escapeHtml(batch.supplierName || "—")}</span>
+        </div>
+      </div>
+    `).join("");
+  })();
 
   const isThisMonth = (dateStr) => {
     const d = new Date(dateStr);

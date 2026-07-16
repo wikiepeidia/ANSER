@@ -1,0 +1,176 @@
+<!-- production-costs.html — Báo cáo giá thành thực tế & hao hụt so với định mức (mock, localStorage) -->
+<div class="content__header">
+  <h1 class="content__title">Giá thành &amp; hao hụt</h1>
+  <p class="content__subtitle">So sánh giá thành thực tế với định mức (BOM) theo từng đơn sản xuất</p>
+</div>
+
+<div class="report-toolbar">
+  <div class="chart-card__actions">
+    <button class="chart-btn active">Đơn đang/đã sản xuất</button>
+  </div>
+  <div class="report-toolbar__right">
+    <button class="btn btn--outline" onclick="Router.printSection('pcPage', 'Báo cáo giá thành &amp; hao hụt')"><i class="fa-solid fa-print"></i> In</button>
+    <button class="btn btn--primary" id="btnExportPcCSV"><i class="fa-solid fa-file-export"></i> Xuất CSV</button>
+  </div>
+</div>
+
+<div id="pcPage">
+  <div class="stats-grid stats-grid--4 report-stats">
+    <div class="stat-card">
+      <div class="stat-card__icon stat-card__icon--blue"><i class="fa-solid fa-ruler"></i></div>
+      <div class="stat-card__info"><span class="stat-card__label">Tổng định mức (NVL)</span><span class="stat-card__value" id="pcStatStandard">—</span></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-card__icon stat-card__icon--orange"><i class="fa-solid fa-money-bill-wave"></i></div>
+      <div class="stat-card__info"><span class="stat-card__label">Tổng giá thành thực tế</span><span class="stat-card__value" id="pcStatActual">—</span></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-card__icon stat-card__icon--red"><i class="fa-solid fa-triangle-exclamation"></i></div>
+      <div class="stat-card__info"><span class="stat-card__label">Tổng hao hụt</span><span class="stat-card__value" id="pcStatWaste">—</span></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-card__icon stat-card__icon--green"><i class="fa-solid fa-percent"></i></div>
+      <div class="stat-card__info"><span class="stat-card__label">Hao hụt trung bình</span><span class="stat-card__value" id="pcStatWastePct">—</span></div>
+    </div>
+  </div>
+
+  <div class="chart-card" style="margin-bottom:20px">
+    <div class="chart-card__header">
+      <div class="chart-card__title-group">
+        <h3>Giá thành thực tế so với định mức theo đơn</h3>
+        <span class="chart-card__subtitle">Đơn vị: ₫ · <em>dữ liệu mẫu, minh hoạ giao diện</em></span>
+      </div>
+      <div class="bar-chart__legend bar-chart__legend--inline">
+        <span class="legend-item"><span class="legend-dot legend-dot--revenue"></span> Định mức</span>
+        <span class="legend-item"><span class="legend-dot legend-dot--profit"></span> Thực tế</span>
+      </div>
+    </div>
+    <div class="chart-card__body">
+      <div class="bar-chart bar-chart--grouped bar-chart--profit">
+        <div class="bar-chart__inner">
+          <div class="bar-chart__y-axis" id="pcYAxis"></div>
+          <div class="bar-chart__plot">
+            <div class="bar-chart__grid" id="pcGrid"></div>
+            <div class="bar-chart__bars" id="pcBars"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="table-card">
+    <div class="table-card__header"><h3>Chi tiết theo đơn sản xuất</h3></div>
+    <div class="table-card__body">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Mã đơn</th><th>Sản phẩm</th><th>Trạng thái</th>
+            <th class="num">Định mức (NVL)</th><th class="num">Thực tế</th>
+            <th class="num">Hao hụt</th><th class="num">Hao hụt (%)</th>
+          </tr>
+        </thead>
+        <tbody id="pcTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  const rows = Store.productionOrders
+    .filter((o) => ["in_progress", "completed"].includes(o.status))
+    .map((o) => {
+      const standard = Store.getOrderCost(o);
+      const actual = Store.getActualCost(o);
+      const wasteAmt = (standard !== null && actual !== null) ? actual - standard : null;
+      const wastePct = (standard && wasteAmt !== null) ? (wasteAmt / standard) * 100 : null;
+      return { order: o, standard, actual, wasteAmt, wastePct };
+    })
+    .sort((a, b) => new Date(b.order.createdAt) - new Date(a.order.createdAt));
+
+  window.pcReportData = rows;
+
+  if (!rows.length) {
+    document.getElementById("pcPage").innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon"><i class="fa-solid fa-chart-column"></i></div>
+        <h3 class="empty-title">Chưa có đơn nào đang/đã sản xuất</h3>
+        <p class="empty-description">Báo cáo cần ít nhất 1 đơn ở trạng thái "Đang sản xuất" trở lên. Vào <a href="#production-orders">Đơn hàng sản xuất</a> để bắt đầu 1 đơn.</p>
+      </div>`;
+    return;
+  }
+
+  // Stats
+  const totalStandard = rows.reduce((s, r) => s + (r.standard || 0), 0);
+  const totalActual = rows.reduce((s, r) => s + (r.actual || 0), 0);
+  const totalWaste = totalActual - totalStandard;
+  const avgWastePct = rows.filter((r) => r.wastePct !== null).reduce((s, r, _, arr) => s + r.wastePct / arr.length, 0);
+
+  document.getElementById("pcStatStandard").textContent = Helpers.formatVNDShort(totalStandard);
+  document.getElementById("pcStatActual").textContent = Helpers.formatVNDShort(totalActual);
+  document.getElementById("pcStatWaste").textContent = (totalWaste >= 0 ? "+" : "") + Helpers.formatVNDShort(totalWaste);
+  document.getElementById("pcStatWastePct").textContent = (avgWastePct >= 0 ? "+" : "") + avgWastePct.toFixed(1) + "%";
+
+  // Chart: y-axis + grid + grouped bars
+  const maxVal = Math.max(1, ...rows.map((r) => Math.max(r.standard || 0, r.actual || 0))) * 1.15;
+  const STEPS = 5;
+  document.getElementById("pcYAxis").innerHTML = Array.from({ length: STEPS + 1 }, (_, i) => {
+    const top = (i / STEPS) * 100;
+    const val = maxVal * (1 - i / STEPS);
+    return `<span style="top:${top.toFixed(0)}%">${Helpers.formatVNDShort(val)}</span>`;
+  }).join("");
+  document.getElementById("pcGrid").innerHTML = Array.from({ length: STEPS + 1 }, (_, i) => {
+    const top = (i / STEPS) * 100;
+    return `<div class="bar-chart__grid-line${i === STEPS ? " bar-chart__grid-line--base" : ""}" style="top:${top.toFixed(0)}%"></div>`;
+  }).join("");
+  document.getElementById("pcBars").innerHTML = rows.map((r) => `
+    <div class="bar-chart__group">
+      <div class="bar-chart__pair">
+        <div class="bar-chart__item"><span class="bar-chart__bar bar-chart__bar--revenue" style="--h: ${Math.round(((r.standard || 0) / maxVal) * 100)}%"></span></div>
+        <div class="bar-chart__item"><span class="bar-chart__bar bar-chart__bar--profit" style="--h: ${Math.round(((r.actual || 0) / maxVal) * 100)}%"></span></div>
+      </div>
+      <span class="bar-chart__tooltip bar-chart__tooltip--multi">
+        <span class="bar-chart__tooltip-header">${Helpers.escapeHtml(r.order.code)}</span>
+        <span class="bar-chart__tooltip-row"><span class="bar-chart__tooltip-swatch" style="background:var(--chart-revenue)"></span><span class="bar-chart__tooltip-text">Định mức: ${Helpers.formatVND(r.standard || 0)}</span></span>
+        <span class="bar-chart__tooltip-row"><span class="bar-chart__tooltip-swatch" style="background:var(--chart-profit)"></span><span class="bar-chart__tooltip-text">Thực tế: ${Helpers.formatVND(r.actual || 0)}</span></span>
+      </span>
+      <span class="bar-chart__label">${Helpers.escapeHtml(r.order.code)}</span>
+    </div>
+  `).join("");
+
+  // Table
+  document.getElementById("pcTableBody").innerHTML = rows.map((r) => {
+    const s = Store.ORDER_STATUSES[r.order.status];
+    const wasteColor = r.wasteAmt === null ? "gray" : r.wasteAmt > 0 ? "red" : r.wasteAmt < 0 ? "green" : "gray";
+    return `
+      <tr>
+        <td>${Helpers.escapeHtml(r.order.code)}</td>
+        <td>${Helpers.escapeHtml(r.order.productName)}</td>
+        <td><span class="badge badge--${s.badge}"><i class="fa-solid ${s.icon}"></i> ${s.label}</span></td>
+        <td class="num">${r.standard !== null ? Helpers.formatVND(r.standard) : "—"}</td>
+        <td class="num">${r.actual !== null ? Helpers.formatVND(r.actual) : "—"}</td>
+        <td class="num"><span class="badge badge--${wasteColor}">${r.wasteAmt === null ? "—" : (r.wasteAmt > 0 ? "+" : "") + Helpers.formatVNDShort(r.wasteAmt)}</span></td>
+        <td class="num">${r.wastePct === null ? "—" : (r.wastePct > 0 ? "+" : "") + r.wastePct.toFixed(1) + "%"}</td>
+      </tr>
+    `;
+  }).join("");
+
+  document.getElementById("btnExportPcCSV").addEventListener("click", () => {
+    Helpers.exportCSV(`gia-thanh-hao-hut-${Helpers.formatDate(new Date()).replace(/\//g, "-")}.csv`,
+      [
+        { key: "code", label: "Mã đơn" },
+        { key: "product", label: "Sản phẩm" },
+        { key: "standard", label: "Định mức (đ)" },
+        { key: "actual", label: "Thực tế (đ)" },
+        { key: "waste", label: "Hao hụt (đ)" },
+        { key: "wastePct", label: "Hao hụt (%)" },
+      ],
+      rows.map((r) => ({
+        code: r.order.code, product: r.order.productName,
+        standard: r.standard ?? "", actual: r.actual ?? "",
+        waste: r.wasteAmt ?? "", wastePct: r.wastePct !== null ? r.wastePct.toFixed(1) : "",
+      })));
+    showToast("Đã xuất báo cáo giá thành & hao hụt!");
+  });
+})();
+</script>

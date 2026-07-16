@@ -1,0 +1,98 @@
+<!-- supplier-detail.html — Chi tiết nhà cung cấp + lịch sử lô NVL đã nhập (mock, đứng thay GET /api/suppliers/<id>/batches) -->
+<div class="content__header">
+  <div>
+    <a href="#suppliers" style="color:var(--text-muted);font-size:13px;text-decoration:none">
+      <i class="fa-solid fa-arrow-left"></i> Danh sách nhà cung cấp
+    </a>
+    <h1 class="content__title" id="sdTitle" style="margin-top:6px">Chi tiết nhà cung cấp</h1>
+    <p class="content__subtitle" id="sdSubtitle">Đang tải...</p>
+  </div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap" id="sdActions"></div>
+</div>
+
+<div id="sdNotFound" style="display:none" class="empty-state">
+  <div class="empty-icon"><i class="fa-solid fa-circle-exclamation"></i></div>
+  <h3 class="empty-title">Không tìm thấy nhà cung cấp</h3>
+  <p class="empty-description">NCC có thể đã bị xoá. Quay lại <a href="#suppliers">danh sách nhà cung cấp</a>.</p>
+</div>
+
+<div id="sdContent" style="display:none">
+  <div class="form-card">
+    <div class="form-card__header"><h3><i class="fa-solid fa-circle-info"></i> Thông tin liên hệ</h3></div>
+    <div class="form-card__body">
+      <div class="form-row">
+        <div class="form-group"><label>Người liên hệ</label><p id="sdContact" style="margin:0;font-weight:600"></p></div>
+        <div class="form-group"><label>Số điện thoại</label><p id="sdPhone" style="margin:0;font-weight:600"></p></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Email</label><p id="sdEmail" style="margin:0"></p></div>
+        <div class="form-group"><label>Địa chỉ</label><p id="sdAddress" style="margin:0"></p></div>
+      </div>
+      <div class="form-group" id="sdNotesRow" style="display:none">
+        <label>Ghi chú</label><p id="sdNotes" style="margin:0"></p>
+      </div>
+    </div>
+  </div>
+
+  <div class="table-card">
+    <div class="table-card__header"><h3><i class="fa-solid fa-boxes-stacked"></i> Lịch sử lô nguyên liệu đã nhập</h3></div>
+    <div class="table-card__body">
+      <table class="data-table">
+        <thead>
+          <tr><th>Mã lô</th><th>Nguyên vật liệu</th><th class="num">Số lượng</th><th>Ngày nhận</th><th>Hạn dùng</th><th>Trạng thái QC</th><th></th></tr>
+        </thead>
+        <tbody id="sdBatchesBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  const id = Helpers.load("selectedSupplierId", null);
+  const supplier = id ? Store.getSupplierById(id) : null;
+
+  if (!supplier) {
+    document.getElementById("sdNotFound").style.display = "block";
+    document.getElementById("sdSubtitle").textContent = "—";
+    return;
+  }
+
+  document.getElementById("sdContent").style.display = "block";
+  document.getElementById("sdTitle").textContent = supplier.name;
+  document.getElementById("sdSubtitle").innerHTML = `<span class="badge badge--blue">${Helpers.escapeHtml(supplier.code)}</span>`;
+
+  document.getElementById("sdContact").textContent = supplier.contact || "—";
+  document.getElementById("sdPhone").textContent = supplier.phone || "—";
+  document.getElementById("sdEmail").textContent = supplier.email || "—";
+  document.getElementById("sdAddress").textContent = supplier.address || "—";
+  if (supplier.notes) {
+    document.getElementById("sdNotesRow").style.display = "block";
+    document.getElementById("sdNotes").textContent = supplier.notes;
+  }
+
+  document.getElementById("sdActions").innerHTML = `
+    <button class="btn btn--outline" onclick="Router.editSupplier(${supplier.id})"><i class="fa-solid fa-pen"></i> Sửa</button>
+    <button class="btn btn--outline" onclick="Router.deleteSupplier(${supplier.id})"><i class="fa-solid fa-trash"></i> Xoá</button>
+  `;
+
+  const batches = Store.getSupplierBatches(supplier.id);
+  document.getElementById("sdBatchesBody").innerHTML = batches.length
+    ? batches.map((b) => {
+        const qc = Store.QC_STATUSES[b.qcStatus];
+        const exp = Store.expiryInfo(b.expiryDate);
+        return `
+          <tr>
+            <td>${Helpers.escapeHtml(b.code)}</td>
+            <td>${Helpers.escapeHtml(b.materialName)} <span style="color:var(--text-muted);font-size:12px">(${Helpers.escapeHtml(b.materialCode)})</span></td>
+            <td class="num">${Helpers.formatNumber(b.quantity)} ${Helpers.escapeHtml(b.unit)}</td>
+            <td>${Helpers.formatDateTime(b.receivedAt)}</td>
+            <td>${b.expiryDate ? `${Helpers.formatDate(b.expiryDate)} <span class="badge badge--${exp.badge}">${exp.label}</span>` : "—"}</td>
+            <td><span class="badge badge--${qc.badge}"><i class="fa-solid ${qc.icon}"></i> ${qc.label}</span></td>
+            <td><button class="action-btn" onclick="Router.viewBatch(${b.id})" title="Xem lô"><i class="fa-solid fa-eye"></i></button></td>
+          </tr>
+        `;
+      }).join("")
+    : `<tr><td colspan="7" style="text-align:center;color:var(--text-muted)">Chưa nhập lô nguyên liệu nào từ nhà cung cấp này</td></tr>`;
+})();
+</script>

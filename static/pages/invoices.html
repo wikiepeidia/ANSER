@@ -1,0 +1,148 @@
+<!-- invoices.html — Nhập hoá đơn NVL từ Excel + xem file đính kèm (mock, localStorage) -->
+<div class="content__header">
+  <h1 class="content__title">Nhập hoá đơn NVL (Excel)</h1>
+  <p class="content__subtitle">Tải lên file hoá đơn Excel, xem trước và kiểm tra lỗi từng dòng trước khi xác nhận nhập</p>
+</div>
+
+<div class="form-card">
+  <div class="form-card__header"><h3><i class="fa-solid fa-file-excel"></i> Tải lên hoá đơn</h3></div>
+  <div class="form-card__body">
+    <div class="form-group">
+      <label for="invoiceFile">Chọn file Excel</label>
+      <input type="file" id="invoiceFile" accept=".xlsx,.xls,.csv" />
+    </div>
+    <p style="font-size:12px;color:var(--text-muted);margin:0">
+      <i class="fa-solid fa-circle-info"></i> Demo: hệ thống chưa có bộ đọc Excel thật — bảng xem trước bên dưới là dữ liệu minh hoạ sinh theo tên/kích thước file bạn chọn, dùng để demo luồng kiểm tra lỗi trước khi nhập.
+    </p>
+  </div>
+</div>
+
+<div class="table-card" id="invoicePreviewCard" style="display:none">
+  <div class="table-card__header">
+    <h3>Xem trước: <span id="invoicePreviewFileName"></span></h3>
+    <span id="invoicePreviewSummary" style="font-size:13px"></span>
+  </div>
+  <div class="table-card__body">
+    <table class="data-table">
+      <thead>
+        <tr><th>Dòng</th><th>Mã SP</th><th>Tên SP</th><th class="num">Số lượng</th><th class="num">Đơn giá</th><th>Kiểm tra</th><th></th></tr>
+      </thead>
+      <tbody id="invoicePreviewBody"></tbody>
+    </table>
+  </div>
+  <div class="form-card__footer" style="display:flex;gap:12px;align-items:center">
+    <button class="btn btn--primary" id="btnConfirmInvoice" disabled><i class="fa-solid fa-check"></i> Xác nhận nhập</button>
+    <button class="btn btn--outline" id="btnCancelInvoicePreview">Huỷ</button>
+    <span id="invoiceConfirmHint" style="font-size:12px;color:var(--stat-red-icon)"></span>
+  </div>
+</div>
+
+<div class="table-card">
+  <div class="table-card__header"><h3><i class="fa-solid fa-clock-rotate-left"></i> Lịch sử hoá đơn đã nhập</h3></div>
+  <div class="table-card__body">
+    <table class="data-table">
+      <thead>
+        <tr><th>Mã hoá đơn</th><th>Tên file</th><th class="num">Số dòng</th><th>Ngày nhập</th><th>Trạng thái</th><th>File gốc</th></tr>
+      </thead>
+      <tbody id="invoiceHistoryBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+(function () {
+  let pendingRows = [];
+  let pendingFile = null;
+
+  function renderPreview() {
+    const card = document.getElementById("invoicePreviewCard");
+    if (!pendingFile) { card.style.display = "none"; return; }
+    card.style.display = "block";
+    document.getElementById("invoicePreviewFileName").textContent = pendingFile.name;
+    const errCount = pendingRows.filter((r) => r.error).length;
+    document.getElementById("invoicePreviewSummary").innerHTML =
+      `${pendingRows.length} dòng · <strong style="color:${errCount ? "var(--stat-red-icon)" : "var(--stat-green-icon)"}">${errCount} dòng lỗi</strong>`;
+
+    document.getElementById("invoicePreviewBody").innerHTML = pendingRows.map((r, idx) => `
+      <tr style="${r.error ? "background:var(--badge-red-bg)" : ""}">
+        <td>${r.row}</td>
+        <td>${Helpers.escapeHtml(r.productCode)}</td>
+        <td>${r.productName ? Helpers.escapeHtml(r.productName) : `<span style="color:var(--text-muted)">—</span>`}</td>
+        <td class="num">${Helpers.formatNumber(r.quantity)}</td>
+        <td class="num">${Helpers.formatVND(r.unitPrice)}</td>
+        <td>${r.error
+          ? `<span style="color:var(--stat-red-icon);font-weight:600;font-size:12.5px"><i class="fa-solid fa-triangle-exclamation"></i> ${Helpers.escapeHtml(r.error)}</span>`
+          : `<i class="fa-solid fa-circle-check" style="color:var(--stat-green-icon)"></i>`}</td>
+        <td>${r.error ? `<button class="action-btn action-btn--danger" onclick="window.__removeInvoiceRow(${idx})" title="Xoá dòng lỗi này"><i class="fa-solid fa-trash"></i></button>` : ""}</td>
+      </tr>
+    `).join("");
+
+    const btn = document.getElementById("btnConfirmInvoice");
+    btn.disabled = errCount > 0 || !pendingRows.length;
+    document.getElementById("invoiceConfirmHint").textContent =
+      errCount > 0 ? `Cần xoá ${errCount} dòng lỗi trước khi xác nhận nhập` : "";
+  }
+
+  window.__removeInvoiceRow = function (idx) {
+    pendingRows.splice(idx, 1);
+    renderPreview();
+  };
+
+  document.getElementById("invoiceFile").addEventListener("change", (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    pendingFile = file;
+    pendingRows = Store.parseExcelMock(file);
+    renderPreview();
+  });
+
+  document.getElementById("btnCancelInvoicePreview").addEventListener("click", () => {
+    pendingFile = null;
+    pendingRows = [];
+    document.getElementById("invoiceFile").value = "";
+    renderPreview();
+  });
+
+  document.getElementById("btnConfirmInvoice").addEventListener("click", () => {
+    if (!pendingFile || !pendingRows.length) return;
+    let fileUrl = null;
+    try { fileUrl = URL.createObjectURL(pendingFile); } catch (err) { /* no-op */ }
+    Store.createInvoice({
+      fileName: pendingFile.name,
+      fileSize: pendingFile.size,
+      lineItems: pendingRows,
+      fileUrl,
+    });
+    showToast("Đã nhập hoá đơn thành công!");
+    pendingFile = null;
+    pendingRows = [];
+    document.getElementById("invoiceFile").value = "";
+    renderPreview();
+    renderHistory();
+  });
+
+  function renderHistory() {
+    const body = document.getElementById("invoiceHistoryBody");
+    const invoices = Store.invoices;
+    body.innerHTML = invoices.length
+      ? invoices.map((inv) => `
+          <tr>
+            <td>${Helpers.escapeHtml(inv.code)}</td>
+            <td>${Helpers.escapeHtml(inv.fileName)}</td>
+            <td class="num">${inv.lineItems.length}</td>
+            <td>${Helpers.formatDateTime(inv.uploadedAt)}</td>
+            <td><span class="badge badge--green">Đã nhập</span></td>
+            <td>
+              ${inv.fileUrl
+                ? `<a class="action-btn" href="${inv.fileUrl}" target="_blank" rel="noopener" title="Xem file"><i class="fa-solid fa-eye"></i></a>
+                   <a class="action-btn" href="${inv.fileUrl}" download="${Helpers.escapeHtml(inv.fileName)}" title="Tải file"><i class="fa-solid fa-download"></i></a>`
+                : `<span style="color:var(--text-muted);font-size:12px" title="Demo chưa có lưu trữ file thật — file gốc chỉ xem được trong phiên vừa tải lên">Không khả dụng</span>`}
+            </td>
+          </tr>
+        `).join("")
+      : `<tr><td colspan="6" style="text-align:center;color:var(--text-muted)">Chưa có hoá đơn nào</td></tr>`;
+  }
+
+  renderHistory();
+})();
+</script>

@@ -1,0 +1,146 @@
+<!-- production-orders.html — Danh sách đơn hàng sản xuất (mock, localStorage) -->
+<div class="content__header">
+  <h1 class="content__title">Đơn hàng sản xuất</h1>
+  <p class="content__subtitle">Quản lý lệnh sản xuất · Tổng: <strong id="orderTotal">0</strong> đơn</p>
+</div>
+
+<div class="toolbar">
+  <div class="toolbar__filters">
+    <div class="toolbar__search">
+      <i class="fa-solid fa-magnifying-glass"></i>
+      <input type="text" id="orderSearch" placeholder="Tìm mã đơn, sản phẩm, khách hàng..." />
+    </div>
+    <select class="filter-select" id="filterOrderStatus">
+      <option value="">Tất cả trạng thái</option>
+    </select>
+  </div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap">
+    <button class="btn btn--primary" id="btnAddOrder">
+      <i class="fa-solid fa-plus"></i> Tạo đơn sản xuất
+    </button>
+  </div>
+</div>
+
+<div class="table-card" id="ordersTableCard">
+  <div class="table-card__body">
+    <table class="data-table" id="orderTable">
+      <thead>
+        <tr>
+          <th>Mã đơn</th>
+          <th>Sản phẩm</th>
+          <th class="num">Số lượng</th>
+          <th>Khách hàng</th>
+          <th>Trạng thái</th>
+          <th>Ngày tạo</th>
+          <th style="width: 170px">Hành động</th>
+        </tr>
+      </thead>
+      <tbody id="orderTableBody"></tbody>
+    </table>
+  </div>
+  <div class="pagination">
+    <span class="pagination__info" id="orderPaginationInfo">Hiển thị 1-8</span>
+    <div class="pagination__controls" id="orderPaginationControls"></div>
+  </div>
+</div>
+
+<script>
+(function () {
+  let currentPage = 1;
+  const PAGE_SIZE = 8;
+
+  // Điền dropdown lọc trạng thái từ Store.ORDER_STATUSES (tránh lặp danh sách trạng thái ở 2 nơi)
+  const filterStatusEl = document.getElementById("filterOrderStatus");
+  Object.entries(Store.ORDER_STATUSES).forEach(([key, s]) => {
+    const opt = document.createElement("option");
+    opt.value = key;
+    opt.textContent = s.label;
+    filterStatusEl.appendChild(opt);
+  });
+
+  function filtered() {
+    const q = document.getElementById("orderSearch").value.toLowerCase();
+    const status = filterStatusEl.value;
+    return Store.productionOrders
+      .filter((o) => {
+        if (status && o.status !== status) return false;
+        if (q && !(`${o.code} ${o.productName} ${o.productCode} ${o.customerName}`.toLowerCase().includes(q))) return false;
+        return true;
+      })
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  }
+
+  // Nút hành động chính (chuyển trạng thái kế tiếp, không tính huỷ) + nút phụ
+  function nextAction(order) {
+    const nexts = (Store.ORDER_STATUS_FLOW[order.status] || []).filter((s) => s !== "cancelled");
+    if (!nexts.length) return null;
+    const to = nexts[0];
+    const label = Store.ORDER_TRANSITION_LABELS[`${order.status}>${to}`] || "Chuyển trạng thái";
+    return { to, label };
+  }
+
+  function renderRow(o) {
+    const s = Store.ORDER_STATUSES[o.status];
+    const action = nextAction(o);
+    const canCancel = (Store.ORDER_STATUS_FLOW[o.status] || []).includes("cancelled");
+    const canEdit = o.status === "draft";
+    const canDelete = o.status === "draft" || o.status === "cancelled";
+    return `
+      <tr data-id="${o.id}">
+        <td>${Helpers.tableAvatar(o.code, o.code, "")}</td>
+        <td>${Helpers.escapeHtml(o.productName)}<br><span style="color:var(--text-muted);font-size:12px">${Helpers.escapeHtml(o.productCode)}</span></td>
+        <td class="num">${Helpers.formatNumber(o.quantity)} ${Helpers.escapeHtml(o.unit)}</td>
+        <td>${Helpers.escapeHtml(o.customerName || "—")}</td>
+        <td><span class="badge badge--${s.badge}"><i class="fa-solid ${s.icon}"></i> ${s.label}</span></td>
+        <td>${Helpers.formatDate(o.createdAt)}</td>
+        <td>
+          <button class="action-btn" onclick="Router.viewOrder(${o.id})" title="Xem chi tiết"><i class="fa-solid fa-eye"></i></button>
+          ${canEdit ? `<button class="action-btn" onclick="Router.editOrder(${o.id})" title="Sửa"><i class="fa-solid fa-pen"></i></button>` : ""}
+          ${action ? `<button class="action-btn" onclick="Router.transitionOrder(${o.id}, '${action.to}')" title="${action.label}"><i class="fa-solid fa-arrow-right"></i></button>` : ""}
+          ${canCancel ? `<button class="action-btn action-btn--danger" onclick="Router.transitionOrder(${o.id}, 'cancelled')" title="Huỷ đơn"><i class="fa-solid fa-ban"></i></button>` : ""}
+          ${canDelete ? `<button class="action-btn action-btn--danger" onclick="Router.deleteOrder(${o.id})" title="Xoá"><i class="fa-solid fa-trash"></i></button>` : ""}
+        </td>
+      </tr>
+    `;
+  }
+
+  function renderTable() {
+    const all = filtered();
+    document.getElementById("orderTotal").textContent = Store.productionOrders.length;
+    const totalPages = Math.max(1, Math.ceil(all.length / PAGE_SIZE));
+    if (currentPage > totalPages) currentPage = totalPages;
+    const start = (currentPage - 1) * PAGE_SIZE;
+    const pageRows = all.slice(start, start + PAGE_SIZE);
+    const tbody = document.getElementById("orderTableBody");
+    tbody.innerHTML = pageRows.length
+      ? pageRows.map(renderRow).join("")
+      : `<tr><td colspan="7" style="text-align:center;color:var(--text-muted)">Không có đơn hàng nào</td></tr>`;
+
+    document.getElementById("orderPaginationInfo").textContent = all.length
+      ? `Hiển thị ${start + 1}-${Math.min(start + PAGE_SIZE, all.length)} / ${all.length}`
+      : "Không có dữ liệu";
+    const ctrls = document.getElementById("orderPaginationControls");
+    let html = `<button class="page-btn" data-pg="${Math.max(1, currentPage - 1)}" ${currentPage === 1 ? "disabled" : ""}><i class="fa-solid fa-chevron-left"></i></button>`;
+    for (let i = 1; i <= totalPages; i++) {
+      html += `<button class="page-btn ${i === currentPage ? "active" : ""}" data-pg="${i}">${i}</button>`;
+    }
+    html += `<button class="page-btn" data-pg="${Math.min(totalPages, currentPage + 1)}" ${currentPage === totalPages ? "disabled" : ""}><i class="fa-solid fa-chevron-right"></i></button>`;
+    ctrls.innerHTML = html;
+    ctrls.querySelectorAll(".page-btn").forEach((b) => {
+      b.addEventListener("click", () => {
+        const p = parseInt(b.dataset.pg);
+        if (p && !isNaN(p)) { currentPage = p; renderTable(); }
+      });
+    });
+  }
+
+  document.getElementById("orderSearch").addEventListener("input", () => { currentPage = 1; renderTable(); });
+  filterStatusEl.addEventListener("change", () => { currentPage = 1; renderTable(); });
+
+  document.getElementById("btnAddOrder").addEventListener("click", () => {
+    Router.editOrder(null);
+  });
+
+  renderTable();
+})();
+</script>

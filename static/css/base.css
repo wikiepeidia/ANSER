@@ -339,7 +339,10 @@ img {
 }
 
 .sidebar__group.open .sidebar__submenu {
-  max-height: 200px;
+  /* Đủ chỗ cho nhóm dài nhất hiện tại (Sản xuất: 7 mục) + dư cho các mục
+     thêm sau này — max-height chỉ là đích cho hiệu ứng transition, không
+     cần khớp chính xác chiều cao thật. */
+  max-height: 500px;
 }
 
 .sidebar__submenu-item {

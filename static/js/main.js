@@ -170,6 +170,289 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // Production Order Modal
+  const orderModal = document.getElementById("orderModal");
+  const orderModalClose = document.getElementById("orderModalClose");
+  const orderModalOverlay = document.getElementById("orderModalOverlay");
+  const btnCancelOrderModal = document.getElementById("btnCancelOrderModal");
+  const orderForm = document.getElementById("orderForm");
+
+  if (orderModal && orderModalClose) {
+    orderModalClose.addEventListener("click", () => orderModal.classList.remove("open"));
+  }
+  if (orderModal && orderModalOverlay) {
+    orderModalOverlay.addEventListener("click", () => orderModal.classList.remove("open"));
+  }
+  if (btnCancelOrderModal) {
+    btnCancelOrderModal.addEventListener("click", () => orderModal.classList.remove("open"));
+  }
+  if (orderForm) {
+    orderForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      if (window.Router && typeof window.Router.saveOrderForm === "function") {
+        window.Router.saveOrderForm(e);
+      } else {
+        orderModal.classList.remove("open");
+        showToast("Đã lưu đơn hàng!");
+      }
+    });
+  }
+
+  // Material Batch Modal
+  const batchModal = document.getElementById("batchModal");
+  const batchModalClose = document.getElementById("batchModalClose");
+  const batchModalOverlay = document.getElementById("batchModalOverlay");
+  const btnCancelBatchModal = document.getElementById("btnCancelBatchModal");
+  const batchForm = document.getElementById("batchForm");
+
+  if (batchModal && batchModalClose) {
+    batchModalClose.addEventListener("click", () => batchModal.classList.remove("open"));
+  }
+  if (batchModal && batchModalOverlay) {
+    batchModalOverlay.addEventListener("click", () => batchModal.classList.remove("open"));
+  }
+  if (btnCancelBatchModal) {
+    btnCancelBatchModal.addEventListener("click", () => batchModal.classList.remove("open"));
+  }
+  if (batchForm) {
+    batchForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      if (window.Router && typeof window.Router.saveBatchForm === "function") {
+        window.Router.saveBatchForm(e);
+      } else {
+        batchModal.classList.remove("open");
+        showToast("Đã lưu lô nguyên liệu!");
+      }
+    });
+  }
+
+  // QC Result Modal
+  const qcModal = document.getElementById("qcModal");
+  const qcModalClose = document.getElementById("qcModalClose");
+  const qcModalOverlay = document.getElementById("qcModalOverlay");
+  const btnCancelQCModal = document.getElementById("btnCancelQCModal");
+  const qcForm = document.getElementById("qcForm");
+
+  if (qcModal && qcModalClose) {
+    qcModalClose.addEventListener("click", () => qcModal.classList.remove("open"));
+  }
+  if (qcModal && qcModalOverlay) {
+    qcModalOverlay.addEventListener("click", () => qcModal.classList.remove("open"));
+  }
+  if (btnCancelQCModal) {
+    btnCancelQCModal.addEventListener("click", () => qcModal.classList.remove("open"));
+  }
+  if (qcForm) {
+    qcForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      if (window.Router && typeof window.Router.saveQCForm === "function") {
+        window.Router.saveQCForm(e);
+      } else {
+        qcModal.classList.remove("open");
+        showToast("Đã lưu kết quả kiểm định!");
+      }
+    });
+  }
+
+  // Batch Process Event Modal
+  const batchEventModal = document.getElementById("batchEventModal");
+  const batchEventModalClose = document.getElementById("batchEventModalClose");
+  const batchEventModalOverlay = document.getElementById("batchEventModalOverlay");
+  const btnCancelBatchEventModal = document.getElementById("btnCancelBatchEventModal");
+  const batchEventForm = document.getElementById("batchEventForm");
+
+  if (batchEventModal && batchEventModalClose) {
+    batchEventModalClose.addEventListener("click", () => batchEventModal.classList.remove("open"));
+  }
+  if (batchEventModal && batchEventModalOverlay) {
+    batchEventModalOverlay.addEventListener("click", () => batchEventModal.classList.remove("open"));
+  }
+  if (btnCancelBatchEventModal) {
+    btnCancelBatchEventModal.addEventListener("click", () => batchEventModal.classList.remove("open"));
+  }
+  if (batchEventForm) {
+    batchEventForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      if (window.Router && typeof window.Router.saveBatchEventForm === "function") {
+        window.Router.saveBatchEventForm(e);
+      } else {
+        batchEventModal.classList.remove("open");
+        showToast("Đã ghi sự kiện!");
+      }
+    });
+  }
+
+  // Warehouse Transfer Modal
+  const transferModal = document.getElementById("transferModal");
+  const transferModalClose = document.getElementById("transferModalClose");
+  const transferModalOverlay = document.getElementById("transferModalOverlay");
+  const btnCancelTransferModal = document.getElementById("btnCancelTransferModal");
+  const transferForm = document.getElementById("transferForm");
+
+  if (transferModal && transferModalClose) {
+    transferModalClose.addEventListener("click", () => transferModal.classList.remove("open"));
+  }
+  if (transferModal && transferModalOverlay) {
+    transferModalOverlay.addEventListener("click", () => transferModal.classList.remove("open"));
+  }
+  if (btnCancelTransferModal) {
+    btnCancelTransferModal.addEventListener("click", () => transferModal.classList.remove("open"));
+  }
+  if (transferForm) {
+    transferForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      if (window.Router && typeof window.Router.saveTransferForm === "function") {
+        window.Router.saveTransferForm(e);
+      } else {
+        transferModal.classList.remove("open");
+        showToast("Đã chuyển kho!");
+      }
+    });
+  }
+
+  // Transfer modal: cascading selects (kho -> vị trí) + tồn kho theo vị trí info
+  function populateLocationSelect(selectEl, warehouseId, placeholder) {
+    selectEl.innerHTML = "";
+    if (!warehouseId) {
+      selectEl.innerHTML = `<option value="">${placeholder}</option>`;
+      return;
+    }
+    const locs = window.Store ? Store.getLocationsForWarehouse(warehouseId) : [];
+    selectEl.innerHTML = `<option value="">Chọn vị trí</option>` +
+      locs.map((l) => `<option value="${l.id}">${l.code} — ${l.name}</option>`).join("");
+  }
+
+  function updateTransferStockInfo() {
+    const infoEl = document.getElementById("transferStockInfo");
+    if (!infoEl || !window.Store) return;
+    const code = document.getElementById("transferProduct").value;
+    if (!code) { infoEl.textContent = ""; return; }
+    const rows = Store.warehouseStock.filter((s) => s.productCode === code);
+    if (!rows.length) { infoEl.textContent = "Sản phẩm này chưa có tồn kho ở kho nào."; return; }
+    infoEl.textContent = "Tồn hiện tại: " + rows.map((r) => {
+      const wh = Store.getWarehouseById(r.warehouseId);
+      const loc = Store.getLocationById(r.locationId);
+      return `${wh?.code}/${loc?.code}: ${r.quantity}`;
+    }).join(" · ");
+  }
+
+  const transferFromWarehouse = document.getElementById("transferFromWarehouse");
+  const transferToWarehouse = document.getElementById("transferToWarehouse");
+  const transferProductSel = document.getElementById("transferProduct");
+  if (transferFromWarehouse) {
+    transferFromWarehouse.addEventListener("change", () => {
+      populateLocationSelect(document.getElementById("transferFromLocation"), transferFromWarehouse.value, "Chọn kho nguồn trước");
+    });
+  }
+  if (transferToWarehouse) {
+    transferToWarehouse.addEventListener("change", () => {
+      populateLocationSelect(document.getElementById("transferToLocation"), transferToWarehouse.value, "Chọn kho đích trước");
+    });
+  }
+  if (transferProductSel) {
+    transferProductSel.addEventListener("change", updateTransferStockInfo);
+  }
+
+  // Stock Count (Kiểm kê) Modal
+  const stockCountModal = document.getElementById("stockCountModal");
+  const stockCountModalClose = document.getElementById("stockCountModalClose");
+  const stockCountModalOverlay = document.getElementById("stockCountModalOverlay");
+  const btnCancelStockCountModal = document.getElementById("btnCancelStockCountModal");
+  const stockCountForm = document.getElementById("stockCountForm");
+
+  if (stockCountModal && stockCountModalClose) {
+    stockCountModalClose.addEventListener("click", () => stockCountModal.classList.remove("open"));
+  }
+  if (stockCountModal && stockCountModalOverlay) {
+    stockCountModalOverlay.addEventListener("click", () => stockCountModal.classList.remove("open"));
+  }
+  if (btnCancelStockCountModal) {
+    btnCancelStockCountModal.addEventListener("click", () => stockCountModal.classList.remove("open"));
+  }
+  if (stockCountForm) {
+    stockCountForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      if (window.Router && typeof window.Router.saveStockCountForm === "function") {
+        window.Router.saveStockCountForm(e);
+      } else {
+        stockCountModal.classList.remove("open");
+        showToast("Đã lưu kết quả kiểm kê!");
+      }
+    });
+  }
+
+  function updateCountSystemQty() {
+    const warehouseId = document.getElementById("countWarehouse").value;
+    const locationId = document.getElementById("countLocation").value;
+    const code = document.getElementById("countProduct").value;
+    const sysEl = document.getElementById("countSystemQty");
+    if (!warehouseId || !locationId || !code || !window.Store) {
+      sysEl.textContent = "—";
+      document.getElementById("countDiff").textContent = "—";
+      return;
+    }
+    const row = Store.warehouseStock.find((s) =>
+      s.warehouseId === Number(warehouseId) && s.locationId === Number(locationId) && s.productCode === code);
+    const sysQty = row ? row.quantity : 0;
+    sysEl.textContent = Helpers.formatNumber(sysQty);
+    sysEl.dataset.systemQty = sysQty;
+    updateCountDiff();
+  }
+
+  function updateCountDiff() {
+    const sysEl = document.getElementById("countSystemQty");
+    const actualEl = document.getElementById("countActualQty");
+    const diffEl = document.getElementById("countDiff");
+    const sysQty = Number(sysEl.dataset.systemQty || 0);
+    const actual = parseFloat(actualEl.value);
+    if (isNaN(actual)) { diffEl.textContent = "—"; diffEl.style.color = ""; return; }
+    const diff = actual - sysQty;
+    diffEl.textContent = (diff > 0 ? "+" : "") + Helpers.formatNumber(diff);
+    diffEl.style.color = diff === 0 ? "var(--stat-green-icon)" : diff > 0 ? "var(--stat-blue-icon)" : "var(--stat-red-icon)";
+  }
+
+  const countWarehouse = document.getElementById("countWarehouse");
+  const countLocation = document.getElementById("countLocation");
+  const countProduct = document.getElementById("countProduct");
+  const countActualQty = document.getElementById("countActualQty");
+  if (countWarehouse) {
+    countWarehouse.addEventListener("change", () => {
+      populateLocationSelect(countLocation, countWarehouse.value, "Chọn kho trước");
+      updateCountSystemQty();
+    });
+  }
+  if (countLocation) countLocation.addEventListener("change", updateCountSystemQty);
+  if (countProduct) countProduct.addEventListener("change", updateCountSystemQty);
+  if (countActualQty) countActualQty.addEventListener("input", updateCountDiff);
+
+  // Supplier Modal
+  const supplierModal = document.getElementById("supplierModal");
+  const supplierModalClose = document.getElementById("supplierModalClose");
+  const supplierModalOverlay = document.getElementById("supplierModalOverlay");
+  const btnCancelSupplierModal = document.getElementById("btnCancelSupplierModal");
+  const supplierForm = document.getElementById("supplierForm");
+
+  if (supplierModal && supplierModalClose) {
+    supplierModalClose.addEventListener("click", () => supplierModal.classList.remove("open"));
+  }
+  if (supplierModal && supplierModalOverlay) {
+    supplierModalOverlay.addEventListener("click", () => supplierModal.classList.remove("open"));
+  }
+  if (btnCancelSupplierModal) {
+    btnCancelSupplierModal.addEventListener("click", () => supplierModal.classList.remove("open"));
+  }
+  if (supplierForm) {
+    supplierForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      if (window.Router && typeof window.Router.saveSupplierForm === "function") {
+        window.Router.saveSupplierForm(e);
+      } else {
+        supplierModal.classList.remove("open");
+        showToast("Đã lưu nhà cung cấp!");
+      }
+    });
+  }
+
   // Delete Modal — uses Router to actually delete
   const deleteModal = document.getElementById("deleteModal");
   const deleteClose = document.getElementById("deleteClose");
@@ -203,6 +486,13 @@ document.addEventListener("DOMContentLoaded", () => {
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") {
       productModal?.classList.remove("open");
+      orderModal?.classList.remove("open");
+      batchModal?.classList.remove("open");
+      qcModal?.classList.remove("open");
+      batchEventModal?.classList.remove("open");
+      transferModal?.classList.remove("open");
+      stockCountModal?.classList.remove("open");
+      supplierModal?.classList.remove("open");
       deleteModal?.classList.remove("open");
       const notiPanel = document.getElementById("notiPanel");
       if (notiPanel) notiPanel.classList.remove("open");
@@ -241,6 +531,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function mapQueryToRoute(q) {
     if (/(báo cáo|doanh thu|lợi nhuận|tồn kho)/.test(q)) return "reports";
+    if (/(đơn hàng sản xuất|đơn sản xuất|production)/.test(q)) return "production-orders";
+    if (/(nhà cung cấp|ncc)/.test(q)) return "suppliers";
+    if (/(quản lý kho|chuyển kho|kiểm kê|vị trí kho)/.test(q)) return "warehouses";
+    if (/(nhật ký quy trình|quy trình sản xuất)/.test(q)) return "batch-logs";
+    if (/(kiểm định|qc)/.test(q)) return "qc";
+    if (/(lô nguyên liệu|truy xuất)/.test(q)) return "material-batches";
+    if (/(bom|định mức|nguyên vật liệu|nvl)/.test(q)) return "bom";
     if (/(sản phẩm|sp|hàng)/.test(q)) return "products";
     if (/(nhập)/.test(q)) return "import";
     if (/(xuất)/.test(q)) return "export";

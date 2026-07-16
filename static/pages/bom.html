@@ -1,0 +1,201 @@
+<!-- bom.html — Định mức nguyên vật liệu (BOM) theo sản phẩm (mock, localStorage) -->
+<div class="content__header">
+  <h1 class="content__title">Định mức nguyên vật liệu (BOM)</h1>
+  <p class="content__subtitle">Chọn 1 sản phẩm để xem/sửa danh sách NVL, và tính trước nhu cầu vật tư theo số lượng sản xuất dự kiến</p>
+</div>
+
+<div class="form-card">
+  <div class="form-card__body">
+    <div class="form-group" style="max-width:420px">
+      <label for="bomProduct">Sản phẩm</label>
+      <select id="bomProduct">
+        <option value="">Chọn sản phẩm</option>
+      </select>
+    </div>
+  </div>
+</div>
+
+<div id="bomEmptyState" class="empty-state">
+  <div class="empty-icon"><i class="fa-solid fa-boxes-stacked"></i></div>
+  <h3 class="empty-title">Chọn sản phẩm để xem định mức</h3>
+  <p class="empty-description">Chọn 1 sản phẩm ở trên để xem hoặc chỉnh sửa danh sách nguyên vật liệu cần dùng cho 1 đơn vị sản phẩm.</p>
+</div>
+
+<div id="bomEditorSection" style="display:none">
+  <div class="table-card">
+    <div class="table-card__header">
+      <h3><i class="fa-solid fa-list-check"></i> Danh sách nguyên vật liệu / 1 đơn vị sản phẩm</h3>
+      <button class="btn btn--outline btn--sm" id="btnAddBomRow">
+        <i class="fa-solid fa-plus"></i> Thêm NVL
+      </button>
+    </div>
+    <p id="bomStatusNote" style="padding:0 20px;margin:10px 0;font-size:12px;color:var(--text-muted)"></p>
+    <div class="table-card__body">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Mã NVL</th><th>Tên NVL</th><th>Đơn vị</th>
+            <th class="num">Định mức/SP</th><th class="num">Đơn giá (₫)</th><th></th>
+          </tr>
+        </thead>
+        <tbody id="bomRowsBody"></tbody>
+      </table>
+    </div>
+    <div class="form-card__footer" style="display:flex;align-items:center;gap:12px">
+      <button class="btn btn--primary" id="btnSaveBom">
+        <i class="fa-solid fa-floppy-disk"></i> Lưu định mức
+      </button>
+      <span id="bomSavedInfo" style="font-size:12.5px;color:var(--text-muted)"></span>
+    </div>
+  </div>
+
+  <div class="table-card">
+    <div class="table-card__header">
+      <h3><i class="fa-solid fa-calculator"></i> Tính nhu cầu vật tư theo số lượng dự kiến</h3>
+    </div>
+    <div class="table-card__body" style="padding:20px">
+      <div class="form-row" style="align-items:flex-end;gap:16px">
+        <div class="form-group" style="max-width:220px;margin:0">
+          <label for="bomCalcQty">Số lượng sản xuất dự kiến</label>
+          <input type="number" id="bomCalcQty" min="1" value="100" />
+        </div>
+        <button class="btn btn--primary" id="btnCalcBom">
+          <i class="fa-solid fa-calculator"></i> Tính cho X đơn vị
+        </button>
+      </div>
+      <div id="bomCalcResult" style="display:none;margin-top:20px">
+        <table class="data-table">
+          <thead>
+            <tr><th>Mã NVL</th><th>Tên NVL</th><th class="num">Số lượng cần</th><th class="num">Đơn giá</th><th class="num">Thành tiền</th></tr>
+          </thead>
+          <tbody id="bomCalcBody"></tbody>
+        </table>
+        <div class="form-summary">
+          <div class="form-summary__row form-summary__row--total">
+            <span>Tổng chi phí NVL ước tính:</span><strong id="bomCalcTotal">—</strong>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  const productSelect = document.getElementById("bomProduct");
+  const emptyState = document.getElementById("bomEmptyState");
+  const editorSection = document.getElementById("bomEditorSection");
+  const rowsBody = document.getElementById("bomRowsBody");
+  const statusNote = document.getElementById("bomStatusNote");
+  const savedInfo = document.getElementById("bomSavedInfo");
+  const calcResult = document.getElementById("bomCalcResult");
+
+  productSelect.innerHTML = `<option value="">Chọn sản phẩm</option>` +
+    Store.products.map((p) => `<option value="${Helpers.escapeHtml(p.code)}">${Helpers.escapeHtml(p.code)} — ${Helpers.escapeHtml(p.name)}</option>`).join("");
+
+  function rowTemplate(line) {
+    const l = line || { code: "", name: "", unit: "cái", qtyPerUnit: "", unitCost: "" };
+    const tr = document.createElement("tr");
+    tr.className = "bom-item-row";
+    tr.innerHTML = `
+      <td><input type="text" class="table-input bom-code" placeholder="NVL-xxx" value="${Helpers.escapeHtml(l.code)}" /></td>
+      <td><input type="text" class="table-input bom-name" placeholder="Tên nguyên vật liệu" value="${Helpers.escapeHtml(l.name)}" /></td>
+      <td><input type="text" class="table-input bom-unit" placeholder="cái" value="${Helpers.escapeHtml(l.unit)}" style="width:80px" /></td>
+      <td><input type="number" class="table-input bom-qty" min="0" step="0.1" value="${l.qtyPerUnit}" style="width:100px" /></td>
+      <td><input type="number" class="table-input bom-cost" min="0" value="${l.unitCost}" style="width:120px" /></td>
+      <td><button class="action-btn action-btn--danger btn-remove-bom-row"><i class="fa-solid fa-trash"></i></button></td>
+    `;
+    return tr;
+  }
+
+  function renderRows(lines) {
+    rowsBody.innerHTML = "";
+    (lines.length ? lines : [null]).forEach((l) => rowsBody.appendChild(rowTemplate(l)));
+  }
+
+  function renderStatusNote(productCode) {
+    if (Store.hasCustomBOM(productCode)) {
+      statusNote.innerHTML = `<i class="fa-solid fa-circle-check"></i> Định mức đã được lưu cho sản phẩm này.`;
+    } else {
+      statusNote.innerHTML = `<i class="fa-solid fa-circle-info"></i> Sản phẩm này chưa có định mức — đang hiện gợi ý tự động, kiểm tra rồi bấm "Lưu định mức" để xác nhận.`;
+    }
+    savedInfo.textContent = "";
+  }
+
+  function loadProduct(code) {
+    calcResult.style.display = "none";
+    if (!code) {
+      emptyState.style.display = "block";
+      editorSection.style.display = "none";
+      return;
+    }
+    emptyState.style.display = "none";
+    editorSection.style.display = "block";
+    renderRows(Store.getBOMForProduct(code));
+    renderStatusNote(code);
+  }
+
+  productSelect.addEventListener("change", () => loadProduct(productSelect.value));
+
+  document.getElementById("btnAddBomRow").addEventListener("click", () => {
+    rowsBody.appendChild(rowTemplate(null));
+  });
+
+  rowsBody.addEventListener("click", (e) => {
+    if (e.target.closest(".btn-remove-bom-row")) {
+      const row = e.target.closest("tr");
+      if (row && rowsBody.querySelectorAll(".bom-item-row").length > 1) {
+        row.remove();
+      } else if (row) {
+        row.replaceWith(rowTemplate(null));
+      }
+    }
+  });
+
+  document.getElementById("btnSaveBom").addEventListener("click", () => {
+    const code = productSelect.value;
+    if (!code) return;
+    const lines = Array.from(rowsBody.querySelectorAll(".bom-item-row")).map((r) => ({
+      code: r.querySelector(".bom-code").value.trim(),
+      name: r.querySelector(".bom-name").value.trim(),
+      unit: r.querySelector(".bom-unit").value.trim(),
+      qtyPerUnit: r.querySelector(".bom-qty").value,
+      unitCost: r.querySelector(".bom-cost").value,
+    }));
+    try {
+      const saved = Store.saveBOMForProduct(code, lines);
+      renderRows(saved);
+      renderStatusNote(code);
+      savedInfo.textContent = `Đã lưu lúc ${Helpers.formatDateTime(new Date())}`;
+      showToast("Đã lưu định mức nguyên vật liệu!");
+    } catch (err) {
+      showToast(err.message || "Lỗi lưu định mức", "warning");
+    }
+  });
+
+  // "Tính cho X đơn vị" — mock cho POST /api/bom/calculate (xem
+  // Store.calculateBOMForQuantity trong store.js).
+  document.getElementById("btnCalcBom").addEventListener("click", () => {
+    const code = productSelect.value;
+    const qty = parseFloat(document.getElementById("bomCalcQty").value) || 0;
+    if (!code || qty <= 0) {
+      showToast("Chọn sản phẩm và nhập số lượng hợp lệ", "warning");
+      return;
+    }
+    const result = Store.calculateBOMForQuantity(code, qty);
+    document.getElementById("bomCalcBody").innerHTML = result.lines.map((m) => `
+      <tr>
+        <td>${Helpers.escapeHtml(m.code)}</td>
+        <td>${Helpers.escapeHtml(m.name)}</td>
+        <td class="num">${Helpers.formatNumber(m.qty)} ${Helpers.escapeHtml(m.unit)}</td>
+        <td class="num">${Helpers.formatVND(m.unitCost)}</td>
+        <td class="num">${Helpers.formatVND(m.lineCost)}</td>
+      </tr>
+    `).join("");
+    document.getElementById("bomCalcTotal").textContent = Helpers.formatVND(result.totalCost);
+    calcResult.style.display = "block";
+  });
+
+  loadProduct("");
+})();
+</script>

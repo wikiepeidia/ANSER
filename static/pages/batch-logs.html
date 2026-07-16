@@ -1,0 +1,90 @@
+<!-- batch-logs.html — Nhật ký quy trình theo lô/đơn sản xuất (mock, localStorage) -->
+<div class="content__header">
+  <h1 class="content__title">Nhật ký quy trình theo lô</h1>
+  <p class="content__subtitle">Dòng thời gian sự kiện sản xuất (bắt đầu / dừng / sự cố / hoàn thành) theo từng đơn</p>
+</div>
+
+<div class="toolbar">
+  <div class="toolbar__filters">
+    <select class="filter-select" id="blOrderFilter" style="min-width:280px">
+      <option value="">Tất cả đơn sản xuất</option>
+    </select>
+  </div>
+  <button class="btn btn--primary" id="btnLogEvent" disabled title="Chọn 1 đơn đang 'Đang sản xuất' để ghi sự kiện">
+    <i class="fa-solid fa-plus"></i> Ghi sự kiện
+  </button>
+</div>
+
+<div class="table-card">
+  <div class="table-card__header"><h3><i class="fa-solid fa-timeline"></i> Dòng thời gian sự kiện</h3></div>
+  <div class="table-card__body" style="padding:6px 20px" id="blTimelineWrap">
+    <ul class="exec-timeline" id="blTimeline" style="list-style:none;margin:0;padding:0"></ul>
+  </div>
+</div>
+
+<script>
+(function () {
+  const orderFilter = document.getElementById("blOrderFilter");
+  const btnLogEvent = document.getElementById("btnLogEvent");
+
+  Store.productionOrders
+    .slice()
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+    .forEach((o) => {
+      const opt = document.createElement("option");
+      opt.value = o.id;
+      opt.textContent = `${o.code} — ${o.productName}`;
+      orderFilter.appendChild(opt);
+    });
+
+  function updateLogButton() {
+    const orderId = orderFilter.value;
+    const order = orderId ? Store.getOrderById(orderId) : null;
+    const enabled = order && order.status === "in_progress";
+    btnLogEvent.disabled = !enabled;
+    btnLogEvent.title = enabled
+      ? `Ghi sự kiện cho đơn ${order.code}`
+      : "Chọn 1 đơn đang \"Đang sản xuất\" để ghi sự kiện";
+  }
+
+  function renderTimeline() {
+    const orderId = orderFilter.value;
+    let logs = Store.processLogs.slice();
+    if (orderId) logs = logs.filter((l) => l.orderId === Number(orderId));
+    logs.sort((a, b) => new Date(b.ts) - new Date(a.ts));
+
+    const wrap = document.getElementById("blTimeline");
+    if (!logs.length) {
+      wrap.innerHTML = `<li style="padding:20px 4px;text-align:center;color:var(--text-muted)">Chưa có sự kiện nào</li>`;
+      return;
+    }
+    wrap.innerHTML = logs.map((l) => {
+      const meta = Store.eventMeta(l.event);
+      const order = Store.getOrderById(l.orderId);
+      return `
+        <li class="exec-item">
+          <span class="exec-dot exec-dot--${meta.color}"></span>
+          <a href="javascript:void(0)" class="exec-item__order" onclick="Router.viewOrder(${l.orderId})">${order ? Helpers.escapeHtml(order.code) : "—"}</a>
+          <span class="exec-item__event">
+            <i class="fa-solid ${meta.icon}"></i> ${Helpers.escapeHtml(l.event)}
+            ${l.note ? `— <span class="exec-item__note">${Helpers.escapeHtml(l.note)}</span>` : ""}
+          </span>
+          <span class="exec-item__time">${Helpers.formatDateTime(l.ts)}</span>
+        </li>
+      `;
+    }).join("");
+  }
+
+  orderFilter.addEventListener("change", () => {
+    updateLogButton();
+    renderTimeline();
+  });
+
+  btnLogEvent.addEventListener("click", () => {
+    if (orderFilter.value) Router.openBatchEventForm(parseInt(orderFilter.value));
+  });
+
+  updateLogButton();
+  renderTimeline();
+})();
+</script>

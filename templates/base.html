@@ -57,6 +57,29 @@
           </ul>
         </div>
 
+        <a href="#warehouses" class="sidebar__item" data-page="warehouses">
+          <i class="fa-solid fa-warehouse"></i>
+          <span>Quản lý kho</span>
+        </a>
+
+        <div class="sidebar__group">
+          <button class="sidebar__item sidebar__item--has-sub" data-page="production-orders" data-sub="production-sub">
+            <i class="fa-solid fa-industry"></i>
+            <span>Sản xuất</span>
+            <i class="fa-solid fa-chevron-down sidebar__chevron"></i>
+          </button>
+          <ul class="sidebar__submenu" id="production-sub">
+            <li><a href="#production-orders" class="sidebar__submenu-item" data-page="production-orders">Đơn hàng sản xuất</a></li>
+            <li><a href="#bom" class="sidebar__submenu-item" data-page="bom">Định mức NVL (BOM)</a></li>
+            <li><a href="#material-batches" class="sidebar__submenu-item" data-page="material-batches">Lô nguyên liệu</a></li>
+            <li><a href="#suppliers" class="sidebar__submenu-item" data-page="suppliers">Nhà cung cấp</a></li>
+            <li><a href="#qc" class="sidebar__submenu-item" data-page="qc">Kiểm định chất lượng (QC)</a></li>
+            <li><a href="#batch-logs" class="sidebar__submenu-item" data-page="batch-logs">Nhật ký quy trình theo lô</a></li>
+            <li><a href="#invoices" class="sidebar__submenu-item" data-page="invoices">Nhập hoá đơn NVL</a></li>
+            <li><a href="#production-costs" class="sidebar__submenu-item" data-page="production-costs">Giá thành &amp; hao hụt</a></li>
+          </ul>
+        </div>
+
         <div class="sidebar__group">
           <button class="sidebar__item sidebar__item--has-sub" data-page="reports" data-sub="reports-sub">
             <i class="fa-solid fa-chart-line"></i>
@@ -253,6 +276,343 @@
           <div class="modal__footer">
             <button type="button" class="btn btn--outline" id="btnCancelModal">Huỷ</button>
             <button type="submit" class="btn btn--primary">Lưu sản phẩm</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Production Order Modal — mock (localStorage), chưa nối API thật -->
+  <div class="modal" id="orderModal">
+    <div class="modal__overlay" id="orderModalOverlay"></div>
+    <div class="modal__content">
+      <div class="modal__header">
+        <h2 id="orderModalTitle">Tạo đơn sản xuất</h2>
+        <button class="modal__close" id="orderModalClose">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div class="modal__body">
+        <form id="orderForm">
+          <div class="form-group">
+            <label for="orderProduct">Sản phẩm</label>
+            <select id="orderProduct" name="orderProduct" required>
+              <option value="">Chọn sản phẩm</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="orderQuantity">Số lượng</label>
+              <input type="number" id="orderQuantity" name="orderQuantity" placeholder="0" min="1" required />
+            </div>
+            <div class="form-group">
+              <label for="orderCustomer">Khách hàng</label>
+              <input type="text" id="orderCustomer" name="orderCustomer" placeholder="Tên khách hàng (nếu có)" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="orderNotes">Ghi chú</label>
+            <textarea id="orderNotes" name="orderNotes" rows="3" placeholder="Ghi chú cho đơn sản xuất"></textarea>
+          </div>
+          <div class="modal__footer">
+            <button type="button" class="btn btn--outline" id="btnCancelOrderModal">Huỷ</button>
+            <button type="submit" class="btn btn--primary">Lưu đơn hàng</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Material Batch Modal — mock (localStorage), chưa nối API thật -->
+  <div class="modal" id="batchModal">
+    <div class="modal__overlay" id="batchModalOverlay"></div>
+    <div class="modal__content">
+      <div class="modal__header">
+        <h2>Thêm lô nguyên liệu</h2>
+        <button class="modal__close" id="batchModalClose">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div class="modal__body">
+        <form id="batchForm">
+          <div class="form-group">
+            <label for="batchMaterial">Nguyên vật liệu</label>
+            <select id="batchMaterial" name="batchMaterial" required>
+              <option value="">Chọn nguyên vật liệu</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="batchSupplier">Nhà cung cấp</label>
+              <input type="text" id="batchSupplier" name="batchSupplier" placeholder="Tên nhà cung cấp" />
+            </div>
+            <div class="form-group">
+              <label for="batchQuantity">Số lượng</label>
+              <input type="number" id="batchQuantity" name="batchQuantity" placeholder="0" min="1" required />
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="batchExpiry">Hạn dùng</label>
+            <input type="date" id="batchExpiry" name="batchExpiry" />
+          </div>
+          <div class="form-group">
+            <label for="batchNotes">Ghi chú</label>
+            <textarea id="batchNotes" name="batchNotes" rows="3" placeholder="Ghi chú cho lô nguyên liệu"></textarea>
+          </div>
+          <div class="modal__footer">
+            <button type="button" class="btn btn--outline" id="btnCancelBatchModal">Huỷ</button>
+            <button type="submit" class="btn btn--primary">Lưu lô nguyên liệu</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- QC Result Modal — mock (localStorage), chưa nối API thật -->
+  <div class="modal" id="qcModal">
+    <div class="modal__overlay" id="qcModalOverlay"></div>
+    <div class="modal__content">
+      <div class="modal__header">
+        <h2>Nhập kết quả kiểm định</h2>
+        <button class="modal__close" id="qcModalClose">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div class="modal__body">
+        <p id="qcModalBatchInfo" style="margin:0 0 16px;font-size:13.5px;color:var(--text-secondary)"></p>
+        <form id="qcForm">
+          <div class="form-group">
+            <label>Kết quả kiểm định</label>
+            <div style="display:flex;gap:20px;margin-top:8px">
+              <label style="display:flex;align-items:center;gap:6px;font-weight:400;cursor:pointer">
+                <input type="radio" name="qcResult" value="passed" required /> Đạt
+              </label>
+              <label style="display:flex;align-items:center;gap:6px;font-weight:400;cursor:pointer">
+                <input type="radio" name="qcResult" value="failed" /> Không đạt
+              </label>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="qcNote">Ghi chú kiểm định</label>
+            <textarea id="qcNote" name="qcNote" rows="3" placeholder="Chỉ tiêu đo, lý do, người kiểm định..."></textarea>
+          </div>
+          <div class="modal__footer">
+            <button type="button" class="btn btn--outline" id="btnCancelQCModal">Huỷ</button>
+            <button type="submit" class="btn btn--primary">Lưu kết quả</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Batch Process Event Modal — mock (localStorage), chưa nối API thật -->
+  <div class="modal" id="batchEventModal">
+    <div class="modal__overlay" id="batchEventModalOverlay"></div>
+    <div class="modal__content modal__content--sm">
+      <div class="modal__header">
+        <h2>Ghi sự kiện quy trình</h2>
+        <button class="modal__close" id="batchEventModalClose">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div class="modal__body">
+        <p id="batchEventOrderInfo" style="margin:0 0 16px;font-size:13.5px;color:var(--text-secondary)"></p>
+        <form id="batchEventForm">
+          <div class="form-group">
+            <label>Loại sự kiện</label>
+            <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px">
+              <label style="display:flex;align-items:center;gap:8px;font-weight:400;cursor:pointer">
+                <input type="radio" name="eventType" value="Dừng sản xuất" required /> <i class="fa-solid fa-pause"></i> Dừng sản xuất
+              </label>
+              <label style="display:flex;align-items:center;gap:8px;font-weight:400;cursor:pointer">
+                <input type="radio" name="eventType" value="Tiếp tục sản xuất" /> <i class="fa-solid fa-play"></i> Tiếp tục sản xuất
+              </label>
+              <label style="display:flex;align-items:center;gap:8px;font-weight:400;cursor:pointer">
+                <input type="radio" name="eventType" value="Sự cố" /> <i class="fa-solid fa-triangle-exclamation"></i> Sự cố
+              </label>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="batchEventNote">Ghi chú</label>
+            <textarea id="batchEventNote" name="batchEventNote" rows="3" placeholder="Mô tả chi tiết sự kiện"></textarea>
+          </div>
+          <div class="modal__footer">
+            <button type="button" class="btn btn--outline" id="btnCancelBatchEventModal">Huỷ</button>
+            <button type="submit" class="btn btn--primary">Lưu sự kiện</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Warehouse Transfer Modal — mock (localStorage), chưa nối API thật -->
+  <div class="modal" id="transferModal">
+    <div class="modal__overlay" id="transferModalOverlay"></div>
+    <div class="modal__content">
+      <div class="modal__header">
+        <h2>Chuyển kho</h2>
+        <button class="modal__close" id="transferModalClose">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div class="modal__body">
+        <form id="transferForm">
+          <div class="form-group">
+            <label for="transferProduct">Sản phẩm</label>
+            <select id="transferProduct" name="transferProduct" required>
+              <option value="">Chọn sản phẩm</option>
+            </select>
+          </div>
+          <div id="transferStockInfo" style="margin:-6px 0 14px;font-size:12px;color:var(--text-muted)"></div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="transferFromWarehouse">Kho nguồn</label>
+              <select id="transferFromWarehouse" name="transferFromWarehouse" required>
+                <option value="">Chọn kho</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="transferFromLocation">Vị trí nguồn</label>
+              <select id="transferFromLocation" name="transferFromLocation" required>
+                <option value="">Chọn kho nguồn trước</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="transferToWarehouse">Kho đích</label>
+              <select id="transferToWarehouse" name="transferToWarehouse" required>
+                <option value="">Chọn kho</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="transferToLocation">Vị trí đích</label>
+              <select id="transferToLocation" name="transferToLocation" required>
+                <option value="">Chọn kho đích trước</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="transferQuantity">Số lượng chuyển</label>
+              <input type="number" id="transferQuantity" name="transferQuantity" placeholder="0" min="1" required />
+            </div>
+            <div class="form-group">
+              <label for="transferNote">Ghi chú</label>
+              <input type="text" id="transferNote" name="transferNote" placeholder="Ghi chú (nếu có)" />
+            </div>
+          </div>
+          <div class="modal__footer">
+            <button type="button" class="btn btn--outline" id="btnCancelTransferModal">Huỷ</button>
+            <button type="submit" class="btn btn--primary">Xác nhận chuyển kho</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stock Count (Kiểm kê) Modal — mock (localStorage), chưa nối API thật -->
+  <div class="modal" id="stockCountModal">
+    <div class="modal__overlay" id="stockCountModalOverlay"></div>
+    <div class="modal__content">
+      <div class="modal__header">
+        <h2>Kiểm kê kho</h2>
+        <button class="modal__close" id="stockCountModalClose">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div class="modal__body">
+        <form id="stockCountForm">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="countWarehouse">Kho</label>
+              <select id="countWarehouse" name="countWarehouse" required>
+                <option value="">Chọn kho</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="countLocation">Vị trí</label>
+              <select id="countLocation" name="countLocation" required>
+                <option value="">Chọn kho trước</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="countProduct">Sản phẩm</label>
+            <select id="countProduct" name="countProduct" required>
+              <option value="">Chọn sản phẩm</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Số lượng hệ thống</label>
+              <p id="countSystemQty" style="margin:0;font-weight:700;font-size:18px">—</p>
+            </div>
+            <div class="form-group">
+              <label for="countActualQty">Số lượng đếm thực tế</label>
+              <input type="number" id="countActualQty" name="countActualQty" placeholder="0" min="0" required />
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Chênh lệch</label>
+            <p id="countDiff" style="margin:0;font-weight:700;font-size:18px">—</p>
+          </div>
+          <div class="form-group">
+            <label for="countNote">Ghi chú</label>
+            <textarea id="countNote" name="countNote" rows="2" placeholder="Lý do chênh lệch (nếu có)"></textarea>
+          </div>
+          <div class="modal__footer">
+            <button type="button" class="btn btn--outline" id="btnCancelStockCountModal">Huỷ</button>
+            <button type="submit" class="btn btn--primary">Lưu kết quả kiểm kê</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Supplier Modal — mock (localStorage), chưa nối API thật -->
+  <div class="modal" id="supplierModal">
+    <div class="modal__overlay" id="supplierModalOverlay"></div>
+    <div class="modal__content">
+      <div class="modal__header">
+        <h2 id="supplierModalTitle">Thêm nhà cung cấp</h2>
+        <button class="modal__close" id="supplierModalClose">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div class="modal__body">
+        <form id="supplierForm">
+          <div class="form-group">
+            <label for="supplierName">Tên nhà cung cấp</label>
+            <input type="text" id="supplierName" name="supplierName" placeholder="VD: Dệt May Thành Công" required />
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="supplierContact">Người liên hệ</label>
+              <input type="text" id="supplierContact" name="supplierContact" placeholder="Tên người liên hệ" />
+            </div>
+            <div class="form-group">
+              <label for="supplierPhone">Số điện thoại</label>
+              <input type="text" id="supplierPhone" name="supplierPhone" placeholder="09xxxxxxxx" />
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="supplierEmail">Email</label>
+              <input type="email" id="supplierEmail" name="supplierEmail" placeholder="email@congty.vn" />
+            </div>
+            <div class="form-group">
+              <label for="supplierAddress">Địa chỉ</label>
+              <input type="text" id="supplierAddress" name="supplierAddress" placeholder="Địa chỉ (nếu có)" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="supplierNotes">Ghi chú</label>
+            <textarea id="supplierNotes" name="supplierNotes" rows="2" placeholder="Ghi chú (nếu có)"></textarea>
+          </div>
+          <div class="modal__footer">
+            <button type="button" class="btn btn--outline" id="btnCancelSupplierModal">Huỷ</button>
+            <button type="submit" class="btn btn--primary">Lưu nhà cung cấp</button>
           </div>
         </form>
       </div>

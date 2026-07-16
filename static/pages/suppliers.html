@@ -1,0 +1,82 @@
+<!-- suppliers.html — Quản lý nhà cung cấp (mock, localStorage) -->
+<div class="content__header">
+  <h1 class="content__title">Nhà cung cấp</h1>
+  <p class="content__subtitle">Quản lý NCC nguyên vật liệu · Tổng: <strong id="supplierTotal">0</strong> NCC</p>
+</div>
+
+<div class="toolbar">
+  <div class="toolbar__filters">
+    <div class="toolbar__search">
+      <i class="fa-solid fa-magnifying-glass"></i>
+      <input type="text" id="supplierSearch" placeholder="Tìm tên, người liên hệ, SĐT, email..." />
+    </div>
+  </div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap">
+    <button class="btn btn--outline" id="btnResetSupplierSeed" title="Dùng khi trình duyệt đang lưu bộ dữ liệu mẫu cũ">
+      <i class="fa-solid fa-arrows-rotate"></i> Nạp lại dữ liệu mẫu
+    </button>
+    <button class="btn btn--primary" id="btnAddSupplier">
+      <i class="fa-solid fa-plus"></i> Thêm nhà cung cấp
+    </button>
+  </div>
+</div>
+
+<div class="table-card">
+  <div class="table-card__body">
+    <table class="data-table" id="supplierTable">
+      <thead>
+        <tr>
+          <th>Mã NCC</th><th>Tên nhà cung cấp</th><th>Người liên hệ</th>
+          <th>SĐT</th><th>Email</th><th class="num">Số lô đã nhập</th><th style="width:130px">Hành động</th>
+        </tr>
+      </thead>
+      <tbody id="supplierTableBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+(function () {
+  function filtered() {
+    const q = document.getElementById("supplierSearch").value.toLowerCase();
+    return Store.getSupplierSummary().filter(({ supplier: s }) => {
+      if (!q) return true;
+      return `${s.name} ${s.contact} ${s.phone} ${s.email}`.toLowerCase().includes(q);
+    });
+  }
+
+  function renderTable() {
+    const rows = filtered();
+    document.getElementById("supplierTotal").textContent = Store.suppliers.length;
+    const body = document.getElementById("supplierTableBody");
+    body.innerHTML = rows.length
+      ? rows.map(({ supplier: s, batchCount }) => `
+          <tr data-id="${s.id}">
+            <td>${Helpers.tableAvatar(s.code, s.name, s.code)}</td>
+            <td>${Helpers.escapeHtml(s.name)}</td>
+            <td>${s.contact ? Helpers.escapeHtml(s.contact) : `<span style="color:var(--text-muted)">—</span>`}</td>
+            <td>${s.phone ? Helpers.escapeHtml(s.phone) : `<span style="color:var(--text-muted)">—</span>`}</td>
+            <td>${s.email ? Helpers.escapeHtml(s.email) : `<span style="color:var(--text-muted)">—</span>`}</td>
+            <td class="num">${batchCount}</td>
+            <td>
+              <button class="action-btn" onclick="Router.viewSupplier(${s.id})" title="Xem chi tiết"><i class="fa-solid fa-eye"></i></button>
+              <button class="action-btn" onclick="Router.editSupplier(${s.id})" title="Sửa"><i class="fa-solid fa-pen"></i></button>
+              <button class="action-btn action-btn--danger" onclick="Router.deleteSupplier(${s.id})" title="Xoá"><i class="fa-solid fa-trash"></i></button>
+            </td>
+          </tr>
+        `).join("")
+      : `<tr><td colspan="7" style="text-align:center;color:var(--text-muted)">Không có nhà cung cấp nào</td></tr>`;
+  }
+
+  document.getElementById("supplierSearch").addEventListener("input", renderTable);
+  document.getElementById("btnAddSupplier").addEventListener("click", () => Router.editSupplier(null));
+  document.getElementById("btnResetSupplierSeed").addEventListener("click", () => {
+    if (!window.confirm("Nạp lại dữ liệu mẫu nhà cung cấp? NCC bạn tự thêm/sửa sẽ bị thay bằng bộ mẫu mới.")) return;
+    Store.resetSuppliersSeed();
+    showToast("Đã nạp lại dữ liệu mẫu nhà cung cấp!");
+    renderTable();
+  });
+
+  renderTable();
+})();
+</script>

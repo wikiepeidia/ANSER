@@ -1,0 +1,165 @@
+<!-- warehouses.html — Quản lý kho: đa kho, vị trí, chuyển kho, kiểm kê (mock, localStorage) -->
+<div class="content__header">
+  <h1 class="content__title">Quản lý kho</h1>
+  <p class="content__subtitle">Đa kho · vị trí lưu trữ · chuyển kho · kiểm kê tồn thực tế</p>
+</div>
+
+<div class="toolbar">
+  <div class="toolbar__filters">
+    <select class="filter-select" id="whSelect"></select>
+  </div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap">
+    <button class="btn btn--outline" id="btnResetWarehouseSeed" title="Dùng khi trình duyệt đang lưu bộ dữ liệu mẫu cũ">
+      <i class="fa-solid fa-arrows-rotate"></i> Nạp lại dữ liệu mẫu
+    </button>
+    <button class="btn btn--outline" id="btnStockCount">
+      <i class="fa-solid fa-clipboard-check"></i> Kiểm kê
+    </button>
+    <button class="btn btn--primary" id="btnTransfer">
+      <i class="fa-solid fa-right-left"></i> Chuyển kho
+    </button>
+  </div>
+</div>
+
+<div class="table-card">
+  <div class="table-card__header"><h3><i class="fa-solid fa-warehouse"></i> Danh sách kho</h3></div>
+  <div class="table-card__body">
+    <table class="data-table">
+      <thead>
+        <tr><th>Mã kho</th><th>Tên kho</th><th>Địa chỉ</th><th class="num">Số vị trí</th><th class="num">Số SKU</th><th class="num">Tổng tồn kho</th></tr>
+      </thead>
+      <tbody id="whSummaryBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<div class="table-card">
+  <div class="table-card__header"><h3 id="whLocationsTitle"><i class="fa-solid fa-location-dot"></i> Vị trí lưu trong kho</h3></div>
+  <div class="table-card__body">
+    <table class="data-table">
+      <thead><tr><th>Vị trí</th><th>Sản phẩm</th><th class="num">Số lượng</th></tr></thead>
+      <tbody id="whLocationsBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<div class="charts-row" style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+  <div class="table-card">
+    <div class="table-card__header"><h3>Lịch sử chuyển kho gần đây</h3></div>
+    <div class="table-card__body">
+      <table class="data-table">
+        <thead><tr><th>Sản phẩm</th><th>Từ</th><th>Đến</th><th class="num">SL</th><th>Thời gian</th></tr></thead>
+        <tbody id="whTransferHistoryBody"></tbody>
+      </table>
+    </div>
+  </div>
+  <div class="table-card">
+    <div class="table-card__header"><h3>Lịch sử kiểm kê gần đây</h3></div>
+    <div class="table-card__body">
+      <table class="data-table">
+        <thead><tr><th>Vị trí</th><th>Sản phẩm</th><th class="num">Hệ thống</th><th class="num">Thực tế</th><th class="num">Chênh lệch</th></tr></thead>
+        <tbody id="whCountHistoryBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  let currentWarehouseId = Store.WAREHOUSES[0]?.id || null;
+
+  document.getElementById("whSelect").innerHTML = Store.WAREHOUSES
+    .map((w) => `<option value="${w.id}">${Helpers.escapeHtml(w.name)}</option>`).join("");
+  document.getElementById("whSelect").value = currentWarehouseId;
+
+  function renderSummary() {
+    document.getElementById("whSummaryBody").innerHTML = Store.getWarehouseSummary().map((s) => `
+      <tr>
+        <td>${Helpers.escapeHtml(s.warehouse.code)}</td>
+        <td>${Helpers.escapeHtml(s.warehouse.name)}</td>
+        <td style="color:var(--text-muted)">${Helpers.escapeHtml(s.warehouse.address)}</td>
+        <td class="num">${s.locationCount}</td>
+        <td class="num">${s.skuCount}</td>
+        <td class="num">${Helpers.formatNumber(s.totalQty)}</td>
+      </tr>
+    `).join("");
+  }
+
+  function renderLocations() {
+    const wh = Store.getWarehouseById(currentWarehouseId);
+    document.getElementById("whLocationsTitle").innerHTML =
+      `<i class="fa-solid fa-location-dot"></i> Vị trí lưu trong ${wh ? Helpers.escapeHtml(wh.name) : "—"}`;
+    const rows = Store.getStockForWarehouse(currentWarehouseId);
+    document.getElementById("whLocationsBody").innerHTML = rows.length
+      ? rows.map((r) => `
+          <tr>
+            <td><span class="badge badge--blue">${Helpers.escapeHtml(r.location?.code || "—")}</span> ${Helpers.escapeHtml(r.location?.name || "")}</td>
+            <td>${Helpers.escapeHtml(r.productName)} <span style="color:var(--text-muted);font-size:12px">(${Helpers.escapeHtml(r.productCode)})</span></td>
+            <td class="num">${Helpers.formatNumber(r.quantity)} ${Helpers.escapeHtml(r.unit)}</td>
+          </tr>
+        `).join("")
+      : `<tr><td colspan="3" style="text-align:center;color:var(--text-muted)">Kho này chưa có tồn kho</td></tr>`;
+  }
+
+  function renderTransferHistory() {
+    const body = document.getElementById("whTransferHistoryBody");
+    const rows = (Store.stockTransferHistory || []).slice(0, 8);
+    body.innerHTML = rows.length
+      ? rows.map((t) => {
+          const fromWh = Store.getWarehouseById(t.fromWarehouseId);
+          const fromLoc = Store.getLocationById(t.fromLocationId);
+          const toWh = Store.getWarehouseById(t.toWarehouseId);
+          const toLoc = Store.getLocationById(t.toLocationId);
+          return `
+            <tr>
+              <td>${Helpers.escapeHtml(t.productName)}</td>
+              <td>${fromWh?.code}/${fromLoc?.code}</td>
+              <td>${toWh?.code}/${toLoc?.code}</td>
+              <td class="num">${Helpers.formatNumber(t.quantity)}</td>
+              <td>${Helpers.formatDateTime(t.transferredAt)}</td>
+            </tr>
+          `;
+        }).join("")
+      : `<tr><td colspan="5" style="text-align:center;color:var(--text-muted)">Chưa có lượt chuyển kho nào</td></tr>`;
+  }
+
+  function renderCountHistory() {
+    const body = document.getElementById("whCountHistoryBody");
+    const rows = (Store.stockCountHistory || []).slice(0, 8);
+    body.innerHTML = rows.length
+      ? rows.map((c) => {
+          const wh = Store.getWarehouseById(c.warehouseId);
+          const loc = Store.getLocationById(c.locationId);
+          const diffColor = c.diff === 0 ? "green" : c.diff > 0 ? "blue" : "red";
+          return `
+            <tr>
+              <td>${wh?.code}/${loc?.code}</td>
+              <td>${Helpers.escapeHtml(c.productCode)}</td>
+              <td class="num">${Helpers.formatNumber(c.systemQty)}</td>
+              <td class="num">${Helpers.formatNumber(c.countedQty)}</td>
+              <td class="num"><span class="badge badge--${diffColor}">${c.diff > 0 ? "+" : ""}${c.diff}</span></td>
+            </tr>
+          `;
+        }).join("")
+      : `<tr><td colspan="5" style="text-align:center;color:var(--text-muted)">Chưa có lượt kiểm kê nào</td></tr>`;
+  }
+
+  function renderAll() {
+    renderSummary();
+    renderLocations();
+    renderTransferHistory();
+    renderCountHistory();
+  }
+
+  document.getElementById("whSelect").addEventListener("change", (e) => {
+    currentWarehouseId = parseInt(e.target.value);
+    renderLocations();
+  });
+
+  document.getElementById("btnTransfer").addEventListener("click", () => Router.openTransferForm());
+  document.getElementById("btnStockCount").addEventListener("click", () => Router.openStockCountForm());
+  document.getElementById("btnResetWarehouseSeed").addEventListener("click", () => Router.resetWarehouseSeed());
+
+  renderAll();
+})();
+</script>

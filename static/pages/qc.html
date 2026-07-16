@@ -1,0 +1,96 @@
+<!-- qc.html — Kiểm định chất lượng (QC) lô nguyên liệu (mock, localStorage) -->
+<div class="content__header">
+  <div>
+    <h1 class="content__title">Kiểm định chất lượng (QC)</h1>
+    <p class="content__subtitle">Nhập kết quả kiểm định cho lô nguyên liệu đang chờ · Đang chờ: <strong id="qcPendingTotal">0</strong> lô</p>
+  </div>
+  <button class="btn btn--outline" id="btnResetBatchSeedQC" title="Dùng khi trình duyệt đang lưu bộ dữ liệu mẫu cũ">
+    <i class="fa-solid fa-arrows-rotate"></i> Nạp lại dữ liệu mẫu
+  </button>
+</div>
+
+<div class="table-card">
+  <div class="table-card__header"><h3><i class="fa-solid fa-flask-vial"></i> Lô đang chờ kiểm định</h3></div>
+  <div class="table-card__body">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Mã lô</th><th>Nguyên vật liệu</th><th>Nhà cung cấp</th>
+          <th class="num">Số lượng</th><th>Ngày nhận</th><th style="width:160px">Hành động</th>
+        </tr>
+      </thead>
+      <tbody id="qcPendingBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<div class="table-card">
+  <div class="table-card__header"><h3><i class="fa-solid fa-clock-rotate-left"></i> Đã kiểm định gần đây</h3></div>
+  <div class="table-card__body">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Mã lô</th><th>Nguyên vật liệu</th><th>Kết quả</th><th>Ghi chú</th><th>Trạng thái gate</th><th style="width:70px"></th>
+        </tr>
+      </thead>
+      <tbody id="qcRecentBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+(function () {
+  function renderPending() {
+    const pending = Store.materialBatches
+      .filter((b) => b.qcStatus === "pending")
+      .sort((a, b) => new Date(a.receivedAt) - new Date(b.receivedAt));
+    document.getElementById("qcPendingTotal").textContent = pending.length;
+    const body = document.getElementById("qcPendingBody");
+    body.innerHTML = pending.length
+      ? pending.map((b) => `
+          <tr>
+            <td>${Helpers.tableAvatar(b.code, b.code, "")}</td>
+            <td>${Helpers.escapeHtml(b.materialName)} <span style="color:var(--text-muted);font-size:12px">(${Helpers.escapeHtml(b.materialCode)})</span></td>
+            <td>${Helpers.escapeHtml(b.supplierName || "—")}</td>
+            <td class="num">${Helpers.formatNumber(b.quantity)} ${Helpers.escapeHtml(b.unit)}</td>
+            <td>${Helpers.formatDateTime(b.receivedAt)}</td>
+            <td><button class="btn btn--primary btn--sm" onclick="Router.openQCForm(${b.id})"><i class="fa-solid fa-clipboard-check"></i> Nhập kết quả</button></td>
+          </tr>
+        `).join("")
+      : `<tr><td colspan="6" style="text-align:center;color:var(--text-muted)">Không còn lô nào chờ kiểm định 🎉</td></tr>`;
+  }
+
+  function renderRecent() {
+    const recent = Store.materialBatches
+      .filter((b) => b.qcStatus !== "pending")
+      .sort((a, b) => new Date(b.receivedAt) - new Date(a.receivedAt))
+      .slice(0, 10);
+    const body = document.getElementById("qcRecentBody");
+    body.innerHTML = recent.length
+      ? recent.map((b) => {
+          const qc = Store.QC_STATUSES[b.qcStatus];
+          const gate = b.qcStatus === "failed"
+            ? `<span class="badge badge--red"><i class="fa-solid fa-lock"></i> Đã khoá — không dùng được</span>`
+            : `<span class="badge badge--green"><i class="fa-solid fa-lock-open"></i> Cho phép sử dụng</span>`;
+          return `
+            <tr>
+              <td>${Helpers.escapeHtml(b.code)}</td>
+              <td>${Helpers.escapeHtml(b.materialName)}</td>
+              <td><span class="badge badge--${qc.badge}"><i class="fa-solid ${qc.icon}"></i> ${qc.label}</span></td>
+              <td>${b.qcNote ? Helpers.escapeHtml(b.qcNote) : `<span style="color:var(--text-muted)">—</span>`}</td>
+              <td>${gate}</td>
+              <td><button class="action-btn" onclick="Router.viewBatch(${b.id})" title="Xem chi tiết"><i class="fa-solid fa-eye"></i></button></td>
+            </tr>
+          `;
+        }).join("")
+      : `<tr><td colspan="6" style="text-align:center;color:var(--text-muted)">Chưa có lô nào được kiểm định</td></tr>`;
+  }
+
+  document.getElementById("btnResetBatchSeedQC").addEventListener("click", () => {
+    Router.resetBatchSeed();
+  });
+
+  renderPending();
+  renderRecent();
+})();
+</script>

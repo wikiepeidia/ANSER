@@ -1,0 +1,143 @@
+<!-- material-batch-detail.html — Truy xuất nguồn gốc 1 lô NVL (mock, đứng thay GET /trace) -->
+<!-- .trace-flow* styles live in static/css/components.css — a leading
+     <style> tag here would be silently dropped by router.js's injectPage()
+     (DOMParser hoists it into the detached doc's <head>, which is never
+     read; only doc.body.innerHTML gets injected). -->
+
+<div class="content__header">
+  <div>
+    <a href="#material-batches" style="color:var(--text-muted);font-size:13px;text-decoration:none">
+      <i class="fa-solid fa-arrow-left"></i> Danh sách lô nguyên liệu
+    </a>
+    <h1 class="content__title" id="mbTitle" style="margin-top:6px">Truy xuất nguồn gốc</h1>
+    <p class="content__subtitle" id="mbSubtitle">Đang tải...</p>
+  </div>
+</div>
+
+<div id="mbNotFound" style="display:none" class="empty-state">
+  <div class="empty-icon"><i class="fa-solid fa-circle-exclamation"></i></div>
+  <h3 class="empty-title">Không tìm thấy lô nguyên liệu</h3>
+  <p class="empty-description">Lô có thể đã bị xoá. Quay lại <a href="#material-batches">danh sách lô nguyên liệu</a>.</p>
+</div>
+
+<div id="mbContent" style="display:none">
+  <div id="mbGateWarning" class="gate-banner gate-banner--danger" style="display:none">
+    <i class="fa-solid fa-lock"></i>
+    <span>Lô này <strong>KHÔNG ĐẠT</strong> kiểm định chất lượng — đã bị khoá, không được phép sử dụng trong sản xuất.</span>
+  </div>
+
+  <div class="form-card">
+    <div class="form-card__header"><h3><i class="fa-solid fa-circle-info"></i> Thông tin lô</h3></div>
+    <div class="form-card__body">
+      <div class="form-row">
+        <div class="form-group"><label>Nguyên vật liệu</label><p id="mbMaterial" style="margin:0;font-weight:600"></p></div>
+        <div class="form-group"><label>Số lượng</label><p id="mbQuantity" style="margin:0;font-weight:600"></p></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Nhà cung cấp</label><p id="mbSupplier" style="margin:0"></p></div>
+        <div class="form-group"><label>Ngày nhận</label><p id="mbReceived" style="margin:0"></p></div>
+      </div>
+      <div class="form-group"><label>Hạn dùng</label><p id="mbExpiry" style="margin:0"></p></div>
+      <div class="form-group" id="mbNotesRow" style="display:none"><label>Ghi chú</label><p id="mbNotes" style="margin:0"></p></div>
+    </div>
+  </div>
+
+  <div class="table-card">
+    <div class="table-card__header"><h3><i class="fa-solid fa-diagram-project"></i> Sơ đồ truy xuất nguồn gốc</h3></div>
+    <div class="table-card__body" style="padding:20px">
+      <div class="trace-flow">
+        <div class="trace-flow__box">
+          <i class="fa-solid fa-boxes-stacked"></i>
+          <strong id="tfBatchCode"></strong>
+          <span id="tfBatchMat"></span>
+        </div>
+        <div class="trace-flow__arrow"><i class="fa-solid fa-arrow-right"></i></div>
+        <div class="trace-flow__box">
+          <i class="fa-solid fa-industry"></i>
+          <strong id="tfOrdersCount"></strong>
+          <span>Đơn sản xuất đã dùng lô này</span>
+        </div>
+        <div class="trace-flow__arrow"><i class="fa-solid fa-arrow-right"></i></div>
+        <div class="trace-flow__box">
+          <i class="fa-solid fa-box-open"></i>
+          <strong id="tfFinishedCount"></strong>
+          <span>Đơn đã ra thành phẩm</span>
+        </div>
+      </div>
+      <p style="margin:14px 0 0;font-size:12px;color:var(--text-muted)">
+        <i class="fa-solid fa-circle-info"></i> Suy ra từ định mức NVL (BOM) của sản phẩm mỗi đơn — chưa theo dõi tiêu hao theo từng lô cụ thể.
+      </p>
+    </div>
+  </div>
+
+  <div class="table-card">
+    <div class="table-card__header"><h3>Chi tiết đơn sản xuất đã dùng lô này</h3></div>
+    <div class="table-card__body">
+      <table class="data-table">
+        <thead>
+          <tr><th>Mã đơn</th><th>Sản phẩm</th><th class="num">Số lượng</th><th>Trạng thái đơn</th><th>Ngày tạo</th><th>Thành phẩm?</th><th></th></tr>
+        </thead>
+        <tbody id="mbOrdersBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  const id = Helpers.load("selectedBatchId", null);
+  const trace = id ? Store.traceBatch(id) : null;
+
+  if (!trace) {
+    document.getElementById("mbNotFound").style.display = "block";
+    document.getElementById("mbSubtitle").textContent = "—";
+    return;
+  }
+
+  const { batch, consumingOrders } = trace;
+  const qc = Store.QC_STATUSES[batch.qcStatus];
+  const exp = Store.expiryInfo(batch.expiryDate);
+
+  document.getElementById("mbContent").style.display = "block";
+  document.getElementById("mbTitle").textContent = `Truy xuất lô ${batch.code}`;
+  document.getElementById("mbSubtitle").innerHTML =
+    `<span class="badge badge--${qc.badge}"><i class="fa-solid ${qc.icon}"></i> ${qc.label}</span>`;
+  if (batch.qcStatus === "failed") {
+    document.getElementById("mbGateWarning").style.display = "flex";
+  }
+
+  document.getElementById("mbMaterial").textContent = `${batch.materialName} (${batch.materialCode})`;
+  document.getElementById("mbQuantity").textContent = `${Helpers.formatNumber(batch.quantity)} ${batch.unit}`;
+  document.getElementById("mbSupplier").textContent = batch.supplierName || "—";
+  document.getElementById("mbReceived").textContent = Helpers.formatDateTime(batch.receivedAt);
+  document.getElementById("mbExpiry").innerHTML = batch.expiryDate
+    ? `${Helpers.formatDate(batch.expiryDate)} &nbsp;<span class="badge badge--${exp.badge}">${exp.label}</span>`
+    : "—";
+  if (batch.notes) {
+    document.getElementById("mbNotesRow").style.display = "block";
+    document.getElementById("mbNotes").textContent = batch.notes;
+  }
+
+  document.getElementById("tfBatchCode").textContent = batch.code;
+  document.getElementById("tfBatchMat").textContent = `${batch.materialName} · ${Helpers.formatNumber(batch.quantity)} ${batch.unit}`;
+  document.getElementById("tfOrdersCount").textContent = consumingOrders.length;
+  document.getElementById("tfFinishedCount").textContent = consumingOrders.filter((c) => c.isFinishedGoods).length;
+
+  document.getElementById("mbOrdersBody").innerHTML = consumingOrders.length
+    ? consumingOrders.map(({ order, isFinishedGoods }) => {
+        const s = Store.ORDER_STATUSES[order.status];
+        return `
+          <tr>
+            <td>${Helpers.escapeHtml(order.code)}</td>
+            <td>${Helpers.escapeHtml(order.productName)} <span style="color:var(--text-muted);font-size:12px">(${Helpers.escapeHtml(order.productCode)})</span></td>
+            <td class="num">${Helpers.formatNumber(order.quantity)} ${Helpers.escapeHtml(order.unit)}</td>
+            <td><span class="badge badge--${s.badge}"><i class="fa-solid ${s.icon}"></i> ${s.label}</span></td>
+            <td>${Helpers.formatDate(order.createdAt)}</td>
+            <td>${isFinishedGoods ? `<span class="badge badge--green"><i class="fa-solid fa-check"></i> Đã ra thành phẩm</span>` : `<span class="badge badge--gray">Chưa</span>`}</td>
+            <td><button class="action-btn" onclick="Router.viewOrder(${order.id})" title="Xem đơn"><i class="fa-solid fa-eye"></i></button></td>
+          </tr>
+        `;
+      }).join("")
+    : `<tr><td colspan="7" style="text-align:center;color:var(--text-muted)">Chưa có đơn sản xuất nào dùng nguyên vật liệu này</td></tr>`;
+})();
+</script>

@@ -52,6 +52,10 @@
   --badge-red-color: #991b1b;
   --badge-blue-bg: #ADDFF1;
   --badge-blue-color: #003152;
+  --badge-gray-bg: #e2e8f0;
+  --badge-gray-color: #475569;
+  --badge-purple-bg: #ede9fe;
+  --badge-purple-color: #6d28d9;
 
   /* Table */
   --table-border: #e5e7eb;
@@ -139,6 +143,10 @@
   --badge-red-color: #f87171;
   --badge-blue-bg: #2E3448;
   --badge-blue-color: #FDBF2D;
+  --badge-gray-bg: #2a2e37;
+  --badge-gray-color: #b8b8b8;
+  --badge-purple-bg: #2a2140;
+  --badge-purple-color: #c4b5fd;
 
   /* Table */
   --table-border: #2E3448;

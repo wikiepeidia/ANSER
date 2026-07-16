@@ -562,6 +562,67 @@
   color: var(--badge-red-color);
 }
 
+/* Process/order timeline (production-order-detail.html) */
+.order-timeline { list-style: none; margin: 0; padding: 0; }
+.order-timeline__item { display: flex; gap: 12px; padding: 0 0 18px 0; position: relative; }
+.order-timeline__item:not(:last-child)::before {
+  content: ""; position: absolute; left: 13px; top: 26px; bottom: 0; width: 2px; background: var(--table-border, #e5e7eb);
+}
+.order-timeline__dot {
+  flex: none; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  background: var(--badge-blue-bg); color: var(--badge-blue-color); font-size: 12px;
+}
+.order-timeline__body strong { display: block; font-size: 13.5px; }
+.order-timeline__body span { display: block; font-size: 12.5px; color: var(--text-muted); margin-top: 2px; }
+.order-timeline__body time { display: block; font-size: 11.5px; color: var(--text-muted); margin-top: 4px; }
+
+/* QC gate warning banner (qc.html, material-batch-detail.html) */
+.gate-banner {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 16px; border-radius: 10px; font-size: 13px; font-weight: 600;
+  margin-bottom: 16px;
+}
+.gate-banner i { font-size: 16px; }
+.gate-banner--danger {
+  background: var(--badge-red-bg); color: var(--badge-red-color); border: 1px solid var(--stat-red-icon);
+}
+.gate-banner--warning {
+  background: var(--badge-orange-bg); color: var(--badge-orange-color); border: 1px solid var(--stat-orange-icon);
+}
+
+/* Compact execution timeline (batch-logs.html) — dot + inline row, in the
+   spirit of .sc-exec-item (scenarios_n8n.css) but on the current theme
+   variables so it stays legible in dark mode too. */
+.exec-timeline { display: flex; flex-direction: column; }
+.exec-item {
+  display: flex; align-items: center; gap: 10px; padding: 9px 4px;
+  font-size: 13px; border-bottom: 1px solid var(--table-border, #e5e7eb); flex-wrap: wrap;
+}
+.exec-item:last-child { border-bottom: none; }
+.exec-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+.exec-dot--gray { background: var(--text-muted); }
+.exec-dot--blue { background: var(--badge-blue-color); }
+.exec-dot--green { background: var(--stat-green-icon); }
+.exec-dot--orange { background: var(--stat-orange-icon); }
+.exec-dot--red { background: var(--stat-red-icon); }
+.exec-dot--purple { background: var(--badge-purple-color); }
+.exec-item__order { font-weight: 700; color: var(--brand-primary); flex-shrink: 0; text-decoration: none; }
+.exec-item__event { flex: 1; min-width: 160px; }
+.exec-item__note { color: var(--text-muted); }
+.exec-item__time { color: var(--text-muted); font-size: 11.5px; flex-shrink: 0; white-space: nowrap; margin-left: auto; }
+
+/* Traceability flow (material-batch-detail.html) */
+.trace-flow { display: flex; align-items: stretch; gap: 0; flex-wrap: wrap; }
+.trace-flow__box {
+  flex: 1; min-width: 200px; border: 1px solid var(--table-border, #e5e7eb); border-radius: 10px;
+  padding: 16px; background: var(--bg-card); text-align: center;
+}
+.trace-flow__box i { font-size: 22px; color: var(--brand-primary); }
+.trace-flow__box strong { display: block; margin-top: 8px; font-size: 15px; }
+.trace-flow__box span { display: block; margin-top: 4px; font-size: 12.5px; color: var(--text-muted); }
+.trace-flow__arrow { display: flex; align-items: center; justify-content: center; padding: 0 14px; color: var(--text-muted); font-size: 18px; }
+@media (max-width: 720px) { .trace-flow__arrow { width: 100%; padding: 8px 0; transform: rotate(90deg); } }
+
 /* Empty state */
 .table-empty {
   text-align: center;
@@ -592,6 +653,16 @@
 .badge--red {
   background-color: var(--badge-red-bg);
   color: var(--badge-red-color);
+}
+
+.badge--gray {
+  background-color: var(--badge-gray-bg);
+  color: var(--badge-gray-color);
+}
+
+.badge--purple {
+  background-color: var(--badge-purple-bg);
+  color: var(--badge-purple-color);
 }
 
 .badge--blue {
