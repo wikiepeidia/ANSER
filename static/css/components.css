@@ -995,6 +995,28 @@ input[type="checkbox"] {
   transform: scale(1.1);
 }
 
+.action-btn--view {
+  background-color: var(--badge-gray-bg);
+  color: var(--badge-gray-color);
+}
+
+.action-btn--view:hover {
+  background-color: var(--badge-gray-color);
+  color: #fff;
+  transform: scale(1.1);
+}
+
+.action-btn--transition {
+  background-color: var(--badge-green-bg);
+  color: var(--stat-green-icon);
+}
+
+.action-btn--transition:hover {
+  background-color: var(--stat-green-icon);
+  color: #fff;
+  transform: scale(1.1);
+}
+
 [data-theme="dark"] .action-btn--edit {
   background-color: #1e3a5f;
   color: #60a5fa;
@@ -1003,6 +1025,16 @@ input[type="checkbox"] {
 [data-theme="dark"] .action-btn--danger {
   background-color: #2e1a1a;
   color: #f87171;
+}
+
+[data-theme="dark"] .action-btn--view {
+  background-color: #334155;
+  color: #cbd5e1;
+}
+
+[data-theme="dark"] .action-btn--transition {
+  background-color: #14532d;
+  color: #4ade80;
 }
 
 /* ==============================

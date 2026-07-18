@@ -94,11 +94,13 @@
         <td><span class="badge badge--${s.badge}"><i class="fa-solid ${s.icon}"></i> ${s.label}</span></td>
         <td>${Helpers.formatDate(o.createdAt)}</td>
         <td>
-          <button class="action-btn" onclick="Router.viewOrder(${o.id})" title="Xem chi tiết"><i class="fa-solid fa-eye"></i></button>
-          ${canEdit ? `<button class="action-btn" onclick="Router.editOrder(${o.id})" title="Sửa"><i class="fa-solid fa-pen"></i></button>` : ""}
-          ${action ? `<button class="action-btn" onclick="Router.transitionOrder(${o.id}, '${action.to}')" title="${action.label}"><i class="fa-solid fa-arrow-right"></i></button>` : ""}
-          ${canCancel ? `<button class="action-btn action-btn--danger" onclick="Router.transitionOrder(${o.id}, 'cancelled')" title="Huỷ đơn"><i class="fa-solid fa-ban"></i></button>` : ""}
-          ${canDelete ? `<button class="action-btn action-btn--danger" onclick="Router.deleteOrder(${o.id})" title="Xoá"><i class="fa-solid fa-trash"></i></button>` : ""}
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+            <button class="action-btn action-btn--view" onclick="Router.viewOrder(${o.id})" title="Xem chi tiết"><i class="fa-solid fa-eye"></i></button>
+            ${canEdit ? `<button class="action-btn action-btn--edit" onclick="Router.editOrder(${o.id})" title="Sửa"><i class="fa-solid fa-pen"></i></button>` : ""}
+            ${action ? `<button class="action-btn action-btn--transition" onclick="Router.transitionOrder(${o.id}, '${action.to}')" title="${action.label}"><i class="fa-solid fa-arrow-right"></i></button>` : ""}
+            ${canCancel ? `<button class="action-btn action-btn--danger" onclick="Router.transitionOrder(${o.id}, 'cancelled')" title="Huỷ đơn"><i class="fa-solid fa-ban"></i></button>` : ""}
+            ${canDelete ? `<button class="action-btn action-btn--danger" onclick="Router.deleteOrder(${o.id})" title="Xoá"><i class="fa-solid fa-trash"></i></button>` : ""}
+          </div>
         </td>
       </tr>
     `;
