@@ -121,3 +121,74 @@ def test_update_and_soft_delete(logged_in_client):
     resp = client.get('/api/production-orders')
     ids = [o['id'] for o in resp.get_json()['orders']]
     assert order_id not in ids
+
+
+def test_status_transitions(logged_in_client):
+    client = logged_in_client
+
+    # Seed a product matching the order's productCode so the completion
+    # side-effect (stock_quantity increment) has somewhere to land.
+    resp = client.post('/api/products', json={
+        'code': 'SP-100', 'name': 'San pham hoan thanh', 'stock_quantity': 5,
+    })
+    assert resp.status_code == 200
+
+    resp = client.post('/api/production-orders', json={
+        'productCode': 'SP-100', 'productName': 'San pham hoan thanh', 'quantity': 20,
+    })
+    order_id = resp.get_json()['id']
+
+    # draft -> in_progress directly (skipping approval) is rejected
+    resp = client.post(f'/api/production-orders/{order_id}/transition', json={'status': 'in_progress'})
+    assert resp.status_code == 409
+    body = resp.get_json()
+    assert body['success'] is False
+    assert 'Không thể chuyển từ' in body['message']
+
+    # full valid sequence: draft -> pending_approval -> approved -> in_progress -> completed
+    resp = client.post(f'/api/production-orders/{order_id}/transition', json={'status': 'pending_approval'})
+    assert resp.status_code == 200
+    assert resp.get_json()['success'] is True
+
+    # self-transition (re-submitting the same status) is rejected, not a no-op
+    resp = client.post(f'/api/production-orders/{order_id}/transition', json={'status': 'pending_approval'})
+    assert resp.status_code == 409
+
+    resp = client.post(f'/api/production-orders/{order_id}/transition', json={'status': 'approved'})
+    assert resp.status_code == 200
+
+    resp = client.post(f'/api/production-orders/{order_id}/transition', json={'status': 'in_progress'})
+    assert resp.status_code == 200
+
+    resp = client.post(f'/api/production-orders/{order_id}/transition', json={'status': 'completed'})
+    assert resp.status_code == 200
+    assert resp.get_json()['success'] is True
+
+    # products.stock_quantity increased by the order's quantity (5 + 20 = 25)
+    resp = client.get('/api/products')
+    product = next(p for p in resp.get_json()['products'] if p['code'] == 'SP-100')
+    assert product['stock_quantity'] == 25
+
+    # per-order events: ascending time order, includes create + completion events
+    resp = client.get(f'/api/production-orders/{order_id}/events')
+    assert resp.status_code == 200
+    data = resp.get_json()
+    assert data['success'] is True
+    events = data['events']
+    event_names = [e['event'] for e in events]
+    assert event_names[0] == 'Tạo đơn hàng'
+    assert 'Hoàn thành' in event_names
+    assert 'Nhập kho thành phẩm' in event_names
+    assert all(e['orderId'] == order_id for e in events)
+    timestamps = [e['ts'] for e in events]
+    assert timestamps == sorted(timestamps)
+
+    # bulk events endpoint (Store.loadProductionOrders()'s Promise.all partner call)
+    resp = client.get('/api/production-orders/events')
+    assert resp.status_code == 200
+    bulk = resp.get_json()['events']
+    assert any(e['orderId'] == order_id and e['event'] == 'Tạo đơn hàng' for e in bulk)
+
+    # transitioning a terminal (completed) order is rejected
+    resp = client.post(f'/api/production-orders/{order_id}/transition', json={'status': 'cancelled'})
+    assert resp.status_code == 409
