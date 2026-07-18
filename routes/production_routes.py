@@ -85,13 +85,13 @@ def get_production_orders():
     try:
         if status:
             rows = conn.execute(
-                'SELECT * FROM production_orders WHERE is_deleted = 0 AND status = ? '
+                'SELECT * FROM production_orders WHERE is_deleted = FALSE AND status = ? '
                 'ORDER BY created_at DESC',
                 (status,),
             ).fetchall()
         else:
             rows = conn.execute(
-                'SELECT * FROM production_orders WHERE is_deleted = 0 ORDER BY created_at DESC'
+                'SELECT * FROM production_orders WHERE is_deleted = FALSE ORDER BY created_at DESC'
             ).fetchall()
         return jsonify({'success': True, 'orders': [_serialize_order(r) for r in rows]})
     finally:
@@ -144,7 +144,7 @@ def update_production_order(order_id):
     conn = get_connection()
     try:
         row = conn.execute(
-            'SELECT id FROM production_orders WHERE id = ? AND is_deleted = 0', (order_id,)
+            'SELECT id FROM production_orders WHERE id = ? AND is_deleted = FALSE', (order_id,)
         ).fetchone()
         if not row:
             return jsonify({'success': False, 'message': 'Không tìm thấy đơn hàng'}), 404
@@ -171,12 +171,12 @@ def delete_production_order(order_id):
     conn = get_connection()
     try:
         row = conn.execute(
-            'SELECT id FROM production_orders WHERE id = ? AND is_deleted = 0', (order_id,)
+            'SELECT id FROM production_orders WHERE id = ? AND is_deleted = FALSE', (order_id,)
         ).fetchone()
         if not row:
             return jsonify({'success': False, 'message': 'Không tìm thấy đơn hàng'}), 404
         conn.execute(
-            'UPDATE production_orders SET is_deleted = 1, deleted_at = ? WHERE id = ?',
+            'UPDATE production_orders SET is_deleted = TRUE, deleted_at = ? WHERE id = ?',
             (now(), order_id),
         )
         conn.commit()
@@ -197,7 +197,7 @@ def transition_order(order_id):
     conn = get_connection()
     try:
         row = conn.execute(
-            'SELECT * FROM production_orders WHERE id = ? AND is_deleted = 0', (order_id,)
+            'SELECT * FROM production_orders WHERE id = ? AND is_deleted = FALSE', (order_id,)
         ).fetchone()
         if not row:
             return jsonify({'success': False, 'message': 'Không tìm thấy đơn hàng'}), 404
