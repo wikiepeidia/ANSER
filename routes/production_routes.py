@@ -141,6 +141,15 @@ def create_production_order():
 @login_required
 def update_production_order(order_id):
     data = request.get_json(silent=True) or {}
+    if not data.get('productCode') or not data.get('productName'):
+        return jsonify({'success': False, 'message': 'Thiếu mã sản phẩm hoặc tên sản phẩm'}), 400
+    try:
+        quantity = float(data.get('quantity') or 0)
+    except (TypeError, ValueError):
+        quantity = 0
+    if quantity <= 0:
+        return jsonify({'success': False, 'message': 'Số lượng phải lớn hơn 0'}), 400
+
     conn = get_connection()
     try:
         row = conn.execute(
@@ -153,7 +162,7 @@ def update_production_order(order_id):
         conn.execute(
             'UPDATE production_orders SET product_code=?, product_name=?, quantity=?, unit=?, '
             'customer_name=?, notes=? WHERE id=?',
-            (data.get('productCode'), data.get('productName'), data.get('quantity'),
+            (data['productCode'], data['productName'], quantity,
              data.get('unit', 'cái'), data.get('customerName', ''), data.get('notes', ''), order_id),
         )
         conn.commit()

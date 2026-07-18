@@ -140,7 +140,7 @@
   document.getElementById("odCost").textContent = cost !== null ? Helpers.formatVND(cost) : "Chưa có dữ liệu";
   document.getElementById("odBomNote").innerHTML = bom.length > 0
     ? `<i class="fa-solid fa-circle-check"></i> Định mức đã được lưu cho sản phẩm này. Chưa gồm chi phí nhân công/khấu hao. <a href="#bom">Sửa định mức</a>`
-    : `<i class="fa-solid fa-circle-info"></i> Chưa có định mức lưu cho sản phẩm này — đang hiện gợi ý tự động. <a href="#bom">Khai báo định mức thật</a>`;
+    : `<i class="fa-solid fa-circle-info"></i> Chưa có định mức lưu cho sản phẩm này. <a href="#bom">Khai báo định mức</a>`;
 
   // Nhật ký quy trình
   const log = Store.getProcessLog(order.id);
