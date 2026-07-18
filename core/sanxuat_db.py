@@ -109,6 +109,17 @@ CREATE TABLE IF NOT EXISTS production_orders (
     is_deleted INTEGER DEFAULT 0,
     deleted_at TIMESTAMP
 );
+
+-- production_order_events: per-order timeline ("Nhật ký quy trình" panel on
+-- production-order-detail.html) — system-generated create + transition
+-- events, populated by routes/production_routes.py.
+CREATE TABLE IF NOT EXISTS production_order_events (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    order_id INTEGER NOT NULL,
+    event TEXT NOT NULL,
+    note TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 """
 
 SCHEMA_PG = """
@@ -205,6 +216,17 @@ CREATE TABLE IF NOT EXISTS production_orders (
     approved_by INTEGER,
     is_deleted BOOLEAN DEFAULT FALSE,
     deleted_at TIMESTAMP
+);
+
+-- production_order_events: per-order timeline ("Nhật ký quy trình" panel on
+-- production-order-detail.html) — system-generated create + transition
+-- events, populated by routes/production_routes.py.
+CREATE TABLE IF NOT EXISTS production_order_events (
+    id SERIAL PRIMARY KEY,
+    order_id INTEGER NOT NULL,
+    event TEXT NOT NULL,
+    note TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 """
 
