@@ -120,6 +120,21 @@ CREATE TABLE IF NOT EXISTS production_order_events (
     note TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- bom_lines: master-data BOM (bill of materials) per product_code, full-
+-- replaced on every save (routes/production_routes.py's PUT /api/bom/<code>
+-- deletes all rows for a product then bulk-inserts the cleaned list).
+CREATE TABLE IF NOT EXISTS bom_lines (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    product_code TEXT NOT NULL,
+    code TEXT NOT NULL,
+    name TEXT NOT NULL,
+    unit TEXT DEFAULT 'cái',
+    unit_cost REAL DEFAULT 0,
+    qty_per_unit REAL NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_bom_lines_product_code ON bom_lines(product_code);
 """
 
 SCHEMA_PG = """
@@ -228,6 +243,21 @@ CREATE TABLE IF NOT EXISTS production_order_events (
     note TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- bom_lines: master-data BOM (bill of materials) per product_code, full-
+-- replaced on every save (routes/production_routes.py's PUT /api/bom/<code>
+-- deletes all rows for a product then bulk-inserts the cleaned list).
+CREATE TABLE IF NOT EXISTS bom_lines (
+    id SERIAL PRIMARY KEY,
+    product_code TEXT NOT NULL,
+    code TEXT NOT NULL,
+    name TEXT NOT NULL,
+    unit TEXT DEFAULT 'cái',
+    unit_cost REAL DEFAULT 0,
+    qty_per_unit REAL NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_bom_lines_product_code ON bom_lines(product_code);
 """
 
 

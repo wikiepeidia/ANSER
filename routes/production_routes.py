@@ -290,3 +290,95 @@ def get_all_order_events():
         return jsonify({'success': True, 'events': [_serialize_event(r) for r in rows]})
     finally:
         conn.close()
+
+
+# ── BOM (bill of materials) — full-replace management + calculate ───────
+# (PROD-04, PROD-05). Master data keyed by product_code, decoupled from any
+# specific order. See 01-RESEARCH.md Pattern 4 (full-replace, not per-row
+# upsert) and Pitfall 6 (qty/lineCost rounded independently from the same
+# raw qty_per_unit * quantity product).
+
+def _serialize_bom_line(row):
+    return {
+        'code': row['code'],
+        'name': row['name'],
+        'unit': row['unit'],
+        'unitCost': row['unit_cost'],
+        'qtyPerUnit': row['qty_per_unit'],
+    }
+
+
+@production_bp.route('/api/bom/<product_code>', methods=['GET'])
+@login_required
+def get_bom(product_code):
+    conn = get_connection()
+    try:
+        rows = conn.execute(
+            'SELECT code, name, unit, unit_cost, qty_per_unit FROM bom_lines '
+            'WHERE product_code = ? ORDER BY id',
+            (product_code,),
+        ).fetchall()
+        return jsonify({'success': True, 'lines': [_serialize_bom_line(r) for r in rows]})
+    finally:
+        conn.close()
+
+
+@production_bp.route('/api/bom/<product_code>', methods=['PUT'])
+@login_required
+def save_bom(product_code):
+    data = request.get_json(silent=True) or {}
+    lines = data.get('lines') or []
+
+    clean = []
+    for l in lines:
+        try:
+            qty_per_unit = float(l.get('qtyPerUnit') or 0)
+        except (TypeError, ValueError):
+            qty_per_unit = 0
+        if not l.get('code') or not l.get('name') or qty_per_unit <= 0:
+            continue
+        unit = (l.get('unit') or 'cái').strip() or 'cái'
+        try:
+            unit_cost = float(l.get('unitCost') or 0)
+        except (TypeError, ValueError):
+            unit_cost = 0
+        clean.append({
+            'code': l['code'],
+            'name': l['name'],
+            'unit': unit,
+            'unit_cost': unit_cost,
+            'qty_per_unit': qty_per_unit,
+        })
+
+    if not clean:
+        return jsonify({
+            'success': False,
+            'message': 'Cần ít nhất 1 dòng nguyên vật liệu hợp lệ (mã, tên, định mức > 0)',
+        }), 400
+
+    conn = get_connection()
+    try:
+        conn.execute('DELETE FROM bom_lines WHERE product_code = ?', (product_code,))
+        for l in clean:
+            conn.execute(
+                'INSERT INTO bom_lines (product_code, code, name, unit, unit_cost, qty_per_unit) '
+                'VALUES (?, ?, ?, ?, ?, ?)',
+                (product_code, l['code'], l['name'], l['unit'], l['unit_cost'], l['qty_per_unit']),
+            )
+        conn.commit()
+        return jsonify({
+            'success': True,
+            'message': 'Lưu định mức thành công',
+            'lines': [
+                {
+                    'code': l['code'], 'name': l['name'], 'unit': l['unit'],
+                    'unitCost': l['unit_cost'], 'qtyPerUnit': l['qty_per_unit'],
+                }
+                for l in clean
+            ],
+        })
+    except Exception as e:
+        conn.rollback()
+        return jsonify({'success': False, 'message': str(e)}), 400
+    finally:
+        conn.close()
