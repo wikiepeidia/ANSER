@@ -1,12 +1,12 @@
 /**
  * store.js — Data store, wired to the real ANSER backend for products,
- * imports, exports, customers and dashboard stats.
+ * imports, exports, customers, dashboard stats, production orders and BOM.
  *
  * Automation (rules/logs) is not stored here — automation-rules.html and
  * automation-logs.html read directly from the real n8n API (/api/n8n/*).
  *
- * Production Orders are MOCK (localStorage) — San Xuat has no real
- * production_orders/BOM/process_log tables yet, see the section below.
+ * Material batches/warehouses/suppliers/invoices below this point are still
+ * MOCK (localStorage) — real backends for those land in later phases.
  */
 
 const Store = {
@@ -187,11 +187,9 @@ const Store = {
     }
   },
 
-  // --- Production Orders (MOCK — chưa có bảng/API thật. San Xuat's own DB
-  // (core/sanxuat_db.py) chỉ có products/customers/import/export — chưa có
-  // production_orders/BOM/process_log. Toàn bộ đọc/ghi nằm trong các hàm
-  // dưới đây, persisted qua localStorage; khi có API thật chỉ cần đổi phần
-  // thân các hàm này sang gọi Store._api(), UI/HTML không cần đổi.) ---
+  // --- Production Orders (real API: /api/production-orders*, backed by
+  // routes/production_routes.py). Function bodies below call Store._api();
+  // signatures are unchanged so callers/HTML need no changes. ---
   ORDER_STATUSES: {
     draft:             { label: "Nháp",           badge: "gray",   icon: "fa-file-pen" },
     pending_approval:  { label: "Chờ duyệt",       badge: "orange", icon: "fa-hourglass-half" },
@@ -368,68 +366,19 @@ const Store = {
   productionOrders: [],
   processLogs: [],
 
-  _seedProductionOrders() {
-    const sample = [
-      { productCode: "SP-001", productName: "Áo thun cotton", quantity: 200, unit: "cái", customerName: "Công ty TNHH Minh Phát", status: "in_progress", daysAgo: 5 },
-      { productCode: "SP-002", productName: "Quần jean nam", quantity: 120, unit: "cái", customerName: "Cửa hàng An Khang", status: "pending_approval", daysAgo: 1 },
-      { productCode: "SP-003", productName: "Túi vải canvas", quantity: 500, unit: "cái", customerName: "Siêu thị Co.opmart", status: "completed", daysAgo: 12 },
-      { productCode: "SP-004", productName: "Mũ lưỡi trai", quantity: 300, unit: "cái", customerName: "Công ty XNK Đại Dương", status: "draft", daysAgo: 0 },
-    ];
-    return sample.map((s, i) => {
-      const createdAt = new Date(Date.now() - s.daysAgo * 86400000).toISOString();
-      const isApprovedOrLater = ["approved", "in_progress", "completed"].includes(s.status);
-      return {
-        id: i + 1,
-        code: `DH-${1000 + i}`,
-        productCode: s.productCode,
-        productName: s.productName,
-        quantity: s.quantity,
-        unit: s.unit,
-        customerName: s.customerName,
-        notes: "",
-        status: s.status,
-        createdAt,
-        createdBy: "Demo",
-        approvedAt: isApprovedOrLater ? createdAt : null,
-        approvedBy: isApprovedOrLater ? "Quản lý sản xuất" : null,
-      };
-    });
-  },
-
-  _seedProcessLogs(orders) {
-    const logs = [];
-    let logId = 1;
-    orders.forEach((o) => {
-      logs.push({ id: logId++, orderId: o.id, ts: o.createdAt, event: "Tạo đơn hàng", note: `Đơn ${o.code} được tạo` });
-      if (o.status !== "draft") {
-        logs.push({ id: logId++, orderId: o.id, ts: o.createdAt, event: "Gửi duyệt", note: "" });
-      }
-      if (["approved", "in_progress", "completed"].includes(o.status)) {
-        logs.push({ id: logId++, orderId: o.id, ts: o.approvedAt || o.createdAt, event: "Duyệt đơn", note: `Duyệt bởi ${o.approvedBy || "—"}` });
-      }
-      if (["in_progress", "completed"].includes(o.status)) {
-        logs.push({ id: logId++, orderId: o.id, ts: o.approvedAt || o.createdAt, event: "Bắt đầu sản xuất", note: "" });
-      }
-      if (o.status === "completed") {
-        logs.push({ id: logId++, orderId: o.id, ts: o.createdAt, event: "Hoàn thành", note: "Đã nghiệm thu, nhập kho thành phẩm" });
-      }
-    });
-    return logs;
-  },
-
-  loadProductionOrders() {
-    let orders = Helpers.load("productionOrders", null);
-    if (!orders || !Array.isArray(orders) || !orders.length) {
-      orders = this._seedProductionOrders();
-      Helpers.save("productionOrders", orders);
+  async loadProductionOrders() {
+    try {
+      const [ordersData, eventsData] = await Promise.all([
+        this._api("/api/production-orders"),
+        this._api("/api/production-orders/events"),
+      ]);
+      this.productionOrders = ordersData.orders || [];
+      this.processLogs = eventsData.events || [];
+    } catch (e) {
+      console.error("loadProductionOrders failed:", e);
+      this.productionOrders = [];
+      this.processLogs = [];
     }
-    this.productionOrders = orders;
-    let logs = Helpers.load("productionOrderLogs", null);
-    if (!logs || !Array.isArray(logs) || !logs.length) {
-      logs = this._seedProcessLogs(orders);
-      Helpers.save("productionOrderLogs", logs);
-    }
-    this.processLogs = logs;
     return this.productionOrders;
   },
 
@@ -443,104 +392,61 @@ const Store = {
       .sort((a, b) => new Date(a.ts) - new Date(b.ts));
   },
 
-  _nextOrderId() {
-    return this.productionOrders.reduce((max, o) => Math.max(max, o.id), 0) + 1;
-  },
-
+  // Vẫn được addProcessEvent() dùng (Phase 3 QC-03 sẽ cho "Ghi sự kiện" một
+  // backend thật riêng — chưa đổi trong phase này).
   _saveProductionOrders() {
     Helpers.save("productionOrders", this.productionOrders);
     Helpers.save("productionOrderLogs", this.processLogs);
   },
 
-  createOrder(data) {
-    const id = this._nextOrderId();
-    const code = `DH-${1000 + id}`;
-    const createdAt = new Date().toISOString();
-    const order = {
-      id, code,
-      productCode: data.productCode,
-      productName: data.productName,
-      quantity: data.quantity,
-      unit: data.unit || "cái",
-      customerName: data.customerName || "",
-      notes: data.notes || "",
-      status: "draft",
-      createdAt,
-      createdBy: "Bạn",
-      approvedAt: null,
-      approvedBy: null,
-    };
-    this.productionOrders.unshift(order);
-    this.processLogs.push({ id: Date.now(), orderId: id, ts: createdAt, event: "Tạo đơn hàng", note: `Đơn ${code} được tạo` });
-    this._saveProductionOrders();
-    return order;
+  async createOrder(data) {
+    const res = await this._api("/api/production-orders", {
+      method: "POST",
+      body: JSON.stringify({
+        productCode: data.productCode,
+        productName: data.productName,
+        quantity: data.quantity,
+        unit: data.unit || "cái",
+        customerName: data.customerName || "",
+        notes: data.notes || "",
+      }),
+    });
+    await this.loadProductionOrders();
+    return this.getOrderById(res.id);
   },
 
-  updateOrder(id, patch) {
-    const order = this.getOrderById(id);
-    if (!order) throw new Error("Không tìm thấy đơn hàng");
-    Object.assign(order, {
-      productCode: patch.productCode,
-      productName: patch.productName,
-      quantity: patch.quantity,
-      unit: patch.unit || order.unit,
-      customerName: patch.customerName || "",
-      notes: patch.notes || "",
+  async updateOrder(id, patch) {
+    await this._api(`/api/production-orders/${id}`, {
+      method: "PUT",
+      body: JSON.stringify({
+        productCode: patch.productCode,
+        productName: patch.productName,
+        quantity: patch.quantity,
+        unit: patch.unit || "cái",
+        customerName: patch.customerName || "",
+        notes: patch.notes || "",
+      }),
     });
-    this._saveProductionOrders();
-    return order;
+    await this.loadProductionOrders();
+    return this.getOrderById(id);
   },
 
   async transitionOrder(id, newStatus, note) {
-    const order = this.getOrderById(id);
-    if (!order) throw new Error("Không tìm thấy đơn hàng");
-    const allowed = this.ORDER_STATUS_FLOW[order.status] || [];
-    if (!allowed.includes(newStatus)) {
-      throw new Error(`Không thể chuyển từ "${this.ORDER_STATUSES[order.status].label}" sang "${this.ORDER_STATUSES[newStatus].label}"`);
-    }
-    const label = this.ORDER_TRANSITION_LABELS[`${order.status}>${newStatus}`] || "Chuyển trạng thái";
-    order.status = newStatus;
-    if (newStatus === "approved") {
-      order.approvedAt = new Date().toISOString();
-      order.approvedBy = "Bạn";
-    }
-    this.processLogs.push({
-      id: Date.now(), orderId: order.id, ts: new Date().toISOString(),
-      event: label, note: note || "",
+    // Store._api() throws on {success:false} (e.g. the backend's 409
+    // invalid-transition response) — router.js's existing catch already
+    // relies on this. Stock increment on completion now happens
+    // server-side, atomically, inside this same request.
+    await this._api(`/api/production-orders/${id}/transition`, {
+      method: "POST",
+      body: JSON.stringify({ status: newStatus, note: note || "" }),
     });
-
-    // Hoàn thành đơn sản xuất → cộng số lượng đã sản xuất vào tồn kho sản
-    // phẩm thật (giống cách phiếu nhập kho tăng stock_quantity trong
-    // routes/api_routes.py). "Chọn sản phẩm" lúc tạo đơn chỉ để biết đơn
-    // đang sản xuất SP nào — tồn kho chỉ tăng khi đơn thực sự hoàn thành,
-    // không phải lúc tạo đơn.
-    if (newStatus === "completed") {
-      const product = this.products.find((p) => p.code === order.productCode);
-      if (product) {
-        await this.updateProduct(product.id, {
-          name: product.name,
-          category: product.category,
-          unit: product.unit,
-          sellPrice: product.sellPrice,
-          stock: product.stock + order.quantity,
-          description: product.description,
-        });
-        this.processLogs.push({
-          id: Date.now() + 1, orderId: order.id, ts: new Date().toISOString(),
-          event: "Nhập kho thành phẩm",
-          note: `+${order.quantity} ${order.unit} vào tồn kho "${product.name}" (${product.code})`,
-        });
-      }
-    }
-
-    this._saveProductionOrders();
-    return order;
+    await this.loadProductionOrders();
+    return this.getOrderById(id);
   },
 
-  deleteOrder(id) {
+  async deleteOrder(id) {
+    await this._api(`/api/production-orders/${id}`, { method: "DELETE" });
     this.productionOrders = this.productionOrders.filter((o) => o.id !== Number(id));
-    this.processLogs = this.processLogs.filter((l) => l.orderId !== Number(id));
-    this._saveProductionOrders();
   },
 
   // --- Material Batches + Traceability (MOCK — localStorage, đứng thay
