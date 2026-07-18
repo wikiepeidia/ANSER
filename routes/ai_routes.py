@@ -45,10 +45,14 @@ def ai_upload():
 
     try:
         hf_base_url = os.environ.get('HF_BASE_URL', '').rstrip('/')
+        hf_token = os.environ.get('HF_TOKEN')
 
         files = {'file': (file.filename, file.read(), file.mimetype)}
         data = {'user_id': current_user.id, 'store_id': 1}
+        # FIX: gửi kèm X-API-Token để Brain không trả 401 (đừng set Content-Type cho multipart)
         headers = {'ngrok-skip-browser-warning': 'true'}
+        if hf_token:
+            headers['X-API-Token'] = hf_token
 
         response = requests.post(
             f"{hf_base_url}/upload",

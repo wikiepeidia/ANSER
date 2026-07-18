@@ -1,7 +1,7 @@
 import os
-from core.env_loader import load_project_env
+from dotenv import load_dotenv
 
-load_project_env()
+load_dotenv()
 
 # Core Configuration
 class Config:
