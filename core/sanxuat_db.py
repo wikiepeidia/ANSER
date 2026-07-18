@@ -79,6 +79,20 @@ CREATE TABLE IF NOT EXISTS export_details (
     total_price REAL DEFAULT 0
 );
 
+-- status: draft / approved / in_production / done / cancelled
+CREATE TABLE IF NOT EXISTS production_orders (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    order_code TEXT UNIQUE NOT NULL,
+    product_id INTEGER NOT NULL,
+    quantity REAL NOT NULL,
+    status TEXT NOT NULL DEFAULT 'draft',
+    created_by INTEGER,
+    approved_by INTEGER,
+    started_at TIMESTAMP,
+    finished_at TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Sink for n8n workflow callbacks (RAG_BASE_URL / NOTIFY_URL nodes in
 -- workflow_templates/manuf_*.json). Each row is one HTTP call an n8n
 -- workflow made back into this app while running.
@@ -156,6 +170,30 @@ CREATE TABLE IF NOT EXISTS export_details (
     quantity REAL DEFAULT 0,
     unit_price REAL DEFAULT 0,
     total_price REAL DEFAULT 0
+);
+
+-- status: draft / approved / in_production / done / cancelled
+CREATE TABLE IF NOT EXISTS production_orders (
+    id SERIAL PRIMARY KEY,
+    order_code TEXT UNIQUE NOT NULL,
+    product_id INTEGER NOT NULL,
+    quantity REAL NOT NULL,
+    status TEXT NOT NULL DEFAULT 'draft',
+    created_by INTEGER,
+    approved_by INTEGER,
+    started_at TIMESTAMP,
+    finished_at TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS bom_items (
+    id SERIAL PRIMARY KEY,
+    product_id INTEGER NOT NULL REFERENCES products(id),
+    material_product_id INTEGER NOT NULL REFERENCES products(id),
+    quantity_per_unit NUMERIC(10, 4) NOT NULL,
+    unit VARCHAR(50) NOT NULL,
+    notes TEXT,
+    CONSTRAINT unique_bom_material UNIQUE (product_id, material_product_id)
 );
 
 CREATE TABLE IF NOT EXISTS automation_events (

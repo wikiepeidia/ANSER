@@ -20,8 +20,12 @@ def app():
     os.close(fd)
 
     # Must be patched before app.py's module-level `app = create_app()`
-    # (imported below) runs init_db() against it.
+    # (imported below) runs init_db() against it. SANXUAT_USE_POSTGRES must
+    # be forced off too — otherwise, whenever SANXUAT_POSTGRES_URL is set in
+    # the real .env, get_connection() ignores SANXUAT_DATABASE_PATH entirely
+    # and tests run against the real Neon DB instead of this temp SQLite file.
     Config.SANXUAT_DATABASE_PATH = temp_path
+    Config.SANXUAT_USE_POSTGRES = False
 
     from core.sanxuat_db import init_db
     init_db()
