@@ -2,6 +2,9 @@
 .mcp.json
 strix_runs/
 report/
+# Local git worktree for running the sibling Gateway app alongside this one
+# (machine-local dev convenience, not part of this branch's own code)
+/ANSER-gateway/
 # AI coding assistant scaffolding — machine-local, never shared/merged
 .claude/
 .agent/
