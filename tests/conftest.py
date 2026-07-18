@@ -26,7 +26,8 @@ def app():
     # definition time) — otherwise get_connection() would silently connect
     # to a real Neon Postgres database instead of this isolated temp file,
     # which is exactly the "never corrupt or depend on local dev data"
-    # guarantee this fixture exists to provide.
+    # guarantee this fixture exists to provide. (Independently confirmed by
+    # a teammate hitting the identical landmine — see merge commit.)
     Config.SANXUAT_DATABASE_PATH = temp_path
     Config.SANXUAT_USE_POSTGRES = False
 
