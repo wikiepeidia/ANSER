@@ -11,8 +11,8 @@ Google OAuth login stays on Retail (:5002) for now — not extracted here.
 import os
 from datetime import timedelta
 
-from dotenv import load_dotenv
-load_dotenv()
+from core.env_loader import load_project_env
+load_project_env()
 
 from flask import Flask, jsonify, redirect, request, flash, url_for  # noqa: E402
 from flask_wtf.csrf import CSRFError, generate_csrf  # noqa: E402
