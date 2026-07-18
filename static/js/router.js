@@ -31,8 +31,7 @@ const Router = {
     // Products come from the real ANSER API. Automation (rules/logs) is
     // loaded per-page directly from the n8n API, not preloaded here.
     await Store.loadProducts();
-    Store.loadProductionOrders();
-    Store.loadBOMCatalog();
+    await Store.loadProductionOrders();
     Store.loadMaterialBatches();
     Store.loadWarehouseStock();
     Store.loadSuppliers();
@@ -308,7 +307,7 @@ const Router = {
     if (!id) return;
     try {
       if (type === "order") {
-        Store.deleteOrder(id);
+        await Store.deleteOrder(id);
         showToast("Đã xoá đơn hàng!");
       } else if (type === "batch") {
         Store.deleteBatch(id);
@@ -364,7 +363,7 @@ const Router = {
     modal.classList.add("open");
   },
 
-  saveOrderForm(e) {
+  async saveOrderForm(e) {
     e.preventDefault();
     const modal = document.getElementById("orderModal");
     const form = e.target;
@@ -385,10 +384,10 @@ const Router = {
     };
     try {
       if (modal.dataset.editId) {
-        Store.updateOrder(parseInt(modal.dataset.editId), data);
+        await Store.updateOrder(parseInt(modal.dataset.editId), data);
         showToast("Đã cập nhật đơn hàng!");
       } else {
-        Store.createOrder(data);
+        await Store.createOrder(data);
         showToast("Đã tạo đơn sản xuất mới!");
       }
       modal.classList.remove("open");

@@ -113,8 +113,8 @@
     (lines.length ? lines : [null]).forEach((l) => rowsBody.appendChild(rowTemplate(l)));
   }
 
-  function renderStatusNote(productCode) {
-    if (Store.hasCustomBOM(productCode)) {
+  function renderStatusNote(productCode, hasCustom) {
+    if (hasCustom) {
       statusNote.innerHTML = `<i class="fa-solid fa-circle-check"></i> Định mức đã được lưu cho sản phẩm này.`;
     } else {
       statusNote.innerHTML = `<i class="fa-solid fa-circle-info"></i> Sản phẩm này chưa có định mức — đang hiện gợi ý tự động, kiểm tra rồi bấm "Lưu định mức" để xác nhận.`;
@@ -122,7 +122,7 @@
     savedInfo.textContent = "";
   }
 
-  function loadProduct(code) {
+  async function loadProduct(code) {
     calcResult.style.display = "none";
     if (!code) {
       emptyState.style.display = "block";
@@ -131,8 +131,9 @@
     }
     emptyState.style.display = "none";
     editorSection.style.display = "block";
-    renderRows(Store.getBOMForProduct(code));
-    renderStatusNote(code);
+    const lines = await Store.getBOMForProduct(code);
+    renderRows(lines);
+    renderStatusNote(code, lines.length > 0);
   }
 
   productSelect.addEventListener("change", () => loadProduct(productSelect.value));
@@ -152,7 +153,7 @@
     }
   });
 
-  document.getElementById("btnSaveBom").addEventListener("click", () => {
+  document.getElementById("btnSaveBom").addEventListener("click", async () => {
     const code = productSelect.value;
     if (!code) return;
     const lines = Array.from(rowsBody.querySelectorAll(".bom-item-row")).map((r) => ({
@@ -163,9 +164,9 @@
       unitCost: r.querySelector(".bom-cost").value,
     }));
     try {
-      const saved = Store.saveBOMForProduct(code, lines);
+      const saved = await Store.saveBOMForProduct(code, lines);
       renderRows(saved);
-      renderStatusNote(code);
+      renderStatusNote(code, saved.length > 0);
       savedInfo.textContent = `Đã lưu lúc ${Helpers.formatDateTime(new Date())}`;
       showToast("Đã lưu định mức nguyên vật liệu!");
     } catch (err) {
@@ -175,14 +176,14 @@
 
   // "Tính cho X đơn vị" — mock cho POST /api/bom/calculate (xem
   // Store.calculateBOMForQuantity trong store.js).
-  document.getElementById("btnCalcBom").addEventListener("click", () => {
+  document.getElementById("btnCalcBom").addEventListener("click", async () => {
     const code = productSelect.value;
     const qty = parseFloat(document.getElementById("bomCalcQty").value) || 0;
     if (!code || qty <= 0) {
       showToast("Chọn sản phẩm và nhập số lượng hợp lệ", "warning");
       return;
     }
-    const result = Store.calculateBOMForQuantity(code, qty);
+    const result = await Store.calculateBOMForQuantity(code, qty);
     document.getElementById("bomCalcBody").innerHTML = result.lines.map((m) => `
       <tr>
         <td>${Helpers.escapeHtml(m.code)}</td>
