@@ -1,4 +1,16 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-  <rect width="32" height="32" rx="7" fill="#2563eb"/>
-  <text x="16" y="23" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="700" fill="#ffffff" text-anchor="middle">S</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#60a5fa"/>
+      <stop offset="100%" style="stop-color:#1d4ed8"/>
+    </linearGradient>
+  </defs>
+  <!-- Factory: sawtooth-roof building + chimney -->
+  <rect x="8" y="30" width="48" height="24" rx="2" fill="url(#g)"/>
+  <polygon points="12,30 12,18 22,26 22,18 32,26 32,18 42,26 42,18 52,26 52,30" fill="url(#g)"/>
+  <rect x="16" y="10" width="6" height="12" fill="url(#g)"/>
+  <ellipse cx="19" cy="8" rx="4" ry="3" fill="#bfdbfe" opacity="0.85"/>
+  <rect x="16" y="38" width="7" height="16" fill="#eff6ff"/>
+  <rect x="28" y="38" width="7" height="16" fill="#eff6ff"/>
+  <rect x="40" y="38" width="7" height="16" fill="#eff6ff"/>
 </svg>
