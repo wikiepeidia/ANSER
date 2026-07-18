@@ -30,6 +30,7 @@ tests/
 !/tests/conftest.py
 !/tests/test_production_orders.py
 !/tests/test_bom.py
+!/tests/test_env_loader.py
 evaluate/
 jobs/
 # C extensions

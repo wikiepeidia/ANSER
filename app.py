@@ -9,9 +9,9 @@ ANSER's signin page.
 """
 import os
 
-from dotenv import load_dotenv
+from core.env_loader import load_project_env
 
-load_dotenv()
+load_project_env()
 
 from flask import Flask, redirect  # noqa: E402
 from flask_login import LoginManager  # noqa: E402
