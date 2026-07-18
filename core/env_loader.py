@@ -7,16 +7,21 @@ independently, with no branch awareness — fine for a single-clone-per-branch
 setup, but it meant a dev working out of one shared clone had to hand-rename
 a single root `.env` file every time they switched branches.
 
-`load_project_env()` centralizes resolution into 3 steps, checked in order:
+`load_project_env()` centralizes resolution into 4 steps, checked in order:
 
 1. Root `.env` is a plain FILE -> load it directly. This is today's existing
    single-clone behavior, completely unchanged.
 2. Root `.env` is a DIRECTORY -> look up the currently checked-out git branch
    against a fixed allowlist (`_BRANCH_ENV_FILES`) and load the matching file
    inside `.env/` if present. This is the new multi-branch-in-one-clone case.
-3. Neither present, or git/branch/file lookup fails for any reason -> fall
-   back to a bare `load_dotenv()` call (today's existing no-op behavior when
-   no `.env` is found anywhere — never crashes).
+3. Root `.env` is a DIRECTORY but step 2 found no branch-specific file (git
+   unavailable, detached HEAD, unmapped branch, or the mapped file is simply
+   missing) -> last-resort fallback to a generic `.env/.env` file, if one
+   exists inside the directory. Lets a dev drop in one shared/default file
+   that covers any branch not explicitly listed in `_BRANCH_ENV_FILES`.
+4. None of the above resolved to a file -> fall back to a bare
+   `load_dotenv()` call (today's existing no-op behavior when no `.env` is
+   found anywhere — never crashes).
 
 Env vars must be resolved and loaded into `os.environ` BEFORE
 `core.config.Config`'s class body runs, since that class reads
@@ -82,6 +87,11 @@ def _resolve_env_path(root_dir):
             branch_file = os.path.join(root_env, filename)
             if os.path.isfile(branch_file):
                 return branch_file
+        # Last resort: a generic `.env/.env` file, for branches not in
+        # _BRANCH_ENV_FILES, detached HEAD, or git being unavailable.
+        fallback_file = os.path.join(root_env, '.env')
+        if os.path.isfile(fallback_file):
+            return fallback_file
         return None
 
     return None

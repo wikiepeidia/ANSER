@@ -70,6 +70,46 @@ def test_resolve_env_path_dir_mapped_branch_file_missing_returns_none(tmp_path, 
     assert result is None
 
 
+def test_resolve_env_path_dir_unmapped_branch_uses_generic_fallback_file(tmp_path, monkeypatch):
+    env_dir = tmp_path / ".env"
+    env_dir.mkdir()
+    fallback_file = env_dir / ".env"
+    fallback_file.write_text("FOO=bar")
+
+    monkeypatch.setattr(env_loader, "_current_branch", lambda: "some-other-branch")
+
+    result = _resolve_env_path(str(tmp_path))
+
+    assert result == str(fallback_file)
+
+
+def test_resolve_env_path_dir_mapped_branch_file_missing_uses_generic_fallback_file(tmp_path, monkeypatch):
+    env_dir = tmp_path / ".env"
+    env_dir.mkdir()
+    # No .env.sanxuat file created inside env_dir, but a generic fallback is.
+    fallback_file = env_dir / ".env"
+    fallback_file.write_text("FOO=bar")
+
+    monkeypatch.setattr(env_loader, "_current_branch", lambda: "anser-san-xuat")
+
+    result = _resolve_env_path(str(tmp_path))
+
+    assert result == str(fallback_file)
+
+
+def test_resolve_env_path_dir_git_unavailable_uses_generic_fallback_file(tmp_path, monkeypatch):
+    env_dir = tmp_path / ".env"
+    env_dir.mkdir()
+    fallback_file = env_dir / ".env"
+    fallback_file.write_text("FOO=bar")
+
+    monkeypatch.setattr(env_loader, "_current_branch", lambda: None)
+
+    result = _resolve_env_path(str(tmp_path))
+
+    assert result == str(fallback_file)
+
+
 def test_resolve_env_path_neither_file_nor_dir_returns_none(tmp_path):
     # tmp_path/.env does not exist at all.
     result = _resolve_env_path(str(tmp_path))
