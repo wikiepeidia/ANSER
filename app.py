@@ -59,9 +59,11 @@ def create_app():
     from routes.page_routes import page_bp
     from routes.api_routes import api_bp
     from routes.n8n_api import n8n_api_bp
+    from routes.production_routes import production_bp
     app.register_blueprint(page_bp)
     app.register_blueprint(api_bp)
     app.register_blueprint(n8n_api_bp)
+    app.register_blueprint(production_bp)
 
     init_db()
 

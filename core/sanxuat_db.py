@@ -88,6 +88,27 @@ CREATE TABLE IF NOT EXISTS automation_events (
     payload TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- production_orders table (real backend for the Phase 1 mock in static/js/store.js).
+-- code is id-derived ('DH-' || (1000+id)) so it's set via UPDATE right after
+-- INSERT, once the id is known (see routes/production_routes.py).
+CREATE TABLE IF NOT EXISTS production_orders (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    code TEXT UNIQUE,
+    product_code TEXT NOT NULL,
+    product_name TEXT NOT NULL,
+    quantity REAL NOT NULL,
+    unit TEXT DEFAULT 'cái',
+    customer_name TEXT,
+    notes TEXT,
+    status TEXT NOT NULL DEFAULT 'draft',
+    created_by INTEGER,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    approved_at TIMESTAMP,
+    approved_by INTEGER,
+    is_deleted INTEGER DEFAULT 0,
+    deleted_at TIMESTAMP
+);
 """
 
 SCHEMA_PG = """
@@ -163,6 +184,27 @@ CREATE TABLE IF NOT EXISTS automation_events (
     action TEXT NOT NULL,
     payload TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- production_orders table (real backend for the Phase 1 mock in static/js/store.js).
+-- code is id-derived ('DH-' || (1000+id)) so it's set via UPDATE right after
+-- INSERT, once the id is known (see routes/production_routes.py).
+CREATE TABLE IF NOT EXISTS production_orders (
+    id SERIAL PRIMARY KEY,
+    code TEXT UNIQUE,
+    product_code TEXT NOT NULL,
+    product_name TEXT NOT NULL,
+    quantity REAL NOT NULL,
+    unit TEXT DEFAULT 'cái',
+    customer_name TEXT,
+    notes TEXT,
+    status TEXT NOT NULL DEFAULT 'draft',
+    created_by INTEGER,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    approved_at TIMESTAMP,
+    approved_by INTEGER,
+    is_deleted BOOLEAN DEFAULT FALSE,
+    deleted_at TIMESTAMP
 );
 """
 

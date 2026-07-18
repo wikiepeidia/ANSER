@@ -20,8 +20,15 @@ def app():
     os.close(fd)
 
     # Must be patched before app.py's module-level `app = create_app()`
-    # (imported below) runs init_db() against it.
+    # (imported below) runs init_db() against it. Force SQLite even if this
+    # shared multi-branch working tree's .env defines SANXUAT_POSTGRES_URL
+    # (Config.SANXUAT_USE_POSTGRES is computed from that env var at class-
+    # definition time) — otherwise get_connection() would silently connect
+    # to a real Neon Postgres database instead of this isolated temp file,
+    # which is exactly the "never corrupt or depend on local dev data"
+    # guarantee this fixture exists to provide.
     Config.SANXUAT_DATABASE_PATH = temp_path
+    Config.SANXUAT_USE_POSTGRES = False
 
     from core.sanxuat_db import init_db
     init_db()
