@@ -1,4 +1,11 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-  <rect width="32" height="32" rx="7" fill="#4f46e5"/>
-  <text x="16" y="23" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="700" fill="#ffffff" text-anchor="middle">A</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#818cf8"/>
+      <stop offset="100%" style="stop-color:#4338ca"/>
+    </linearGradient>
+  </defs>
+  <!-- Gateway: archway/portal shape + keyhole slit (entry point, auth) -->
+  <path d="M14 54 V28 A18 18 0 0 1 50 28 V54" fill="none" stroke="url(#g)" stroke-width="7" stroke-linecap="round"/>
+  <rect x="29" y="32" width="6" height="16" rx="3" fill="url(#g)"/>
 </svg>
