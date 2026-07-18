@@ -3,8 +3,8 @@ import sys
 import threading
 from datetime import timedelta
 
-from dotenv import load_dotenv
-load_dotenv()
+from core.env_loader import load_project_env
+load_project_env()
 
 from flask import Flask, jsonify, redirect, request, flash
 from werkzeug.middleware.proxy_fix import ProxyFix
