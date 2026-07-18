@@ -268,48 +268,13 @@ const Store = {
     return Math.abs(h);
   },
 
-  // --- BOM master data (MOCK — localStorage, đứng thay cho /api/bom/*
-  // thật. Khi có backend thật, đổi thân saveBOMForProduct/
-  // calculateBOMForQuantity sang gọi Store._api(), giữ nguyên chữ ký hàm
-  // để bom.html và production-order-detail.html không phải sửa gì.) ---
-  bomCatalog: {}, // { [productCode]: [{code,name,unit,unitCost,qtyPerUnit}] }
+  // --- BOM master data (real API: /api/bom/*, backed by
+  // routes/production_routes.py). Function bodies below call Store._api();
+  // signatures are unchanged so bom.html/production-order-detail.html
+  // need no changes. No client-side fabrication of default BOM lines —
+  // an empty result means no BOM has been saved for that product yet. ---
 
-  loadBOMCatalog() {
-    this.bomCatalog = Helpers.load("bomCatalog", {}) || {};
-    return this.bomCatalog;
-  },
-
-  hasCustomBOM(productCode) {
-    return Array.isArray(this.bomCatalog[productCode]) && this.bomCatalog[productCode].length > 0;
-  },
-
-  // Định mức NVL cho 1 sản phẩm — ưu tiên định mức đã lưu (bomCatalog); nếu
-  // sản phẩm chưa từng được khai báo BOM thì sinh gợi ý mặc định ổn định
-  // (deterministic theo mã SP) để trang chi tiết đơn hàng luôn có dữ liệu.
-  getBOMForProduct(productCode) {
-    if (this.hasCustomBOM(productCode)) {
-      return this.bomCatalog[productCode].map((m) => ({ ...m }));
-    }
-    return this._defaultBOMForProduct(productCode);
-  },
-
-  _defaultBOMForProduct(productCode) {
-    const pool = this._MOCK_MATERIALS;
-    const h = this._hashStr(productCode || "SP");
-    const count = 2 + (h % 3); // 2-4 dòng nguyên vật liệu
-    const lines = [];
-    for (let i = 0; i < count; i++) {
-      // *3 (coprime with pool.length=7) so consecutive i's hit distinct
-      // materials instead of collapsing back onto the same index.
-      const mat = pool[(h + i * 3) % pool.length];
-      if (lines.find((l) => l.code === mat.code)) continue;
-      const qtyPerUnit = 0.5 + ((h + i * 13) % 6) * 0.5; // 0.5 .. 3.0
-      lines.push({ ...mat, qtyPerUnit });
-    }
-    return lines;
-  },
-
-  saveBOMForProduct(productCode, lines) {
+  async saveBOMForProduct(productCode, lines) {
     if (!productCode) throw new Error("Chưa chọn sản phẩm");
     const clean = (lines || [])
       .filter((l) => l.code && l.name && Number(l.qtyPerUnit) > 0)
@@ -321,30 +286,35 @@ const Store = {
         qtyPerUnit: Number(l.qtyPerUnit),
       }));
     if (!clean.length) throw new Error("Cần ít nhất 1 dòng nguyên vật liệu hợp lệ (mã, tên, định mức > 0)");
-    this.bomCatalog[productCode] = clean;
-    Helpers.save("bomCatalog", this.bomCatalog);
-    return clean;
+    const res = await this._api(`/api/bom/${encodeURIComponent(productCode)}`, {
+      method: "PUT",
+      body: JSON.stringify({ lines: clean }),
+    });
+    return res.lines || clean;
   },
 
-  // Mock cho POST /api/bom/calculate — tính tổng NVL cần khi sản xuất X đơn vị.
-  calculateBOMForQuantity(productCode, quantity) {
-    const qty = Number(quantity) || 0;
-    const lines = this.getBOMForProduct(productCode).map((m) => ({
-      ...m,
-      qty: Math.round(m.qtyPerUnit * qty * 100) / 100,
-      lineCost: Math.round(m.qtyPerUnit * qty * m.unitCost),
-    }));
-    const totalCost = lines.reduce((sum, l) => sum + l.lineCost, 0);
-    return { lines, totalCost, quantity: qty };
+  // POST /api/bom/calculate — tính tổng NVL cần khi sản xuất X đơn vị.
+  async calculateBOMForQuantity(productCode, quantity) {
+    const res = await this._api("/api/bom/calculate", {
+      method: "POST",
+      body: JSON.stringify({ productCode, quantity }),
+    });
+    return { lines: res.lines, totalCost: res.totalCost, quantity: res.quantity };
   },
 
-  getBOMForOrder(order) {
+  // GET /api/bom/<productCode> — trả về [] nếu sản phẩm chưa có BOM.
+  async getBOMForProduct(productCode) {
+    const res = await this._api(`/api/bom/${encodeURIComponent(productCode)}`);
+    return res.lines || [];
+  },
+
+  async getBOMForOrder(order) {
     if (!order) return [];
-    return this.calculateBOMForQuantity(order.productCode, order.quantity).lines;
+    return (await this.calculateBOMForQuantity(order.productCode, order.quantity)).lines;
   },
 
-  getOrderCost(order) {
-    const bom = this.getBOMForOrder(order);
+  async getOrderCost(order) {
+    const bom = await this.getBOMForOrder(order);
     if (!bom.length) return null;
     return bom.reduce((sum, l) => sum + l.lineCost, 0);
   },
@@ -354,9 +324,9 @@ const Store = {
   // mức (getOrderCost), thiên về hao hụt dương (thực tế thường cao hơn định
   // mức) để trang báo cáo có dữ liệu "hao hụt" minh hoạ. Chỉ có giá trị với
   // đơn đã bắt đầu sản xuất trở lên (in_progress/completed).
-  getActualCost(order) {
+  async getActualCost(order) {
     if (!order || !["in_progress", "completed"].includes(order.status)) return null;
-    const standard = this.getOrderCost(order);
+    const standard = await this.getOrderCost(order);
     if (standard === null) return null;
     const h = this._hashStr(order.code);
     const variancePct = -5 + (h % 30); // -5% .. +24%
@@ -588,12 +558,15 @@ const Store = {
   // Mock cho GET /trace?batchId=... — lô này đã dùng cho đơn sản xuất nào
   // (suy ra từ BOM của sản phẩm mỗi đơn có chứa đúng materialCode của lô),
   // và đơn nào trong số đó đã ra thành phẩm (status = completed).
-  traceBatch(id) {
+  async traceBatch(id) {
     const batch = this.getBatchById(id);
     if (!batch) return null;
-    const consumingOrders = this.productionOrders
-      .filter((o) => this.getBOMForProduct(o.productCode).some((m) => m.code === batch.materialCode))
-      .map((o) => ({ order: o, isFinishedGoods: o.status === "completed" }))
+    const withLines = await Promise.all(
+      this.productionOrders.map(async (o) => ({ o, lines: await this.getBOMForProduct(o.productCode) }))
+    );
+    const consumingOrders = withLines
+      .filter(({ lines }) => lines.some((m) => m.code === batch.materialCode))
+      .map(({ o }) => ({ order: o, isFinishedGoods: o.status === "completed" }))
       .sort((a, b) => new Date(b.order.createdAt) - new Date(a.order.createdAt));
     return { batch, consumingOrders };
   },
