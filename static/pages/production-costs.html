@@ -76,17 +76,15 @@
 </div>
 
 <script>
-(function () {
-  const rows = Store.productionOrders
-    .filter((o) => ["in_progress", "completed"].includes(o.status))
-    .map((o) => {
-      const standard = Store.getOrderCost(o);
-      const actual = Store.getActualCost(o);
-      const wasteAmt = (standard !== null && actual !== null) ? actual - standard : null;
-      const wastePct = (standard && wasteAmt !== null) ? (wasteAmt / standard) * 100 : null;
-      return { order: o, standard, actual, wasteAmt, wastePct };
-    })
-    .sort((a, b) => new Date(b.order.createdAt) - new Date(a.order.createdAt));
+(async function () {
+  const filteredOrders = Store.productionOrders.filter((o) => ["in_progress", "completed"].includes(o.status));
+  const rows = (await Promise.all(filteredOrders.map(async (o) => {
+    const standard = await Store.getOrderCost(o);
+    const actual = await Store.getActualCost(o);
+    const wasteAmt = (standard !== null && actual !== null) ? actual - standard : null;
+    const wastePct = (standard && wasteAmt !== null) ? (wasteAmt / standard) * 100 : null;
+    return { order: o, standard, actual, wasteAmt, wastePct };
+  }))).sort((a, b) => new Date(b.order.createdAt) - new Date(a.order.createdAt));
 
   window.pcReportData = rows;
 

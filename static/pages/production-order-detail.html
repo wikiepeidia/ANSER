@@ -74,7 +74,7 @@
 </div>
 
 <script>
-(function () {
+(async function () {
   const id = Helpers.load("selectedOrderId", null);
   const order = id ? Store.getOrderById(id) : null;
 
@@ -125,7 +125,7 @@
   document.getElementById("odActions").innerHTML = actions.join("");
 
   // BOM
-  const bom = Store.getBOMForOrder(order);
+  const bom = await Store.getBOMForOrder(order);
   document.getElementById("odBomBody").innerHTML = bom.map((m) => `
     <tr>
       <td>${Helpers.escapeHtml(m.code)}</td>
@@ -136,9 +136,9 @@
       <td class="num">${Helpers.formatVND(m.lineCost)}</td>
     </tr>
   `).join("");
-  const cost = Store.getOrderCost(order);
+  const cost = await Store.getOrderCost(order);
   document.getElementById("odCost").textContent = cost !== null ? Helpers.formatVND(cost) : "Chưa có dữ liệu";
-  document.getElementById("odBomNote").innerHTML = Store.hasCustomBOM(order.productCode)
+  document.getElementById("odBomNote").innerHTML = bom.length > 0
     ? `<i class="fa-solid fa-circle-check"></i> Định mức đã được lưu cho sản phẩm này. Chưa gồm chi phí nhân công/khấu hao. <a href="#bom">Sửa định mức</a>`
     : `<i class="fa-solid fa-circle-info"></i> Chưa có định mức lưu cho sản phẩm này — đang hiện gợi ý tự động. <a href="#bom">Khai báo định mức thật</a>`;
 

@@ -84,9 +84,9 @@
 </div>
 
 <script>
-(function () {
+(async function () {
   const id = Helpers.load("selectedBatchId", null);
-  const trace = id ? Store.traceBatch(id) : null;
+  const trace = id ? await Store.traceBatch(id) : null;
 
   if (!trace) {
     document.getElementById("mbNotFound").style.display = "block";
