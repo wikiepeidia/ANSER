@@ -382,3 +382,44 @@ def save_bom(product_code):
         return jsonify({'success': False, 'message': str(e)}), 400
     finally:
         conn.close()
+
+
+@production_bp.route('/api/bom/calculate', methods=['POST'])
+@login_required
+def calculate_bom():
+    data = request.get_json(silent=True) or {}
+    product_code = data.get('productCode')
+    try:
+        qty = float(data.get('quantity') or 0)
+    except (TypeError, ValueError):
+        qty = 0
+
+    conn = get_connection()
+    try:
+        rows = conn.execute(
+            'SELECT code, name, unit, unit_cost, qty_per_unit FROM bom_lines WHERE product_code = ?',
+            (product_code,),
+        ).fetchall()
+        lines = []
+        total_cost = 0
+        for r in rows:
+            line_qty = round(r['qty_per_unit'] * qty, 2)
+            line_cost = round(r['qty_per_unit'] * qty * r['unit_cost'])
+            total_cost += line_cost
+            lines.append({
+                'code': r['code'],
+                'name': r['name'],
+                'unit': r['unit'],
+                'unitCost': r['unit_cost'],
+                'qtyPerUnit': r['qty_per_unit'],
+                'qty': line_qty,
+                'lineCost': line_cost,
+            })
+        return jsonify({
+            'success': True,
+            'lines': lines,
+            'totalCost': total_cost,
+            'quantity': qty,
+        })
+    finally:
+        conn.close()
