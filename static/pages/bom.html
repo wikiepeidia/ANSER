@@ -1,4 +1,4 @@
-<!-- bom.html — Định mức nguyên vật liệu (BOM) theo sản phẩm (mock, localStorage) -->
+<!-- bom.html — Định mức nguyên vật liệu (BOM) theo sản phẩm (real backend, /api/bom/*) -->
 <div class="content__header">
   <h1 class="content__title">Định mức nguyên vật liệu (BOM)</h1>
   <p class="content__subtitle">Chọn 1 sản phẩm để xem/sửa danh sách NVL, và tính trước nhu cầu vật tư theo số lượng sản xuất dự kiến</p>
@@ -117,7 +117,7 @@
     if (hasCustom) {
       statusNote.innerHTML = `<i class="fa-solid fa-circle-check"></i> Định mức đã được lưu cho sản phẩm này.`;
     } else {
-      statusNote.innerHTML = `<i class="fa-solid fa-circle-info"></i> Sản phẩm này chưa có định mức — đang hiện gợi ý tự động, kiểm tra rồi bấm "Lưu định mức" để xác nhận.`;
+      statusNote.innerHTML = `<i class="fa-solid fa-circle-info"></i> Sản phẩm này chưa có định mức — nhập nguyên vật liệu bên dưới rồi bấm "Lưu định mức" để lưu.`;
     }
     savedInfo.textContent = "";
   }
