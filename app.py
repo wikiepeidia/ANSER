@@ -60,10 +60,12 @@ def create_app():
     from routes.api_routes import api_bp
     from routes.n8n_api import n8n_api_bp
     from routes.production_routes import production_bp
+    from routes.inventory_routes import inventory_bp
     app.register_blueprint(page_bp)
     app.register_blueprint(api_bp)
     app.register_blueprint(n8n_api_bp)
     app.register_blueprint(production_bp)
+    app.register_blueprint(inventory_bp)
 
     init_db()
 

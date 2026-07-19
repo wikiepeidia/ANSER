@@ -1,0 +1,231 @@
+"""Material batch routes — real backend for material batches + supplier
+auto-resolution.
+
+Replaces the localStorage mock in static/js/store.js (Material Batches +
+Traceability section, materialBatches array / createBatch / traceBatch /
+getExpiringBatches). See .planning/phases/02-material-batches-warehouses-
+traceability-suppliers/02-RESEARCH.md for the locked resolution contract
+this file implements (Pattern 6 _resolve_supplier, Pattern 7
+MATERIALS_CATALOG, Pattern 5 traceability-chain JOIN).
+"""
+import secrets
+
+from flask import Blueprint, jsonify, request
+from flask_login import current_user, login_required
+
+from core.sanxuat_db import get_connection, now
+
+inventory_bp = Blueprint('inventory', __name__)
+
+# Server-side source of truth for material reference data — ported verbatim
+# from static/js/store.js:255-263 (_MOCK_MATERIALS). A POST/PUT body's
+# materialCode is resolved against this list; materialName/unit are never
+# trusted from the client.
+MATERIALS_CATALOG = [
+    {'code': 'NVL-001', 'name': 'Vải cotton', 'unit': 'm', 'unitCost': 45000},
+    {'code': 'NVL-002', 'name': 'Chỉ may', 'unit': 'cuộn', 'unitCost': 8000},
+    {'code': 'NVL-003', 'name': 'Khuy nhựa', 'unit': 'cái', 'unitCost': 500},
+    {'code': 'NVL-004', 'name': 'Nhãn mác', 'unit': 'cái', 'unitCost': 1200},
+    {'code': 'NVL-005', 'name': 'Bao bì đóng gói', 'unit': 'cái', 'unitCost': 2500},
+    {'code': 'NVL-006', 'name': 'Keo dán công nghiệp', 'unit': 'kg', 'unitCost': 60000},
+    {'code': 'NVL-007', 'name': 'Dây kéo', 'unit': 'cái', 'unitCost': 3000},
+]
+
+
+def _find_material(code):
+    for m in MATERIALS_CATALOG:
+        if m['code'] == code:
+            return m
+    return None
+
+
+def _resolve_supplier(conn, name, user_id):
+    """Resolve a free-text supplier name into a real suppliers.id, matching
+    by trimmed/case-insensitive name or auto-creating a placeholder-coded
+    row (NCC-PENDING-{hex}) if nothing matches. Empty/missing name -> None
+    (no auto-create for an empty string). Called only from this file's
+    create/update batch routes — routes/supplier_routes.py's own supplier
+    CRUD (02-04) always creates suppliers directly with a real NCC-{id}
+    code, never through this resolver.
+
+    The placeholder code is intentionally kept as-is (NOT converted to a
+    real NCC-{id} code, unlike the id-derived code convention used
+    elsewhere in this app) — per T-02-05 in this plan's threat model, it
+    must stay visibly flagged as auto-created/unverified until a human
+    corrects it via 02-04's real supplier CRUD.
+    """
+    name = (name or '').strip()
+    if not name:
+        return None
+    row = conn.execute(
+        'SELECT id FROM suppliers WHERE LOWER(TRIM(name)) = LOWER(?) AND is_deleted = FALSE',
+        (name,),
+    ).fetchone()
+    if row:
+        return row['id']
+    placeholder_code = f'NCC-PENDING-{secrets.token_hex(2).upper()}'
+    cur = conn.execute(
+        'INSERT INTO suppliers (code, name, created_by, created_at) VALUES (?, ?, ?, ?)',
+        (placeholder_code, name, user_id, now()),
+    )
+    return cur.lastrowid
+
+
+def _serialize_batch(row):
+    return {
+        'id': row['id'],
+        'code': row['code'],
+        'materialCode': row['material_code'],
+        'materialName': row['material_name'],
+        'unit': row['unit'],
+        'supplierId': row['supplier_id'],
+        'supplierName': row['supplier_name'] or '',
+        'quantity': row['quantity'],
+        'receivedAt': row['received_at'],
+        'expiryDate': row['expiry_date'] or '',
+        'qcStatus': row['qc_status'],
+        'qcNote': row['qc_note'] or '',
+        'notes': row['notes'] or '',
+    }
+
+
+# Shared base query for every route that reads material_batches — always
+# LEFT JOINs suppliers to populate supplierName, and deliberately never
+# filters suppliers.is_deleted in the JOIN condition (Pitfall 3): a batch
+# referencing a later-soft-deleted supplier must still show its name.
+_BATCH_SELECT = (
+    'SELECT b.*, s.name AS supplier_name FROM material_batches b '
+    'LEFT JOIN suppliers s ON s.id = b.supplier_id'
+)
+
+
+def _validate_batch_payload(data):
+    """Shared create/update validation. Returns (material_dict, quantity,
+    None) on success, or (None, None, (body, status)) on failure."""
+    material_code = data.get('materialCode')
+    if not material_code:
+        return None, None, ({'success': False, 'message': 'Thiếu mã nguyên vật liệu'}, 400)
+    material = _find_material(material_code)
+    if not material:
+        return None, None, ({'success': False, 'message': 'Mã nguyên vật liệu không hợp lệ'}, 400)
+    try:
+        quantity = float(data.get('quantity') or 0)
+    except (TypeError, ValueError):
+        quantity = 0
+    if quantity <= 0:
+        return None, None, ({'success': False, 'message': 'Số lượng phải lớn hơn 0'}, 400)
+    return material, quantity, None
+
+
+# ── Material Batches CRUD (TRACE-01) ─────────────────────────────────────
+
+@inventory_bp.route('/api/material-batches', methods=['GET'])
+@login_required
+def get_material_batches():
+    conn = get_connection()
+    try:
+        rows = conn.execute(
+            f'{_BATCH_SELECT} WHERE b.is_deleted = FALSE ORDER BY b.received_at DESC'
+        ).fetchall()
+        return jsonify({'success': True, 'batches': [_serialize_batch(r) for r in rows]})
+    finally:
+        conn.close()
+
+
+@inventory_bp.route('/api/material-batches', methods=['POST'])
+@login_required
+def create_material_batch():
+    data = request.get_json(silent=True) or {}
+    material, quantity, error = _validate_batch_payload(data)
+    if error:
+        body, status = error
+        return jsonify(body), status
+
+    conn = get_connection()
+    try:
+        supplier_id = _resolve_supplier(conn, data.get('supplierName'), current_user.id)
+        cur = conn.execute(
+            'INSERT INTO material_batches (material_code, material_name, unit, supplier_id, '
+            'quantity, expiry_date, notes, created_by, created_at) '
+            'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            (material['code'], material['name'], material['unit'], supplier_id, quantity,
+             data.get('expiryDate') or '', data.get('notes', ''), current_user.id, now()),
+        )
+        batch_id = cur.lastrowid
+        code = f'LO-{2000 + batch_id}'
+        conn.execute('UPDATE material_batches SET code = ? WHERE id = ?', (code, batch_id))
+        conn.commit()
+        return jsonify({'success': True, 'id': batch_id, 'code': code})
+    except Exception as e:
+        conn.rollback()
+        return jsonify({'success': False, 'message': str(e)}), 400
+    finally:
+        conn.close()
+
+
+@inventory_bp.route('/api/material-batches/<int:batch_id>', methods=['GET'])
+@login_required
+def get_material_batch(batch_id):
+    conn = get_connection()
+    try:
+        # No is_deleted filter here (Pitfall 2) — only the list endpoint
+        # filters; a soft-deleted batch must remain individually queryable
+        # for historical traceability (TRACE-02).
+        row = conn.execute(f'{_BATCH_SELECT} WHERE b.id = ?', (batch_id,)).fetchone()
+        if not row:
+            return jsonify({'success': False, 'message': 'Không tìm thấy lô nguyên liệu'}), 404
+        return jsonify({'success': True, 'batch': _serialize_batch(row)})
+    finally:
+        conn.close()
+
+
+@inventory_bp.route('/api/material-batches/<int:batch_id>', methods=['PUT'])
+@login_required
+def update_material_batch(batch_id):
+    data = request.get_json(silent=True) or {}
+    material, quantity, error = _validate_batch_payload(data)
+    if error:
+        body, status = error
+        return jsonify(body), status
+
+    conn = get_connection()
+    try:
+        row = conn.execute(
+            'SELECT id FROM material_batches WHERE id = ? AND is_deleted = FALSE', (batch_id,)
+        ).fetchone()
+        if not row:
+            return jsonify({'success': False, 'message': 'Không tìm thấy lô nguyên liệu'}), 404
+        supplier_id = _resolve_supplier(conn, data.get('supplierName'), current_user.id)
+        conn.execute(
+            'UPDATE material_batches SET material_code=?, material_name=?, unit=?, supplier_id=?, '
+            'quantity=?, expiry_date=?, notes=? WHERE id=?',
+            (material['code'], material['name'], material['unit'], supplier_id, quantity,
+             data.get('expiryDate') or '', data.get('notes', ''), batch_id),
+        )
+        conn.commit()
+        return jsonify({'success': True, 'message': 'Cập nhật lô nguyên liệu thành công'})
+    except Exception as e:
+        conn.rollback()
+        return jsonify({'success': False, 'message': str(e)}), 400
+    finally:
+        conn.close()
+
+
+@inventory_bp.route('/api/material-batches/<int:batch_id>', methods=['DELETE'])
+@login_required
+def delete_material_batch(batch_id):
+    conn = get_connection()
+    try:
+        row = conn.execute(
+            'SELECT id FROM material_batches WHERE id = ? AND is_deleted = FALSE', (batch_id,)
+        ).fetchone()
+        if not row:
+            return jsonify({'success': False, 'message': 'Không tìm thấy lô nguyên liệu'}), 404
+        conn.execute(
+            'UPDATE material_batches SET is_deleted = TRUE, deleted_at = ? WHERE id = ?',
+            (now(), batch_id),
+        )
+        conn.commit()
+        return jsonify({'success': True, 'message': 'Xóa lô nguyên liệu thành công'})
+    finally:
+        conn.close()
