@@ -106,3 +106,33 @@ def test_qc_results_schema(app):
         assert count_row['c'] == 2
     finally:
         conn.close()
+
+
+def test_material_batch_events_schema(app):
+    conn = get_connection()
+    try:
+        conn.execute(
+            "INSERT INTO material_batch_events (batch_id, event, created_at) VALUES (?, ?, ?)",
+            (1, 'Bắt đầu sản xuất', now()),
+        )
+        conn.commit()
+
+        row = conn.execute(
+            "SELECT note FROM material_batch_events WHERE batch_id = 1",
+        ).fetchone()
+        assert row['note'] is None
+
+        conn.execute(
+            "INSERT INTO material_batch_events (batch_id, event, note, created_at) VALUES (?, ?, ?, ?)",
+            (1, 'Kiểm tra đột xuất', 'Sự kiện ngoài danh mục mẫu', now()),
+        )
+        conn.commit()
+
+        rows = conn.execute(
+            "SELECT event FROM material_batch_events WHERE batch_id = 1 ORDER BY created_at ASC",
+        ).fetchall()
+        assert len(rows) == 2
+        assert rows[0]['event'] == 'Bắt đầu sản xuất'
+        assert rows[1]['event'] == 'Kiểm tra đột xuất'
+    finally:
+        conn.close()

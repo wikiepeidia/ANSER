@@ -250,6 +250,20 @@ CREATE TABLE IF NOT EXISTS qc_results (
 );
 
 CREATE INDEX IF NOT EXISTS idx_qc_results_batch_id ON qc_results(batch_id);
+
+-- material_batch_events: append-only process-event log for QC-03/QC-04
+-- (Phase 2.1), structurally identical to production_order_events
+-- (batch_id instead of order_id). No enum/CHECK constraint on `event` --
+-- the mock's own addProcessEvent never validates its event string either.
+CREATE TABLE IF NOT EXISTS material_batch_events (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    batch_id INTEGER NOT NULL,
+    event TEXT NOT NULL,
+    note TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_material_batch_events_batch_id ON material_batch_events(batch_id);
 """
 
 SCHEMA_PG = """
@@ -488,6 +502,20 @@ CREATE TABLE IF NOT EXISTS qc_results (
 );
 
 CREATE INDEX IF NOT EXISTS idx_qc_results_batch_id ON qc_results(batch_id);
+
+-- material_batch_events: append-only process-event log for QC-03/QC-04
+-- (Phase 2.1), structurally identical to production_order_events
+-- (batch_id instead of order_id). No enum/CHECK constraint on `event` --
+-- the mock's own addProcessEvent never validates its event string either.
+CREATE TABLE IF NOT EXISTS material_batch_events (
+    id SERIAL PRIMARY KEY,
+    batch_id INTEGER NOT NULL,
+    event TEXT NOT NULL,
+    note TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_material_batch_events_batch_id ON material_batch_events(batch_id);
 """
 
 
