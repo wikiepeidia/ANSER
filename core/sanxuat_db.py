@@ -182,6 +182,58 @@ CREATE TABLE IF NOT EXISTS material_batches (
 
 CREATE INDEX IF NOT EXISTS idx_material_batches_material_code ON material_batches(material_code);
 CREATE INDEX IF NOT EXISTS idx_material_batches_supplier_id ON material_batches(supplier_id);
+
+-- warehouses: unlike batches/suppliers, code is client-supplied at creation
+-- time (NOT NULL), not server-generated.
+CREATE TABLE IF NOT EXISTS warehouses (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    code TEXT UNIQUE NOT NULL,
+    name TEXT NOT NULL,
+    address TEXT,
+    created_by INTEGER,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    is_deleted INTEGER DEFAULT 0,
+    deleted_at TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS warehouse_locations (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    warehouse_id INTEGER NOT NULL,
+    code TEXT NOT NULL,
+    name TEXT NOT NULL,
+    is_deleted INTEGER DEFAULT 0,
+    deleted_at TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_warehouse_locations_warehouse_id ON warehouse_locations(warehouse_id);
+
+-- stock_ledger: append-only / event-sourced. Every write is an INSERT;
+-- current stock is always derived via SUM(quantity_delta), never a
+-- mutated column. entry_type in ('transfer_out', 'transfer_in',
+-- 'adjustment'). transfer_group is shared by a transfer's 2 rows, NULL
+-- for adjustment rows. counterparty_warehouse_id/counterparty_location_id
+-- are transfer-only; system_qty_snapshot/counted_qty are adjustment-only.
+CREATE TABLE IF NOT EXISTS stock_ledger (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    entry_type TEXT NOT NULL,
+    warehouse_id INTEGER NOT NULL,
+    location_id INTEGER NOT NULL,
+    product_code TEXT NOT NULL,
+    product_name TEXT NOT NULL,
+    unit TEXT DEFAULT 'cái',
+    quantity_delta REAL NOT NULL,
+    transfer_group TEXT,
+    counterparty_warehouse_id INTEGER,
+    counterparty_location_id INTEGER,
+    system_qty_snapshot REAL,
+    counted_qty REAL,
+    note TEXT DEFAULT '',
+    created_by INTEGER,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_stock_ledger_wlp ON stock_ledger(warehouse_id, location_id, product_code);
+CREATE INDEX IF NOT EXISTS idx_stock_ledger_transfer_group ON stock_ledger(transfer_group);
 """
 
 SCHEMA_PG = """
@@ -352,6 +404,58 @@ CREATE TABLE IF NOT EXISTS material_batches (
 
 CREATE INDEX IF NOT EXISTS idx_material_batches_material_code ON material_batches(material_code);
 CREATE INDEX IF NOT EXISTS idx_material_batches_supplier_id ON material_batches(supplier_id);
+
+-- warehouses: unlike batches/suppliers, code is client-supplied at creation
+-- time (NOT NULL), not server-generated.
+CREATE TABLE IF NOT EXISTS warehouses (
+    id SERIAL PRIMARY KEY,
+    code TEXT UNIQUE NOT NULL,
+    name TEXT NOT NULL,
+    address TEXT,
+    created_by INTEGER,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    is_deleted BOOLEAN DEFAULT FALSE,
+    deleted_at TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS warehouse_locations (
+    id SERIAL PRIMARY KEY,
+    warehouse_id INTEGER NOT NULL,
+    code TEXT NOT NULL,
+    name TEXT NOT NULL,
+    is_deleted BOOLEAN DEFAULT FALSE,
+    deleted_at TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_warehouse_locations_warehouse_id ON warehouse_locations(warehouse_id);
+
+-- stock_ledger: append-only / event-sourced. Every write is an INSERT;
+-- current stock is always derived via SUM(quantity_delta), never a
+-- mutated column. entry_type in ('transfer_out', 'transfer_in',
+-- 'adjustment'). transfer_group is shared by a transfer's 2 rows, NULL
+-- for adjustment rows. counterparty_warehouse_id/counterparty_location_id
+-- are transfer-only; system_qty_snapshot/counted_qty are adjustment-only.
+CREATE TABLE IF NOT EXISTS stock_ledger (
+    id SERIAL PRIMARY KEY,
+    entry_type TEXT NOT NULL,
+    warehouse_id INTEGER NOT NULL,
+    location_id INTEGER NOT NULL,
+    product_code TEXT NOT NULL,
+    product_name TEXT NOT NULL,
+    unit TEXT DEFAULT 'cái',
+    quantity_delta REAL NOT NULL,
+    transfer_group TEXT,
+    counterparty_warehouse_id INTEGER,
+    counterparty_location_id INTEGER,
+    system_qty_snapshot REAL,
+    counted_qty REAL,
+    note TEXT DEFAULT '',
+    created_by INTEGER,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_stock_ledger_wlp ON stock_ledger(warehouse_id, location_id, product_code);
+CREATE INDEX IF NOT EXISTS idx_stock_ledger_transfer_group ON stock_ledger(transfer_group);
 """
 
 

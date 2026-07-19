@@ -40,3 +40,41 @@ def test_suppliers_and_material_batches_schema(app):
         assert not supplier_row['is_deleted']
     finally:
         conn.close()
+
+
+def test_warehouses_locations_and_ledger_schema(app):
+    conn = get_connection()
+    try:
+        cur = conn.execute(
+            "INSERT INTO warehouses (code, name) VALUES (?, ?)",
+            ('KHO-TEST', 'Test Warehouse'),
+        )
+        warehouse_id = cur.lastrowid
+
+        cur = conn.execute(
+            "INSERT INTO warehouse_locations (warehouse_id, code, name) VALUES (?, ?, ?)",
+            (warehouse_id, 'A1', 'Test Location'),
+        )
+        location_id = cur.lastrowid
+
+        conn.execute(
+            """
+            INSERT INTO stock_ledger
+                (entry_type, warehouse_id, location_id, product_code, product_name, unit, quantity_delta, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            ('adjustment', warehouse_id, location_id, 'SP-TEST', 'Test Product', 'cái', 5, now()),
+        )
+        conn.commit()
+
+        row = conn.execute(
+            """
+            SELECT COALESCE(SUM(quantity_delta), 0) AS qty
+            FROM stock_ledger
+            WHERE warehouse_id = ? AND location_id = ? AND product_code = ?
+            """,
+            (warehouse_id, location_id, 'SP-TEST'),
+        ).fetchone()
+        assert row['qty'] == 5
+    finally:
+        conn.close()
