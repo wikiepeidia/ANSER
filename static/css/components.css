@@ -349,10 +349,12 @@
 
 .table-card__body {
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .data-table {
   width: 100%;
+  min-width: 400px;
   border-collapse: separate;
   border-spacing: 0;
 }
@@ -791,7 +793,37 @@
 /* ==============================
    RESPONSIVE
    ============================== */
-@media (max-width: 1200px) {
+
+/* Tablet: 769px - 1024px */
+@media (max-width: 1024px) {
+  .app {
+    --sidebar-width: 240px;
+    --sidebar-collapsed-width: 72px;
+  }
+
+  .sidebar {
+    transform: translateX(-100%);
+    width: 240px;
+    transition: transform 0.3s ease;
+  }
+
+  .sidebar.open {
+    transform: translateX(0);
+  }
+
+  .sidebar.collapsed {
+    width: 240px;
+  }
+
+  .main-wrapper.sidebar-collapsed {
+    margin-left: 72px;
+  }
+
+  .main-wrapper.sidebar-drawer-open {
+    margin-left: 240px;
+    overflow: hidden;
+  }
+
   .stats-grid {
     grid-template-columns: repeat(2, 1fr);
   }
@@ -803,11 +835,39 @@
   .bottom-row {
     grid-template-columns: 1fr;
   }
+
+  .charts-row--4col {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .charts-row--3col {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .charts-row--4col > *,
+  .charts-row--3col > *,
+  .charts-row--2x2 > * {
+    min-width: 0;
+  }
+
+  .data-table {
+    min-width: 600px;
+  }
 }
 
+/* Mobile: ≤768px */
 @media (max-width: 768px) {
+  .app {
+    --sidebar-width: 240px;
+    --sidebar-collapsed-width: 240px;
+  }
+
   .sidebar {
     transform: translateX(-100%);
+    width: 240px;
+  }
+
+  .sidebar.collapsed {
     width: 240px;
   }
 
@@ -817,6 +877,11 @@
 
   .main-wrapper {
     margin-left: 0;
+  }
+
+  .main-wrapper.sidebar-drawer-open {
+    margin-left: 240px;
+    overflow: hidden;
   }
 
   .header__menu-toggle {
@@ -835,11 +900,56 @@
     padding: 16px;
   }
 
+  .content__title {
+    font-size: 20px;
+  }
+
+  .content__subtitle {
+    font-size: 13px;
+  }
+
   .noti-panel {
     right: 8px;
     left: 8px;
     width: auto;
     max-width: none;
+  }
+
+  .user-panel {
+    right: 8px;
+    left: 8px;
+    width: auto;
+    max-width: none;
+  }
+
+  .data-table tbody td,
+  .data-table thead th {
+    padding: 10px 12px;
+    font-size: 12px;
+  }
+
+  .data-table {
+    min-width: 500px;
+  }
+
+  .data-table tbody td {
+    white-space: normal;
+  }
+
+  .data-table thead th {
+    white-space: nowrap;
+  }
+
+  .stat-card {
+    padding: 14px;
+  }
+
+  .stat-card__value {
+    font-size: 18px;
+  }
+
+  .table-card__header h3 {
+    font-size: 14px;
   }
 }
 

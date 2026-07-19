@@ -150,14 +150,21 @@
   display: flex;
   gap: 16px;
   flex-wrap: wrap;
+  min-width: 0;
+}
+
+.form-row > .form-group {
+  min-width: 0;
 }
 
 .form-row--2>.form-group {
   flex: 1 1 calc(50% - 8px);
+  min-width: 200px;
 }
 
 .form-row--3>.form-group {
   flex: 1 1 calc(33.333% - 11px);
+  min-width: 200px;
 }
 
 /* ==============================
@@ -298,6 +305,98 @@
 }
 
 /* ==============================
+   SETTINGS PAGE LAYOUT
+   Sidebar right, content left
+   ============================== */
+.settings-layout {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+}
+
+.settings-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 200px;
+  max-width: 200px;
+  position: sticky;
+  top: 88px;
+  background: var(--bg-card);
+  border: 1px solid var(--header-border);
+  border-radius: 12px;
+  padding: 12px;
+}
+
+.settings-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  transition: background-color var(--transition-fast), color var(--transition-fast);
+  text-decoration: none;
+}
+
+.settings-nav-item:hover {
+  background-color: var(--bg-page);
+  color: var(--text-primary);
+}
+
+.settings-nav-item.active {
+  background-color: var(--brand-light);
+  color: var(--brand-primary);
+  font-weight: 600;
+}
+
+.settings-nav-item i {
+  width: 16px;
+  text-align: center;
+  font-size: 13px;
+}
+
+.settings-content {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Tablet: 769px - 1024px */
+@media (max-width: 1024px) {
+  .settings-sidebar {
+    min-width: 180px;
+    max-width: 180px;
+  }
+}
+
+/* Mobile: ≤768px */
+@media (max-width: 768px) {
+  .settings-layout {
+    flex-direction: column;
+  }
+  .settings-sidebar {
+    max-width: 100%;
+    width: 100%;
+    min-width: auto;
+    position: static;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 4px;
+    padding: 8px;
+  }
+  .settings-nav-item {
+    flex: 0 0 auto;
+    padding: 8px 10px;
+    font-size: 12px;
+  }
+  .settings-nav-item i {
+    font-size: 12px;
+  }
+}
+
+/* ==============================
    SMALL BUTTON
    ============================== */
 .btn--sm {
@@ -316,5 +415,30 @@
 .btn--danger:hover {
   background-color: #b91c1c;
   transform: translateY(-1px);
+}
+
+/* ==============================
+   RESPONSIVE — Forms
+   ============================== */
+
+/* Tablet: 769px - 1024px */
+@media (max-width: 1024px) {
+  .form-row--2 > .form-group,
+  .form-row--3 > .form-group {
+    min-width: 180px;
+  }
+}
+
+/* Mobile: ≤768px */
+@media (max-width: 768px) {
+  .form-row {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .form-row > .form-group {
+    flex: 1 1 100% !important;
+    min-width: 0;
+  }
 }
 

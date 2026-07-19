@@ -170,11 +170,22 @@
   display: flex;
   align-items: center;
   gap: 16px;
+  min-width: 0;
   transition:
     background-color var(--transition-normal),
     border-color var(--transition-normal),
     transform var(--transition-fast),
     box-shadow var(--transition-fast);
+}
+
+/* Grid containers co giãn */
+.stats-grid {
+  display: grid;
+  min-width: 0;
+}
+
+.stats-grid > * {
+  min-width: 0;
 }
 
 .stat-card:hover {

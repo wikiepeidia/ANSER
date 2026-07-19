@@ -48,12 +48,14 @@ document.addEventListener("DOMContentLoaded", () => {
     sidebar.classList.add("open");
     overlay.classList.add("active");
     document.body.style.overflow = "hidden";
+    mainWrapper.classList.add("sidebar-drawer-open");
   }
 
   function closeSidebar() {
     sidebar.classList.remove("open");
     overlay.classList.remove("active");
     document.body.style.overflow = "";
+    mainWrapper.classList.remove("sidebar-drawer-open");
   }
 
   if (menuToggleBtn) {
@@ -78,14 +80,32 @@ document.addEventListener("DOMContentLoaded", () => {
   const isCollapsed = localStorage.getItem("sidebar-collapsed") === "true";
   if (isCollapsed) {
     sidebar.classList.add("collapsed");
+    mainWrapper.classList.add("sidebar-collapsed");
+    document.querySelector(".app").style.setProperty("--sidebar-current-width", "72px");
   }
 
   if (sidebarToggle) {
     sidebarToggle.addEventListener("click", () => {
-      sidebar.classList.toggle("collapsed");
-      mainWrapper.classList.toggle("sidebar-collapsed");
-      const collapsed = sidebar.classList.contains("collapsed");
-      localStorage.setItem("sidebar-collapsed", collapsed);
+      // Only toggle collapsed state on desktop (>1024px)
+      // On tablet/mobile, use drawer behavior (open class)
+      if (window.innerWidth > 1024) {
+        sidebar.classList.toggle("collapsed");
+        mainWrapper.classList.toggle("sidebar-collapsed");
+        const collapsed = sidebar.classList.contains("collapsed");
+        localStorage.setItem("sidebar-collapsed", collapsed);
+        // Update CSS variable for smooth transition
+        document.querySelector(".app").style.setProperty(
+          "--sidebar-current-width",
+          collapsed ? "72px" : "240px"
+        );
+      } else {
+        // Tablet/mobile: use drawer behavior
+        if (sidebar.classList.contains("open")) {
+          closeSidebar();
+        } else {
+          openSidebar();
+        }
+      }
     });
   }
 
@@ -98,42 +118,8 @@ document.addEventListener("DOMContentLoaded", () => {
   // (router.js also handles clicks, this just closes the drawer)
   document.querySelectorAll(".sidebar__item, .sidebar__submenu-item").forEach((el) => {
     el.addEventListener("click", () => {
-      if (window.innerWidth <= 768 && sidebar.classList.contains("open")) {
-        closeSidebar();
-      }
-
-      // Expand sidebar when clicking submenu items in collapsed state
-      if (sidebar.classList.contains("collapsed")) {
-        // Check if this is a submenu parent item (has submenu)
-        if (el.classList.contains("sidebar__item--has-sub")) {
-          // Expand sidebar
-          sidebar.classList.remove("collapsed");
-          mainWrapper.classList.remove("sidebar-collapsed");
-          // Open the submenu
-          const subId = el.dataset.sub;
-          if (subId) {
-            const submenu = document.getElementById(subId);
-            if (submenu) {
-              const group = el.closest(".sidebar__group");
-              if (group) group.classList.add("open");
-            }
-          }
-        }
-      }
-    });
-  });
-
-  // When submenu item is clicked in collapsed state, collapse sidebar after selection
-  document.querySelectorAll(".sidebar__submenu-item").forEach((el) => {
-    el.addEventListener("click", () => {
-      if (sidebar.classList.contains("collapsed")) {
-        // Collapse after a short delay to let navigation happen
-        setTimeout(() => {
-          sidebar.classList.add("collapsed");
-          mainWrapper.classList.add("sidebar-collapsed");
-          localStorage.setItem("sidebar-collapsed", "true");
-        }, 100);
-      }
+      // Removed: sidebar no longer auto-closes or auto-expands on nav item click on tablet/mobile
+      // User must manually close by clicking the toggle button
     });
   });
 
@@ -496,6 +482,8 @@ document.addEventListener("DOMContentLoaded", () => {
       deleteModal?.classList.remove("open");
       const notiPanel = document.getElementById("notiPanel");
       if (notiPanel) notiPanel.classList.remove("open");
+      const userPanel = document.getElementById("userPanel");
+      if (userPanel) userPanel.classList.remove("open");
     }
   });
 
@@ -571,6 +559,33 @@ document.addEventListener("DOMContentLoaded", () => {
       const badge = document.querySelector(".header__badge");
       if (badge) badge.style.display = "none";
       showToast("Đã đánh dấu tất cả đã đọc");
+    });
+  }
+
+  // ========================================
+  // 7. USER PANEL (avatar dropdown)
+  // ========================================
+  const userAvatar = document.getElementById("userAvatar");
+  const userPanel = document.getElementById("userPanel");
+  if (userAvatar && userPanel) {
+    userAvatar.addEventListener("click", (e) => {
+      e.stopImmediatePropagation();
+      userPanel.classList.toggle("open");
+    });
+    document.addEventListener("click", (e) => {
+      if (!userPanel.contains(e.target) && e.target !== userAvatar && !userAvatar.contains(e.target)) {
+        userPanel.classList.remove("open");
+      }
+    });
+    // Navigate to page when clicking a user panel item
+    userPanel.querySelectorAll("[data-page]").forEach((el) => {
+      el.addEventListener("click", (e) => {
+        e.preventDefault();
+        const page = el.dataset.page;
+        userPanel.classList.remove("open");
+        if (window.Router) window.Router.navigateTo(page);
+        else window.location.hash = "#" + page;
+      });
     });
   }
 });

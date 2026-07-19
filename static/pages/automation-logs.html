@@ -33,14 +33,16 @@
   <div class="table-card__header"><h3>Nhật ký chạy gần đây (n8n)</h3></div>
   <div class="table-card__body">
     <div id="logsLoading" class="sc-loading"><i class="fa-solid fa-spinner fa-spin"></i> Đang tải...</div>
-    <table class="data-table" id="logsTable" style="display:none;">
-      <thead><tr><th style="width:32px"></th><th>Thời gian</th><th>Quy tắc (workflow)</th><th>Thời lượng</th><th>Trạng thái</th></tr></thead>
-      <tbody id="logsBody"></tbody>
-    </table>
-    <div id="logsEmpty" class="empty-state" style="display:none;">
-      <div class="empty-icon"><i class="fa-solid fa-clock-rotate-left"></i></div>
-      <h3 class="empty-title">Chưa có lượt chạy nào</h3>
-      <p class="empty-description">Chạy thử một quy tắc ở trang "Quy tắc" để lịch sử xuất hiện ở đây.</p>
+    <div id="logsContent" style="display:grid">
+      <table class="data-table" id="logsTable" style="display:none;grid-area:1/1">
+        <thead><tr><th style="width:32px"></th><th>Thời gian</th><th>Quy tắc (workflow)</th><th>Thời lượng</th><th>Trạng thái</th></tr></thead>
+        <tbody id="logsBody"></tbody>
+      </table>
+      <div id="logsEmpty" class="empty-state" style="display:none;grid-area:1/1">
+        <div class="empty-icon"><i class="fa-solid fa-clock-rotate-left"></i></div>
+        <h3 class="empty-title">Chưa có lượt chạy nào</h3>
+        <p class="empty-description">Chạy thử một quy tắc ở trang "Quy tắc" để lịch sử xuất hiện ở đây.</p>
+      </div>
     </div>
   </div>
 </div>

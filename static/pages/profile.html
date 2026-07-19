@@ -1,0 +1,52 @@
+<!-- profile.html — Hồ sơ cá nhân -->
+<div class="content__header">
+  <h1 class="content__title">Hồ sơ cá nhân</h1>
+  <p class="content__subtitle">Quản lý thông tin tài khoản và bảo mật</p>
+</div>
+
+<div class="form-card">
+  <div class="form-card__header"><h3><i class="fa-solid fa-user"></i> Thông tin cá nhân</h3></div>
+  <div class="form-card__body">
+    <div style="display:flex;gap:20px;align-items:center;margin-bottom:20px">
+      <img src="https://i.pravatar.cc/80?img=12" alt="Avatar" style="width:80px;height:80px;border-radius:50%" />
+      <div>
+        <button class="btn btn--outline btn--sm"><i class="fa-solid fa-upload"></i> Đổi ảnh</button>
+        <p style="font-size:12px;color:var(--text-muted);margin-top:6px">JPG, PNG tối đa 2MB</p>
+      </div>
+    </div>
+    <div class="form-row form-row--2">
+      <div class="form-group"><label>Họ tên</label><input type="text" value="Nguyễn Văn A" /></div>
+      <div class="form-group"><label>Email</label><input type="email" value="admin@anser.vn" /></div>
+    </div>
+    <div class="form-row form-row--2">
+      <div class="form-group"><label>Số điện thoại</label><input type="tel" value="0901 234 567" /></div>
+      <div class="form-group"><label>Chức danh</label><input type="text" value="Quản trị viên" /></div>
+    </div>
+  </div>
+  <div class="form-card__footer">
+    <button class="btn btn--primary" onclick="showToast('Đã lưu hồ sơ!')">
+      <i class="fa-solid fa-floppy-disk"></i> Lưu hồ sơ
+    </button>
+  </div>
+</div>
+
+<div class="form-card">
+  <div class="form-card__header"><h3><i class="fa-solid fa-shield-halved"></i> Bảo mật</h3></div>
+  <div class="form-card__body">
+    <div class="setting-row">
+      <div><strong>Xác thực 2 yếu tố (2FA)</strong><p style="font-size:12px;color:var(--text-muted)">Bảo vệ tài khoản bằng OTP</p></div>
+      <label class="toggle"><input type="checkbox" checked><span class="toggle__slider"></span></label>
+    </div>
+    <div class="setting-row">
+      <div><strong>Đăng nhập từ thiết bị lạ</strong><p style="font-size:12px;color:var(--text-muted)">Yêu cầu xác nhận qua email</p></div>
+      <label class="toggle"><input type="checkbox" checked><span class="toggle__slider"></span></label>
+    </div>
+    <div class="setting-row">
+      <div><strong>Session timeout</strong><p style="font-size:12px;color:var(--text-muted)">Tự động đăng xuất sau 30 phút không hoạt động</p></div>
+      <label class="toggle"><input type="checkbox" checked><span class="toggle__slider"></span></label>
+    </div>
+  </div>
+  <div class="form-card__footer">
+    <button class="btn btn--outline btn--sm"><i class="fa-solid fa-key"></i> Đổi mật khẩu</button>
+  </div>
+</div>

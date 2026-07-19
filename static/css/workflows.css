@@ -107,12 +107,10 @@
 .empty-state {
     text-align: center;
     padding: 80px 24px;
-    background: var(--scenario-panel);
-    border: 1px dashed var(--scenario-border);
+    background: var(--bg-card);
     border-radius: 24px;
     max-width: 720px;
     margin: 0 auto;
-    box-shadow: var(--scenario-shadow);
     width: 100%;
     box-sizing: border-box;
 }

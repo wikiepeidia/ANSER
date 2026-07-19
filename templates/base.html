@@ -70,14 +70,18 @@
             <i class="fa-solid fa-chevron-down sidebar__chevron"></i>
           </button>
           <ul class="sidebar__submenu" id="production-sub">
-            <li><a href="#production-orders" class="sidebar__submenu-item" data-page="production-orders">Đơn hàng sản xuất</a></li>
+            <li><a href="#production-orders" class="sidebar__submenu-item" data-page="production-orders">Đơn hàng sản
+                xuất</a></li>
             <li><a href="#bom" class="sidebar__submenu-item" data-page="bom">Định mức NVL (BOM)</a></li>
-            <li><a href="#material-batches" class="sidebar__submenu-item" data-page="material-batches">Lô nguyên liệu</a></li>
+            <li><a href="#material-batches" class="sidebar__submenu-item" data-page="material-batches">Lô nguyên
+                liệu</a></li>
             <li><a href="#suppliers" class="sidebar__submenu-item" data-page="suppliers">Nhà cung cấp</a></li>
             <li><a href="#qc" class="sidebar__submenu-item" data-page="qc">Kiểm định chất lượng (QC)</a></li>
-            <li><a href="#batch-logs" class="sidebar__submenu-item" data-page="batch-logs">Nhật ký quy trình theo lô</a></li>
+            <li><a href="#batch-logs" class="sidebar__submenu-item" data-page="batch-logs">Nhật ký quy trình theo lô</a>
+            </li>
             <li><a href="#invoices" class="sidebar__submenu-item" data-page="invoices">Nhập hoá đơn NVL</a></li>
-            <li><a href="#production-costs" class="sidebar__submenu-item" data-page="production-costs">Giá thành &amp; hao hụt</a></li>
+            <li><a href="#production-costs" class="sidebar__submenu-item" data-page="production-costs">Giá thành &amp;
+                hao hụt</a></li>
           </ul>
         </div>
 
@@ -91,8 +95,11 @@
             <li><a href="#reports" class="sidebar__submenu-item" data-page="reports">Tổng quan</a></li>
             <li><a href="#reports-revenue" class="sidebar__submenu-item" data-page="reports-revenue">Doanh thu</a></li>
             <li><a href="#reports-profit" class="sidebar__submenu-item" data-page="reports-profit">Lợi nhuận</a></li>
-            <li><a href="#reports-inventory" class="sidebar__submenu-item" data-page="reports-inventory">Tồn kho</a></li>
-            <li style="border-top:1px solid var(--header-border);margin-top:6px;padding-top:6px"><a href="#reports-compare" class="sidebar__submenu-item" data-page="reports-compare"><i class="fa-solid fa-scale-balanced" style="margin-right:6px;font-size:11px"></i>So sánh DT/LN</a></li>
+            <li><a href="#reports-inventory" class="sidebar__submenu-item" data-page="reports-inventory">Tồn kho</a>
+            </li>
+            <li style="border-top:1px solid var(--header-border);margin-top:6px;padding-top:6px"><a
+                href="#reports-compare" class="sidebar__submenu-item" data-page="reports-compare"><i
+                  class="fa-solid fa-scale-balanced" style="margin-right:6px;font-size:11px"></i>So sánh DT/LN</a></li>
           </ul>
         </div>
 
@@ -104,19 +111,11 @@
           </button>
           <ul class="sidebar__submenu" id="automation-sub">
             <li><a href="#automation-rules" class="sidebar__submenu-item" data-page="automation-rules">Quy tắc</a></li>
-            <li><a href="#automation-logs" class="sidebar__submenu-item" data-page="automation-logs">Lịch sử chạy</a></li>
+            <li><a href="#automation-logs" class="sidebar__submenu-item" data-page="automation-logs">Lịch sử chạy</a>
+            </li>
           </ul>
         </div>
 
-        <a href="#settings" class="sidebar__item" data-page="settings">
-          <i class="fa-solid fa-gear"></i>
-          <span>Cài đặt</span>
-        </a>
-
-        <a href="{{ gateway_origin }}/choose-area" class="sidebar__item" style="margin-top:auto">
-          <i class="fa-solid fa-arrow-left"></i>
-          <span>Đổi mảng</span>
-        </a>
       </nav>
     </aside>
 
@@ -141,7 +140,7 @@
           <button class="header__icon-btn" id="themeToggle" aria-label="Chuyốn theme">
             <i class="fa-solid fa-moon" id="themeIcon"></i>
           </button>
-          <div class="header__avatar">
+          <div class="header__avatar" id="userAvatar">
             <img src="{{ user.avatar if user and user.avatar else 'https://i.pravatar.cc/36?img=12' }}" alt="Avatar" />
             <div class="header__avatar-info">
               <span class="header__avatar-name">{{ user.name if user else 'Người dùng' }}</span>
@@ -159,6 +158,29 @@
           <p style="margin-top:12px">Đang tải...</p>
         </div>
       </main>
+    </div>
+  </div>
+
+  <!-- ============ USER PANEL ============ -->
+  <div class="user-panel" id="userPanel">
+    <div class="user-panel__header">
+      <img src="{{ user.avatar if user and user.avatar else 'https://i.pravatar.cc/36?img=12' }}" alt="Avatar" />
+      <div class="user-panel__info">
+        <strong>{{ user.name if user else 'Người dùng' }}</strong>
+        <span>{{ user.role if user else '' }}</span>
+      </div>
+    </div>
+    <div class="user-panel__body">
+      <a href="#profile" class="user-panel__item" data-page="profile">
+        <i class="fa-solid fa-user-pen"></i> Cài đặt tài khoản
+      </a>
+      <a href="#settings" class="user-panel__item" data-page="settings">
+        <i class="fa-solid fa-gear"></i> Cài đặt hệ thống
+      </a>
+      <div class="user-panel__divider"></div>
+      <a href="{{ gateway_origin }}/choose-area" class="user-panel__item user-panel__item--danger">
+        <i class="fa-solid fa-right-from-bracket"></i> Đăng xuất
+      </a>
     </div>
   </div>
 
@@ -395,7 +417,8 @@
           </div>
           <div class="form-group">
             <label for="qcNote">Ghi chú kiểm định</label>
-            <textarea id="qcNote" name="qcNote" rows="3" placeholder="Chỉ tiêu đo, lý do, người kiểm định..."></textarea>
+            <textarea id="qcNote" name="qcNote" rows="3"
+              placeholder="Chỉ tiêu đo, lý do, người kiểm định..."></textarea>
           </div>
           <div class="modal__footer">
             <button type="button" class="btn btn--outline" id="btnCancelQCModal">Huỷ</button>
@@ -423,19 +446,23 @@
             <label>Loại sự kiện</label>
             <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px">
               <label style="display:flex;align-items:center;gap:8px;font-weight:400;cursor:pointer">
-                <input type="radio" name="eventType" value="Dừng sản xuất" required /> <i class="fa-solid fa-pause"></i> Dừng sản xuất
+                <input type="radio" name="eventType" value="Dừng sản xuất" required /> <i class="fa-solid fa-pause"></i>
+                Dừng sản xuất
               </label>
               <label style="display:flex;align-items:center;gap:8px;font-weight:400;cursor:pointer">
-                <input type="radio" name="eventType" value="Tiếp tục sản xuất" /> <i class="fa-solid fa-play"></i> Tiếp tục sản xuất
+                <input type="radio" name="eventType" value="Tiếp tục sản xuất" /> <i class="fa-solid fa-play"></i> Tiếp
+                tục sản xuất
               </label>
               <label style="display:flex;align-items:center;gap:8px;font-weight:400;cursor:pointer">
-                <input type="radio" name="eventType" value="Sự cố" /> <i class="fa-solid fa-triangle-exclamation"></i> Sự cố
+                <input type="radio" name="eventType" value="Sự cố" /> <i class="fa-solid fa-triangle-exclamation"></i>
+                Sự cố
               </label>
             </div>
           </div>
           <div class="form-group">
             <label for="batchEventNote">Ghi chú</label>
-            <textarea id="batchEventNote" name="batchEventNote" rows="3" placeholder="Mô tả chi tiết sự kiện"></textarea>
+            <textarea id="batchEventNote" name="batchEventNote" rows="3"
+              placeholder="Mô tả chi tiết sự kiện"></textarea>
           </div>
           <div class="modal__footer">
             <button type="button" class="btn btn--outline" id="btnCancelBatchEventModal">Huỷ</button>
@@ -667,7 +694,8 @@
         <textarea id="aiChatInput" rows="1" placeholder="Nhập câu hỏi..."></textarea>
         <button class="ai-chat-send" id="aiChatSend" aria-label="Gửi"><i class="fa-solid fa-paper-plane"></i></button>
       </div>
-      <p class="ai-chat-disclaimer">Trả lời dựa trên dữ liệu thật (sản phẩm, quy trình n8n) qua so khớp mẫu câu, không gọi mô hình AI thật.</p>
+      <p class="ai-chat-disclaimer">Trả lời dựa trên dữ liệu thật (sản phẩm, quy trình n8n) qua so khớp mẫu câu, không
+        gọi mô hình AI thật.</p>
     </div>
   </div>
 

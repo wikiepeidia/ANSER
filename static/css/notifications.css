@@ -234,6 +234,124 @@
 }
 
 /* ==============================
+   USER PANEL
+   ============================== */
+.user-panel {
+  position: fixed;
+  top: 72px;
+  right: 24px;
+  width: 260px;
+  background-color: var(--bg-card);
+  border: 1px solid var(--header-border);
+  border-radius: 12px;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.15);
+  z-index: 200;
+  display: none;
+  flex-direction: column;
+  overflow: hidden;
+  animation: notiPanelIn 0.2s ease;
+}
+
+.user-panel.open {
+  display: flex;
+}
+
+.user-panel__header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  border-bottom: 1px solid var(--table-border);
+  background-color: var(--bg-page);
+}
+
+.user-panel__header img {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--header-border);
+  flex-shrink: 0;
+}
+
+.user-panel__info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.user-panel__info strong {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.user-panel__info span {
+  font-size: 12px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.user-panel__body {
+  padding: 6px 0;
+}
+
+.user-panel__item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  font-size: 13.5px;
+  color: var(--text-primary);
+  font-weight: 500;
+  border-radius: 0;
+  transition: background-color var(--transition-fast), color var(--transition-fast);
+  cursor: pointer;
+}
+
+.user-panel__item:hover {
+  background-color: var(--bg-card-hover);
+  color: var(--brand-primary);
+}
+
+.user-panel__item i {
+  width: 16px;
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 13px;
+  transition: color var(--transition-fast);
+}
+
+.user-panel__item:hover i {
+  color: var(--brand-primary);
+}
+
+.user-panel__item--danger {
+  color: var(--stat-red-icon);
+}
+
+.user-panel__item--danger:hover {
+  background-color: var(--badge-red-bg);
+  color: var(--stat-red-icon);
+}
+
+.user-panel__item--danger i {
+  color: var(--stat-red-icon);
+}
+
+.user-panel__divider {
+  height: 1px;
+  background-color: var(--table-border);
+  margin: 4px 12px;
+}
+
+/* ==============================
    NAVIGATION ACTIVE STATES
    ============================== */
 .sidebar__submenu-item.active {
