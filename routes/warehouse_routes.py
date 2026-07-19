@@ -282,3 +282,176 @@ def get_warehouse_stock():
         })
     finally:
         conn.close()
+
+
+def _resolve_product_display(conn, product_code):
+    """Resolve product_name/unit for a ledger row from the products table
+    (read-only lookup of code/name/unit only — never stock_quantity, per
+    Pitfall 4). Falls back to the raw code / 'cái' if no match, matching
+    the mock's lenient fallback."""
+    row = conn.execute('SELECT name, unit FROM products WHERE code = ?', (product_code,)).fetchone()
+    if row:
+        return row['name'], row['unit'] or 'cái'
+    return product_code, 'cái'
+
+
+# ── Stock transfer + stocktake adjustment (TRACE-04, TRACE-05) ──────────
+
+@warehouse_bp.route('/api/warehouse-stock/transfer', methods=['POST'])
+@login_required
+def transfer_stock():
+    data = request.get_json(silent=True) or {}
+
+    try:
+        quantity = float(data.get('quantity'))
+    except (TypeError, ValueError):
+        quantity = 0
+    if quantity <= 0:
+        return jsonify({'success': False, 'message': 'Số lượng chuyển phải lớn hơn 0'}), 400
+
+    product_code = data.get('productCode')
+    from_warehouse_id = data.get('fromWarehouseId')
+    from_location_id = data.get('fromLocationId')
+    to_warehouse_id = data.get('toWarehouseId')
+    to_location_id = data.get('toLocationId')
+
+    if from_warehouse_id == to_warehouse_id and from_location_id == to_location_id:
+        return jsonify({'success': False, 'message': 'Vị trí nguồn và đích phải khác nhau'}), 400
+
+    conn = get_connection()
+    try:
+        # Fresh balance, queried immediately before the decision — never a
+        # cached/previously-fetched figure (Pitfall 5).
+        available = _current_stock(conn, from_warehouse_id, from_location_id, product_code)
+        if available < quantity:
+            return jsonify({
+                'success': False,
+                'message': f'Không đủ tồn kho tại vị trí nguồn (còn {available})',
+            }), 409
+
+        product_name, unit = _resolve_product_display(conn, product_code)
+        note = data.get('note', '')
+
+        cur = conn.execute(
+            'INSERT INTO stock_ledger (entry_type, warehouse_id, location_id, product_code, '
+            'product_name, unit, quantity_delta, counterparty_warehouse_id, '
+            'counterparty_location_id, note, created_by, created_at) '
+            "VALUES ('transfer_out', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (from_warehouse_id, from_location_id, product_code, product_name, unit, -quantity,
+             to_warehouse_id, to_location_id, note, current_user.id, now()),
+        )
+        transfer_group = str(cur.lastrowid)
+        conn.execute(
+            'UPDATE stock_ledger SET transfer_group = ? WHERE id = ?',
+            (transfer_group, cur.lastrowid),
+        )
+        conn.execute(
+            'INSERT INTO stock_ledger (entry_type, warehouse_id, location_id, product_code, '
+            'product_name, unit, quantity_delta, transfer_group, counterparty_warehouse_id, '
+            'counterparty_location_id, note, created_by, created_at) '
+            "VALUES ('transfer_in', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (to_warehouse_id, to_location_id, product_code, product_name, unit, quantity,
+             transfer_group, from_warehouse_id, from_location_id, note, current_user.id, now()),
+        )
+        conn.commit()
+        return jsonify({'success': True, 'message': 'Chuyển kho thành công'})
+    except Exception as e:
+        conn.rollback()
+        return jsonify({'success': False, 'message': str(e)}), 400
+    finally:
+        conn.close()
+
+
+@warehouse_bp.route('/api/warehouse-stock/stocktake', methods=['POST'])
+@login_required
+def stocktake_adjustment():
+    data = request.get_json(silent=True) or {}
+
+    try:
+        counted_qty = float(data.get('countedQty'))
+    except (TypeError, ValueError):
+        counted_qty = None
+    if counted_qty is None or counted_qty < 0:
+        return jsonify({'success': False, 'message': 'Số lượng đếm không hợp lệ'}), 400
+
+    warehouse_id = data.get('warehouseId')
+    location_id = data.get('locationId')
+    product_code = data.get('productCode')
+
+    conn = get_connection()
+    try:
+        system_qty = _current_stock(conn, warehouse_id, location_id, product_code)
+        product_name, unit = _resolve_product_display(conn, product_code)
+        quantity_delta = counted_qty - system_qty
+
+        conn.execute(
+            'INSERT INTO stock_ledger (entry_type, warehouse_id, location_id, product_code, '
+            'product_name, unit, quantity_delta, system_qty_snapshot, counted_qty, note, '
+            'created_by, created_at) '
+            "VALUES ('adjustment', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (warehouse_id, location_id, product_code, product_name, unit, quantity_delta,
+             system_qty, counted_qty, data.get('note', ''), current_user.id, now()),
+        )
+        conn.commit()
+        return jsonify({'success': True, 'message': 'Ghi nhận kiểm kê thành công'})
+    except Exception as e:
+        conn.rollback()
+        return jsonify({'success': False, 'message': str(e)}), 400
+    finally:
+        conn.close()
+
+
+@warehouse_bp.route('/api/warehouse-stock/ledger', methods=['GET'])
+@login_required
+def get_stock_ledger():
+    warehouse_id = request.args.get('warehouseId', type=int)
+    location_id = request.args.get('locationId', type=int)
+    product_code = request.args.get('productCode')
+    entry_type = request.args.get('entryType')
+
+    conditions = []
+    params = []
+    if warehouse_id is not None:
+        conditions.append('warehouse_id = ?')
+        params.append(warehouse_id)
+    if location_id is not None:
+        conditions.append('location_id = ?')
+        params.append(location_id)
+    if product_code:
+        conditions.append('product_code = ?')
+        params.append(product_code)
+    if entry_type:
+        conditions.append('entry_type = ?')
+        params.append(entry_type)
+
+    query = 'SELECT * FROM stock_ledger'
+    if conditions:
+        query += ' WHERE ' + ' AND '.join(conditions)
+    query += ' ORDER BY created_at DESC'
+
+    conn = get_connection()
+    try:
+        rows = conn.execute(query, tuple(params)).fetchall()
+        entries = [
+            {
+                'id': r['id'],
+                'entryType': r['entry_type'],
+                'warehouseId': r['warehouse_id'],
+                'locationId': r['location_id'],
+                'productCode': r['product_code'],
+                'productName': r['product_name'],
+                'unit': r['unit'],
+                'quantityDelta': r['quantity_delta'],
+                'transferGroup': r['transfer_group'],
+                'counterpartyWarehouseId': r['counterparty_warehouse_id'],
+                'counterpartyLocationId': r['counterparty_location_id'],
+                'systemQtySnapshot': r['system_qty_snapshot'],
+                'countedQty': r['counted_qty'],
+                'note': r['note'],
+                'createdAt': r['created_at'],
+            }
+            for r in rows
+        ]
+        return jsonify({'success': True, 'entries': entries})
+    finally:
+        conn.close()
