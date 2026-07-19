@@ -9,11 +9,13 @@ this file implements (Pattern 6 _resolve_supplier, Pattern 7
 MATERIALS_CATALOG, Pattern 5 traceability-chain JOIN).
 """
 import secrets
+from datetime import datetime
 
 from flask import Blueprint, jsonify, request
 from flask_login import current_user, login_required
 
 from core.sanxuat_db import get_connection, now
+from routes.production_routes import _serialize_order
 
 inventory_bp = Blueprint('inventory', __name__)
 
@@ -227,5 +229,72 @@ def delete_material_batch(batch_id):
         )
         conn.commit()
         return jsonify({'success': True, 'message': 'Xóa lô nguyên liệu thành công'})
+    finally:
+        conn.close()
+
+
+# ── Traceability chain (TRACE-02) ────────────────────────────────────────
+
+@inventory_bp.route('/api/material-batches/<int:batch_id>/trace', methods=['GET'])
+@login_required
+def trace_material_batch(batch_id):
+    conn = get_connection()
+    try:
+        # No is_deleted filter (Pitfall 2) — trace must work even for a
+        # soft-deleted batch; only a genuinely nonexistent id is a 404.
+        batch_row = conn.execute(f'{_BATCH_SELECT} WHERE b.id = ?', (batch_id,)).fetchone()
+        if not batch_row:
+            return jsonify({'success': False, 'message': 'Không tìm thấy lô nguyên liệu'}), 404
+
+        order_rows = conn.execute(
+            'SELECT DISTINCT po.* FROM production_orders po '
+            'JOIN bom_lines bl ON bl.product_code = po.product_code '
+            'WHERE bl.code = ? AND po.is_deleted = FALSE '
+            'ORDER BY po.created_at DESC',
+            (batch_row['material_code'],),
+        ).fetchall()
+        consuming_orders = [
+            {'order': _serialize_order(r), 'isFinishedGoods': r['status'] == 'completed'}
+            for r in order_rows
+        ]
+        return jsonify({
+            'success': True,
+            'batch': _serialize_batch(batch_row),
+            'consumingOrders': consuming_orders,
+        })
+    finally:
+        conn.close()
+
+
+# ── Expiring batches (TRACE-06) ──────────────────────────────────────────
+
+@inventory_bp.route('/api/material-batches/expiring', methods=['GET'])
+@login_required
+def get_expiring_material_batches():
+    days = request.args.get('days', default=7, type=int)
+    conn = get_connection()
+    try:
+        rows = conn.execute(
+            f"{_BATCH_SELECT} WHERE b.is_deleted = FALSE AND b.expiry_date IS NOT NULL "
+            "AND b.expiry_date != '' ORDER BY b.expiry_date ASC"
+        ).fetchall()
+        today = datetime.now().date()
+        results = []
+        for r in rows:
+            try:
+                expiry = datetime.strptime(r['expiry_date'], '%Y-%m-%d').date()
+            except (TypeError, ValueError):
+                continue
+            day_count = (expiry - today).days
+            if day_count <= days:
+                results.append((r, day_count))
+        results.sort(key=lambda pair: pair[1])
+        return jsonify({
+            'success': True,
+            'batches': [
+                {**_serialize_batch(r), 'daysUntilExpiry': day_count}
+                for r, day_count in results
+            ],
+        })
     finally:
         conn.close()

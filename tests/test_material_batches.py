@@ -1,6 +1,8 @@
 """Integration tests for material batch CRUD (TRACE-01), traceability-chain
 (TRACE-02), and expiring-batches (TRACE-06) — routes/inventory_routes.py.
 """
+from datetime import datetime, timedelta
+
 from core.sanxuat_db import get_connection
 
 
@@ -100,3 +102,110 @@ def test_create_list_update(logged_in_client):
     res = client.get('/api/material-batches')
     data = res.get_json()
     assert all(b['id'] != batch_id for b in data['batches'])
+
+
+def test_trace_chain(logged_in_client):
+    client = logged_in_client
+
+    # A product + a BOM line referencing a material code this test controls.
+    product_code = 'PRD-TRACE-01'
+    res = client.post('/api/products', json={
+        'code': product_code, 'name': 'Sản phẩm truy xuất test',
+    })
+    assert res.status_code == 200
+
+    material_code = 'NVL-001'
+    res = client.put(f'/api/bom/{product_code}', json={
+        'lines': [{
+            'code': material_code, 'name': 'Vải cotton', 'unit': 'm',
+            'unitCost': 45000, 'qtyPerUnit': 2,
+        }],
+    })
+    assert res.status_code == 200
+
+    # A production order for that product.
+    res = client.post('/api/production-orders', json={
+        'productCode': product_code, 'productName': 'Sản phẩm truy xuất test', 'quantity': 10,
+    })
+    assert res.status_code == 200
+    order_id = res.get_json()['id']
+
+    # A material batch with the matching materialCode.
+    res = client.post('/api/material-batches', json={'materialCode': material_code, 'quantity': 500})
+    assert res.status_code == 200
+    batch_id = res.get_json()['id']
+
+    # Trace: order appears, isFinishedGoods = false (still draft).
+    res = client.get(f'/api/material-batches/{batch_id}/trace')
+    assert res.status_code == 200
+    data = res.get_json()
+    assert data['success'] is True
+    entry = next(e for e in data['consumingOrders'] if e['order']['id'] == order_id)
+    assert entry['isFinishedGoods'] is False
+
+    # Walk the full transition chain to 'completed'.
+    for status in ('pending_approval', 'approved', 'in_progress', 'completed'):
+        res = client.post(f'/api/production-orders/{order_id}/transition', json={'status': status})
+        assert res.status_code == 200, res.get_json()
+
+    res = client.get(f'/api/material-batches/{batch_id}/trace')
+    data = res.get_json()
+    entry = next(e for e in data['consumingOrders'] if e['order']['id'] == order_id)
+    assert entry['isFinishedGoods'] is True
+
+    # Soft-delete the batch — trace must still return 200 with the same
+    # consumingOrders, not a 404 (Pitfall 2 / TRACE-02 historical guarantee).
+    res = client.delete(f'/api/material-batches/{batch_id}')
+    assert res.status_code == 200
+    res = client.get(f'/api/material-batches/{batch_id}/trace')
+    assert res.status_code == 200
+    data = res.get_json()
+    entry = next(e for e in data['consumingOrders'] if e['order']['id'] == order_id)
+    assert entry['isFinishedGoods'] is True
+
+    # A batch with no matching orders returns an empty (never null) list.
+    res = client.post('/api/material-batches', json={'materialCode': 'NVL-007', 'quantity': 5})
+    lonely_batch_id = res.get_json()['id']
+    res = client.get(f'/api/material-batches/{lonely_batch_id}/trace')
+    data = res.get_json()
+    assert data['success'] is True
+    assert data['consumingOrders'] == []
+
+
+def test_expiring_batches(logged_in_client):
+    client = logged_in_client
+    today = datetime.now().date()
+
+    def make_batch(days_offset=None, material='NVL-004'):
+        payload = {'materialCode': material, 'quantity': 10}
+        if days_offset is not None:
+            payload['expiryDate'] = (today + timedelta(days=days_offset)).strftime('%Y-%m-%d')
+        res = client.post('/api/material-batches', json=payload)
+        assert res.status_code == 200
+        return res.get_json()['id']
+
+    expired_id = make_batch(-1)          # already expired
+    soon_id = make_batch(3)              # expiring within default days=7
+    later_id = make_batch(60)            # not within default, within days=90
+    no_expiry_id = make_batch(None)      # no expiryDate -> never appears
+
+    # Default days=7: already-expired + expiring-soon, most-urgent-first.
+    res = client.get('/api/material-batches/expiring')
+    assert res.status_code == 200
+    data = res.get_json()
+    ids = [b['id'] for b in data['batches']]
+    assert expired_id in ids
+    assert soon_id in ids
+    assert later_id not in ids
+    assert no_expiry_id not in ids
+    assert ids.index(expired_id) < ids.index(soon_id)
+    expired_entry = next(b for b in data['batches'] if b['id'] == expired_id)
+    assert expired_entry['daysUntilExpiry'] < 0
+
+    # days=90: superset including the far-future batch, still sorted.
+    res = client.get('/api/material-batches/expiring?days=90')
+    data = res.get_json()
+    ids = [b['id'] for b in data['batches']]
+    assert expired_id in ids and soon_id in ids and later_id in ids
+    assert no_expiry_id not in ids
+    assert ids.index(expired_id) < ids.index(soon_id) < ids.index(later_id)
