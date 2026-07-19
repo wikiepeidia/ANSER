@@ -61,11 +61,13 @@ def create_app():
     from routes.n8n_api import n8n_api_bp
     from routes.production_routes import production_bp
     from routes.inventory_routes import inventory_bp
+    from routes.warehouse_routes import warehouse_bp
     app.register_blueprint(page_bp)
     app.register_blueprint(api_bp)
     app.register_blueprint(n8n_api_bp)
     app.register_blueprint(production_bp)
     app.register_blueprint(inventory_bp)
+    app.register_blueprint(warehouse_bp)
 
     init_db()
 
