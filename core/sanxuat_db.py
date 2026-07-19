@@ -234,6 +234,22 @@ CREATE TABLE IF NOT EXISTS stock_ledger (
 
 CREATE INDEX IF NOT EXISTS idx_stock_ledger_wlp ON stock_ledger(warehouse_id, location_id, product_code);
 CREATE INDEX IF NOT EXISTS idx_stock_ledger_transfer_group ON stock_ledger(transfer_group);
+
+-- qc_results: immutable audit log for QC-01 (Phase 2.1). Never UPDATEd or
+-- DELETEd -- the "current" QC status lives on material_batches.qc_status/
+-- qc_note (dual-write, populated in the same transaction by 02.1-02's
+-- POST .../qc-result route); this table is history only. No is_deleted
+-- column by design (append-only, matching production_order_events'
+-- exact precedent).
+CREATE TABLE IF NOT EXISTS qc_results (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    batch_id INTEGER NOT NULL,
+    qc_status TEXT NOT NULL,
+    qc_note TEXT DEFAULT '',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_qc_results_batch_id ON qc_results(batch_id);
 """
 
 SCHEMA_PG = """
@@ -456,6 +472,22 @@ CREATE TABLE IF NOT EXISTS stock_ledger (
 
 CREATE INDEX IF NOT EXISTS idx_stock_ledger_wlp ON stock_ledger(warehouse_id, location_id, product_code);
 CREATE INDEX IF NOT EXISTS idx_stock_ledger_transfer_group ON stock_ledger(transfer_group);
+
+-- qc_results: immutable audit log for QC-01 (Phase 2.1). Never UPDATEd or
+-- DELETEd -- the "current" QC status lives on material_batches.qc_status/
+-- qc_note (dual-write, populated in the same transaction by 02.1-02's
+-- POST .../qc-result route); this table is history only. No is_deleted
+-- column by design (append-only, matching production_order_events'
+-- exact precedent).
+CREATE TABLE IF NOT EXISTS qc_results (
+    id SERIAL PRIMARY KEY,
+    batch_id INTEGER NOT NULL,
+    qc_status TEXT NOT NULL,
+    qc_note TEXT DEFAULT '',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_qc_results_batch_id ON qc_results(batch_id);
 """
 
 

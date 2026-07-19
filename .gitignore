@@ -38,6 +38,7 @@ tests/
 !/tests/test_material_batches.py
 !/tests/test_warehouses.py
 !/tests/test_suppliers.py
+!/tests/test_qc.py
 evaluate/
 jobs/
 # C extensions
@@ -412,3 +413,4 @@ group_project_ai_ml.db
 .n8n_sx_creds.json
 .planning-anser-backup-20260716/config.json
 JOBS.md
+PHASE2-VERIFY-CHECKLIST.md

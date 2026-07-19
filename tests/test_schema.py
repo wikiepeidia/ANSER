@@ -78,3 +78,31 @@ def test_warehouses_locations_and_ledger_schema(app):
         assert row['qty'] == 5
     finally:
         conn.close()
+
+
+def test_qc_results_schema(app):
+    conn = get_connection()
+    try:
+        conn.execute(
+            "INSERT INTO qc_results (batch_id, qc_status, created_at) VALUES (?, ?, ?)",
+            (1, 'pending', now()),
+        )
+        conn.commit()
+
+        row = conn.execute(
+            "SELECT qc_note FROM qc_results WHERE batch_id = 1",
+        ).fetchone()
+        assert row['qc_note'] == ''
+
+        conn.execute(
+            "INSERT INTO qc_results (batch_id, qc_status, created_at) VALUES (?, ?, ?)",
+            (1, 'passed', now()),
+        )
+        conn.commit()
+
+        count_row = conn.execute(
+            "SELECT COUNT(*) AS c FROM qc_results WHERE batch_id = 1",
+        ).fetchone()
+        assert count_row['c'] == 2
+    finally:
+        conn.close()
