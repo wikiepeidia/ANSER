@@ -135,6 +135,53 @@ CREATE TABLE IF NOT EXISTS bom_lines (
 );
 
 CREATE INDEX IF NOT EXISTS idx_bom_lines_product_code ON bom_lines(product_code);
+
+-- suppliers: master data for material_batches.supplier_id. code is
+-- id-derived ('NCC-' || zero-padded 3-digit id), set via UPDATE right after
+-- INSERT once the id is known (see routes/*_routes.py), same pattern as
+-- production_orders.code.
+CREATE TABLE IF NOT EXISTS suppliers (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    code TEXT UNIQUE,
+    name TEXT NOT NULL,
+    contact TEXT,
+    phone TEXT,
+    email TEXT,
+    address TEXT,
+    notes TEXT,
+    created_by INTEGER,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    is_deleted INTEGER DEFAULT 0,
+    deleted_at TIMESTAMP
+);
+
+-- material_batches: real backend for the mock's materialBatches array.
+-- code is id-derived ('LO-' || (2000+id)). supplier_id is a nullable FK
+-- (no REFERENCES clause, matching this app's existing tables' style, e.g.
+-- production_order_events.order_id) ready for 02-02's resolver to populate.
+-- qc_status/qc_note are reserved for Phase 3 (QC-01) -- no route this
+-- phase writes to them.
+CREATE TABLE IF NOT EXISTS material_batches (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    code TEXT UNIQUE,
+    material_code TEXT NOT NULL,
+    material_name TEXT NOT NULL,
+    unit TEXT DEFAULT 'cái',
+    supplier_id INTEGER,
+    quantity REAL NOT NULL,
+    received_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    expiry_date TEXT,
+    qc_status TEXT NOT NULL DEFAULT 'pending',
+    qc_note TEXT DEFAULT '',
+    notes TEXT DEFAULT '',
+    created_by INTEGER,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    is_deleted INTEGER DEFAULT 0,
+    deleted_at TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_material_batches_material_code ON material_batches(material_code);
+CREATE INDEX IF NOT EXISTS idx_material_batches_supplier_id ON material_batches(supplier_id);
 """
 
 SCHEMA_PG = """
@@ -258,6 +305,53 @@ CREATE TABLE IF NOT EXISTS bom_lines (
 );
 
 CREATE INDEX IF NOT EXISTS idx_bom_lines_product_code ON bom_lines(product_code);
+
+-- suppliers: master data for material_batches.supplier_id. code is
+-- id-derived ('NCC-' || zero-padded 3-digit id), set via UPDATE right after
+-- INSERT once the id is known (see routes/*_routes.py), same pattern as
+-- production_orders.code.
+CREATE TABLE IF NOT EXISTS suppliers (
+    id SERIAL PRIMARY KEY,
+    code TEXT UNIQUE,
+    name TEXT NOT NULL,
+    contact TEXT,
+    phone TEXT,
+    email TEXT,
+    address TEXT,
+    notes TEXT,
+    created_by INTEGER,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    is_deleted BOOLEAN DEFAULT FALSE,
+    deleted_at TIMESTAMP
+);
+
+-- material_batches: real backend for the mock's materialBatches array.
+-- code is id-derived ('LO-' || (2000+id)). supplier_id is a nullable FK
+-- (no REFERENCES clause, matching this app's existing tables' style, e.g.
+-- production_order_events.order_id) ready for 02-02's resolver to populate.
+-- qc_status/qc_note are reserved for Phase 3 (QC-01) -- no route this
+-- phase writes to them.
+CREATE TABLE IF NOT EXISTS material_batches (
+    id SERIAL PRIMARY KEY,
+    code TEXT UNIQUE,
+    material_code TEXT NOT NULL,
+    material_name TEXT NOT NULL,
+    unit TEXT DEFAULT 'cái',
+    supplier_id INTEGER,
+    quantity REAL NOT NULL,
+    received_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    expiry_date TEXT,
+    qc_status TEXT NOT NULL DEFAULT 'pending',
+    qc_note TEXT DEFAULT '',
+    notes TEXT DEFAULT '',
+    created_by INTEGER,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    is_deleted BOOLEAN DEFAULT FALSE,
+    deleted_at TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_material_batches_material_code ON material_batches(material_code);
+CREATE INDEX IF NOT EXISTS idx_material_batches_supplier_id ON material_batches(supplier_id);
 """
 
 

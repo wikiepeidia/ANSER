@@ -34,6 +34,10 @@ tests/
 !/tests/test_production_orders.py
 !/tests/test_bom.py
 !/tests/test_env_loader.py
+!/tests/test_schema.py
+!/tests/test_material_batches.py
+!/tests/test_warehouses.py
+!/tests/test_suppliers.py
 evaluate/
 jobs/
 # C extensions
