@@ -305,6 +305,63 @@ def record_qc_result(batch_id):
         conn.close()
 
 
+# ── Batch process events (QC-03/QC-04) ───────────────────────────────────
+
+def _serialize_batch_event(row):
+    return {
+        'id': row['id'],
+        'batchId': row['batch_id'],
+        'ts': row['created_at'],
+        'event': row['event'],
+        'note': row['note'] or '',
+    }
+
+
+@inventory_bp.route('/api/material-batches/<int:batch_id>/events', methods=['POST'])
+@login_required
+def log_batch_event(batch_id):
+    data = request.get_json(silent=True) or {}
+    event = (data.get('event') or '').strip()
+    note = data.get('note') or ''
+    if not event:
+        return jsonify({'success': False, 'message': 'Thiếu tên sự kiện quy trình'}), 400
+
+    conn = get_connection()
+    try:
+        row = conn.execute(
+            'SELECT id FROM material_batches WHERE id = ? AND is_deleted = FALSE', (batch_id,)
+        ).fetchone()
+        if not row:
+            return jsonify({'success': False, 'message': 'Không tìm thấy lô nguyên liệu'}), 404
+
+        conn.execute(
+            'INSERT INTO material_batch_events (batch_id, event, note, created_at) '
+            'VALUES (?, ?, ?, ?)',
+            (batch_id, event, note, now()),
+        )
+        conn.commit()
+        return jsonify({'success': True, 'message': 'Ghi nhận sự kiện thành công'})
+    except Exception as e:
+        conn.rollback()
+        return jsonify({'success': False, 'message': str(e)}), 400
+    finally:
+        conn.close()
+
+
+@inventory_bp.route('/api/material-batches/<int:batch_id>/events', methods=['GET'])
+@login_required
+def get_batch_events(batch_id):
+    conn = get_connection()
+    try:
+        rows = conn.execute(
+            'SELECT * FROM material_batch_events WHERE batch_id = ? ORDER BY created_at ASC',
+            (batch_id,),
+        ).fetchall()
+        return jsonify({'success': True, 'events': [_serialize_batch_event(r) for r in rows]})
+    finally:
+        conn.close()
+
+
 # ── Expiring batches (TRACE-06) ──────────────────────────────────────────
 
 @inventory_bp.route('/api/material-batches/expiring', methods=['GET'])

@@ -76,3 +76,68 @@ def test_record_qc_result(logged_in_client):
 
     resp = logged_in_client.get(f'/api/material-batches/{batch_id}')
     assert resp.get_json()['batch']['qcStatus'] == 'failed'
+
+
+def test_log_batch_event(logged_in_client):
+    batch_id = _create_batch(logged_in_client)
+
+    resp = logged_in_client.post(
+        f'/api/material-batches/{batch_id}/events',
+        json={'event': 'Bắt đầu sản xuất', 'note': 'Ca sáng'},
+    )
+    assert resp.status_code == 200
+    assert resp.get_json()['success'] is True
+
+    # Novel event string not in the mock's 5-name vocabulary — no enum
+    # restriction, matching the mock's own unvalidated addProcessEvent.
+    resp = logged_in_client.post(
+        f'/api/material-batches/{batch_id}/events',
+        json={'event': 'Kiểm tra đột xuất'},
+    )
+    assert resp.status_code == 200
+
+    resp = logged_in_client.post(
+        f'/api/material-batches/{batch_id}/events',
+        json={'event': ''},
+    )
+    assert resp.status_code == 400
+
+    resp = logged_in_client.post(
+        '/api/material-batches/999999/events',
+        json={'event': 'Bắt đầu sản xuất'},
+    )
+    assert resp.status_code == 404
+    assert resp.get_json()['message'] == 'Không tìm thấy lô nguyên liệu'
+
+
+def test_get_batch_events(logged_in_client):
+    batch_id = _create_batch(logged_in_client)
+
+    events = ['Bắt đầu sản xuất', 'Dừng sản xuất', 'Tiếp tục sản xuất']
+    for event in events:
+        resp = logged_in_client.post(
+            f'/api/material-batches/{batch_id}/events',
+            json={'event': event},
+        )
+        assert resp.status_code == 200
+
+    resp = logged_in_client.get(f'/api/material-batches/{batch_id}/events')
+    assert resp.status_code == 200
+    body = resp.get_json()
+    assert body['success'] is True
+    returned_events = body['events']
+    assert len(returned_events) == 3
+    assert [e['event'] for e in returned_events] == events
+    for e in returned_events:
+        assert e['batchId'] == batch_id
+        assert e['ts']
+
+    other_batch_id = _create_batch(logged_in_client)
+    resp = logged_in_client.post(
+        f'/api/material-batches/{other_batch_id}/events',
+        json={'event': 'Hoàn thành'},
+    )
+    assert resp.status_code == 200
+
+    resp = logged_in_client.get(f'/api/material-batches/{batch_id}/events')
+    assert len(resp.get_json()['events']) == 3
