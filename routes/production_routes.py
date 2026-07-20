@@ -409,6 +409,39 @@ def calculate_bom():
             'SELECT code, name, unit, unit_cost, qty_per_unit FROM bom_lines WHERE product_code = ?',
             (product_code,),
         ).fetchall()
+
+        # QC-02 gating: block only when a material HAS at least one existing
+        # batch but insufficient passed-QC quantity. A material with ZERO
+        # material_batches rows at all (never received) is exempt — the
+        # `total_batches > 0` guard is what prevents false-blocking every
+        # never-received material (02.1-CONTEXT.md, 02.1-RESEARCH.md
+        # Pitfall 2). Both aggregates share one `is_deleted = FALSE`
+        # WHERE clause in a single query so a soft-deleted batch can never
+        # count toward one aggregate but not the other (Pitfall 4).
+        blocked = []
+        for r in rows:
+            line_qty = round(r['qty_per_unit'] * qty, 2)
+            avail = conn.execute(
+                'SELECT COUNT(*) AS total_batches, '
+                "COALESCE(SUM(CASE WHEN qc_status = 'passed' THEN quantity ELSE 0 END), 0) "
+                'AS available_passed FROM material_batches '
+                'WHERE material_code = ? AND is_deleted = FALSE',
+                (r['code'],),
+            ).fetchone()
+            if avail['total_batches'] > 0 and line_qty > avail['available_passed']:
+                blocked.append({
+                    'materialCode': r['code'],
+                    'required': line_qty,
+                    'availablePassed': avail['available_passed'],
+                })
+
+        if blocked:
+            return jsonify({
+                'success': False,
+                'message': 'Một số nguyên vật liệu chưa đủ số lượng đạt kiểm định QC',
+                'blockedMaterials': blocked,
+            }), 409
+
         lines = []
         total_cost = 0
         for r in rows:

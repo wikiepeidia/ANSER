@@ -105,3 +105,60 @@ def test_bom_calculate_sum_and_empty_case(logged_in_client):
     assert data['lines'] == []
     assert data['totalCost'] == 0
     assert data['quantity'] == 4
+
+
+# ── QC-02 gating (02.1-03) ────────────────────────────────────────────────
+# A BOM line only blocks the calculate request when its material HAS at
+# least one existing material_batches row AND that material's passed-QC
+# quantity is insufficient for the requested amount. A material that has
+# never been received (zero batches at all) is never blocked — see
+# 02.1-CONTEXT.md's locked QC-02 resolution.
+
+def test_bom_calculate_qc_gating_zero_batches_not_blocked(logged_in_client):
+    client = logged_in_client
+
+    resp = client.put('/api/bom/SP-QC-ZERO', json={
+        'lines': [
+            {'code': 'NVL-001', 'name': 'Vai cotton', 'unit': 'm', 'unitCost': 45000, 'qtyPerUnit': 2},
+        ],
+    })
+    assert resp.status_code == 200
+
+    # NVL-001 has never been posted to /api/material-batches in this test
+    # -> zero material_batches rows -> must NOT be blocked, regardless of
+    # the requested quantity.
+    resp = client.post('/api/bom/calculate', json={'productCode': 'SP-QC-ZERO', 'quantity': 10})
+    assert resp.status_code == 200
+    data = resp.get_json()
+    assert data['success'] is True
+    assert 'blockedMaterials' not in data
+    assert len(data['lines']) == 1
+    assert data['lines'][0]['code'] == 'NVL-001'
+    assert data['quantity'] == 10
+
+
+def test_bom_calculate_qc_gating_blocks_insufficient(logged_in_client):
+    client = logged_in_client
+
+    resp = client.put('/api/bom/SP-QC-BLOCK', json={
+        'lines': [
+            {'code': 'NVL-002', 'name': 'Chi may', 'unit': 'cuộn', 'unitCost': 8000, 'qtyPerUnit': 1},
+        ],
+    })
+    assert resp.status_code == 200
+
+    # A real batch exists for NVL-002 but its qc_status defaults to
+    # 'pending' (never touched by this test) -> available_passed is 0.
+    resp = client.post('/api/material-batches', json={'materialCode': 'NVL-002', 'quantity': 5})
+    assert resp.status_code == 200
+
+    resp = client.post('/api/bom/calculate', json={'productCode': 'SP-QC-BLOCK', 'quantity': 3})
+    assert resp.status_code == 409
+    data = resp.get_json()
+    assert data['success'] is False
+    assert data['message'] == 'Một số nguyên vật liệu chưa đủ số lượng đạt kiểm định QC'
+    assert len(data['blockedMaterials']) == 1
+    blocked = data['blockedMaterials'][0]
+    assert blocked['materialCode'] == 'NVL-002'
+    assert blocked['required'] == round(1 * 3, 2)
+    assert blocked['availablePassed'] == 0
