@@ -266,6 +266,45 @@ def trace_material_batch(batch_id):
         conn.close()
 
 
+# ── QC results (QC-01) ───────────────────────────────────────────────────
+
+QC_STATUSES = ('pending', 'passed', 'failed')
+
+
+@inventory_bp.route('/api/material-batches/<int:batch_id>/qc-result', methods=['POST'])
+@login_required
+def record_qc_result(batch_id):
+    data = request.get_json(silent=True) or {}
+    qc_status = data.get('qcStatus')
+    qc_note = data.get('qcNote') or ''
+    if qc_status not in QC_STATUSES:
+        return jsonify({'success': False, 'message': 'Trạng thái QC không hợp lệ'}), 400
+
+    conn = get_connection()
+    try:
+        row = conn.execute(
+            'SELECT id FROM material_batches WHERE id = ? AND is_deleted = FALSE', (batch_id,)
+        ).fetchone()
+        if not row:
+            return jsonify({'success': False, 'message': 'Không tìm thấy lô nguyên liệu'}), 404
+
+        conn.execute(
+            'INSERT INTO qc_results (batch_id, qc_status, qc_note, created_at) VALUES (?, ?, ?, ?)',
+            (batch_id, qc_status, qc_note, now()),
+        )
+        conn.execute(
+            'UPDATE material_batches SET qc_status = ?, qc_note = ? WHERE id = ?',
+            (qc_status, qc_note, batch_id),
+        )
+        conn.commit()
+        return jsonify({'success': True, 'qcStatus': qc_status, 'qcNote': qc_note})
+    except Exception as e:
+        conn.rollback()
+        return jsonify({'success': False, 'message': str(e)}), 400
+    finally:
+        conn.close()
+
+
 # ── Expiring batches (TRACE-06) ──────────────────────────────────────────
 
 @inventory_bp.route('/api/material-batches/expiring', methods=['GET'])
