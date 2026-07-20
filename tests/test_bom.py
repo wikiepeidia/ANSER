@@ -1,10 +1,13 @@
 """Integration tests for the BOM backend (routes/production_routes.py).
 
-Covers PROD-04 (full-replace BOM line management) and PROD-05 (material
-requirement calculation with no fabricated defaults). Uses the module-scoped
+Covers PROD-04 (full-replace BOM line management), PROD-05 (material
+requirement calculation with no fabricated defaults), and QC-02 (the
+passed-QC stock gate on calculate_bom(), 02.1-03). Uses the module-scoped
 `logged_in_client` fixture from tests/conftest.py against an isolated temp
 SQLite DB.
 """
+
+from core.sanxuat_db import get_connection
 
 
 def test_bom_line_full_replace(logged_in_client):
@@ -162,3 +165,80 @@ def test_bom_calculate_qc_gating_blocks_insufficient(logged_in_client):
     assert blocked['materialCode'] == 'NVL-002'
     assert blocked['required'] == round(1 * 3, 2)
     assert blocked['availablePassed'] == 0
+
+
+def _mark_batch_passed(batch_id):
+    """Directly set a batch's qc_status to 'passed' via the DB connection --
+    no QC-recording route exists in this plan's scope (02.1-01/02 own that)."""
+    conn = get_connection()
+    try:
+        conn.execute('UPDATE material_batches SET qc_status = ? WHERE id = ?', ('passed', batch_id))
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def test_bom_calculate_qc_gating_sufficient_passed_allows(logged_in_client):
+    client = logged_in_client
+
+    resp = client.put('/api/bom/SP-QC-SUFFICIENT', json={
+        'lines': [
+            {'code': 'NVL-003', 'name': 'Khuy nhua', 'unit': 'cái', 'unitCost': 500, 'qtyPerUnit': 2},
+        ],
+    })
+    assert resp.status_code == 200
+
+    # Required qty for quantity=5 is 2 * 5 = 10 -> batch quantity set to
+    # exactly that (boundary case: required == available_passed, not >).
+    resp = client.post('/api/material-batches', json={'materialCode': 'NVL-003', 'quantity': 10})
+    assert resp.status_code == 200
+    _mark_batch_passed(resp.get_json()['id'])
+
+    resp = client.post('/api/bom/calculate', json={'productCode': 'SP-QC-SUFFICIENT', 'quantity': 5})
+    assert resp.status_code == 200
+    data = resp.get_json()
+    assert data['success'] is True
+    assert 'blockedMaterials' not in data
+    assert len(data['lines']) == 1
+    line = data['lines'][0]
+    assert line['code'] == 'NVL-003'
+    assert line['qty'] == round(2 * 5, 2)
+    assert line['lineCost'] == round(2 * 5 * 500)
+    assert data['totalCost'] == line['lineCost']
+
+
+def test_bom_calculate_qc_gating_soft_deleted_consistency(logged_in_client):
+    client = logged_in_client
+
+    resp = client.put('/api/bom/SP-QC-SOFTDEL', json={
+        'lines': [
+            {'code': 'NVL-004', 'name': 'Nhan mac', 'unit': 'cái', 'unitCost': 1200, 'qtyPerUnit': 1},
+        ],
+    })
+    assert resp.status_code == 200
+
+    resp = client.post('/api/material-batches', json={'materialCode': 'NVL-004', 'quantity': 20})
+    assert resp.status_code == 200
+    batch_id = resp.get_json()['id']
+    _mark_batch_passed(batch_id)
+
+    # Currently sufficient (passed + enough qty) -> not blocked.
+    resp = client.post('/api/bom/calculate', json={'productCode': 'SP-QC-SOFTDEL', 'quantity': 3})
+    assert resp.status_code == 200
+    assert 'blockedMaterials' not in resp.get_json()
+
+    # Soft-delete the batch (it's the material's ONLY batch) -> total_batches
+    # drops to 0 for this material, so the total_batches > 0 guard exempts
+    # it as "never received", NOT as "received but insufficient" -- the
+    # soft-deleted quantity must never leak into available_passed either
+    # (Pitfall 4: both aggregates share one is_deleted = FALSE clause).
+    resp = client.delete(f'/api/material-batches/{batch_id}')
+    assert resp.status_code == 200
+
+    resp = client.post('/api/bom/calculate', json={'productCode': 'SP-QC-SOFTDEL', 'quantity': 3})
+    assert resp.status_code == 200
+    data = resp.get_json()
+    assert data['success'] is True
+    assert 'blockedMaterials' not in data
+    assert len(data['lines']) == 1
+    assert data['lines'][0]['code'] == 'NVL-004'
