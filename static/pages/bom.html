@@ -183,18 +183,26 @@
       showToast("Chọn sản phẩm và nhập số lượng hợp lệ", "warning");
       return;
     }
-    const result = await Store.calculateBOMForQuantity(code, qty);
-    document.getElementById("bomCalcBody").innerHTML = result.lines.map((m) => `
-      <tr>
-        <td>${Helpers.escapeHtml(m.code)}</td>
-        <td>${Helpers.escapeHtml(m.name)}</td>
-        <td class="num">${Helpers.formatNumber(m.qty)} ${Helpers.escapeHtml(m.unit)}</td>
-        <td class="num">${Helpers.formatVND(m.unitCost)}</td>
-        <td class="num">${Helpers.formatVND(m.lineCost)}</td>
-      </tr>
-    `).join("");
-    document.getElementById("bomCalcTotal").textContent = Helpers.formatVND(result.totalCost);
-    calcResult.style.display = "block";
+    // /api/bom/calculate can now reject with 409 (QC-02: insufficient
+    // QC-passed stock for a required material) where it never used to
+    // fail before Phase 2.1 — Store._api() throws on {success:false}.
+    try {
+      const result = await Store.calculateBOMForQuantity(code, qty);
+      document.getElementById("bomCalcBody").innerHTML = result.lines.map((m) => `
+        <tr>
+          <td>${Helpers.escapeHtml(m.code)}</td>
+          <td>${Helpers.escapeHtml(m.name)}</td>
+          <td class="num">${Helpers.formatNumber(m.qty)} ${Helpers.escapeHtml(m.unit)}</td>
+          <td class="num">${Helpers.formatVND(m.unitCost)}</td>
+          <td class="num">${Helpers.formatVND(m.lineCost)}</td>
+        </tr>
+      `).join("");
+      document.getElementById("bomCalcTotal").textContent = Helpers.formatVND(result.totalCost);
+      calcResult.style.display = "block";
+    } catch (err) {
+      calcResult.style.display = "none";
+      showToast(err.message || "Không thể tính định mức NVL", "warning");
+    }
   });
 
   loadProduct("");

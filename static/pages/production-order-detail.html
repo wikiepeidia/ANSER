@@ -124,23 +124,33 @@
   }
   document.getElementById("odActions").innerHTML = actions.join("");
 
-  // BOM
-  const bom = await Store.getBOMForOrder(order);
-  document.getElementById("odBomBody").innerHTML = bom.map((m) => `
-    <tr>
-      <td>${Helpers.escapeHtml(m.code)}</td>
-      <td>${Helpers.escapeHtml(m.name)}</td>
-      <td class="num">${m.qtyPerUnit} ${Helpers.escapeHtml(m.unit)}</td>
-      <td class="num">${Helpers.formatNumber(m.qty)} ${Helpers.escapeHtml(m.unit)}</td>
-      <td class="num">${Helpers.formatVND(m.unitCost)}</td>
-      <td class="num">${Helpers.formatVND(m.lineCost)}</td>
-    </tr>
-  `).join("");
-  const cost = await Store.getOrderCost(order);
-  document.getElementById("odCost").textContent = cost !== null ? Helpers.formatVND(cost) : "Chưa có dữ liệu";
-  document.getElementById("odBomNote").innerHTML = bom.length > 0
-    ? `<i class="fa-solid fa-circle-check"></i> Định mức đã được lưu cho sản phẩm này. Chưa gồm chi phí nhân công/khấu hao. <a href="#bom">Sửa định mức</a>`
-    : `<i class="fa-solid fa-circle-info"></i> Chưa có định mức lưu cho sản phẩm này. <a href="#bom">Khai báo định mức</a>`;
+  // BOM — /api/bom/calculate can now reject with 409 (QC-02: insufficient
+  // QC-passed stock for a required material) where it never used to fail
+  // before Phase 2.1. Isolate this section so that rejection degrades the
+  // BOM card gracefully instead of aborting the rest of this IIFE (cost
+  // display, process log, actions) with an unhandled promise rejection.
+  try {
+    const bom = await Store.getBOMForOrder(order);
+    document.getElementById("odBomBody").innerHTML = bom.map((m) => `
+      <tr>
+        <td>${Helpers.escapeHtml(m.code)}</td>
+        <td>${Helpers.escapeHtml(m.name)}</td>
+        <td class="num">${m.qtyPerUnit} ${Helpers.escapeHtml(m.unit)}</td>
+        <td class="num">${Helpers.formatNumber(m.qty)} ${Helpers.escapeHtml(m.unit)}</td>
+        <td class="num">${Helpers.formatVND(m.unitCost)}</td>
+        <td class="num">${Helpers.formatVND(m.lineCost)}</td>
+      </tr>
+    `).join("");
+    const cost = await Store.getOrderCost(order);
+    document.getElementById("odCost").textContent = cost !== null ? Helpers.formatVND(cost) : "Chưa có dữ liệu";
+    document.getElementById("odBomNote").innerHTML = bom.length > 0
+      ? `<i class="fa-solid fa-circle-check"></i> Định mức đã được lưu cho sản phẩm này. Chưa gồm chi phí nhân công/khấu hao. <a href="#bom">Sửa định mức</a>`
+      : `<i class="fa-solid fa-circle-info"></i> Chưa có định mức lưu cho sản phẩm này. <a href="#bom">Khai báo định mức</a>`;
+  } catch (err) {
+    document.getElementById("odCost").textContent = "—";
+    document.getElementById("odBomNote").innerHTML =
+      `<i class="fa-solid fa-triangle-exclamation" style="color:var(--badge-red-color)"></i> ${Helpers.escapeHtml(err.message || "Không thể tính định mức NVL")}`;
+  }
 
   // Nhật ký quy trình
   const log = Store.getProcessLog(order.id);

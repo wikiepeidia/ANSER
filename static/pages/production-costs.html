@@ -78,12 +78,20 @@
 <script>
 (async function () {
   const filteredOrders = Store.productionOrders.filter((o) => ["in_progress", "completed"].includes(o.status));
+  // /api/bom/calculate (via getOrderCost -> getBOMForOrder) can now reject
+  // with 409 (QC-02: insufficient QC-passed stock) for an individual order's
+  // product — isolate per-order so one blocked order doesn't sink the whole
+  // Promise.all and blank out this entire report page.
   const rows = (await Promise.all(filteredOrders.map(async (o) => {
-    const standard = await Store.getOrderCost(o);
-    const actual = await Store.getActualCost(o);
-    const wasteAmt = (standard !== null && actual !== null) ? actual - standard : null;
-    const wastePct = (standard && wasteAmt !== null) ? (wasteAmt / standard) * 100 : null;
-    return { order: o, standard, actual, wasteAmt, wastePct };
+    try {
+      const standard = await Store.getOrderCost(o);
+      const actual = await Store.getActualCost(o);
+      const wasteAmt = (standard !== null && actual !== null) ? actual - standard : null;
+      const wastePct = (standard && wasteAmt !== null) ? (wasteAmt / standard) * 100 : null;
+      return { order: o, standard, actual, wasteAmt, wastePct };
+    } catch (err) {
+      return { order: o, standard: null, actual: null, wasteAmt: null, wastePct: null, error: err.message };
+    }
   }))).sort((a, b) => new Date(b.order.createdAt) - new Date(a.order.createdAt));
 
   window.pcReportData = rows;
