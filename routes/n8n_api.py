@@ -454,12 +454,57 @@ def _internal_material_batch_insert(payload):
         conn.close()
 
 
+def _internal_production_order_insert(payload):
+    """Mirrors create_production_order (routes/production_routes.py) with
+    created_by=None, including the same-transaction 'Tạo đơn hàng'
+    production_order_events row (timeline parity with browser-created
+    orders). See 02.2-CONTEXT.md Field-Mapping Fidelity for the dropped
+    n8n fields (order_code, qty_ordered, unit_price, region, deadline).
+    """
+    product_code = payload.get('product_code')
+    product_name = payload.get('product_name')
+    if not product_code or not product_name:
+        return {'success': False, 'message': 'Thiếu mã sản phẩm hoặc tên sản phẩm'}, 400
+    try:
+        quantity = float(payload.get('qty_to_produce') or 0)
+    except (TypeError, ValueError):
+        quantity = 0
+    if quantity <= 0:
+        return {'success': False, 'message': 'Số lượng phải lớn hơn 0'}, 400
+
+    conn = get_connection()
+    try:
+        cur = conn.execute(
+            'INSERT INTO production_orders (product_code, product_name, quantity, unit, '
+            'customer_name, notes, status, created_by, created_at) '
+            'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            (product_code, product_name, quantity, payload.get('unit', 'cái'),
+             payload.get('customer_code') or '', '', 'draft', None, now()),
+        )
+        order_id = cur.lastrowid
+        code = f'DH-{1000 + order_id}'
+        conn.execute('UPDATE production_orders SET code = ? WHERE id = ?', (code, order_id))
+        conn.execute(
+            'INSERT INTO production_order_events (order_id, event, note, created_at) '
+            'VALUES (?, ?, ?, ?)',
+            (order_id, 'Tạo đơn hàng', f'Đơn {code} được tạo', now()),
+        )
+        conn.commit()
+        return {'success': True, 'id': order_id, 'code': code, 'status': 'ok'}, 201
+    except Exception as e:
+        conn.rollback()
+        return {'success': False, 'message': str(e)}, 400
+    finally:
+        conn.close()
+
+
 # Per-action dispatch for the actions that now have real backing tables
 # (02.2-CONTEXT.md Action Routing decision). Every action NOT in this dict
 # falls through unchanged to the existing _log_event/automation_events
 # catch-all below.
 _REAL_TABLE_ACTIONS = {
     'material-batch-insert': _internal_material_batch_insert,
+    'production-order-insert': _internal_production_order_insert,
 }
 
 

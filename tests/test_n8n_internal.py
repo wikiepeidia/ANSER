@@ -50,3 +50,56 @@ def test_material_batch_insert(client):
         'qty_kg': 0,
     })
     assert resp3.status_code == 400
+
+
+def test_production_order_insert(client):
+    resp = client.post('/api/n8n/internal/rag/production-order-insert', json={
+        'product_code': 'SP-001',
+        'product_name': 'Áo thun Test N8N',
+        'qty_to_produce': 20,
+        'customer_code': 'KH-N8N-01',
+        'order_code': 'IGNORED',
+        'qty_ordered': 25,
+        'unit_price': 100000,
+        'region': 'HN',
+        'deadline': '2026-08-01',
+    })
+    assert resp.status_code == 201
+    body = resp.get_json()
+    assert body['success'] is True
+    assert body['code'].startswith('DH-')
+    assert body['status'] == 'ok'
+
+    conn = get_connection()
+    try:
+        row = conn.execute(
+            'SELECT created_by, status, quantity, customer_name FROM production_orders '
+            'WHERE id = ?',
+            (body['id'],),
+        ).fetchone()
+        events = conn.execute(
+            'SELECT event FROM production_order_events WHERE order_id = ?',
+            (body['id'],),
+        ).fetchall()
+    finally:
+        conn.close()
+    assert row['created_by'] is None
+    assert row['status'] == 'draft'
+    assert row['quantity'] == 20
+    assert row['customer_name'] == 'KH-N8N-01'
+    assert len(events) == 1
+    assert events[0]['event'] == 'Tạo đơn hàng'
+
+    resp2 = client.post('/api/n8n/internal/rag/production-order-insert', json={
+        'product_name': 'Missing product_code',
+        'qty_to_produce': 5,
+    })
+    assert resp2.status_code == 400
+    assert resp2.get_json()['message'] == 'Thiếu mã sản phẩm hoặc tên sản phẩm'
+
+    resp3 = client.post('/api/n8n/internal/rag/production-order-insert', json={
+        'product_code': 'SP-001',
+        'product_name': 'Zero qty',
+        'qty_to_produce': 0,
+    })
+    assert resp3.status_code == 400
