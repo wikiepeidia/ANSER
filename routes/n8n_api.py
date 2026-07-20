@@ -558,6 +558,39 @@ def _internal_lab_result_insert(payload):
         conn.close()
 
 
+def _internal_process_event(payload):
+    """Appends one material_batch_events row, mirroring log_batch_event's
+    shape (routes/inventory_routes.py) exactly. No IoT/telemetry field
+    (temp_c, shift, moisture_pct, operator, etc.) is persisted anywhere --
+    only batch_code (resolved to batch_id), event, and note.
+    """
+    batch_code = payload.get('batch_code')
+    event = (payload.get('event') or '').strip()
+    if not event:
+        return {'success': False, 'message': 'Thiếu tên sự kiện quy trình'}, 400
+
+    conn = get_connection()
+    batch_id = _resolve_batch_id_by_code(conn, batch_code)
+    if batch_id is None:
+        conn.close()
+        return {'success': False,
+                'message': f'Không tìm thấy lô nguyên liệu theo mã: {batch_code}'}, 404
+    try:
+        note = payload.get('note') or ''
+        conn.execute(
+            'INSERT INTO material_batch_events (batch_id, event, note, created_at) '
+            'VALUES (?, ?, ?, ?)',
+            (batch_id, event, note, now()),
+        )
+        conn.commit()
+        return {'success': True, 'batch_id': batch_id, 'event': event, 'note': note}, 201
+    except Exception as e:
+        conn.rollback()
+        return {'success': False, 'message': str(e)}, 400
+    finally:
+        conn.close()
+
+
 # Per-action dispatch for the actions that now have real backing tables
 # (02.2-CONTEXT.md Action Routing decision). Every action NOT in this dict
 # falls through unchanged to the existing _log_event/automation_events
@@ -566,6 +599,7 @@ _REAL_TABLE_ACTIONS = {
     'material-batch-insert': _internal_material_batch_insert,
     'production-order-insert': _internal_production_order_insert,
     'lab-result-insert': _internal_lab_result_insert,
+    'process-event': _internal_process_event,
 }
 
 

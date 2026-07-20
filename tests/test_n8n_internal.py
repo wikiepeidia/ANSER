@@ -181,3 +181,73 @@ def test_lab_result_insert_unknown_batch(client):
     })
     assert resp.status_code == 404
     assert resp.get_json()['message'] == 'Không tìm thấy lô nguyên liệu theo mã: LO-999999'
+
+
+def test_process_event(client):
+    batch_resp = client.post('/api/n8n/internal/rag/material-batch-insert', json={
+        'material_code': 'NVL-003',
+        'qty_kg': 15,
+        'farmer': 'NCC Process Test',
+    })
+    code = batch_resp.get_json()['code']
+
+    resp = client.post('/api/n8n/internal/rag/process-event', json={
+        'event': 'Bắt đầu sản xuất',
+        'batch_code': code,
+        'order_code': 'IGNORED',
+        'shift': 'sáng',
+        'temp_c': 25,
+        'duration_min': 60,
+    })
+    assert resp.status_code == 201
+    body = resp.get_json()
+    assert body['event'] == 'Bắt đầu sản xuất'
+    assert body['note'] == ''
+    assert 'batch_id' in body
+
+    conn = get_connection()
+    try:
+        rows = conn.execute(
+            'SELECT event, note FROM material_batch_events WHERE batch_id = ?',
+            (body['batch_id'],),
+        ).fetchall()
+    finally:
+        conn.close()
+    assert len(rows) == 1
+    assert rows[0]['event'] == 'Bắt đầu sản xuất'
+    assert not rows[0]['note']
+
+    resp2 = client.post('/api/n8n/internal/rag/process-event', json={
+        'event': '',
+        'batch_code': code,
+    })
+    assert resp2.status_code == 400
+    assert resp2.get_json()['message'] == 'Thiếu tên sự kiện quy trình'
+
+    resp3 = client.post('/api/n8n/internal/rag/process-event', json={
+        'event': 'Bắt đầu sản xuất',
+        'batch_code': 'LO-999999',
+    })
+    assert resp3.status_code == 404
+    assert resp3.get_json()['message'] == 'Không tìm thấy lô nguyên liệu theo mã: LO-999999'
+
+
+def test_unrouted_action_falls_through(client):
+    resp = client.post('/api/n8n/internal/rag/pending-review', json={
+        'foo': 'bar', 'reason': 'low OCR confidence',
+    })
+    assert resp.status_code == 200
+    body = resp.get_json()
+    assert body['success'] is True
+    assert body['action'] == 'pending-review'
+    assert body['received'] == {'foo': 'bar', 'reason': 'low OCR confidence'}
+    assert 'id' in body
+
+    conn = get_connection()
+    try:
+        row = conn.execute(
+            'SELECT action FROM automation_events WHERE id = ?', (body['id'],),
+        ).fetchone()
+    finally:
+        conn.close()
+    assert row['action'] == 'rag:pending-review'
