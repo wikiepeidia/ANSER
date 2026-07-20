@@ -25,6 +25,7 @@ from flask_login import login_required
 from core.config import Config
 from core.extensions import csrf
 from core.sanxuat_db import get_connection, now
+from routes.inventory_routes import _find_material, _resolve_supplier
 
 logger = logging.getLogger(__name__)
 
@@ -411,16 +412,70 @@ def _log_event(action, payload):
         conn.close()
 
 
+def _internal_material_batch_insert(payload):
+    """Mirrors create_material_batch (routes/inventory_routes.py) with
+    created_by=None — n8n has no Flask-Login session. See 02.2-CONTEXT.md
+    Field-Mapping Fidelity: only material_code/qty_kg/farmer are mapped,
+    every other n8n-sent field is silently dropped (lossy-wiring decision).
+    """
+    material_code = payload.get('material_code')
+    material = _find_material(material_code)
+    if not material:
+        return {'success': False, 'message': 'Mã nguyên vật liệu không hợp lệ'}, 400
+    try:
+        quantity = float(payload.get('qty_kg') or 0)
+    except (TypeError, ValueError):
+        quantity = 0
+    if quantity <= 0:
+        return {'success': False, 'message': 'Số lượng phải lớn hơn 0'}, 400
+
+    conn = get_connection()
+    try:
+        supplier_id = _resolve_supplier(conn, payload.get('farmer'), None)
+        cur = conn.execute(
+            'INSERT INTO material_batches (material_code, material_name, unit, supplier_id, '
+            'quantity, expiry_date, notes, created_by, created_at) '
+            'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            (material['code'], material['name'], material['unit'], supplier_id, quantity,
+             '', '', None, now()),
+        )
+        batch_id = cur.lastrowid
+        code = f'LO-{2000 + batch_id}'
+        conn.execute('UPDATE material_batches SET code = ? WHERE id = ?', (code, batch_id))
+        conn.commit()
+        return {'success': True, 'id': batch_id, 'code': code,
+                'lot_code': code, 'farmer': payload.get('farmer') or '',
+                'material_code': material['code'], 'qty_kg': quantity,
+                'status': 'ok'}, 201
+    except Exception as e:
+        conn.rollback()
+        return {'success': False, 'message': str(e)}, 400
+    finally:
+        conn.close()
+
+
+# Per-action dispatch for the actions that now have real backing tables
+# (02.2-CONTEXT.md Action Routing decision). Every action NOT in this dict
+# falls through unchanged to the existing _log_event/automation_events
+# catch-all below.
+_REAL_TABLE_ACTIONS = {
+    'material-batch-insert': _internal_material_batch_insert,
+}
+
+
 @n8n_api_bp.route('/api/n8n/internal/rag/<path:action>', methods=['GET', 'POST'])
 def internal_rag(action):
-    """Generic sink for {{ $env.RAG_BASE_URL }}/<action> calls.
+    """Dispatch for {{ $env.RAG_BASE_URL }}/<action> calls.
 
-    San Xuat has no real material-batch/lab-result/production-order tables
-    (out of scope for this feature) — every RAG_BASE_URL call is recorded
-    as an automation_events row instead, so workflows can run end-to-end
-    and the result is inspectable, without inventing a full MES schema.
+    Actions with a real backing table (see _REAL_TABLE_ACTIONS) write
+    directly to that table. Every other action keeps falling through to
+    the generic automation_events sink, unchanged from before this phase.
     """
     payload = request.get_json(silent=True) or dict(request.args)
+    handler = _REAL_TABLE_ACTIONS.get(action)
+    if handler:
+        body, status = handler(payload)
+        return jsonify(body), status
     event_id = _log_event(f'rag:{action}', payload)
     return jsonify({'success': True, 'id': event_id, 'action': action, 'received': payload})
 

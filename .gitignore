@@ -39,6 +39,7 @@ tests/
 !/tests/test_warehouses.py
 !/tests/test_suppliers.py
 !/tests/test_qc.py
+!/tests/test_n8n_internal.py
 evaluate/
 jobs/
 # C extensions
