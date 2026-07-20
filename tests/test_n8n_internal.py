@@ -103,3 +103,81 @@ def test_production_order_insert(client):
         'qty_to_produce': 0,
     })
     assert resp3.status_code == 400
+
+
+def test_lab_result_insert(client):
+    batch_resp = client.post('/api/n8n/internal/rag/material-batch-insert', json={
+        'material_code': 'NVL-002',
+        'qty_kg': 30,
+        'farmer': 'NCC Lab Test',
+    })
+    code = batch_resp.get_json()['code']
+
+    resp = client.post('/api/n8n/internal/rag/lab-result-insert', json={
+        'batch_code': code,
+        'pesticide_ok': True,
+        'heavy_metal_ok': True,
+        'tested_by': 'Nguyễn Văn A',
+        'cynarin_pct': 5.2,
+        'mold_cfu_g': 100,
+    })
+    assert resp.status_code == 201
+    body = resp.get_json()
+    assert body['status'] == 'passed'
+    assert body['batch_code'] == code
+    assert body['sellable'] is True
+    assert body['reasons'] == []
+
+    conn = get_connection()
+    try:
+        batch_id = conn.execute(
+            'SELECT id FROM material_batches WHERE code = ?', (code,),
+        ).fetchone()['id']
+        rows = conn.execute(
+            'SELECT qc_status, qc_note FROM qc_results WHERE batch_id = ?', (batch_id,),
+        ).fetchall()
+        batch_row = conn.execute(
+            'SELECT qc_status FROM material_batches WHERE id = ?', (batch_id,),
+        ).fetchone()
+    finally:
+        conn.close()
+    assert len(rows) == 1
+    assert rows[0]['qc_status'] == 'passed'
+    assert rows[0]['qc_note'] == 'Kiểm định bởi Nguyễn Văn A'
+    assert batch_row['qc_status'] == 'passed'
+
+    resp2 = client.post('/api/n8n/internal/rag/lab-result-insert', json={
+        'batch_code': code,
+        'pesticide_ok': True,
+        'heavy_metal_ok': False,
+        'tested_by': 'Trần B',
+    })
+    assert resp2.status_code == 201
+    body2 = resp2.get_json()
+    assert body2['status'] == 'failed'
+    assert body2['sellable'] is False
+    assert body2['reasons'] == ['heavy_metal_ok']
+
+    conn = get_connection()
+    try:
+        rows2 = conn.execute(
+            'SELECT qc_status FROM qc_results WHERE batch_id = ?', (batch_id,),
+        ).fetchall()
+        batch_row2 = conn.execute(
+            'SELECT qc_status FROM material_batches WHERE id = ?', (batch_id,),
+        ).fetchone()
+    finally:
+        conn.close()
+    assert len(rows2) == 2
+    assert batch_row2['qc_status'] == 'failed'
+
+
+def test_lab_result_insert_unknown_batch(client):
+    resp = client.post('/api/n8n/internal/rag/lab-result-insert', json={
+        'batch_code': 'LO-999999',
+        'pesticide_ok': True,
+        'heavy_metal_ok': True,
+        'tested_by': 'X',
+    })
+    assert resp.status_code == 404
+    assert resp.get_json()['message'] == 'Không tìm thấy lô nguyên liệu theo mã: LO-999999'

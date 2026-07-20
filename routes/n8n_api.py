@@ -498,6 +498,66 @@ def _internal_production_order_insert(payload):
         conn.close()
 
 
+def _resolve_batch_id_by_code(conn, batch_code):
+    """Resolve a human-readable batch code (n8n's only handle on a batch)
+    to its internal numeric id. Shared by _internal_lab_result_insert and
+    _internal_process_event. Uses the same Postgres-safe `is_deleted =
+    FALSE` literal already proven live against material_batches by Phase
+    2's 02-05 checkpoint (never a SQLite-only 0/1 integer literal).
+    """
+    row = conn.execute(
+        'SELECT id FROM material_batches WHERE code = ? AND is_deleted = FALSE',
+        (batch_code,),
+    ).fetchone()
+    return row['id'] if row else None
+
+
+def _internal_lab_result_insert(payload):
+    """Dual-writes qc_results (audit history) + material_batches.qc_status/
+    qc_note, mirroring record_qc_result's shape (routes/inventory_routes.py)
+    exactly. Unlike record_qc_result, there is no client-supplied qcStatus
+    field to validate against the browser route's status-enum tuple --
+    n8n sends pesticide_ok/heavy_metal_ok booleans and qc_status is
+    computed server-side from those (02.2-RESEARCH.md Pitfall 3: never
+    cross-contaminate the two validation styles).
+    """
+    batch_code = payload.get('batch_code')
+    conn = get_connection()
+    batch_id = _resolve_batch_id_by_code(conn, batch_code)
+    if batch_id is None:
+        conn.close()
+        return {'success': False,
+                'message': f'Không tìm thấy lô nguyên liệu theo mã: {batch_code}'}, 404
+    try:
+        pesticide_ok = payload.get('pesticide_ok') is True
+        heavy_metal_ok = payload.get('heavy_metal_ok') is True
+        qc_status = 'passed' if pesticide_ok and heavy_metal_ok else 'failed'
+        tested_by = payload.get('tested_by') or ''
+        qc_note = f'Kiểm định bởi {tested_by}' if tested_by else ''
+        cur = conn.execute(
+            'INSERT INTO qc_results (batch_id, qc_status, qc_note, created_at) '
+            'VALUES (?, ?, ?, ?)',
+            (batch_id, qc_status, qc_note, now()),
+        )
+        qc_result_id = cur.lastrowid
+        conn.execute(
+            'UPDATE material_batches SET qc_status = ?, qc_note = ? WHERE id = ?',
+            (qc_status, qc_note, batch_id),
+        )
+        conn.commit()
+        reasons = [name for name, ok in
+                   (('pesticide_ok', pesticide_ok), ('heavy_metal_ok', heavy_metal_ok))
+                   if not ok]
+        return {'success': True, 'id': qc_result_id, 'status': qc_status,
+                'batch_code': batch_code, 'sellable': qc_status == 'passed',
+                'reasons': reasons}, 201
+    except Exception as e:
+        conn.rollback()
+        return {'success': False, 'message': str(e)}, 400
+    finally:
+        conn.close()
+
+
 # Per-action dispatch for the actions that now have real backing tables
 # (02.2-CONTEXT.md Action Routing decision). Every action NOT in this dict
 # falls through unchanged to the existing _log_event/automation_events
@@ -505,6 +565,7 @@ def _internal_production_order_insert(payload):
 _REAL_TABLE_ACTIONS = {
     'material-batch-insert': _internal_material_batch_insert,
     'production-order-insert': _internal_production_order_insert,
+    'lab-result-insert': _internal_lab_result_insert,
 }
 
 
