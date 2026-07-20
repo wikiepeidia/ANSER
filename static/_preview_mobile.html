@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Preview: Mobile Top Bar — Mixed Sidebar</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link rel="stylesheet" href="/static/css/style.css">
+<link rel="stylesheet" href="/static/css/workspace_scenario.css">
+<link rel="stylesheet" href="/static/css/base_theme.css">
+<style>
+  body { margin:0; font-family: 'Inter', system-ui, sans-serif; }
+  .demo-frame {
+    width: 380px;
+    height: 720px;
+    margin: 24px auto;
+    border: 1px solid #ccc;
+    border-radius: 24px;
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.1);
+    background: #f4f6f9;
+  }
+  .demo-label { text-align: center; font-family: monospace; margin-top: 8px; }
+  /* Use real workspace layout to validate the CSS */
+  .scenario-wrapper { position: relative; min-height: 100%; }
+  .scenario-main { background: #f4f6f9; }
+  /* Compact card for preview only */
+  .preview-card {
+    background: white; border-radius: 12px; padding: 20px;
+    margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+  .preview-card h3 { margin: 0 0 8px; font-size: 1rem; }
+  .preview-card p { margin: 0; color: #666; font-size: 0.85rem; }
+  /* Sidebar background matches production navy */
+  .modern-sidebar { background: #0d1b2a !important; color: #fff !important; }
+  .modern-sidebar a, .modern-sidebar .menu-item { color: rgba(255,255,255,0.9) !important; }
+  .modern-sidebar .section-title { color: rgba(255,255,255,0.5) !important; text-transform: uppercase; font-size: 11px; font-weight: 600; padding: 8px 16px 4px; }
+  .modern-sidebar .menu-item { display:flex; align-items:center; gap:10px; padding: 10px 16px; text-decoration: none; }
+  .modern-sidebar .menu-item:hover { background: rgba(255,255,255,0.06); }
+  .modern-sidebar .menu-icon { width: 18px; }
+  .modern-sidebar .sidebar-user { display:flex; align-items:center; gap:10px; padding: 12px 16px; border-bottom: 1px solid rgba(255,255,255,0.08); text-decoration:none; }
+  .modern-sidebar .sidebar-user__avatar { width:32px; height:32px; border-radius:50%; background:#1e88e5; color:#fff; display:flex; align-items:center; justify-content:center; font-weight:600; }
+  .modern-sidebar .sidebar-user__name { color: #fff; font-weight: 500; }
+  .role-badge { background:#1e88e5; color:#fff; font-size:10px; padding:2px 8px; border-radius:10px; font-weight:600; margin-left:6px; }
+  .modern-sidebar select { background: rgba(255,255,255,0.08); color:#fff; border:1px solid rgba(255,255,255,0.15); }
+  .modern-sidebar .logout-button { display:flex; align-items:center; justify-content:center; gap:8px; background:#dc3545; color:#fff; padding:12px; text-decoration:none; font-weight:600; border-radius:8px; margin: 12px; }
+  .menu-footer { padding: 0; border-top: 1px solid rgba(255,255,255,0.08); }
+  .sidebar-scroll { flex: 1; overflow-y: auto; }
+  /* For preview: also show TOP BAR matching the production gradient */
+  .mobile-topbar { background: linear-gradient(135deg, #003152 0%, #0a4a73 100%) !important; }
+</style>
+</head>
+<body>
+
+<div class="demo-frame">
+  <header class="mobile-topbar" id="mobile-topbar">
+    <span class="mobile-topbar__brand">ANSER</span>
+    <button id="mobile-sidebar-toggle" class="mobile-sidebar-toggle" aria-label="Toggle Menu">
+      <i class="fas fa-bars"></i>
+    </button>
+  </header>
+  <div id="sidebar-overlay" class="sidebar-overlay"></div>
+
+  <nav class="modern-sidebar open" id="main-sidebar">
+    <!-- Brand ẩn trên mobile — top bar đã có "ANSER" rồi -->
+    <div class="sidebar-brand">
+      <div class="brand-icon"><i class="fas fa-rocket"></i></div>
+      <div class="brand-text"><h3>ANSER</h3></div>
+      <button id="sidebar-collapse-toggle" class="sidebar-collapse-btn" aria-label="Toggle sidebar">
+        <i class="fas fa-chevron-left" id="sidebar-collapse-icon"></i>
+      </button>
+    </div>
+    <div class="sidebar-scroll">
+      <a class="sidebar-user" href="#">
+        <div class="sidebar-user__avatar">M</div>
+        <div class="sidebar-user__info">
+          <span class="sidebar-user__name">Manager User None</span>
+          <span class="role-badge role-manager">MANAGER</span>
+        </div>
+      </a>
+      <div class="warehouse-switcher" style="padding: 10px 16px; border-bottom: 1px solid rgba(255,255,255,.08);">
+        <label style="display:block; font-size:.72rem; text-transform:uppercase; opacity:.6; margin-bottom:4px;">
+          <i class="fas fa-store"></i> Cửa hàng đang thao tác
+        </label>
+        <select class="form-select form-select-sm" style="width:100%; font-size:.82rem;">
+          <option>Tất cả cửa hàng (gộp)</option>
+        </select>
+      </div>
+      <div class="menu-container">
+        <div class="menu-section">
+          <div class="section-title"><i class="fas fa-store"></i> Quản lý cửa hàng</div>
+          <a class="menu-item" href="#"><i class="fas fa-chart-pie menu-icon"></i><span class="menu-label">Bảng điều khiển cửa hàng</span></a>
+          <a class="menu-item" href="#"><i class="fas fa-users-cog menu-icon"></i><span class="menu-label">Quản lý nhân viên</span></a>
+        </div>
+        <div class="menu-section">
+          <div class="section-title"><i class="fas fa-rocket"></i> Không gian làm việc</div>
+          <a class="menu-item" href="#"><i class="fas fa-paint-brush menu-icon"></i><span class="menu-label">Trung tâm không gian làm việc</span></a>
+          <a class="menu-item" href="#"><i class="fas fa-project-diagram menu-icon"></i><span class="menu-label">Quy trình n8n</span></a>
+          <a class="menu-item" href="#"><i class="fas fa-cash-register menu-icon"></i><span class="menu-label">Giám sát IoT</span></a>
+          <a class="menu-item" href="#"><i class="fas fa-cog menu-icon"></i><span class="menu-label">Cài đặt</span></a>
+          <a class="menu-item" href="#"><i class="fas fa-right-left menu-icon"></i><span class="menu-label">Đổi mảng</span></a>
+        </div>
+      </div>
+    </div>
+    <div class="menu-footer">
+      <a class="logout-button" href="#"><i class="fas fa-sign-out-alt"></i><span class="logout-label">Đăng xuất</span></a>
+    </div>
+  </nav>
+
+  <main class="scenario-main">
+    <div class="preview-card"><h3>📱 Không gian làm việc</h3><p>Đây là nội dung chính. Top bar với hamburger ở phải, nút &lt; đã ẩn.</p></div>
+    <div class="preview-card"><h3>Quy trình n8n</h3><p>Layout đã responsive đúng cách.</p></div>
+  </main>
+</div>
+
+<div class="demo-label">Preview khung 380×720px (mobile)</div>
+
+<script>
+  // Replicate the real mobile sidebar toggle
+  const sidebar = document.getElementById('main-sidebar');
+  const overlay = document.getElementById('sidebar-overlay');
+  const toggle = document.getElementById('mobile-sidebar-toggle');
+  function t() {
+    sidebar.classList.toggle('open');
+    overlay.classList.toggle('active');
+  }
+  toggle.addEventListener('click', t);
+  overlay.addEventListener('click', t);
+</script>
+</body>
+</html>

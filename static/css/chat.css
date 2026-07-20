@@ -1,8 +1,8 @@
 /* Chat Widget Styles */
 :root {
-    --chat-primary: var(--primary, #6366f1);
+    --chat-primary: var(--primary, #003152);
     --chat-bg: var(--surface-100, #ffffff);
-    --chat-user-msg-bg: var(--primary, #6366f1);
+    --chat-user-msg-bg: var(--primary, #003152);
     --chat-user-msg-text: #ffffff;
     --chat-bot-msg-bg: var(--surface-200, #f1f5f9);
     --chat-bot-msg-text: var(--gray-800, #1e293b);
@@ -28,7 +28,7 @@ body.dark-mode {
     background: var(--gradient-primary);
     color: white;
     border: none;
-    box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+    box-shadow: 0 4px 15px rgba(0, 49, 82, 0.4);
     cursor: pointer;
     z-index: 1000;
     transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
@@ -40,7 +40,7 @@ body.dark-mode {
 
 .ai-chat-toggle:hover {
     transform: scale(1.1);
-    box-shadow: 0 6px 20px rgba(99, 102, 241, 0.5);
+    box-shadow: 0 6px 20px rgba(0, 49, 82, 0.5);
 }
 
 /* Chat Window */
@@ -196,10 +196,10 @@ body.dark-mode {
     border-radius: 8px;
     margin-bottom: 10px;
     font-size: 12px;
-    color: var(--primary, #6366f1);
+    color: var(--primary, #003152);
     align-items: center;
     justify-content: space-between;
-    border: 1px solid var(--primary, #6366f1);
+    border: 1px solid var(--primary, #003152);
     opacity: 0.8;
 }
 
@@ -393,5 +393,21 @@ body.dark-mode .ai-input-bar {
 
     100% {
         transform: rotate(360deg);
+    }
+}
+
+/* The 380px fixed width overflows narrow phones (e.g. 375px-wide screens) since
+   it's positioned with a fixed right offset; go full-width/near-full-height instead. */
+@media (max-width: 480px) {
+    .ai-chat-window {
+        width: calc(100vw - 2rem);
+        height: calc(100vh - 7rem);
+        right: 1rem;
+        bottom: 5rem;
+    }
+
+    .ai-chat-toggle {
+        right: 1rem;
+        bottom: 1rem;
     }
 }

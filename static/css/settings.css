@@ -136,3 +136,10 @@
 .theme-option.is-active[data-theme-option='light'] {
 }
 
+/* Language Option Active State */
+.language-option.is-active {
+    background-color: var(--primary) !important;
+    color: #fff !important;
+    border-color: var(--primary) !important;
+}
+

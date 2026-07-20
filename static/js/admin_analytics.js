@@ -21,8 +21,8 @@
             text: styles.getPropertyValue('--gray-900').trim() || '#0f172a',
             border: styles.getPropertyValue('--border-soft').trim() || 'rgba(15, 23, 42, 0.12)',
             surfaceAlt: styles.getPropertyValue('--surface-200').trim() || '#f8fafc',
-            primary: styles.getPropertyValue('--primary').trim() || '#3b82f6',
-            secondary: styles.getPropertyValue('--secondary').trim() || '#6366f1'
+            primary: styles.getPropertyValue('--primary').trim() || '#003152',
+            secondary: styles.getPropertyValue('--secondary').trim() || '#0077b6'
         };
     };
 

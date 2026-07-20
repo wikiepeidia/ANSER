@@ -19,13 +19,13 @@
     <main class="app-content main-content subscriptions-page">
         <!-- Header -->
         <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4 border-bottom">
-            <h1 class="h2"><i class="fas fa-crown"></i> Quản lý gói dịch vụ</h1>
+            <h1 class="h2"><i class="fas fa-crown"></i> <span data-i18n="nav.manageSubscriptions">Quản lý gói dịch vụ</span></h1>
             <div class="btn-toolbar">
                 <button class="btn btn-modern btn-modern--primary me-2" onclick="loadManagers()">
-                    <i class="fas fa-sync-alt"></i> <span>Làm mới</span>
+                    <i class="fas fa-sync-alt"></i> <span data-i18n="common.refresh">Làm mới</span>
                 </button>
                 <button class="btn btn-modern btn-modern--success" data-bs-toggle="modal" data-bs-target="#addManagerModal">
-                    <i class="fas fa-user-plus"></i> <span>Thêm Manager</span>
+                    <i class="fas fa-user-plus"></i> <span data-i18n="adminMgrs.addManager">Thêm Manager</span>
                 </button>
             </div>
         </div>
@@ -36,7 +36,7 @@
                 <div class="stat-card stat-card--purple">
                     <div class="stat-icon"><i class="fas fa-users"></i></div>
                     <div class="stat-content">
-                        <div class="stat-label">Tổng Manager</div>
+                        <div class="stat-label" data-i18n="adminSubs.totalManagers">Tổng Manager</div>
                         <div class="stat-value" id="totalManagers">0</div>
                     </div>
                 </div>
@@ -45,7 +45,7 @@
                 <div class="stat-card stat-card--green">
                     <div class="stat-icon"><i class="fas fa-check-circle"></i></div>
                     <div class="stat-content">
-                        <div class="stat-label">Gói đang hoạt động</div>
+                        <div class="stat-label" data-i18n="adminSubs.activeSubs">Gói đang hoạt động</div>
                         <div class="stat-value" id="activeSubscriptions">0</div>
                     </div>
                 </div>
@@ -54,9 +54,9 @@
                 <div class="stat-card stat-card--orange">
                     <div class="stat-icon"><i class="fas fa-exclamation-triangle"></i></div>
                     <div class="stat-content">
-                        <div class="stat-label">Sắp hết hạn</div>
+                        <div class="stat-label" data-i18n="adminSubs.expiringSoon">Sắp hết hạn</div>
                         <div class="stat-value" id="expiringSoon">0</div>
-                        <div class="stat-sublabel">7 ngày tới</div>
+                        <div class="stat-sublabel" data-i18n="adminSubs.next7Days">7 ngày tới</div>
                     </div>
                 </div>
             </div>
@@ -64,7 +64,7 @@
                 <div class="stat-card stat-card--blue">
                     <div class="stat-icon"><i class="fas fa-dollar-sign"></i></div>
                     <div class="stat-content">
-                        <div class="stat-label">Doanh thu tháng</div>
+                        <div class="stat-label" data-i18n="adminSubs.monthlyRevenue">Doanh thu tháng</div>
                         <div class="stat-value" id="monthlyRevenue">0 VND</div>
                     </div>
                 </div>
@@ -75,9 +75,9 @@
         <div class="card mb-4 shadow-sm">
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h5 class="card-title mb-0"><i class="fas fa-user-tie"></i> Tài khoản Manager đang hoạt động</h5>
+                    <h5 class="card-title mb-0"><i class="fas fa-user-tie"></i> <span data-i18n="adminSubs.activeManagerAccounts">Tài khoản Manager đang hoạt động</span></h5>
                     <div class="input-group" style="max-width: 300px;">
-                        <input type="text" class="form-control form-control-sm" id="searchManager" placeholder="Tìm Manager...">
+                        <input type="text" class="form-control form-control-sm" id="searchManager" placeholder="Tìm Manager..." data-i18n-placeholder="adminSubs.searchManager">
                         <button class="btn btn-outline-secondary btn-sm"><i class="fas fa-search"></i></button>
                     </div>
                 </div>
@@ -85,20 +85,20 @@
                     <table class="table table-hover align-middle">
                         <thead>
                             <tr>
-                                <th>Manager</th>
-                                <th>Email</th>
-                                <th>Gói</th>
-                                <th>Ngày bắt đầu</th>
-                                <th>Ngày hết hạn</th>
-                                <th>Trạng thái</th>
-                                <th>Thao tác</th>
+                                <th data-i18n="common.role">Manager</th>
+                                <th data-i18n="common.email">Email</th>
+                                <th data-i18n="adminSubs.plan">Gói</th>
+                                <th data-i18n="adminSubs.startDate">Ngày bắt đầu</th>
+                                <th data-i18n="adminSubs.expiryDate">Ngày hết hạn</th>
+                                <th data-i18n="common.status">Trạng thái</th>
+                                <th data-i18n="common.actions">Thao tác</th>
                             </tr>
                         </thead>
                         <tbody id="managersTable">
                             <tr>
                                 <td colspan="7" class="text-center py-4">
                                     <div class="spinner-border text-primary" role="status"></div>
-                                    <p class="text-muted mt-2">Đang tải danh sách Manager...</p>
+                                    <p class="text-muted mt-2" data-i18n="adminSubs.loadingManagers">Đang tải danh sách Manager...</p>
                                 </td>
                             </tr>
                         </tbody>
@@ -111,24 +111,24 @@
         <div class="card shadow-sm">
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h5 class="card-title mb-0"><i class="fas fa-history"></i> Giao dịch gần đây</h5>
+                    <h5 class="card-title mb-0"><i class="fas fa-history"></i> <span data-i18n="adminSubs.recentTransactions">Giao dịch gần đây</span></h5>
                     <select class="form-select form-select-sm" style="max-width: 200px;" id="filterTransactions">
-                        <option value="all">Tất cả giao dịch</option>
-                        <option value="completed">Đã hoàn thành</option>
-                        <option value="pending">Đang chờ</option>
-                        <option value="failed">Thất bại</option>
+                        <option value="all" data-i18n="adminSubs.allTransactions">Tất cả giao dịch</option>
+                        <option value="completed" data-i18n="imports.completed">Đã hoàn thành</option>
+                        <option value="pending" data-i18n="adminSubs.pending">Đang chờ</option>
+                        <option value="failed" data-i18n="adminSubs.failed">Thất bại</option>
                     </select>
                 </div>
                 <div class="table-responsive">
                     <table class="table table-sm">
                         <thead>
                             <tr>
-                                <th>Ngày</th>
-                                <th>Manager</th>
-                                <th>Gói</th>
-                                <th>Số tiền</th>
-                                <th>Phương thức</th>
-                                <th>Trạng thái</th>
+                                <th data-i18n="sale.colDate">Ngày</th>
+                                <th data-i18n="common.role">Manager</th>
+                                <th data-i18n="adminSubs.plan">Gói</th>
+                                <th data-i18n="wallet.colAmount">Số tiền</th>
+                                <th data-i18n="sale.methodLabel">Phương thức</th>
+                                <th data-i18n="common.status">Trạng thái</th>
                             </tr>
                         </thead>
                         <tbody id="transactionsTable">
@@ -150,19 +150,19 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title"><i class="fas fa-user-plus"></i> Thêm Manager mới</h5>
+                <h5 class="modal-title"><i class="fas fa-user-plus"></i> <span data-i18n="adminSubs.addNewManager">Thêm Manager mới</span></h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <div class="mb-3">
-                    <label class="form-label">Chọn người dùng <span class="text-danger">*</span></label>
+                    <label class="form-label"><span data-i18n="adminSubs.chooseUser">Chọn người dùng</span> <span class="text-danger">*</span></label>
                     <select class="form-select" id="selectUser">
-                        <option value="">-- Chọn người dùng --</option>
+                        <option value="" data-i18n="adminSubs.chooseUserOption">-- Chọn người dùng --</option>
                     </select>
-                    <small class="text-muted">Chỉ hiện các user chưa phải manager</small>
+                    <small class="text-muted" data-i18n="adminSubs.onlyNonManagerUsers">Chỉ hiện các user chưa phải manager</small>
                 </div>
                 <div class="mb-3">
-                    <label class="form-label">Gói dịch vụ <span class="text-danger">*</span></label>
+                    <label class="form-label"><span data-i18n="adminSubs.servicePlan">Gói dịch vụ</span> <span class="text-danger">*</span></label>
                     <select class="form-select" id="selectPlan">
                         <option value="trial">Dùng thử - Miễn phí (30 ngày)</option>
                         <option value="monthly">Hàng tháng - 500.000 VND (30 ngày)</option>
@@ -171,20 +171,20 @@
                     </select>
                 </div>
                 <div class="mb-3">
-                    <label class="form-label">Phương thức thanh toán</label>
+                    <label class="form-label" data-i18n="sale.paymentMethod">Phương thức thanh toán</label>
                     <select class="form-select" id="paymentMethod">
                         <option value="bank_transfer">Chuyển khoản ngân hàng</option>
                         <option value="cash">Tiền mặt</option>
                         <option value="momo">MoMo</option>
                         <option value="vnpay">VNPay</option>
-                        <option value="admin_grant">Admin cấp miễn phí</option>
+                        <option value="admin_grant" data-i18n="adminSubs.adminGrantFree">Admin cấp miễn phí</option>
                     </select>
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-i18n="common.cancel">Hủy</button>
                 <button type="button" class="btn btn-success" onclick="createManager()">
-                    <i class="fas fa-check"></i> Tạo Manager
+                    <i class="fas fa-check"></i> <span data-i18n="adminSubs.createManager">Tạo Manager</span>
                 </button>
             </div>
         </div>
@@ -196,21 +196,21 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title"><i class="fas fa-calendar-plus"></i> Gia hạn gói dịch vụ</h5>
+                <h5 class="modal-title"><i class="fas fa-calendar-plus"></i> <span data-i18n="adminSubs.extendPlan">Gia hạn gói dịch vụ</span></h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <input type="hidden" id="extendUserId">
                 <div class="mb-3">
-                    <label class="form-label">Manager</label>
+                    <label class="form-label" data-i18n="common.role">Manager</label>
                     <input type="text" class="form-control" id="extendUserName" readonly>
                 </div>
                 <div class="mb-3">
-                    <label class="form-label">Ngày hết hạn hiện tại</label>
+                    <label class="form-label" data-i18n="adminSubs.currentExpiry">Ngày hết hạn hiện tại</label>
                     <input type="text" class="form-control" id="currentExpiry" readonly>
                 </div>
                 <div class="mb-3">
-                    <label class="form-label">Gói gia hạn <span class="text-danger">*</span></label>
+                    <label class="form-label"><span data-i18n="adminSubs.renewalPlan">Gói gia hạn</span> <span class="text-danger">*</span></label>
                     <select class="form-select" id="extendPlan">
                         <option value="monthly">Hàng tháng - 500.000 VND (+ 30 ngày)</option>
                         <option value="quarterly" selected>Hàng quý - 1.200.000 VND (+ 90 ngày)</option>
@@ -218,7 +218,7 @@
                     </select>
                 </div>
                 <div class="mb-3">
-                    <label class="form-label">Phương thức thanh toán</label>
+                    <label class="form-label" data-i18n="sale.paymentMethod">Phương thức thanh toán</label>
                     <select class="form-select" id="extendPaymentMethod">
                         <option value="bank_transfer">Chuyển khoản ngân hàng</option>
                         <option value="cash">Tiền mặt</option>
@@ -228,9 +228,9 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-i18n="common.cancel">Hủy</button>
                 <button type="button" class="btn btn-primary" onclick="processExtension()">
-                    <i class="fas fa-check"></i> Gia hạn gói
+                    <i class="fas fa-check"></i> <span data-i18n="adminSubs.extendPlanBtn">Gia hạn gói</span>
                 </button>
             </div>
         </div>

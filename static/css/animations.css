@@ -45,9 +45,9 @@
 }
 
 @keyframes pulseRing {
-    0%   { box-shadow: 0 0 0 0 rgba(0, 212, 170, 0.4); }
-    70%  { box-shadow: 0 0 0 12px rgba(0, 212, 170, 0); }
-    100% { box-shadow: 0 0 0 0 rgba(0, 212, 170, 0); }
+    0%   { box-shadow: 0 0 0 0 rgba(0, 119, 182, 0.4); }
+    70%  { box-shadow: 0 0 0 12px rgba(0, 119, 182, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(0, 119, 182, 0); }
 }
 
 @keyframes barGrow {

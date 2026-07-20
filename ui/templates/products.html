@@ -19,13 +19,13 @@
     <main class="app-content main-content products-page">
         <div
             class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-            <h1 class="h2"><i class="fas fa-box"></i> Quản lý sản phẩm</h1>
+            <h1 class="h2"><i class="fas fa-box"></i> <span data-i18n="products.title">Quản lý sản phẩm</span></h1>
             <div class="d-flex gap-2">
                 <button class="btn btn-success" onclick="openImportExcelModal()">
-                    <i class="fas fa-file-excel"></i> Nhập từ Excel
+                    <i class="fas fa-file-excel"></i> <span data-i18n="products.importExcel">Nhập từ Excel</span>
                 </button>
                 <button class="btn btn-primary" onclick="openAddProductModal()">
-                    <i class="fas fa-plus"></i> Thêm sản phẩm
+                    <i class="fas fa-plus"></i> <span data-i18n="products.addProduct">Thêm sản phẩm</span>
                 </button>
             </div>
         </div>
@@ -36,15 +36,15 @@
                     <table class="table table-hover" id="productsTable">
                         <thead>
                             <tr>
-                                <th>Hình ảnh</th>
+                                <th data-i18n="products.colImage">Hình ảnh</th>
                                 <th>SKU</th>
-                                <th>Tên sản phẩm</th>
-                                <th>Danh mục</th>
-                                <th>Đơn vị</th>
-                                <th>Giá</th>
-                                <th>Tồn kho</th>
-                                <th>Mô tả</th>
-                                <th>Thao tác</th>
+                                <th data-i18n="products.colName">Tên sản phẩm</th>
+                                <th data-i18n="products.colCategory">Danh mục</th>
+                                <th data-i18n="products.colUnit">Đơn vị</th>
+                                <th data-i18n="sale.colPrice">Giá</th>
+                                <th data-i18n="products.colStock">Tồn kho</th>
+                                <th data-i18n="products.colDescription">Mô tả</th>
+                                <th data-i18n="common.actions">Thao tác</th>
                             </tr>
                         </thead>
                         <tbody id="productsTableBody">
@@ -68,8 +68,8 @@
             <div class="modal-header">
                 <h5 class="modal-title">
                     <i class="fas fa-file-excel text-success me-2"></i>
-                    Import sản phẩm từ Excel
-                    <span id="importStepBadge" class="badge bg-secondary ms-2 fs-6">Bước 1/2</span>
+                    <span data-i18n="products.importFromExcel">Import sản phẩm từ Excel</span>
+                    <span id="importStepBadge" class="badge bg-secondary ms-2 fs-6" data-i18n="products.step1">Bước 1/2</span>
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
@@ -79,8 +79,8 @@
                 <div id="importStep1">
                     <div id="dropZone" class="excel-drop-zone" onclick="document.getElementById('excelFileInput').click()">
                         <div class="drop-zone-icon"><i class="fas fa-cloud-upload-alt"></i></div>
-                        <p class="drop-zone-text">Kéo thả file vào đây hoặc <span class="text-primary">chọn file</span></p>
-                        <p class="drop-zone-hint">Chấp nhận: .xlsx, .xls — mọi cấu trúc cột</p>
+                        <p class="drop-zone-text" data-i18n="products.dropZoneText">Kéo thả file vào đây hoặc <span class="text-primary">chọn file</span></p>
+                        <p class="drop-zone-hint" data-i18n="products.dropZoneHint">Chấp nhận: .xlsx, .xls — mọi cấu trúc cột</p>
                         <input type="file" id="excelFileInput" accept=".xlsx,.xls" style="display:none">
                     </div>
                     <div id="selectedFileInfo" class="selected-file-info d-none">
@@ -92,27 +92,27 @@
                     </div>
                     <div class="mt-3 text-muted" style="font-size:0.82rem">
                         <i class="fas fa-info-circle me-1"></i>
-                        Hệ thống sẽ tự đọc tên cột và đề xuất mapping. Bạn xác nhận trước khi import.
+                        <span data-i18n="products.autoMapHint">Hệ thống sẽ tự đọc tên cột và đề xuất mapping. Bạn xác nhận trước khi import.</span>
                     </div>
                 </div>
 
                 <!-- ── BƯỚC 2: Xác nhận mapping cột ── -->
                 <div id="importStep2" class="d-none">
-                    <p class="mb-2 fw-semibold">Hệ thống đã đọc file — xác nhận mỗi cột ứng với trường nào:</p>
+                    <p class="mb-2 fw-semibold" data-i18n="products.confirmMapping">Hệ thống đã đọc file — xác nhận mỗi cột ứng với trường nào:</p>
                     <div class="table-responsive">
                         <table class="table table-sm table-bordered mb-0 guide-table" id="mappingTable">
                             <thead>
                                 <tr>
-                                    <th style="width:35%">Cột trong file</th>
-                                    <th style="width:30%">Ví dụ dữ liệu</th>
-                                    <th style="width:35%">Ánh xạ tới trường</th>
+                                    <th style="width:35%" data-i18n="products.colFileColumn">Cột trong file</th>
+                                    <th style="width:30%" data-i18n="products.colSample">Ví dụ dữ liệu</th>
+                                    <th style="width:35%" data-i18n="products.colMapTo">Ánh xạ tới trường</th>
                                 </tr>
                             </thead>
                             <tbody id="mappingRows"></tbody>
                         </table>
                     </div>
                     <small class="text-danger mt-1 d-block">
-                        <i class="fas fa-asterisk me-1"></i>Bắt buộc phải chọn <strong>Tên sản phẩm</strong> cho ít nhất một cột.
+                        <i class="fas fa-asterisk me-1"></i><span data-i18n="products.requiredNameCol">Bắt buộc phải chọn</span> <strong data-i18n="products.colName">Tên sản phẩm</strong> <span data-i18n="products.forAtLeastOneCol">cho ít nhất một cột.</span>
                     </small>
                 </div>
 
@@ -124,21 +124,21 @@
                     <div class="import-error-icon mb-3">
                         <i class="fas fa-times-circle"></i>
                     </div>
-                    <h5 class="import-error-title mb-2">Không thể import file này</h5>
+                    <h5 class="import-error-title mb-2" data-i18n="products.cannotImport">Không thể import file này</h5>
                     <p id="importErrorMessage" class="import-error-message mb-4"></p>
                     <button type="button" class="btn btn-outline-primary" onclick="goBackToStep1()">
-                        <i class="fas fa-redo me-2"></i>Chọn file khác
+                        <i class="fas fa-redo me-2"></i><span data-i18n="products.chooseOtherFile">Chọn file khác</span>
                     </button>
                 </div>
 
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-i18n="common.close">Đóng</button>
                 <button type="button" class="btn btn-outline-secondary d-none" id="btnBack" onclick="goBackToStep1()">
-                    <i class="fas fa-arrow-left me-1"></i>Quay lại
+                    <i class="fas fa-arrow-left me-1"></i><span data-i18n="sale.back">Quay lại</span>
                 </button>
                 <button type="button" class="btn btn-primary" id="btnNext" onclick="previewColumnMapping()" disabled>
-                    Tiếp theo <i class="fas fa-arrow-right ms-1"></i>
+                    <span data-i18n="products.next">Tiếp theo</span> <i class="fas fa-arrow-right ms-1"></i>
                 </button>
                 <button type="button" class="btn btn-success d-none" id="btnImport" onclick="submitImportExcel()">
                     <i class="fas fa-upload me-1"></i>Import
@@ -153,45 +153,45 @@
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="productModalTitle">Thêm sản phẩm</h5>
+                <h5 class="modal-title" id="productModalTitle" data-i18n="products.addProduct">Thêm sản phẩm</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <input type="hidden" id="productId">
                 <div class="row">
                     <div class="col-md-6 mb-3">
-                        <label class="form-label">Mã SP <span class="text-danger">*</span></label>
+                        <label class="form-label"><span data-i18n="products.codeLabel">Mã SP</span> <span class="text-danger">*</span></label>
                         <input type="text" class="form-control" id="productCode" required>
                     </div>
                     <div class="col-md-6 mb-3">
-                        <label class="form-label">Tên sản phẩm <span class="text-danger">*</span></label>
+                        <label class="form-label"><span data-i18n="products.colName">Tên sản phẩm</span> <span class="text-danger">*</span></label>
                         <input type="text" class="form-control" id="productName" required>
                     </div>
                 </div>
                 <div class="row">
                     <div class="col-md-4 mb-3">
-                        <label class="form-label">Danh mục</label>
+                        <label class="form-label" data-i18n="products.colCategory">Danh mục</label>
                         <input type="text" class="form-control" id="productCategory">
                     </div>
                     <div class="col-md-4 mb-3">
-                        <label class="form-label">Đơn vị</label>
+                        <label class="form-label" data-i18n="products.colUnit">Đơn vị</label>
                         <input type="text" class="form-control" id="productUnit" value="cái">
                     </div>
                     <div class="col-md-4 mb-3">
-                        <label class="form-label">Giá</label>
+                        <label class="form-label" data-i18n="sale.colPrice">Giá</label>
                         <input type="number" class="form-control" id="productPrice" min="0" value="0">
                     </div>
                 </div>
                 <div class="mb-3">
-                    <label class="form-label">Số lượng tồn kho</label>
+                    <label class="form-label" data-i18n="products.stockQty">Số lượng tồn kho</label>
                     <input type="number" class="form-control" id="productStock" min="0" value="0">
                 </div>
                 <div class="mb-3">
-                    <label class="form-label">Mô tả</label>
+                    <label class="form-label" data-i18n="products.colDescription">Mô tả</label>
                     <textarea class="form-control" id="productDescription" rows="3"></textarea>
                 </div>
                 <div class="mb-3">
-                    <label class="form-label">Hình ảnh (URL)</label>
+                    <label class="form-label" data-i18n="products.imageUrl">Hình ảnh (URL)</label>
                     <input type="url" class="form-control" id="productImageUrl" placeholder="https://example.com/image.jpg">
                     <div id="productImagePreview" class="mt-2 d-none">
                         <img src="" alt="preview" class="product-img-preview rounded">
@@ -199,8 +199,8 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
-                <button type="button" class="btn btn-primary" onclick="saveProduct()">Lưu</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-i18n="common.cancel">Hủy</button>
+                <button type="button" class="btn btn-primary" onclick="saveProduct()" data-i18n="common.save">Lưu</button>
             </div>
         </div>
     </div>

@@ -6,6 +6,14 @@
     min-height: 100vh;
 }
 
+@media (max-width: 767.98px) {
+    .main-content {
+        margin-left: 0;
+        padding: 15px;
+        padding-top: 76px; /* clears the fixed 56px mobile topbar */
+    }
+}
+
 .subscriptions-page .card {
     background: var(--surface-100);
     border: 1px solid var(--border-soft);
@@ -155,7 +163,7 @@
 .auto-card-icon { width: 52px; height: 52px; border-radius: 14px; display:flex; align-items:center; justify-content:center; color:#fff; font-size:20px; }
 .auto-card-body h6 { margin: 0; font-weight: 600; color: var(--gray-900); }
 .auto-card-value { margin: 4px 0; font-size: 20px; font-weight: 700; color: var(--gray-900); }
-.bg-gradient-primary { background: linear-gradient(135deg, #7f5af0, #2cb9ff); }
+.bg-gradient-primary { background: linear-gradient(135deg, #003152, #0077b6); }
 .bg-gradient-warning { background: linear-gradient(135deg, #facc15, #f97316); }
 .bg-gradient-success { background: linear-gradient(135deg, #34d399, #10b981); }
 
@@ -234,7 +242,7 @@
 .subscriptions-page .form-control:focus,
 .subscriptions-page .form-select:focus {
     border-color: var(--primary);
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.25);
+    box-shadow: 0 0 0 3px rgba(0, 119, 182, 0.25);
     background: var(--surface-100);
     color: var(--gray-900);
 }

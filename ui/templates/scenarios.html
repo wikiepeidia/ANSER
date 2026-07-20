@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Automation Workflows{% endblock %}
+{% block title %}Quy trình tự động hoá{% endblock %}
 {% block body_class %}scenarios-page{% endblock %}
 
 {% block styles %}
@@ -17,21 +17,21 @@
         <div class="content-header" style="flex-wrap:wrap;">
             <div style="flex:1; min-width:200px;">
                 <div class="nav-breadcrumb">
-                    <a href="/workspace" class="nav-link">Workspace</a>
+                    <a href="/workspace" class="nav-link" data-i18n="nav.workspace">Workspace</a>
                     <span>&rsaquo;</span>
-                    <span>Automation</span>
+                    <span data-i18n="scenarios.automation">Automation</span>
                 </div>
-                <h1 class="content-title" style="margin-bottom:8px;">Automation Workflows</h1>
+                <h1 class="content-title" style="margin-bottom:8px;" data-i18n="scenarios.automationWorkflows">Automation Workflows</h1>
                 <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
                     <span class="sc-status" id="n8nStatus">
                         <span class="sc-status-dot"></span>
                         <span id="n8nStatusText">Đang kết nối...</span>
                     </span>
                     <button class="btn-secondary" onclick="toggleTemplates()" style="padding:6px 14px; font-size:.82rem;">
-                        <i class="fas fa-magic"></i> Templates
+                        <i class="fas fa-magic"></i> <span data-i18n="scenarios.templates">Templates</span>
                     </button>
                     <button class="create-btn" onclick="refreshAll()" style="padding:6px 14px; font-size:.82rem;">
-                        <i class="fas fa-sync-alt"></i> Refresh
+                        <i class="fas fa-sync-alt"></i> <span data-i18n="common.refresh">Refresh</span>
                     </button>
                 </div>
             </div>
@@ -40,7 +40,7 @@
         <!-- Templates panel -->
         <div id="tplPanel" class="scenario-templates-panel">
             <div class="scenario-templates-label">
-                Workflow Templates — click để deploy vào n8n
+                <span data-i18n="scenarios.workflowTemplatesHint">Workflow Templates — click để deploy vào n8n</span>
             </div>
             <div class="sc-tpl-viewport">
                 <button class="sc-tpl-nav prev" data-tpl-dir="prev" aria-label="Cuộn trái"><i class="fas fa-chevron-left"></i></button>
@@ -58,11 +58,11 @@
             </div>
             <div id="wfEmpty" class="empty-state" style="display:none;">
                 <div class="empty-icon"><i class="fas fa-project-diagram"></i></div>
-                <h3 class="empty-title">Chưa có workflow nào</h3>
-                <p class="empty-description">Deploy một template có sẵn để bắt đầu.</p>
+                <h3 class="empty-title" data-i18n="scenarios.noWorkflows">Chưa có workflow nào</h3>
+                <p class="empty-description" data-i18n="scenarios.deployToStart">Deploy một template có sẵn để bắt đầu.</p>
                 <div class="empty-actions">
                     <button class="create-btn" onclick="toggleTemplates()">
-                        <i class="fas fa-magic"></i> Xem Templates
+                        <i class="fas fa-magic"></i> <span data-i18n="scenarios.viewTemplates">Xem Templates</span>
                     </button>
                 </div>
             </div>

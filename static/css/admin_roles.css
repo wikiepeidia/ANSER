@@ -6,6 +6,14 @@
     min-height: 100vh;
 }
 
+@media (max-width: 767.98px) {
+    .main-content {
+        margin-left: 0;
+        padding: 15px;
+        padding-top: 76px; /* clears the fixed 56px mobile topbar */
+    }
+}
+
 .roles-page .card {
     background: var(--surface-100);
     border: 1px solid var(--border-soft);
@@ -116,7 +124,7 @@
 }
 
 .bg-gradient-primary {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #0077b6 0%, #003152 100%);
 }
 
 .stats-icon {
@@ -155,7 +163,7 @@
 }
 
 .nav-tabs .nav-link:hover {
-    border-bottom: 3px solid #764ba2;
+    border-bottom: 3px solid #003152;
 }
 
 .badge {

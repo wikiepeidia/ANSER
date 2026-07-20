@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Admin Panel - Workflow Automation for Retail{% endblock %}
+{% block title %}Bảng quản trị - {{ project_name }}{% endblock %}
 
 {% block styles %}
 {{ super() }}
@@ -17,25 +17,25 @@
 <div class="workspace-container">
     <!-- Activity Bar -->
     <div class="activity-bar">
-        <a href="{{ url_for('pages.dashboard') }}" class="activity-item" title="Back to Dashboard">
+        <a href="{{ url_for('pages.dashboard') }}" class="activity-item" title="Back to Dashboard" data-i18n-title="adminWs.backToDashboard">
             <i class="fas fa-arrow-left"></i>
         </a>
-        <div class="activity-item active" title="Explorer" data-view="explorer">
+        <div class="activity-item active" title="Explorer" data-view="explorer" data-i18n-title="adminWs.explorer">
             <i class="fas fa-folder"></i>
         </div>
-        <div class="activity-item" title="Search" data-view="search">
+        <div class="activity-item" title="Search" data-view="search" data-i18n-title="common.search">
             <i class="fas fa-search"></i>
         </div>
-        <div class="activity-item" title="Source Control" data-view="git">
+        <div class="activity-item" title="Source Control" data-view="git" data-i18n-title="adminWs.sourceControl">
             <i class="fas fa-code-branch"></i>
         </div>
-        <div class="activity-item" title="Run and Debug" data-view="debug">
+        <div class="activity-item" title="Run and Debug" data-view="debug" data-i18n-title="adminWs.runAndDebug">
             <i class="fas fa-play"></i>
         </div>
-        <div class="activity-item" title="Extensions" data-view="extensions">
+        <div class="activity-item" title="Extensions" data-view="extensions" data-i18n-title="adminWs.extensions">
             <i class="fas fa-th-large"></i>
         </div>
-        <div class="activity-item" title="Scenarios" data-view="scenarios">
+        <div class="activity-item" title="Scenarios" data-view="scenarios" data-i18n-title="adminWs.scenarios">
             <i class="fas fa-theater-masks"></i>
         </div>
 
@@ -52,14 +52,14 @@
     <div class="sidebar" id="sidebar">
         <div class="sidebar-header">
             <div>
-                <div class="sidebar-title">Admin Panel</div>
-                <div class="sidebar-subtitle">System Management</div>
+                <div class="sidebar-title" data-i18n="adminWs.adminPanel">Admin Panel</div>
+                <div class="sidebar-subtitle" data-i18n="adminWs.systemManagement">System Management</div>
             </div>
             <div class="user-menu">
                 <div class="user-avatar">{{ user_initials }}</div>
                 <a href="{{ url_for('main.logout') }}" class="logout-btn">
                     <i class="fas fa-sign-out-alt"></i>
-                    Logout
+                    <span data-i18n="nav.logout">Logout</span>
                 </a>
             </div>
         </div>
@@ -71,7 +71,7 @@
                     <div class="tree-expand">
                         <i class="fas fa-user"></i>
                     </div>
-                    <div class="tree-label">{{ current_user.first_name }}'s Workspace</div>
+                    <div class="tree-label"><span>{{ current_user.first_name }}</span><span data-i18n="adminWs.workspaceSuffix">'s Workspace</span></div>
                     <div class="tree-badge">12</div>
                 </div>
                 <div class="tree-children">
@@ -84,7 +84,7 @@
                             <div class="tree-icon">
                                 <i class="fas fa-folder"></i>
                             </div>
-                            <div class="tree-label">Todo Lists</div>
+                            <div class="tree-label" data-i18n="adminWs.todoLists">Todo Lists</div>
                             <div class="tree-badge">5</div>
                         </div>
                         <div class="tree-children">
@@ -94,7 +94,7 @@
                                     <div class="tree-icon">
                                         <i class="fas fa-check-square"></i>
                                     </div>
-                                    <div class="tree-label">Daily Tasks</div>
+                                    <div class="tree-label" data-i18n="adminWs.dailyTasks">Daily Tasks</div>
                                 </div>
                             </div>
                             <div class="tree-item" data-type="file">
@@ -103,7 +103,7 @@
                                     <div class="tree-icon">
                                         <i class="fas fa-calendar-week"></i>
                                     </div>
-                                    <div class="tree-label">Weekly Goals</div>
+                                    <div class="tree-label" data-i18n="adminWs.weeklyGoals">Weekly Goals</div>
                                 </div>
                             </div>
                         </div>
@@ -117,7 +117,7 @@
                             <div class="tree-icon">
                                 <i class="fas fa-sticky-note"></i>
                             </div>
-                            <div class="tree-label">Notes</div>
+                            <div class="tree-label" data-i18n="adminWs.notes">Notes</div>
                             <div class="tree-badge">7</div>
                         </div>
                     </div>
@@ -133,7 +133,7 @@
                     <div class="tree-icon workspace-type-team">
                         <i class="fas fa-users"></i>
                     </div>
-                    <div class="tree-label">Development Team</div>
+                    <div class="tree-label" data-i18n="adminWs.devTeam">Development Team</div>
                     <div class="tree-badge">8</div>
                 </div>
             </div>
@@ -161,7 +161,7 @@
                     <div class="tree-icon workspace-type-scenario">
                         <i class="fas fa-theater-masks"></i>
                     </div>
-                    <div class="tree-label">Marketing Campaign</div>
+                    <div class="tree-label" data-i18n="adminWs.marketingCampaign">Marketing Campaign</div>
                     <div class="tree-badge">6</div>
                 </div>
             </div>
@@ -176,7 +176,7 @@
                 <div class="tab-icon">
                     <i class="fas fa-home"></i>
                 </div>
-                <span>Welcome</span>
+                <span data-i18n="adminWs.welcome">Welcome</span>
                 <div class="tab-close">
                     <i class="fas fa-times"></i>
                 </div>
@@ -189,8 +189,8 @@
                 <div class="welcome-logo" aria-label="{{ project_name }} emblem">
                     <i class="fas fa-rocket" aria-hidden="true"></i>
                 </div>
-                <h1 class="welcome-title">Welcome to {{ project_name }}</h1>
-                <p class="welcome-subtitle">
+                <h1 class="welcome-title"><span data-i18n="adminWs.welcomeTo">Welcome to</span> {{ project_name }}</h1>
+                <p class="welcome-subtitle" data-i18n="adminWs.welcomeSubtitle">
                     An intelligent workspace to help you organize work efficiently with a layered structure and powerful
                     connected channels.
                 </p>
@@ -200,8 +200,8 @@
                         <div class="action-icon">
                             <i class="fas fa-plus"></i>
                         </div>
-                        <div class="action-title">Create new Todo</div>
-                        <div class="action-description">
+                        <div class="action-title" data-i18n="adminWs.createTodo">Create new Todo</div>
+                        <div class="action-description" data-i18n="adminWs.createTodoDesc">
                             Add a task and track progress
                         </div>
                     </a>
@@ -210,8 +210,8 @@
                         <div class="action-icon">
                             <i class="fas fa-edit"></i>
                         </div>
-                        <div class="action-title">Create new Note</div>
-                        <div class="action-description">
+                        <div class="action-title" data-i18n="adminWs.createNote">Create new Note</div>
+                        <div class="action-description" data-i18n="adminWs.createNoteDesc">
                             Jot down ideas and save information
                         </div>
                     </a>
@@ -220,8 +220,8 @@
                         <div class="action-icon">
                             <i class="fas fa-layer-group"></i>
                         </div>
-                        <div class="action-title">Create Workspace</div>
-                        <div class="action-description">
+                        <div class="action-title" data-i18n="adminWs.createWorkspace">Create Workspace</div>
+                        <div class="action-description" data-i18n="adminWs.createWorkspaceDesc">
                             Initialize a new workspace
                         </div>
                     </a>
@@ -230,8 +230,8 @@
                         <div class="action-icon">
                             <i class="fas fa-theater-masks"></i>
                         </div>
-                        <div class="action-title">Manage Scenarios</div>
-                        <div class="action-description">
+                        <div class="action-title" data-i18n="adminWs.manageScenarios">Manage Scenarios</div>
+                        <div class="action-description" data-i18n="adminWs.manageScenariosDesc">
                             Create and orchestrate workflow scenarios
                         </div>
                     </a>
@@ -241,8 +241,8 @@
                         <div class="action-icon">
                             <i class="fas fa-credit-card"></i>
                         </div>
-                        <div class="action-title">Paid Scenario (Manager/Admin)</div>
-                        <div class="action-description">
+                        <div class="action-title" data-i18n="adminWs.paidScenario">Paid Scenario (Manager/Admin)</div>
+                        <div class="action-description" data-i18n="adminWs.paidScenarioDesc">
                             This is a paid section · Click to go to the payment page before granting access
                         </div>
                     </a>
@@ -259,11 +259,11 @@
                 </div>
                 <div class="status-item">
                     <i class="fas fa-sync"></i>
-                    Synced
+                    <span data-i18n="adminWs.synced">Synced</span>
                 </div>
                 <div class="status-item">
                     <i class="fas fa-exclamation-triangle"></i>
-                    0 problems
+                    <span>0</span> <span data-i18n="adminWs.problems">problems</span>
                 </div>
             </div>
             <div class="status-right">
@@ -272,7 +272,7 @@
                 </div>
                 <div class="status-item">
                     <i class="fas fa-wifi"></i>
-                    Online
+                    <span data-i18n="adminWs.online">Online</span>
                 </div>
                 <div class="status-item">
                     <i class="fas fa-bell"></i>
@@ -287,20 +287,20 @@
 <div class="context-menu" id="contextMenu" style="display: none;">
     <div class="context-item" onclick="contextAction('new-file')">
         <i class="fas fa-file"></i>
-        New Todo
+        <span data-i18n="adminWs.newTodo">New Todo</span>
     </div>
     <div class="context-item" onclick="contextAction('new-folder')">
         <i class="fas fa-sticky-note"></i>
-        New Note
+        <span data-i18n="adminWs.newNote">New Note</span>
     </div>
     <div class="context-separator"></div>
     <div class="context-item" onclick="contextAction('rename')">
         <i class="fas fa-edit"></i>
-        Rename
+        <span data-i18n="adminWs.rename">Rename</span>
     </div>
     <div class="context-item" onclick="contextAction('delete')">
         <i class="fas fa-trash"></i>
-        Delete
+        <span data-i18n="common.delete">Delete</span>
     </div>
 </div>
 
@@ -308,57 +308,57 @@
 <div class="modal" id="createItemModal" style="display: none;">
     <div class="modal-content">
         <div class="modal-header">
-            <h3 id="modalTitle">Create New Item</h3>
+            <h3 id="modalTitle" data-i18n="adminWs.createNewItem">Create New Item</h3>
             <span class="modal-close" onclick="closeModal('createItemModal')">&times;</span>
         </div>
         <div class="modal-body">
             <form id="itemForm">
                 <div class="form-group">
-                    <label for="itemTitle">Title *</label>
+                    <label for="itemTitle"><span data-i18n="adminWs.itemTitle">Title</span> *</label>
                     <input type="text" id="itemTitle" name="title" required>
                 </div>
 
                 <div class="form-group">
-                    <label for="itemDescription">Description</label>
+                    <label for="itemDescription" data-i18n="products.colDescription">Description</label>
                     <textarea id="itemDescription" name="description" rows="3"></textarea>
                 </div>
 
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="itemType">Type</label>
+                        <label for="itemType" data-i18n="adminWs.type">Type</label>
                         <select id="itemType" name="type">
-                            <option value="task">Task</option>
-                            <option value="note">Note</option>
-                            <option value="reminder">Reminder</option>
-                            <option value="idea">Idea</option>
+                            <option value="task" data-i18n="adminWs.task">Task</option>
+                            <option value="note" data-i18n="adminWs.note">Note</option>
+                            <option value="reminder" data-i18n="adminWs.reminder">Reminder</option>
+                            <option value="idea" data-i18n="adminWs.idea">Idea</option>
                         </select>
                     </div>
 
                     <div class="form-group">
-                        <label for="itemPriority">Priority</label>
+                        <label for="itemPriority" data-i18n="adminWs.priority">Priority</label>
                         <select id="itemPriority" name="priority">
-                            <option value="low">Low</option>
-                            <option value="medium" selected>Medium</option>
-                            <option value="high">High</option>
-                            <option value="urgent">Urgent</option>
+                            <option value="low" data-i18n="adminWs.low">Low</option>
+                            <option value="medium" selected data-i18n="adminWs.medium">Medium</option>
+                            <option value="high" data-i18n="adminWs.high">High</option>
+                            <option value="urgent" data-i18n="adminWs.urgent">Urgent</option>
                         </select>
                     </div>
                 </div>
 
                 <div class="form-group">
-                    <label for="itemStatus">Status</label>
+                    <label for="itemStatus" data-i18n="common.status">Status</label>
                     <select id="itemStatus" name="status">
-                        <option value="todo" selected>To Do</option>
-                        <option value="in-progress">In Progress</option>
-                        <option value="done">Done</option>
-                        <option value="archived">Archived</option>
+                        <option value="todo" selected data-i18n="adminWs.todo">To Do</option>
+                        <option value="in-progress" data-i18n="adminWs.inProgress">In Progress</option>
+                        <option value="done" data-i18n="adminWs.done">Done</option>
+                        <option value="archived" data-i18n="adminWs.archived">Archived</option>
                     </select>
                 </div>
             </form>
         </div>
         <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" onclick="closeModal('createItemModal')">Cancel</button>
-            <button type="button" class="btn btn-primary" onclick="saveItem()">Save</button>
+            <button type="button" class="btn btn-secondary" onclick="closeModal('createItemModal')" data-i18n="common.cancel">Cancel</button>
+            <button type="button" class="btn btn-primary" onclick="saveItem()" data-i18n="common.save">Save</button>
         </div>
     </div>
 </div>
@@ -367,35 +367,35 @@
 <div class="modal" id="createWorkspaceModal" style="display: none;">
     <div class="modal-content">
         <div class="modal-header">
-            <h3>Create New Workspace</h3>
+            <h3 data-i18n="adminWs.createNewWorkspace">Create New Workspace</h3>
             <span class="modal-close" onclick="closeModal('createWorkspaceModal')">&times;</span>
         </div>
         <div class="modal-body">
             <form id="workspaceForm">
                 <div class="form-group">
-                    <label for="workspaceName">Workspace Name *</label>
+                    <label for="workspaceName"><span data-i18n="adminWs.workspaceName">Workspace Name</span> *</label>
                     <input type="text" id="workspaceName" name="name" required>
                 </div>
 
                 <div class="form-group">
-                    <label for="workspaceType">Type</label>
+                    <label for="workspaceType" data-i18n="adminWs.type">Type</label>
                     <select id="workspaceType" name="type">
-                        <option value="personal">Personal</option>
-                        <option value="team">Team</option>
-                        <option value="project">Project</option>
-                        <option value="scenario">Scenario</option>
+                        <option value="personal" data-i18n="adminWs.personal">Personal</option>
+                        <option value="team" data-i18n="adminWs.team">Team</option>
+                        <option value="project" data-i18n="adminWs.project">Project</option>
+                        <option value="scenario" data-i18n="adminWs.scenario">Scenario</option>
                     </select>
                 </div>
 
                 <div class="form-group">
-                    <label for="workspaceDescription">Description</label>
+                    <label for="workspaceDescription" data-i18n="products.colDescription">Description</label>
                     <textarea id="workspaceDescription" name="description" rows="3"></textarea>
                 </div>
             </form>
         </div>
         <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" onclick="closeModal('createWorkspaceModal')">Cancel</button>
-            <button type="button" class="btn btn-primary" onclick="saveWorkspace()">Create Workspace</button>
+            <button type="button" class="btn btn-secondary" onclick="closeModal('createWorkspaceModal')" data-i18n="common.cancel">Cancel</button>
+            <button type="button" class="btn btn-primary" onclick="saveWorkspace()" data-i18n="adminWs.createWorkspace">Create Workspace</button>
         </div>
     </div>
 </div>
@@ -403,24 +403,24 @@
 <!-- Item Detail Panel -->
 <div class="item-detail-panel" id="itemDetailPanel" style="display: none;">
     <div class="panel-header">
-        <h4 id="itemDetailTitle">Item Details</h4>
+        <h4 id="itemDetailTitle" data-i18n="adminWs.itemDetails">Item Details</h4>
         <button class="panel-close" onclick="closeItemDetail()">&times;</button>
     </div>
     <div class="panel-content">
         <div class="item-meta">
-            <span class="item-type" id="itemDetailType">Task</span>
-            <span class="item-priority" id="itemDetailPriority">Medium</span>
-            <span class="item-status" id="itemDetailStatus">To Do</span>
+            <span class="item-type" id="itemDetailType" data-i18n="adminWs.task">Task</span>
+            <span class="item-priority" id="itemDetailPriority" data-i18n="adminWs.medium">Medium</span>
+            <span class="item-status" id="itemDetailStatus" data-i18n="adminWs.todo">To Do</span>
         </div>
-        <div class="item-description" id="itemDetailDescription">
+        <div class="item-description" id="itemDetailDescription" data-i18n="adminWs.noDescription">
             No description available
         </div>
         <div class="item-actions">
             <button class="btn btn-small btn-primary" onclick="editCurrentItem()">
-                <i class="fas fa-edit"></i> Edit
+                <i class="fas fa-edit"></i> <span data-i18n="common.edit">Edit</span>
             </button>
             <button class="btn btn-small btn-danger" onclick="deleteCurrentItem()">
-                <i class="fas fa-trash"></i> Delete
+                <i class="fas fa-trash"></i> <span data-i18n="common.delete">Delete</span>
             </button>
         </div>
     </div>

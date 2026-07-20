@@ -13,11 +13,11 @@
         <div class="col-md-7 col-lg-8 d-flex flex-column p-3 left-panel">
             <div class="d-flex align-items-center mb-3">
                 <a href="{{ url_for('pages.workspace') }}" class="btn btn-outline-secondary me-3">
-                    <i class="fas fa-arrow-left"></i> Quay lại
+                    <i class="fas fa-arrow-left"></i> <span data-i18n="sale.back">Quay lại</span>
                 </a>
-                <h4 class="mb-0 me-auto">Điểm bán hàng</h4>
+                <h4 class="mb-0 me-auto" data-i18n="sale.title">Điểm bán hàng</h4>
                 <button class="btn btn-info text-white" onclick="showHistory()">
-                    <i class="fas fa-history"></i> Lịch sử
+                    <i class="fas fa-history"></i> <span data-i18n="sale.history">Lịch sử</span>
                 </button>
             </div>
             <div class="search-section mb-3">
@@ -25,13 +25,13 @@
                     <span class="input-group-text search-icon border-end-0"><i
                             class="fas fa-search text-muted"></i></span>
                     <input type="text" id="productSearch" class="form-control border-start-0 ps-0"
-                        placeholder="Tìm sản phẩm (quét mã vạch hoặc gõ tên)..." autocomplete="off">
+                        placeholder="Tìm sản phẩm (quét mã vạch hoặc gõ tên)..." autocomplete="off" data-i18n-placeholder="sale.searchPlaceholder">
                 </div>
                 <div id="searchResults" class="search-results-dropdown shadow-sm" style="display: none;"></div>
             </div>
 
             <div class="products-grid-container flex-grow-1">
-                <h5 class="mb-3 section-title"><i class="fas fa-box-open me-2"></i>Gợi ý sản phẩm</h5>
+                <h5 class="mb-3 section-title"><i class="fas fa-box-open me-2"></i><span data-i18n="sale.suggested">Gợi ý sản phẩm</span></h5>
                 <div id="productSuggestions" class="row row-cols-2 row-cols-md-3 row-cols-xl-4 g-3">
                     <!-- Sản phẩm ngẫu nhiên sẽ được tải tại đây -->
                 </div>
@@ -43,7 +43,7 @@
 
             <div class="cart-header p-3 border-bottom">
                 <div class="d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0"><i class="fas fa-shopping-cart me-2"></i>Đơn hàng hiện tại</h5>
+                    <h5 class="mb-0"><i class="fas fa-shopping-cart me-2"></i><span data-i18n="sale.currentOrder">Đơn hàng hiện tại</span></h5>
                     <span class="badge bg-primary rounded-pill" id="cartItemCount">0 sản phẩm</span>
                 </div>
             </div>
@@ -51,15 +51,15 @@
             <div class="cart-items flex-grow-1 p-0 overflow-auto" id="cartItemsContainer">
                 <div class="text-center text-muted mt-5 pt-5 empty-cart-msg">
                     <i class="fas fa-basket-shopping fa-3x mb-3 opacity-25"></i>
-                    <p>Giỏ hàng đang trống</p>
-                    <small>Tìm sản phẩm để bắt đầu bán</small>
+                    <p data-i18n="sale.cartEmpty">Giỏ hàng đang trống</p>
+                    <small data-i18n="sale.cartEmptyHint">Tìm sản phẩm để bắt đầu bán</small>
                 </div>
                 <table class="table table-hover mb-0 cart-table" style="display: none;">
                     <thead class="sticky-top">
                         <tr>
-                            <th scope="col" width="45%">Sản phẩm</th>
-                            <th scope="col" width="20%">SL</th>
-                            <th scope="col" width="25%">Giá</th>
+                            <th scope="col" width="45%" data-i18n="sale.colProduct">Sản phẩm</th>
+                            <th scope="col" width="20%" data-i18n="sale.colQty">SL</th>
+                            <th scope="col" width="25%" data-i18n="sale.colPrice">Giá</th>
                             <th scope="col" width="10%"></th>
                         </tr>
                     </thead>
@@ -70,12 +70,12 @@
 
             <div class="payment-section p-4 border-top">
                 <div class="d-flex justify-content-between mb-2">
-                    <span class="h5 mb-0 fw-normal">Tổng cộng</span>
+                    <span class="h5 mb-0 fw-normal" data-i18n="sale.total">Tổng cộng</span>
                     <span class="h5 mb-0 fw-bold text-primary" id="grandTotal">0 ₫</span>
                 </div>
 
                 <div class="mb-3">
-                    <label for="customerGiven" class="form-label small text-muted text-uppercase fw-bold">Khách
+                    <label for="customerGiven" class="form-label small text-muted text-uppercase fw-bold" data-i18n="sale.customerGiven">Khách
                         đưa</label>
                     <div class="input-group">
                         <input type="number" class="form-control form-control-lg text-end fw-bold" id="customerGiven"
@@ -85,36 +85,36 @@
                 </div>
 
                 <div class="d-flex justify-content-between mb-4">
-                    <span class="mb-0 text-muted">Tiền thừa</span>
+                    <span class="mb-0 text-muted" data-i18n="sale.change">Tiền thừa</span>
                     <span class="h5 mb-0 fw-bold text-success" id="refundAmount">0 ₫</span>
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label small text-muted text-uppercase fw-bold">Phương thức thanh toán</label>
+                    <label class="form-label small text-muted text-uppercase fw-bold" data-i18n="sale.paymentMethod">Phương thức thanh toán</label>
                     <div class="btn-group w-100" role="group" aria-label="Phương thức thanh toán">
                         <input type="radio" class="btn-check" name="paymentMethod" id="payCash" value="Cash" checked>
                         <label class="btn btn-outline-primary" for="payCash">
-                            <i class="fas fa-money-bill-wave me-1"></i> Tiền mặt
+                            <i class="fas fa-money-bill-wave me-1"></i> <span data-i18n="sale.cash">Tiền mặt</span>
                         </label>
 
                         <input type="radio" class="btn-check" name="paymentMethod" id="payCard" value="Card">
                         <label class="btn btn-outline-primary" for="payCard">
-                            <i class="fas fa-credit-card me-1"></i> Thẻ
+                            <i class="fas fa-credit-card me-1"></i> <span data-i18n="sale.card">Thẻ</span>
                         </label>
 
                         <input type="radio" class="btn-check" name="paymentMethod" id="payTransfer" value="Transfer">
                         <label class="btn btn-outline-primary" for="payTransfer">
-                            <i class="fas fa-university me-1"></i> Chuyển khoản
+                            <i class="fas fa-university me-1"></i> <span data-i18n="sale.transfer">Chuyển khoản</span>
                         </label>
                     </div>
                 </div>
 
                 <div class="d-grid gap-2">
                     <button class="btn btn-primary btn-lg py-3 fw-bold" id="btnCompleteSale" disabled>
-                        <i class="fas fa-check-circle me-2"></i> HOÀN TẤT BÁN HÀNG
+                        <i class="fas fa-check-circle me-2"></i> <span data-i18n="sale.completeSale">HOÀN TẤT BÁN HÀNG</span>
                     </button>
                     <button class="btn btn-outline-danger" id="btnClearCart">
-                        <i class="fas fa-trash-alt me-2"></i> Xóa giỏ hàng
+                        <i class="fas fa-trash-alt me-2"></i> <span data-i18n="sale.clearCart">Xóa giỏ hàng</span>
                     </button>
                 </div>
             </div>
@@ -128,9 +128,9 @@
         <div class="modal-content">
             <div class="modal-body text-center p-4">
                 <div class="display-1 text-success mb-3"><i class="fas fa-check-circle"></i></div>
-                <h4 class="mb-3">Bán hàng thành công!</h4>
-                <p class="text-muted">Giao dịch đã được lưu.</p>
-                <button type="button" class="btn btn-primary w-100" data-bs-dismiss="modal">Bán tiếp</button>
+                <h4 class="mb-3" data-i18n="sale.saleSuccess">Bán hàng thành công!</h4>
+                <p class="text-muted" data-i18n="sale.saleSaved">Giao dịch đã được lưu.</p>
+                <button type="button" class="btn btn-primary w-100" data-bs-dismiss="modal" data-i18n="sale.sellMore">Bán tiếp</button>
             </div>
         </div>
     </div>
@@ -141,7 +141,7 @@
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title"><i class="fas fa-history me-2"></i>Lịch sử bán hàng</h5>
+                <h5 class="modal-title"><i class="fas fa-history me-2"></i><span data-i18n="sale.salesHistory">Lịch sử bán hàng</span></h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
             </div>
             <div class="modal-body p-0">
@@ -150,9 +150,9 @@
                     <div class="input-group">
                         <span class="input-group-text"><i class="fas fa-search text-muted"></i></span>
                         <input type="text" id="historySearchInput" class="form-control"
-                            placeholder="Tìm theo mã hoặc phương thức thanh toán...">
+                            placeholder="Tìm theo mã hoặc phương thức thanh toán..." data-i18n-placeholder="sale.searchHistoryPlaceholder">
                     </div>
-                    <button class="btn btn-outline-secondary" onclick="refreshHistory()" title="Làm mới">
+                    <button class="btn btn-outline-secondary" onclick="refreshHistory()" title="Làm mới" data-i18n-title="common.refresh">
                         <i class="fas fa-sync-alt"></i>
                     </button>
                 </div>
@@ -161,24 +161,24 @@
                     <table class="table table-striped table-hover mb-0" id="historyTable">
                         <thead class="sticky-top shadow-sm history-table-head" style="top: 0; z-index: 10;">
                             <tr>
-                                <th>ID</th>
-                                <th>Ngày</th>
-                                <th>Thanh toán</th>
-                                <th class="text-center">Sản phẩm</th>
-                                <th class="text-end">Số tiền</th>
-                                <th class="text-center" style="width: 100px;">Thao tác</th>
+                                <th data-i18n="sale.colId">ID</th>
+                                <th data-i18n="sale.colDate">Ngày</th>
+                                <th data-i18n="sale.colPayment">Thanh toán</th>
+                                <th class="text-center" data-i18n="sale.colProduct">Sản phẩm</th>
+                                <th class="text-end" data-i18n="sale.colAmount">Số tiền</th>
+                                <th class="text-center" style="width: 100px;" data-i18n="sale.colAction">Thao tác</th>
                             </tr>
                         </thead>
                         <tbody id="historyTableBody">
                             <tr>
-                                <td colspan="6" class="text-center py-4">Đang tải...</td>
+                                <td colspan="6" class="text-center py-4" data-i18n="common.loading">Đang tải...</td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-i18n="common.close">Đóng</button>
             </div>
         </div>
     </div>
@@ -189,13 +189,13 @@
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Chi tiết đơn bán #<span id="detailSaleId"></span></h5>
+                <h5 class="modal-title"><span data-i18n="sale.saleDetails">Chi tiết đơn bán</span> #<span id="detailSaleId"></span></h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
             </div>
             <div class="modal-body">
                 <div class="mb-3 d-flex justify-content-between align-items-center details-header p-2 rounded">
-                    <span><strong>Ngày:</strong> <span id="detailSaleDate"></span></span>
-                    <span><strong>Phương thức:</strong> <span id="detailSaleMethod" class="badge bg-secondary"></span></span>
+                    <span><strong data-i18n="sale.dateLabel">Ngày:</strong> <span id="detailSaleDate"></span></span>
+                    <span><strong data-i18n="sale.methodLabel">Phương thức:</strong> <span id="detailSaleMethod" class="badge bg-secondary"></span></span>
                 </div>
                 <!-- Hộp cảnh báo lỗi -->
                 <div id="detailError" class="alert alert-danger d-none my-2"></div>
@@ -204,16 +204,16 @@
                     <table class="table table-sm table-bordered mb-0">
                         <thead class="details-table-header">
                             <tr>
-                                <th>Sản phẩm</th>
-                                <th class="text-center">SL</th>
-                                <th class="text-end">Giá</th>
-                                <th class="text-end">Tổng</th>
+                                <th data-i18n="sale.colProduct">Sản phẩm</th>
+                                <th class="text-center" data-i18n="sale.colQty">SL</th>
+                                <th class="text-end" data-i18n="sale.colPrice">Giá</th>
+                                <th class="text-end" data-i18n="sale.colSubtotal">Tổng</th>
                             </tr>
                         </thead>
                         <tbody id="detailItemsBody"></tbody>
                         <tfoot class="details-table-footer fw-bold">
                             <tr>
-                                <td colspan="3" class="text-end">Tổng cộng:</td>
+                                <td colspan="3" class="text-end" data-i18n="sale.grandTotal">Tổng cộng:</td>
                                 <td class="text-end" id="detailSaleTotal"></td>
                             </tr>
                         </tfoot>
@@ -221,7 +221,7 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-i18n="common.close">Đóng</button>
             </div>
         </div>
     </div>

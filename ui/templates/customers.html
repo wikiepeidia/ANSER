@@ -19,9 +19,9 @@
     <main class="app-content main-content customers-page">
         <div
             class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-            <h1 class="h2"><i class="fas fa-users"></i> Quản lý khách hàng</h1>
+            <h1 class="h2"><i class="fas fa-users"></i> <span data-i18n="customers.title">Quản lý khách hàng</span></h1>
             <button class="btn btn-primary" onclick="openAddCustomerModal()">
-                <i class="fas fa-plus"></i> Thêm khách hàng
+                <i class="fas fa-plus"></i> <span data-i18n="customers.addCustomer">Thêm khách hàng</span>
             </button>
         </div>
 
@@ -31,13 +31,13 @@
                     <table class="table table-hover">
                         <thead>
                             <tr>
-                                <th>Mã khách hàng</th>
-                                <th>Tên khách hàng</th>
-                                <th>Số điện thoại</th>
-                                <th>Email</th>
-                                <th>Địa chỉ</th>
-                                <th>Ghi chú</th>
-                                <th>Thao tác</th>
+                                <th data-i18n="customers.colCode">Mã khách hàng</th>
+                                <th data-i18n="customers.colName">Tên khách hàng</th>
+                                <th data-i18n="customers.colPhone">Số điện thoại</th>
+                                <th data-i18n="common.email">Email</th>
+                                <th data-i18n="customers.colAddress">Địa chỉ</th>
+                                <th data-i18n="customers.colNotes">Ghi chú</th>
+                                <th data-i18n="common.actions">Thao tác</th>
                             </tr>
                         </thead>
                         <tbody id="customersTableBody">
@@ -59,43 +59,43 @@
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="customerModalTitle">Thêm khách hàng</h5>
+                <h5 class="modal-title" id="customerModalTitle" data-i18n="customers.addCustomer">Thêm khách hàng</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <input type="hidden" id="customerId">
                 <div class="row">
                     <div class="col-md-6 mb-3">
-                        <label class="form-label">Mã KH <span class="text-danger">*</span></label>
+                        <label class="form-label"><span data-i18n="customers.codeLabel">Mã KH</span> <span class="text-danger">*</span></label>
                         <input type="text" class="form-control" id="customerCode" required>
                     </div>
                     <div class="col-md-6 mb-3">
-                        <label class="form-label">Tên khách hàng <span class="text-danger">*</span></label>
+                        <label class="form-label"><span data-i18n="customers.colName">Tên khách hàng</span> <span class="text-danger">*</span></label>
                         <input type="text" class="form-control" id="customerName" required>
                     </div>
                 </div>
                 <div class="row">
                     <div class="col-md-6 mb-3">
-                        <label class="form-label">Số điện thoại</label>
+                        <label class="form-label" data-i18n="customers.colPhone">Số điện thoại</label>
                         <input type="tel" class="form-control" id="customerPhone">
                     </div>
                     <div class="col-md-6 mb-3">
-                        <label class="form-label">Email</label>
+                        <label class="form-label" data-i18n="common.email">Email</label>
                         <input type="email" class="form-control" id="customerEmail">
                     </div>
                 </div>
                 <div class="mb-3">
-                    <label class="form-label">Địa chỉ</label>
+                    <label class="form-label" data-i18n="customers.colAddress">Địa chỉ</label>
                     <input type="text" class="form-control" id="customerAddress">
                 </div>
                 <div class="mb-3">
-                    <label class="form-label">Ghi chú</label>
+                    <label class="form-label" data-i18n="customers.colNotes">Ghi chú</label>
                     <textarea class="form-control" id="customerNotes" rows="3"></textarea>
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
-                <button type="button" class="btn btn-primary" onclick="saveCustomer()">Lưu</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-i18n="common.cancel">Hủy</button>
+                <button type="button" class="btn btn-primary" onclick="saveCustomer()" data-i18n="common.save">Lưu</button>
             </div>
         </div>
     </div>

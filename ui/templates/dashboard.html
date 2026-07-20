@@ -20,12 +20,12 @@
         <!-- Header / Launchpad -->
         <div class="workspace-launchpad">
             <div>
-                <p class="launch-eyebrow">Dashboard</p>
-                <h2>Xin chào, {{ user.name or user.email.split('@')[0] }}</h2>
+                <p class="launch-eyebrow" data-i18n="dashboard.title">Dashboard</p>
+                <h2><span data-i18n="dashboard.greeting">Xin chào</span>, {{ user.name or user.email.split('@')[0] }}</h2>
             </div>
             <div class="launch-cta">
                 <a href="{{ url_for('pages.scenarios') }}" class="btn btn-primary rounded-pill">
-                    <i class="fas fa-plus me-2"></i>Dự án mới
+                    <i class="fas fa-plus me-2"></i><span data-i18n="dashboard.newProject">Dự án mới</span>
                 </a>
             </div>
         </div>
@@ -33,22 +33,22 @@
         <!-- Wallet / Subscription Glance -->
         <div class="wallet-glance">
             <div class="glance-head">
-                <h3><i class="fas fa-chart-line me-2"></i>Tổng quan kinh doanh</h3>
-                <span class="glance-chip">Dữ liệu trực tiếp</span>
+                <h3><i class="fas fa-chart-line me-2"></i><span data-i18n="dashboard.overview">Tổng quan kinh doanh</span></h3>
+                <span class="glance-chip" data-i18n="dashboard.liveData">Dữ liệu trực tiếp</span>
             </div>
             <div class="glance-grid">
                 <div class="glance-card">
-                    <p>Tổng doanh thu</p>
+                    <p data-i18n="dashboard.totalRevenue">Tổng doanh thu</p>
                     <h3>—</h3>
                     <div class="glance-subtext">Tháng này</div>
                 </div>
                 <div class="glance-card">
-                    <p>Đơn hàng mới</p>
+                    <p data-i18n="dashboard.newOrders">Đơn hàng mới</p>
                     <h3>0</h3>
                     <div class="glance-subtext">Hôm nay</div>
                 </div>
                 <div class="glance-card">
-                    <p>Đơn hoàn trả</p>
+                    <p data-i18n="dashboard.returnOrders">Đơn hoàn trả</p>
                     <h3>0</h3>
                     <div class="glance-subtext">Đang chờ</div>
                 </div>
@@ -86,7 +86,7 @@
         <div class="workspace-collections">
             <div class="collection-block">
                 <div class="collection-head">
-                    <h3>Thao tác nhanh</h3>
+                    <h3 data-i18n="dashboard.quickActions">Thao tác nhanh</h3>
                 </div>
                 <div class="collection-grid">
                     <!-- Thẻ quy trình mới -->
@@ -95,10 +95,10 @@
                             <i class="fas fa-plus"></i>
                         </div>
                         <div class="collection-body">
-                            <h4>Quy trình mới</h4>
-                            <p>Chọn template và triển khai tự động hóa</p>
+                            <h4 data-i18n="dashboard.newWorkflow">Quy trình mới</h4>
+                            <p data-i18n="dashboard.newWorkflowDesc">Chọn template và triển khai tự động hóa</p>
                         </div>
-                        <div class="collection-cta">Tạo <i class="fas fa-arrow-right ms-1"></i></div>
+                        <div class="collection-cta"><span data-i18n="dashboard.create">Tạo</span> <i class="fas fa-arrow-right ms-1"></i></div>
                     </a>
 
                     <!-- Thẻ kịch bản -->
@@ -107,10 +107,10 @@
                             <i class="fas fa-layer-group"></i>
                         </div>
                         <div class="collection-body">
-                            <h4>Kịch bản của tôi</h4>
-                            <p>Quản lý các quy trình tự động đang có</p>
+                            <h4 data-i18n="dashboard.myScenarios">Kịch bản của tôi</h4>
+                            <p data-i18n="dashboard.myScenariosDesc">Quản lý các quy trình tự động đang có</p>
                         </div>
-                        <div class="collection-cta">Xem <i class="fas fa-arrow-right ms-1"></i></div>
+                        <div class="collection-cta"><span data-i18n="dashboard.view">Xem</span> <i class="fas fa-arrow-right ms-1"></i></div>
                     </a>
 
                     <!-- Thẻ cài đặt -->
@@ -119,10 +119,10 @@
                             <i class="fas fa-cog"></i>
                         </div>
                         <div class="collection-body">
-                            <h4>Cài đặt</h4>
-                            <p>Cấu hình không gian làm việc của bạn</p>
+                            <h4 data-i18n="dashboard.settings">Cài đặt</h4>
+                            <p data-i18n="dashboard.settingsDesc">Cấu hình không gian làm việc của bạn</p>
                         </div>
-                        <div class="collection-cta">Mở <i class="fas fa-arrow-right ms-1"></i></div>
+                        <div class="collection-cta"><span data-i18n="dashboard.open">Mở</span> <i class="fas fa-arrow-right ms-1"></i></div>
                     </a>
                 </div>
             </div>

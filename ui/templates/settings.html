@@ -44,7 +44,7 @@
                                 <i class="fas {{ item.icon }}"></i>
                             </div>
                             <div>
-                                <h6 class="mb-0">{{ item.title }}</h6>
+                                <h6 class="mb-0" data-i18n="settings.section.{{ item.i18n_key }}.title">{{ item.title }}</h6>
                             </div>
                         </a>
                         {% endfor %}
@@ -62,8 +62,8 @@
                             role="tabpanel">
                             <div class="card shadow-sm">
                                 <div class="card-header bg-white py-3">
-                                    <h5 class="mb-0">{{ item.title }}</h5>
-                                    <small class="text-muted">{{ item.description }}</small>
+                                    <h5 class="mb-0" data-i18n="settings.section.{{ item.i18n_key }}.title">{{ item.title }}</h5>
+                                    <small class="text-muted" data-i18n="settings.section.{{ item.i18n_key }}.desc">{{ item.description }}</small>
                                 </div>
                                 <div class="card-body">
                                     <form class="settings-form">
@@ -112,6 +112,25 @@
                                             </div>
                                             <div class="form-text mt-2">
                                                 Chọn cách hiển thị ứng dụng. Chế độ Hệ thống tự động chuyển theo cài đặt thiết bị của bạn.
+                                            </div>
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label class="form-label d-block" data-i18n="settings.language">Ngôn ngữ</label>
+                                            <div class="d-grid gap-2 d-md-flex justify-content-md-start">
+                                                <button type="button"
+                                                    class="btn btn-outline-primary language-option flex-grow-1"
+                                                    data-locale-option="vi" data-locale-active="vi">
+                                                    <i class="fas fa-language me-2"></i> <span data-i18n="settings.languageVi">Tiếng Việt</span>
+                                                </button>
+                                                <button type="button"
+                                                    class="btn btn-outline-primary language-option flex-grow-1"
+                                                    data-locale-option="en" data-locale-active="en">
+                                                    <i class="fas fa-language me-2"></i> <span data-i18n="settings.languageEn">English</span>
+                                                </button>
+                                            </div>
+                                            <div class="form-text mt-2" data-i18n="settings.languageDesc">
+                                                Chọn ngôn ngữ hiển thị cho toàn bộ giao diện.
                                             </div>
                                         </div>
 
@@ -205,6 +224,13 @@
                 statusEl.style.opacity = '0';
             }, 2000);
         }
+
+        // Chuyển đổi ngôn ngữ (Tiếng Việt / English)
+        document.querySelectorAll('.language-option').forEach((btn) => {
+            btn.addEventListener('click', function () {
+                if (window.i18n) window.i18n.setLocale(this.dataset.localeOption);
+            });
+        });
     });
 </script>
 {% endblock %}

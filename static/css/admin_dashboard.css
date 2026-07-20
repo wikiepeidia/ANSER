@@ -47,7 +47,7 @@
 }
 
 .bg-gradient-primary {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #0077b6 0%, #003152 100%);
 }
 
 .bg-gradient-success {
@@ -148,6 +148,53 @@
     color: var(--primary);
 }
 
+/* Sidebar collapses to the off-canvas mobile-topbar pattern below 768px,
+   so the reserved 280px gutter must go away too or content gets shoved
+   off-screen. */
+@media (max-width: 767.98px) {
+    .main-content {
+        margin-left: 0;
+        padding: 10px;
+        padding-top: 76px; /* clears the fixed 56px mobile topbar */
+    }
+}
+
+/* Between the 768px sidebar-visible breakpoint and ~1200px, the fixed 280px
+   sidebar leaves too little room for 3 side-by-side col-md-3 cards — the
+   icon/text/arrow row collides. Stack each card's content instead. */
+@media (min-width: 768px) and (max-width: 1199.98px) {
+    .action-card {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .action-content {
+        min-width: 0;
+    }
+
+    .action-arrow {
+        align-self: flex-end;
+    }
+
+    .stat-card {
+        padding: 16px;
+        gap: 12px;
+    }
+
+    .stat-content {
+        min-width: 0;
+    }
+
+    .stat-icon {
+        font-size: 32px;
+    }
+
+    .stat-number {
+        font-size: 26px;
+    }
+}
+
 .action-card.action-analytics .action-icon {
     background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
 }
@@ -157,7 +204,7 @@
 }
 
 .action-card.action-managers .action-icon {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #0077b6 0%, #003152 100%);
 }
 
 .action-card.action-permissions .action-icon {
@@ -189,7 +236,7 @@
     width: 40px;
     height: 40px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #0077b6 0%, #003152 100%);
     display: flex;
     align-items: center;
     justify-content: center;

@@ -95,6 +95,16 @@ def create_app(config_object=None):
     flask_app.config['SESSION_COOKIE_SECURE'] = session_cookie_secure
     flask_app.config['SESSION_COOKIE_HTTPONLY'] = True
     flask_app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+    # Share the session cookie with the Gateway (:5000) and Sản xuất (:5003)
+    # so a single login on Gateway authenticates this app too. Without a
+    # Domain attribute, browsers scope cookies to the exact (host, port) that
+    # set them, so the Gateway-issued cookie never reaches us on :5002 and
+    # the user gets stuck in a redirect loop. Override SESSION_COOKIE_DOMAIN
+    # in production (e.g. auto-flowai.com).
+    flask_app.config['SESSION_COOKIE_DOMAIN'] = os.environ.get(
+        'SESSION_COOKIE_DOMAIN',
+        '127.0.0.1' if local_runtime else None,
+    )
     flask_app.config['PREFERRED_URL_SCHEME'] = 'https' if force_https else 'http'
     flask_app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=7)
     flask_app.config['SESSION_REFRESH_EACH_REQUEST'] = True

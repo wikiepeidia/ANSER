@@ -19,8 +19,8 @@
             <div class="collection-block">
                 <div class="collection-head">
                     <div>
-                        <p class="launch-eyebrow">Quản lý kinh doanh</p>
-                        <h3>Bảng điều khiển vận hành</h3>
+                        <p class="launch-eyebrow" data-i18n="ws.businessManagement">Quản lý kinh doanh</p>
+                        <h3 data-i18n="ws.operationsDashboard">Bảng điều khiển vận hành</h3>
                     </div>
                 </div>
                 <div class="collection-grid">
@@ -28,42 +28,42 @@
                         onclick="location.href='{{ url_for('pages.create_user_account') }}'">
                         <div class="collection-icon gradient-blue"><i class="fas fa-users"></i></div>
                         <div class="collection-body">
-                            <h4>Quản lý nhân viên</h4>
-                            <p>Tạo và quản lý tài khoản nhân viên.</p>
+                            <h4 data-i18n="nav.manageEmployees">Quản lý nhân viên</h4>
+                            <p data-i18n="ws.manageEmployeesDesc">Tạo và quản lý tài khoản nhân viên.</p>
                         </div>
-                        <span class="collection-cta">Mở trang</span>
+                        <span class="collection-cta" data-i18n="ws.openPage">Mở trang</span>
                     </button>
                     <button type="button" class="collection-card" onclick="location.href='{{ url_for('sales.sale_page') }}'">
                         <div class="collection-icon gradient-green"><i class="fas fa-cash-register"></i></div>
                         <div class="collection-body">
-                            <h4>Bán hàng</h4>
-                            <p>Bán sản phẩm, quản lý giỏ hàng và thanh toán.</p>
+                            <h4 data-i18n="ws.sellProducts">Bán hàng</h4>
+                            <p data-i18n="ws.sellProductsDesc">Bán sản phẩm, quản lý giỏ hàng và thanh toán.</p>
                         </div>
-                        <span class="collection-cta">Mở trang</span>
+                        <span class="collection-cta" data-i18n="ws.openPage">Mở trang</span>
                     </button>
                     <button type="button" class="collection-card" onclick="location.href='{{ url_for('pages.products') }}'">
                         <div class="collection-icon gradient-orange"><i class="fas fa-box"></i></div>
                         <div class="collection-body">
-                            <h4>Sản phẩm</h4>
-                            <p>Quản lý danh mục, tồn kho và giá cả theo thời gian thực.</p>
+                            <h4 data-i18n="sale.colProduct">Sản phẩm</h4>
+                            <p data-i18n="ws.productsDesc">Quản lý danh mục, tồn kho và giá cả theo thời gian thực.</p>
                         </div>
-                        <span class="collection-cta">Mở trang</span>
+                        <span class="collection-cta" data-i18n="ws.openPage">Mở trang</span>
                     </button>
                     <button type="button" class="collection-card" onclick="location.href='{{ url_for('pages.imports') }}'">
                         <div class="collection-icon gradient-blue"><i class="fas fa-download"></i></div>
                         <div class="collection-body">
-                            <h4>Nhập hàng</h4>
-                            <p>Ghi nhận lô hàng nhập, nhà cung cấp và cập nhật giá vốn.</p>
+                            <h4 data-i18n="ws.imports">Nhập hàng</h4>
+                            <p data-i18n="ws.importsDesc">Ghi nhận lô hàng nhập, nhà cung cấp và cập nhật giá vốn.</p>
                         </div>
-                        <span class="collection-cta">Mở trang</span>
+                        <span class="collection-cta" data-i18n="ws.openPage">Mở trang</span>
                     </button>
                     <button type="button" class="collection-card" onclick="location.href='{{ url_for('pages.exports') }}'">
                         <div class="collection-icon gradient-green"><i class="fas fa-upload"></i></div>
                         <div class="collection-body">
-                            <h4>Xuất hàng</h4>
-                            <p>Theo dõi đơn hàng xuất, tìm kiếm giao dịch và hỗ trợ mua/bán.</p>
+                            <h4 data-i18n="ws.exports">Xuất hàng</h4>
+                            <p data-i18n="ws.exportsDesc">Theo dõi đơn hàng xuất, tìm kiếm giao dịch và hỗ trợ mua/bán.</p>
                         </div>
-                        <span class="collection-cta">Mở trang</span>
+                        <span class="collection-cta" data-i18n="ws.openPage">Mở trang</span>
                     </button>
                 </div>
             </div>
@@ -71,8 +71,8 @@
             <div class="collection-block">
                 <div class="collection-head">
                     <div>
-                        <p class="launch-eyebrow">Tự động hóa thông minh</p>
-                        <h3>Kịch bản &amp; Tự động hóa AI</h3>
+                        <p class="launch-eyebrow" data-i18n="ws.smartAutomation">Tự động hóa thông minh</p>
+                        <h3 data-i18n="ws.scenariosAndAi">Kịch bản &amp; Tự động hóa AI</h3>
                     </div>
                 </div>
                 <div class="collection-grid">
@@ -80,19 +80,19 @@
                         onclick="location.href='{{ url_for('pages.se_auto_import') }}'">
                         <div class="collection-icon gradient-gold"><i class="fas fa-sync-alt"></i></div>
                         <div class="collection-body">
-                            <h4>Nhập hàng tự động</h4>
-                            <p>Sử dụng bot tự động đặt hàng khi tồn kho thấp và đồng bộ kho.</p>
+                            <h4 data-i18n="ws.autoImport">Nhập hàng tự động</h4>
+                            <p data-i18n="ws.autoImportDesc">Sử dụng bot tự động đặt hàng khi tồn kho thấp và đồng bộ kho.</p>
                         </div>
-                        <span class="collection-cta">Mở trang</span>
+                        <span class="collection-cta" data-i18n="ws.openPage">Mở trang</span>
                     </button>
                     <button type="button" class="collection-card"
                         onclick="location.href='{{ url_for('pages.scenarios') }}'">
                         <div class="collection-icon gradient-indigo"><i class="fas fa-diagram-project"></i></div>
                         <div class="collection-body">
-                            <h4>Xây dựng quy trình</h4>
-                            <p>Chọn template và triển khai tự động hóa.</p>
+                            <h4 data-i18n="ws.buildWorkflow">Xây dựng quy trình</h4>
+                            <p data-i18n="dashboard.newWorkflowDesc">Chọn template và triển khai tự động hóa.</p>
                         </div>
-                        <span class="collection-cta"><i class="fas fa-tools"></i> Xem template</span>
+                        <span class="collection-cta"><i class="fas fa-tools"></i> <span data-i18n="ws.viewTemplate">Xem template</span></span>
                     </button>
                 </div>
             </div>
@@ -116,7 +116,7 @@
                             <h4>Sản phẩm</h4>
                             <p>Quản lý danh mục, tồn kho và giá cả theo thời gian thực.</p>
                         </div>
-                        <span class="collection-cta">Mở trang</span>
+                        <span class="collection-cta" data-i18n="ws.openPage">Mở trang</span>
                     </button>
                     <button type="button" class="collection-card" onclick="location.href='{{ url_for('pages.imports') }}'">
                         <div class="collection-icon gradient-blue"><i class="fas fa-download"></i></div>
@@ -124,7 +124,7 @@
                             <h4>Nhập hàng</h4>
                             <p>Ghi nhận lô hàng nhập, nhà cung cấp và cập nhật giá vốn.</p>
                         </div>
-                        <span class="collection-cta">Mở trang</span>
+                        <span class="collection-cta" data-i18n="ws.openPage">Mở trang</span>
                     </button>
                     <button type="button" class="collection-card" onclick="location.href='{{ url_for('pages.exports') }}'">
                         <div class="collection-icon gradient-green"><i class="fas fa-upload"></i></div>
@@ -132,7 +132,7 @@
                             <h4>Xuất hàng</h4>
                             <p>Theo dõi đơn hàng xuất, tìm kiếm giao dịch và hỗ trợ mua/bán.</p>
                         </div>
-                        <span class="collection-cta">Mở trang</span>
+                        <span class="collection-cta" data-i18n="ws.openPage">Mở trang</span>
                     </button>
                 </div>
             </div>
@@ -148,10 +148,10 @@
                     <button type="button" class="collection-card" onclick="location.href='{{ url_for('pages.scenarios') }}'">
                         <div class="collection-icon gradient-purple"><i class="fas fa-project-diagram"></i></div>
                         <div class="collection-body">
-                            <h4>Kịch bản</h4>
-                            <p>Quản lý và chạy các kịch bản tự động hóa.</p>
+                            <h4 data-i18n="ws.scenario">Kịch bản</h4>
+                            <p data-i18n="mgrPerm.userListDesc2">Quản lý và chạy các kịch bản tự động hóa.</p>
                         </div>
-                        <span class="collection-cta">Mở trang</span>
+                        <span class="collection-cta" data-i18n="ws.openPage">Mở trang</span>
                     </button>
                     <button type="button" class="collection-card"
                         onclick="location.href='{{ url_for('pages.se_auto_import') }}'">
@@ -160,7 +160,7 @@
                             <h4>Nhập hàng tự động</h4>
                             <p>Sử dụng bot tự động đặt hàng khi tồn kho thấp và đồng bộ kho.</p>
                         </div>
-                        <span class="collection-cta">Mở trang</span>
+                        <span class="collection-cta" data-i18n="ws.openPage">Mở trang</span>
                     </button>
                 </div>
             </div>
@@ -171,8 +171,8 @@
             <div class="collection-block">
                 <div class="collection-head">
                     <div>
-                        <p class="launch-eyebrow">Truy cập nhân viên</p>
-                        <h3>Bảng điều khiển nhân viên</h3>
+                        <p class="launch-eyebrow" data-i18n="ws.staffAccess">Truy cập nhân viên</p>
+                        <h3 data-i18n="ws.staffDashboard">Bảng điều khiển nhân viên</h3>
                     </div>
                 </div>
                 <div class="collection-grid">
@@ -182,7 +182,7 @@
                             <h4>Bán hàng</h4>
                             <p>Bán sản phẩm, quản lý giỏ hàng và thanh toán.</p>
                         </div>
-                        <span class="collection-cta">Mở trang</span>
+                        <span class="collection-cta" data-i18n="ws.openPage">Mở trang</span>
                     </button>
                 </div>
             </div>

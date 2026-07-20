@@ -11,7 +11,7 @@
     --auth-demo-card: #ffffff;
     --auth-demo-border: transparent;
     /* Light mode: Reverted to dark gradient for better contrast */
-    --auth-left-gradient: linear-gradient(135deg, #6366f1 0%, #7c3aed 45%, #0ea5e9 100%);
+    --auth-left-gradient: linear-gradient(135deg, #003152 0%, #0077b6 45%, #0ea5e9 100%);
     --auth-left-text: #ffffff;
     --auth-feature-icon-bg: rgba(255, 255, 255, 0.2);
     --auth-feature-icon-color: #ffffff;
@@ -21,9 +21,9 @@
     --auth-input-border: #e0e0e0;
     --auth-input-text: #101426;
     --auth-placeholder: #8c8fa3;
-    --auth-input-focus-ring: rgba(102, 126, 234, 0.15);
+    --auth-input-focus-ring: rgba(0, 119, 182, 0.15);
     --auth-social-hover: #f8f9ff;
-    --auth-step-highlight: rgba(102, 126, 234, 0.12);
+    --auth-step-highlight: rgba(0, 119, 182, 0.12);
     --auth-alert-success-bg: #d1fae5;
     --auth-alert-success-text: #065f46;
     --auth-alert-error-bg: #fee2e2;
@@ -46,8 +46,8 @@ body.dark-mode {
     --auth-soft-surface: rgba(15, 23, 42, 0.7);
     --auth-soft-surface-strong: rgba(35, 46, 70, 0.9);
     --auth-demo-card: rgba(15, 23, 42, 0.85);
-    --auth-demo-border: rgba(99, 102, 241, 0.35);
-    --auth-left-gradient: linear-gradient(135deg, #1f2657 0%, #4338ca 35%, #7c3aed 70%, #0ea5e9 100%);
+    --auth-demo-border: rgba(0, 49, 82, 0.35);
+    --auth-left-gradient: linear-gradient(135deg, #1f2657 0%, #001529 35%, #0077b6 70%, #0ea5e9 100%);
     --auth-left-text: #ffffff;
     --auth-feature-icon-bg: rgba(255, 255, 255, 0.12);
     --auth-feature-icon-color: #f8fafc;
@@ -58,7 +58,7 @@ body.dark-mode {
     --auth-placeholder: #9ca3af;
     --auth-input-focus-ring: rgba(56, 189, 248, 0.35);
     --auth-social-hover: rgba(255, 255, 255, 0.04);
-    --auth-step-highlight: rgba(99, 102, 241, 0.25);
+    --auth-step-highlight: rgba(0, 49, 82, 0.25);
     --auth-alert-success-bg: rgba(5, 122, 85, 0.35);
     --auth-alert-success-text: #bbf7d0;
     --auth-alert-error-bg: rgba(185, 28, 28, 0.35);
@@ -149,7 +149,7 @@ body.auth-page .auth-container {
 
 .feature-item:hover {
     transform: translateY(-2px);
-    border-color: rgba(99, 102, 241, 0.4);
+    border-color: rgba(0, 49, 82, 0.4);
     background: rgba(255, 255, 255, 0.12);
 }
 
@@ -240,7 +240,7 @@ body.auth-page .auth-container {
 
 .form-input:focus {
     outline: none;
-    border-color: #6366f1;
+    border-color: #003152;
     box-shadow: 0 0 0 3px var(--auth-input-focus-ring);
 }
 
@@ -253,14 +253,14 @@ body.auth-page .auth-container {
     font-weight: 600;
     color: #fff;
     cursor: pointer;
-    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #0ea5e9 100%);
-    box-shadow: 0 18px 30px rgba(79, 70, 229, 0.25);
+    background: linear-gradient(135deg, #003152 0%, #0077b6 50%, #0ea5e9 100%);
+    box-shadow: 0 18px 30px rgba(0, 31, 54, 0.25);
     transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .auth-btn:hover {
     transform: translateY(-2px);
-    box-shadow: 0 25px 35px rgba(79, 70, 229, 0.35);
+    box-shadow: 0 25px 35px rgba(0, 31, 54, 0.35);
 }
 
 /* Google Sign-In Button - Official Style */
@@ -316,7 +316,7 @@ html[data-theme='dark'] .google-signin-btn:hover {
 }
 
 .auth-switch a {
-    color: #6366f1;
+    color: #003152;
     font-weight: 600;
     text-decoration: none;
 }
@@ -361,7 +361,7 @@ html[data-theme='dark'] .google-signin-btn:hover {
 }
 
 .demo-account:hover {
-    border-color: #6366f1;
+    border-color: #003152;
     background: var(--auth-soft-surface-strong);
     transform: translateY(-2px);
 }
@@ -378,8 +378,8 @@ html[data-theme='dark'] .google-signin-btn:hover {
 
 .demo-role i {
     font-size: 18px;
-    color: #6366f1;
-    background: rgba(99, 102, 241, 0.1);
+    color: #003152;
+    background: rgba(0, 49, 82, 0.1);
     width: 36px;
     height: 36px;
     display: flex;

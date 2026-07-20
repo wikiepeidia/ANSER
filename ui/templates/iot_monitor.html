@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}IoT Monitor — POS Events{% endblock %}
+{% block title %}Giám sát IoT — Sự kiện POS{% endblock %}
 {% block body_class %}iot-monitor-page{% endblock %}
 
 {% block styles %}
@@ -21,15 +21,15 @@
     <main class="scenario-main">
         <div class="workspace-launchpad">
             <div>
-                <p class="launch-eyebrow">Workspace &rsaquo; IoT Monitor</p>
-                <h2><i class="fas fa-cash-register me-2" style="color:#FF6B35;"></i>POS Events</h2>
+                <p class="launch-eyebrow"><span data-i18n="nav.workspace">Workspace</span> &rsaquo; <span data-i18n="nav.iotMonitor">IoT Monitor</span></p>
+                <h2><i class="fas fa-cash-register me-2" style="color:#FF6B35;"></i><span data-i18n="iot.posEvents">POS Events</span></h2>
             </div>
             <div class="launch-cta">
                 <button id="refreshBtn" class="btn btn-outline-secondary rounded-pill me-2">
-                    <i class="fas fa-sync-alt me-1"></i>Refresh
+                    <i class="fas fa-sync-alt me-1"></i><span data-i18n="common.refresh">Refresh</span>
                 </button>
                 <a href="{{ url_for('pages.scenarios') }}" class="btn btn-primary rounded-pill">
-                    <i class="fas fa-project-diagram me-2"></i>Tự động hóa
+                    <i class="fas fa-project-diagram me-2"></i><span data-i18n="scenarios.automation2">Tự động hóa</span>
                 </a>
             </div>
         </div>
@@ -41,7 +41,7 @@
                     <i class="fas fa-bolt"></i>
                 </div>
                 <div class="iot-stat-body">
-                    <div class="iot-stat-label">Tổng sự kiện</div>
+                    <div class="iot-stat-label" data-i18n="iot.totalEvents">Tổng sự kiện</div>
                     <div class="iot-stat-value" id="statTotal">—</div>
                 </div>
             </div>
@@ -50,7 +50,7 @@
                     <i class="fas fa-coins"></i>
                 </div>
                 <div class="iot-stat-body">
-                    <div class="iot-stat-label">Tổng doanh thu</div>
+                    <div class="iot-stat-label" data-i18n="wallet.totalRevenue">Tổng doanh thu</div>
                     <div class="iot-stat-value" id="statRevenue">—</div>
                 </div>
             </div>
@@ -59,7 +59,7 @@
                     <i class="fas fa-tablet-alt"></i>
                 </div>
                 <div class="iot-stat-body">
-                    <div class="iot-stat-label">Thiết bị đang hoạt động</div>
+                    <div class="iot-stat-label" data-i18n="iot.activeDevices">Thiết bị đang hoạt động</div>
                     <div class="iot-stat-value" id="statDevices">—</div>
                 </div>
             </div>
@@ -68,7 +68,7 @@
                     <i class="fas fa-calendar-day"></i>
                 </div>
                 <div class="iot-stat-body">
-                    <div class="iot-stat-label">Sự kiện hôm nay</div>
+                    <div class="iot-stat-label" data-i18n="iot.eventsToday">Sự kiện hôm nay</div>
                     <div class="iot-stat-value" id="statToday">—</div>
                 </div>
             </div>
@@ -77,15 +77,15 @@
         <!-- Filters -->
         <div class="iot-filter-bar">
             <div class="iot-filter-group">
-                <label>Device</label>
+                <label data-i18n="iot.device">Device</label>
                 <select id="filterDevice" class="iot-select">
-                    <option value="">Tất cả thiết bị</option>
+                    <option value="" data-i18n="iot.allDevices">Tất cả thiết bị</option>
                 </select>
             </div>
             <div class="iot-filter-group">
-                <label>Event Type</label>
+                <label data-i18n="iot.eventType">Event Type</label>
                 <select id="filterEventType" class="iot-select">
-                    <option value="">Tất cả loại</option>
+                    <option value="" data-i18n="iot.allTypes">Tất cả loại</option>
                     <option value="sale_completed">sale_completed</option>
                     <option value="payment_received">payment_received</option>
                     <option value="cash_low">cash_low</option>
@@ -93,7 +93,7 @@
                 </select>
             </div>
             <div class="iot-filter-group">
-                <label>Số bản ghi</label>
+                <label data-i18n="iot.recordCount">Số bản ghi</label>
                 <select id="filterLimit" class="iot-select">
                     <option value="20">20</option>
                     <option value="50" selected>50</option>
@@ -101,33 +101,33 @@
                 </select>
             </div>
             <button id="applyFilter" class="btn btn-primary btn-sm">
-                <i class="fas fa-filter me-1"></i>Lọc
+                <i class="fas fa-filter me-1"></i><span data-i18n="iot.filter">Lọc</span>
             </button>
             <span class="iot-live-badge" id="liveBadge">
-                <span class="iot-live-dot"></span>Live
+                <span class="iot-live-dot"></span><span data-i18n="iot.live">Live</span>
             </span>
         </div>
 
         <!-- Events Table -->
         <div class="iot-table-wrap">
             <div id="loadingRow" class="iot-loading">
-                <i class="fas fa-spinner fa-spin me-2"></i>Đang tải dữ liệu...
+                <i class="fas fa-spinner fa-spin me-2"></i><span data-i18n="iot.loadingData">Đang tải dữ liệu...</span>
             </div>
             <table class="iot-table" id="eventsTable" style="display:none;">
                 <thead>
                     <tr>
                         <th>#ID</th>
-                        <th>Thiết bị</th>
-                        <th>Loại sự kiện</th>
-                        <th>Số tiền</th>
+                        <th data-i18n="iot.device">Device</th>
+                        <th data-i18n="iot.eventTypeCol">Loại sự kiện</th>
+                        <th data-i18n="wallet.colAmount">Số tiền</th>
                         <th>Payload</th>
-                        <th>Thời gian</th>
+                        <th data-i18n="iot.time">Thời gian</th>
                     </tr>
                 </thead>
                 <tbody id="eventsBody"></tbody>
             </table>
             <div id="emptyRow" class="iot-empty" style="display:none;">
-                <i class="fas fa-inbox fa-2x mb-2"></i><br>Chưa có sự kiện nào
+                <i class="fas fa-inbox fa-2x mb-2"></i><br><span data-i18n="iot.noEvents">Chưa có sự kiện nào</span>
             </div>
         </div>
 

@@ -14,14 +14,14 @@
         <div class="container-fluid py-4">
             <div class="d-flex align-items-center mb-4 gap-3">
                 <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('pages.settings') }}">
-                    <i class="fas fa-arrow-left"></i> Quay lại
+                    <i class="fas fa-arrow-left"></i> <span data-i18n="sale.back">Quay lại</span>
                 </a>
                 <div class="d-flex align-items-center">
                     <div class="settings-header-icon me-3" style="background: {{ section_meta.gradient }};">
                         <i class="fas {{ section_meta.icon }}"></i>
                     </div>
                     <div>
-                        <p class="text-muted mb-0">Cấu hình</p>
+                        <p class="text-muted mb-0" data-i18n="settingsSection.configuration">Cấu hình</p>
                         <h3 class="mb-0">{{ section_meta.title }}</h3>
                         <small class="text-muted">{{ section_meta.description }}</small>
                     </div>
@@ -35,17 +35,17 @@
                             <form id="settingsForm">
                                 {% if section_key == 'store' %}
                                 <div class="mb-3">
-                                    <label class="form-label">Tên cửa hàng</label>
+                                    <label class="form-label" data-i18n="settingsSection.storeName">Tên cửa hàng</label>
                                     <input type="text" class="form-control setting-input" name="store_name"
                                         value="{{ settings.get('store_name', 'Cửa hàng AI của tôi') }}" data-group="store">
                                 </div>
                                 <div class="mb-3">
-                                    <label class="form-label">Địa chỉ</label>
+                                    <label class="form-label" data-i18n="settingsSection.address">Địa chỉ</label>
                                     <input type="text" class="form-control setting-input" name="store_address"
                                         value="{{ settings.get('store_address', '') }}" data-group="store">
                                 </div>
                                 <div class="mb-3">
-                                    <label class="form-label">Tiền tệ</label>
+                                    <label class="form-label" data-i18n="settingsSection.currency">Tiền tệ</label>
                                     <select class="form-select setting-input" name="currency" data-group="store">
                                         <option value="VND" {% if settings.get('currency')=='VND' %}selected{% endif %}>
                                             VND (Đồng Việt Nam)</option>
@@ -56,22 +56,22 @@
 
                                 {% elif section_key == 'system' %}
                                 <div class="mb-3">
-                                    <label class="form-label">Tần suất sao lưu</label>
+                                    <label class="form-label" data-i18n="settingsSection.backupFrequency">Tần suất sao lưu</label>
                                     <select class="form-select setting-input" name="backup_frequency"
                                         data-group="system">
                                         <option value="daily" {% if settings.get('backup_frequency')=='daily'
-                                            %}selected{% endif %}>Hằng ngày</option>
+                                            %}selected{% endif %} data-i18n="adminDash.daily">Hằng ngày</option>
                                         <option value="weekly" {% if settings.get('backup_frequency')=='weekly'
-                                            %}selected{% endif %}>Hằng tuần</option>
+                                            %}selected{% endif %} data-i18n="settingsSection.weekly">Hằng tuần</option>
                                         <option value="manual" {% if settings.get('backup_frequency')=='manual'
-                                            %}selected{% endif %}>Chỉ thủ công</option>
+                                            %}selected{% endif %} data-i18n="settingsSection.manualOnly">Chỉ thủ công</option>
                                     </select>
                                 </div>
                                 <div class="mb-3">
-                                    <label class="form-label">Giữ ảnh đã tải lên (ngày)</label>
+                                    <label class="form-label" data-i18n="settingsSection.keepImages">Giữ ảnh đã tải lên (ngày)</label>
                                     <input type="number" class="form-control setting-input" name="keep_images_days"
                                         value="{{ settings.get('keep_images_days', '30') }}" data-group="system">
-                                    <div class="form-text">Ảnh cũ hơn mốc này sẽ tự động bị xóa để tiết kiệm dung lượng.</div>
+                                    <div class="form-text" data-i18n="settingsSection.keepImagesHint">Ảnh cũ hơn mốc này sẽ tự động bị xóa để tiết kiệm dung lượng.</div>
                                 </div>
                                 {% endif %}
                             </form>
@@ -82,15 +82,15 @@
                 <div class="col-lg-4">
                     <div class="card shadow-sm bg-light">
                         <div class="card-body">
-                            <h6><i class="fas fa-info-circle"></i> Về mục này</h6>
+                            <h6><i class="fas fa-info-circle"></i> <span data-i18n="settingsSection.aboutThis">Về mục này</span></h6>
                             <p class="small text-muted mb-0">
-                                Thay đổi sẽ được tự động lưu khi bạn rời khỏi trường.
+                                <span data-i18n="settingsSection.autoSaveHint">Thay đổi sẽ được tự động lưu khi bạn rời khỏi trường.</span>
                             </p>
                         </div>
                     </div>
                     <div id="saveStatus" class="mt-3 text-center text-muted small"
                         style="opacity: 0; transition: opacity 0.3s;">
-                        <i class="fas fa-check-circle text-success"></i> Đã lưu
+                        <i class="fas fa-check-circle text-success"></i> <span data-i18n="settingsSection.saved">Đã lưu</span>
                     </div>
                 </div>
             </div>

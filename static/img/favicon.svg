@@ -1,8 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
   <defs>
     <linearGradient id="g1" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#00d4aa"/>
-      <stop offset="100%" style="stop-color:#00a688"/>
+      <stop offset="0%" style="stop-color:#0077b6"/>
+      <stop offset="100%" style="stop-color:#003152"/>
     </linearGradient>
   </defs>
   
@@ -16,7 +16,7 @@
   
   <!-- Antenna -->
   <rect x="30" y="14" width="4" height="6" rx="2" fill="url(#g1)"/>
-  <circle cx="32" cy="14" r="2" fill="#10b981"/>
+  <circle cx="32" cy="14" r="2" fill="#ADDFF1"/>
   
   <!-- Body -->
   <rect x="22" y="40" width="20" height="14" rx="2" fill="url(#g1)"/>

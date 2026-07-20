@@ -33,20 +33,20 @@
     <main class="app-content main-content imports-page">
         <div
             class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-            <h1 class="h2"><i class="fas fa-arrow-down"></i> Quản lý nhập hàng</h1>
+            <h1 class="h2"><i class="fas fa-arrow-down"></i> <span data-i18n="imports.title">Quản lý nhập hàng</span></h1>
             <div>
                 <button class="btn btn-warning text-dark me-2"
                     onclick="window.location.href='{{ url_for('pages.se_auto_import') }}'">
-                    <i class="fas fa-bolt"></i> Nhập tự động
+                    <i class="fas fa-bolt"></i> <span data-i18n="imports.autoImport">Nhập tự động</span>
                 </button>
                 <button class="btn btn-info text-white me-2" data-bs-toggle="modal" data-bs-target="#ocrImportModal">
-                    <i class="fas fa-magic"></i> OCR hóa đơn
+                    <i class="fas fa-magic"></i> <span data-i18n="imports.ocrInvoice">OCR hóa đơn</span>
                 </button>
                 <button class="btn btn-success me-2" data-bs-toggle="modal" data-bs-target="#excelImportModal">
-                    <i class="fas fa-file-excel"></i> Nhập từ Excel
+                    <i class="fas fa-file-excel"></i> <span data-i18n="products.importExcel">Nhập từ Excel</span>
                 </button>
                 <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createImportModal">
-                    <i class="fas fa-plus"></i> Tạo phiếu nhập
+                    <i class="fas fa-plus"></i> <span data-i18n="imports.createImport">Tạo phiếu nhập</span>
                 </button>
             </div>
         </div>
@@ -55,7 +55,7 @@
             <div class="col-md-3">
                 <div class="card text-white bg-primary">
                     <div class="card-body">
-                        <h5 class="card-title">Tổng phiếu nhập</h5>
+                        <h5 class="card-title" data-i18n="imports.totalImports">Tổng phiếu nhập</h5>
                         <h2 id="totalImports">0</h2>
                     </div>
                 </div>
@@ -63,7 +63,7 @@
             <div class="col-md-3">
                 <div class="card text-white bg-success">
                     <div class="card-body">
-                        <h5 class="card-title">Đã hoàn thành</h5>
+                        <h5 class="card-title" data-i18n="imports.completed">Đã hoàn thành</h5>
                         <h2 id="completedImports">0</h2>
                     </div>
                 </div>
@@ -71,7 +71,7 @@
             <div class="col-md-3">
                 <div class="card text-white bg-info">
                     <div class="card-body">
-                        <h5 class="card-title">Tổng giá trị</h5>
+                        <h5 class="card-title" data-i18n="imports.totalValue">Tổng giá trị</h5>
                         <h2 id="totalAmount">0 VND</h2>
                     </div>
                 </div>
@@ -80,18 +80,18 @@
 
         <div class="card">
             <div class="card-body">
-                <h5 class="card-title">Danh sách phiếu nhập</h5>
+                <h5 class="card-title" data-i18n="imports.listTitle">Danh sách phiếu nhập</h5>
                 <div class="table-responsive">
                     <table class="table table-hover">
                         <thead>
                             <tr>
-                                <th>Mã phiếu</th>
-                                <th>Nhà cung cấp</th>
-                                <th>Tổng tiền</th>
-                                <th>Trạng thái</th>
-                                <th>Ngày nhập</th>
-                                <th>Ghi chú</th>
-                                <th>Thao tác</th>
+                                <th data-i18n="imports.colCode">Mã phiếu</th>
+                                <th data-i18n="imports.colSupplier">Nhà cung cấp</th>
+                                <th data-i18n="imports.colTotal">Tổng tiền</th>
+                                <th data-i18n="common.status">Trạng thái</th>
+                                <th data-i18n="imports.colDate">Ngày nhập</th>
+                                <th data-i18n="customers.colNotes">Ghi chú</th>
+                                <th data-i18n="common.actions">Thao tác</th>
                             </tr>
                         </thead>
                         <tbody id="importsTableBody">
@@ -113,31 +113,31 @@
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Tạo phiếu nhập hàng</h5>
+                <h5 class="modal-title" data-i18n="imports.createImportTitle">Tạo phiếu nhập hàng</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
             </div>
             <div class="modal-body">
                 <form id="createImportForm">
                     <div class="row mb-3">
                         <div class="col-md-6">
-                            <label class="form-label">Tên nhà cung cấp</label>
+                            <label class="form-label" data-i18n="imports.supplierName">Tên nhà cung cấp</label>
                             <input type="text" class="form-control" name="supplier_name" required>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">Ghi chú</label>
+                            <label class="form-label" data-i18n="customers.colNotes">Ghi chú</label>
                             <input type="text" class="form-control" name="notes">
                         </div>
                     </div>
 
                     <hr>
-                    <h6>Sản phẩm</h6>
+                    <h6 data-i18n="sale.colProduct">Sản phẩm</h6>
                     <div class="table-responsive mb-3">
                         <table class="table table-bordered" id="importItemsTable">
                             <thead>
                                 <tr>
-                                    <th>Sản phẩm</th>
-                                    <th width="150">Số lượng</th>
-                                    <th width="200">Đơn giá</th>
+                                    <th data-i18n="sale.colProduct">Sản phẩm</th>
+                                    <th width="150" data-i18n="imports.qty">Số lượng</th>
+                                    <th width="200" data-i18n="imports.unitPrice">Đơn giá</th>
                                     <th width="50"></th>
                                 </tr>
                             </thead>
@@ -147,13 +147,13 @@
                         </table>
                     </div>
                     <button type="button" class="btn btn-secondary btn-sm" onclick="addImportItemRow()">
-                        <i class="fas fa-plus"></i> Thêm sản phẩm
+                        <i class="fas fa-plus"></i> <span data-i18n="products.addProduct">Thêm sản phẩm</span>
                     </button>
                 </form>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
-                <button type="button" class="btn btn-primary" onclick="submitImport()">Tạo phiếu nhập</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-i18n="common.close">Đóng</button>
+                <button type="button" class="btn btn-primary" onclick="submitImport()" data-i18n="imports.createImport">Tạo phiếu nhập</button>
             </div>
         </div>
     </div>
@@ -164,34 +164,34 @@
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Chi tiết phiếu nhập</h5>
+                <h5 class="modal-title" data-i18n="imports.detailsTitle">Chi tiết phiếu nhập</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
             </div>
             <div class="modal-body">
                 <div class="row mb-3">
                     <div class="col-md-6">
-                        <strong>Mã:</strong> <span id="viewImportCode"></span><br>
-                        <strong>Nhà cung cấp:</strong> <span id="viewImportSupplier"></span><br>
-                        <strong>Ngày:</strong> <span id="viewImportDate"></span>
+                        <strong data-i18n="imports.codeLabel">Mã:</strong> <span id="viewImportCode"></span><br>
+                        <strong data-i18n="imports.supplierLabel">Nhà cung cấp:</strong> <span id="viewImportSupplier"></span><br>
+                        <strong data-i18n="sale.dateLabel">Ngày:</strong> <span id="viewImportDate"></span>
                     </div>
                     <div class="col-md-6 text-end">
-                        <strong>Trạng thái:</strong> <span id="viewImportStatus"></span><br>
-                        <strong>Tổng tiền:</strong> <span id="viewImportTotal" class="h5 text-primary"></span>
+                        <strong data-i18n="imports.statusLabel">Trạng thái:</strong> <span id="viewImportStatus"></span><br>
+                        <strong data-i18n="imports.totalLabel">Tổng tiền:</strong> <span id="viewImportTotal" class="h5 text-primary"></span>
                     </div>
                 </div>
                 <div class="mb-3">
-                    <strong>Ghi chú:</strong> <span id="viewImportNotes"></span>
+                    <strong data-i18n="imports.notesLabel">Ghi chú:</strong> <span id="viewImportNotes"></span>
                 </div>
 
                 <div class="table-responsive">
                     <table class="table table-striped">
                         <thead>
                             <tr>
-                                <th>Mã sản phẩm</th>
-                                <th>Tên sản phẩm</th>
-                                <th class="text-end">Số lượng</th>
-                                <th class="text-end">Đơn giá</th>
-                                <th class="text-end">Thành tiền</th>
+                                <th data-i18n="imports.colProductCode">Mã sản phẩm</th>
+                                <th data-i18n="products.colName">Tên sản phẩm</th>
+                                <th class="text-end" data-i18n="imports.qty">Số lượng</th>
+                                <th class="text-end" data-i18n="imports.unitPrice">Đơn giá</th>
+                                <th class="text-end" data-i18n="imports.subtotal">Thành tiền</th>
                             </tr>
                         </thead>
                         <tbody id="viewImportItemsBody"></tbody>
@@ -210,7 +210,7 @@
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title"><i class="fas fa-robot"></i> OCR hóa đơn</h5>
+                <h5 class="modal-title"><i class="fas fa-robot"></i> <span data-i18n="imports.ocrInvoice">OCR hóa đơn</span></h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
             </div>
             <div class="modal-body">
@@ -220,7 +220,7 @@
 
                 <form id="ocrImportForm">
                     <div class="mb-3">
-                        <label class="form-label">Ảnh hóa đơn</label>
+                        <label class="form-label" data-i18n="imports.invoiceImage">Ảnh hóa đơn</label>
                         <input type="file" class="form-control" id="ocrFile" accept="image/*" required>
                     </div>
                     <div class="text-center" id="ocrLoading" style="display:none;">
@@ -267,7 +267,7 @@
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title"><i class="fas fa-file-excel"></i> Nhập từ Excel</h5>
+                <h5 class="modal-title"><i class="fas fa-file-excel"></i> <span data-i18n="products.importExcel">Nhập từ Excel</span></h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
             </div>
             <div class="modal-body">
@@ -278,16 +278,16 @@
 
                 <form id="excelImportForm">
                     <div class="mb-3">
-                        <label class="form-label">Tên nhà cung cấp</label>
+                        <label class="form-label" data-i18n="imports.supplierName">Tên nhà cung cấp</label>
                         <input type="text" class="form-control" name="supplier_name" required>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Ghi chú</label>
+                        <label class="form-label" data-i18n="customers.colNotes">Ghi chú</label>
                         <textarea class="form-control" name="notes" rows="2"></textarea>
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label">File Excel</label>
+                        <label class="form-label" data-i18n="imports.excelFile">File Excel</label>
                         <div class="input-group">
                             <input type="file" class="form-control" id="excelFile" accept=".xlsx,.xls" required>
                             <button type="button" class="btn btn-outline-secondary" id="btnClearExcelFile">
@@ -327,7 +327,7 @@
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
                 <button type="button" class="btn btn-primary" id="btnUploadExcel" onclick="submitExcelImport()" disabled>
-                    <i class="fas fa-upload"></i> Tải lên & Tạo phiếu nhập
+                    <i class="fas fa-upload"></i> <span data-i18n="imports.uploadAndCreate">Tải lên & Tạo phiếu nhập</span>
                 </button>
             </div>
         </div>
@@ -344,10 +344,10 @@
                         <i class="fas fa-check-circle"></i>
                     </div>
                 </div>
-                <h4 class="mb-3 text-success"><strong>Đã cập nhật sản phẩm thành công</strong></h4>
-                <p class="text-muted mb-4" id="successMessage">Các sản phẩm đã được nhập vào kho thành công</p>
+                <h4 class="mb-3 text-success"><strong data-i18n="imports.updateSuccess">Đã cập nhật sản phẩm thành công</strong></h4>
+                <p class="text-muted mb-4" id="successMessage" data-i18n="imports.stockUpdated">Các sản phẩm đã được nhập vào kho thành công</p>
                 <button type="button" class="btn btn-success btn-lg" data-bs-dismiss="modal">
-                    <i class="fas fa-check"></i> Đóng
+                    <i class="fas fa-check"></i> <span data-i18n="common.close">Đóng</span>
                 </button>
             </div>
         </div>

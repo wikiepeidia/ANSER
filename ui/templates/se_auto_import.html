@@ -19,22 +19,22 @@
     <main class="app-content main-content auto-import-page">
         <div
             class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-            <h1 class="h2"><i class="fas fa-sync-alt"></i> SE - Tự động nhập hàng</h1>
+            <h1 class="h2"><i class="fas fa-sync-alt"></i> <span data-i18n="seAuto.title">SE - Tự động nhập hàng</span></h1>
             <button class="btn btn-primary" onclick="openAddAutomationModal()">
-                <i class="fas fa-plus"></i> Tạo quy tự động
+                <i class="fas fa-plus"></i> <span data-i18n="seAuto.createRule">Tạo quy tự động</span>
             </button>
         </div>
 
         <div class="alert alert-info">
-            <i class="fas fa-magic"></i> <strong>Tính năng:</strong> Thiết lập các kịch bản tự động để tự nhập hàng khi
-            tồn kho sản phẩm thấp hơn ngưỡng hoặc theo lịch cố định.
+            <i class="fas fa-magic"></i> <strong data-i18n="seAuto.featureLabel">Tính năng:</strong> <span data-i18n="seAuto.featureDesc">Thiết lập các kịch bản tự động để tự nhập hàng khi
+            tồn kho sản phẩm thấp hơn ngưỡng hoặc theo lịch cố định.</span>
         </div>
 
         <div class="row mb-3">
             <div class="col-md-4">
                 <div class="card text-white bg-primary">
                     <div class="card-body">
-                        <h5 class="card-title"><i class="fas fa-robot"></i> Quy tự động đang chạy</h5>
+                        <h5 class="card-title"><i class="fas fa-robot"></i> <span data-i18n="seAuto.activeRules">Quy tự động đang chạy</span></h5>
                         <h2 id="activeAutomations" class="text-white">0</h2>
                     </div>
                 </div>
@@ -42,7 +42,7 @@
             <div class="col-md-4">
                 <div class="card text-white bg-success">
                     <div class="card-body">
-                        <h5 class="card-title"><i class="fas fa-check-circle"></i> Hoàn thành</h5>
+                        <h5 class="card-title"><i class="fas fa-check-circle"></i> <span data-i18n="imports.completed">Hoàn thành</span></h5>
                         <h2 id="completedRuns" class="text-white">0</h2>
                     </div>
                 </div>
@@ -50,8 +50,8 @@
             <div class="col-md-4">
                 <div class="card text-white bg-warning">
                     <div class="card-body">
-                        <h5 class="card-title"><i class="fas fa-clock"></i> Lần chạy gần nhất</h5>
-                        <h5 id="lastRun" class="text-white">Chưa có</h5>
+                        <h5 class="card-title"><i class="fas fa-clock"></i> <span data-i18n="seAuto.lastRun">Lần chạy gần nhất</span></h5>
+                        <h5 id="lastRun" class="text-white" data-i18n="seAuto.none">Chưa có</h5>
                     </div>
                 </div>
             </div>
@@ -59,23 +59,23 @@
 
         <div class="card">
             <div class="card-body">
-                <h5 class="card-title">Danh sách quy tự động</h5>
+                <h5 class="card-title" data-i18n="seAuto.ruleList">Danh sách quy tự động</h5>
                 <div class="table-responsive">
                     <table class="table table-hover">
                         <thead>
                             <tr>
-                                <th>Tên</th>
-                                <th>Loại</th>
-                                <th>Trạng thái</th>
-                                <th>Lần chạy gần nhất</th>
-                                <th>Cấu hình</th>
-                                <th>Thao tác</th>
+                                <th data-i18n="common.name">Tên</th>
+                                <th data-i18n="wallet.colType">Loại</th>
+                                <th data-i18n="common.status">Trạng thái</th>
+                                <th data-i18n="seAuto.lastRun">Lần chạy gần nhất</th>
+                                <th data-i18n="seAuto.config">Cấu hình</th>
+                                <th data-i18n="common.actions">Thao tác</th>
                             </tr>
                         </thead>
                         <tbody id="automationsTableBody">
                             <tr>
                                 <td colspan="6" class="text-center">
-                                    Chưa có quy tự động nào. Nhấn "Tạo quy tự động" để bắt đầu.
+                                    <span data-i18n="seAuto.emptyState">Chưa có quy tự động nào. Nhấn "Tạo quy tự động" để bắt đầu.</span>
                                 </td>
                             </tr>
                         </tbody>
@@ -86,18 +86,18 @@
 
         <div class="card mt-3">
             <div class="card-header card-header-surface">
-                <h5><i class="fas fa-lightbulb"></i> Gợi ý quy tự động</h5>
+                <h5><i class="fas fa-lightbulb"></i> <span data-i18n="seAuto.suggestions">Gợi ý quy tự động</span></h5>
             </div>
             <div class="card-body">
                 <div class="row">
                     <div class="col-md-6 mb-3">
                         <div class="card border-info">
                             <div class="card-body">
-                                <h6 class="card-title"><i class="fas fa-warehouse"></i> Tự nhập khi tồn kho thấp
+                                <h6 class="card-title"><i class="fas fa-warehouse"></i> <span data-i18n="seAuto.lowStockTitle">Tự nhập khi tồn kho thấp</span>
                                 </h6>
-                                <p class="card-text">Tự động tạo đơn nhập khi tồn kho sản phẩm thấp hơn ngưỡng.</p>
+                                <p class="card-text" data-i18n="seAuto.lowStockDesc">Tự động tạo đơn nhập khi tồn kho sản phẩm thấp hơn ngưỡng.</p>
                                 <button class="btn btn-sm btn-info" onclick="useTemplate('low_stock')">
-                                    <i class="fas fa-plus"></i> Dùng mẫu
+                                    <i class="fas fa-plus"></i> <span data-i18n="seAuto.useTemplate">Dùng mẫu</span>
                                 </button>
                             </div>
                         </div>
@@ -105,10 +105,10 @@
                     <div class="col-md-6 mb-3">
                         <div class="card border-success">
                             <div class="card-body">
-                                <h6 class="card-title"><i class="fas fa-calendar-alt"></i> Nhập theo lịch</h6>
-                                <p class="card-text">Tự động nhập theo lịch: hằng ngày, hằng tuần, hằng tháng.</p>
+                                <h6 class="card-title"><i class="fas fa-calendar-alt"></i> <span data-i18n="seAuto.scheduledTitle">Nhập theo lịch</span></h6>
+                                <p class="card-text" data-i18n="seAuto.scheduledDesc">Tự động nhập theo lịch: hằng ngày, hằng tuần, hằng tháng.</p>
                                 <button class="btn btn-sm btn-success" onclick="useTemplate('scheduled')">
-                                    <i class="fas fa-plus"></i> Dùng mẫu
+                                    <i class="fas fa-plus"></i> <span data-i18n="seAuto.useTemplate">Dùng mẫu</span>
                                 </button>
                             </div>
                         </div>
@@ -124,18 +124,18 @@
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Tạo quy tự động mới</h5>
+                <h5 class="modal-title" data-i18n="seAuto.createNewRule">Tạo quy tự động mới</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <form id="automationForm">
                     <div class="mb-3">
-                        <label class="form-label">Tên quy tự động <span class="text-danger">*</span></label>
+                        <label class="form-label"><span data-i18n="seAuto.ruleName">Tên quy tự động</span> <span class="text-danger">*</span></label>
                         <input type="text" class="form-control" name="name" required
                             placeholder="VD: Tự nhập khi hết hàng">
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Loại quy tự động</label>
+                        <label class="form-label" data-i18n="seAuto.ruleType">Loại quy tự động</label>
                         <select class="form-select" name="type" id="automationTypeSelect" onchange="updateConfigUI()">
                             <option value="low_stock">Kích hoạt khi tồn kho thấp</option>
                             <option value="scheduled">Nhập theo lịch</option>
@@ -214,13 +214,13 @@
 
                     <div class="mb-3 form-check">
                         <input type="checkbox" class="form-check-input" name="active" id="automationActive" checked>
-                        <label class="form-check-label" for="automationActive">Kích hoạt ngay</label>
+                        <label class="form-check-label" for="automationActive" data-i18n="seAuto.activateNow">Kích hoạt ngay</label>
                     </div>
                 </form>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
-                <button type="button" class="btn btn-primary" onclick="submitAutomation()">Lưu quy tự động</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-i18n="common.cancel">Hủy</button>
+                <button type="button" class="btn btn-primary" onclick="submitAutomation()" data-i18n="seAuto.saveRule">Lưu quy tự động</button>
             </div>
         </div>
     </div>

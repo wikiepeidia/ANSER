@@ -161,6 +161,28 @@
      color: var(--gray-400);
 }
 
+/* On mobile the left/right panels stack (Bootstrap col-md-* collapses to
+   full width), so the fixed 100vh + overflow:hidden shell built for a
+   side-by-side desktop layout was clipping the cart out of view. Let the
+   page scroll naturally instead. */
+@media (max-width: 767.98px) {
+    .sale-container {
+        height: auto;
+        min-height: 100vh;
+        overflow: visible;
+    }
+
+    .left-panel,
+    .right-panel {
+        height: auto;
+    }
+
+    .right-panel {
+        border-left: none !important;
+        border-top: 1px solid var(--border-soft);
+    }
+}
+
 /* Dark Mode Overrides - Minimal needed now because of variables */
 [data-theme="dark"] .right-panel,
 body.dark-mode .right-panel {
@@ -195,7 +217,7 @@ body.dark-mode #productSearch {
     background-color: var(--input-bg);
     color: var(--input-text);
     border-color: var(--primary);
-    box-shadow: 0 0 0 0.25rem rgba(99, 102, 241, 0.25); /* Fallback for primary color shadow */
+    box-shadow: 0 0 0 0.25rem rgba(0, 49, 82, 0.25); /* Fallback for primary color shadow */
 }
 
 /* Ensure placeholders look right */

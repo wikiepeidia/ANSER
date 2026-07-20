@@ -66,7 +66,7 @@
 .form-group select:focus {
     outline: none;
     border-color: var(--primary);
-    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+    box-shadow: 0 0 0 3px rgba(0, 49, 82, 0.1);
 }
 
 .form-actions {
@@ -96,7 +96,7 @@
 
 .btn-primary:hover {
     transform: translateY(-2px);
-    box-shadow: 0 10px 20px rgba(99, 102, 241, 0.3);
+    box-shadow: 0 10px 20px rgba(0, 49, 82, 0.3);
 }
 
 .btn-secondary {
@@ -124,7 +124,7 @@
 .search-input:focus {
     outline: none;
     border-color: var(--primary);
-    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+    box-shadow: 0 0 0 3px rgba(0, 49, 82, 0.1);
 }
 
 .user-table {
@@ -202,7 +202,7 @@
 }
 
 .btn-edit { color: var(--primary); }
-.btn-edit:hover { background: rgba(99, 102, 241, 0.1); }
+.btn-edit:hover { background: rgba(0, 49, 82, 0.1); }
 
 .btn-reset { color: #f59e0b; }
 .btn-reset:hover { background: rgba(245, 158, 11, 0.1); }

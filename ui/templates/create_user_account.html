@@ -18,37 +18,37 @@
 
     <main class="app-content">
         <header class="create-user-header">
-            <h1>Tạo tài khoản nhân viên</h1>
-            <p>Tạo tài khoản nhân viên mới cho cửa hàng của bạn</p>
+            <h1 data-i18n="createUser.title">Tạo tài khoản nhân viên</h1>
+            <p data-i18n="createUser.subtitle">Tạo tài khoản nhân viên mới cho cửa hàng của bạn</p>
         </header>
 
         <div class="create-user-card">
             <div class="info-box">
-                <p><i class="fas fa-info-circle"></i> <strong>Quyền của nhân viên:</strong> Tài khoản nhân viên có quyền truy cập các tính năng cốt lõi (Sản phẩm, Nhập/Xuất hàng) nhưng không thể quản lý người dùng khác.</p>
+                <p><i class="fas fa-info-circle"></i> <strong data-i18n="createUser.permTitle">Quyền của nhân viên:</strong> <span data-i18n="createUser.permDesc">Tài khoản nhân viên có quyền truy cập các tính năng cốt lõi (Sản phẩm, Nhập/Xuất hàng) nhưng không thể quản lý người dùng khác.</span></p>
             </div>
 
             <form id="createUserForm" method="POST" action="/api/create-user" novalidate>
                 <div class="form-section">
-                    <h3><i class="fas fa-user"></i> Thông tin cơ bản</h3>
+                    <h3><i class="fas fa-user"></i> <span data-i18n="createUser.basicInfo">Thông tin cơ bản</span></h3>
 
                     <div class="form-group">
-                        <label for="email">Email <span style="color: #ef4444;">*</span></label>
+                        <label for="email"><span data-i18n="common.email">Email</span> <span style="color: #ef4444;">*</span></label>
                         <input type="email" id="email" name="email" required placeholder="user@example.com">
                     </div>
 
                     <div class="form-group">
-                        <label for="password">Mật khẩu <span style="color: #ef4444;">*</span></label>
+                        <label for="password"><span data-i18n="adminMgrs.password">Mật khẩu</span> <span style="color: #ef4444;">*</span></label>
                         <input type="password" id="password" name="password" required
-                            placeholder="Ít nhất 8 ký tự">
+                            placeholder="Ít nhất 8 ký tự" data-i18n-placeholder="createUser.minChars">
                     </div>
 
                     <div class="form-group">
-                        <label for="first_name">Họ</label>
+                        <label for="first_name" data-i18n="createUser.lastName">Họ</label>
                         <input type="text" id="first_name" name="first_name" placeholder="Nguyễn Văn">
                     </div>
 
                     <div class="form-group">
-                        <label for="last_name">Tên</label>
+                        <label for="last_name" data-i18n="createUser.firstName">Tên</label>
                         <input type="text" id="last_name" name="last_name" placeholder="A">
                     </div>
                 </div>
@@ -73,10 +73,10 @@
 
                 <div class="form-actions">
                     <button type="button" class="btn btn-secondary" onclick="window.history.back()">
-                        <i class="fas fa-times"></i> Hủy
+                        <i class="fas fa-times"></i> <span data-i18n="common.cancel">Hủy</span>
                     </button>
                     <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-check"></i> Tạo tài khoản
+                        <i class="fas fa-check"></i> <span data-i18n="createUser.createAccount">Tạo tài khoản</span>
                     </button>
                 </div>
             </form>
@@ -84,32 +84,32 @@
 
         <div class="create-user-card" style="margin-top: 30px;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
-                <h2 style="margin: 0;"><i class="fas fa-users"></i> Danh sách nhân viên</h2>
+                <h2 style="margin: 0;"><i class="fas fa-users"></i> <span data-i18n="createUser.employeeList">Danh sách nhân viên</span></h2>
                 <button class="btn btn-secondary" onclick="loadUserList()">
-                    <i class="fas fa-sync-alt"></i> Tải lại
+                    <i class="fas fa-sync-alt"></i> <span data-i18n="mgrPerm.reload">Tải lại</span>
                 </button>
             </div>
 
             <div style="margin-bottom: 20px;">
-                <input type="text" id="searchUser" class="search-input" placeholder="Tìm theo email hoặc tên...">
+                <input type="text" id="searchUser" class="search-input" placeholder="Tìm theo email hoặc tên..." data-i18n-placeholder="createUser.searchPlaceholder">
             </div>
 
             <div style="overflow-x: auto;">
                 <table class="user-table">
                     <thead>
                         <tr>
-                            <th>Email</th>
-                            <th>Họ tên</th>
-                            <th class="text-center">Vai trò</th>
-                            <th class="text-center">Trạng thái</th>
-                            <th class="text-center">Thao tác</th>
+                            <th data-i18n="common.email">Email</th>
+                            <th data-i18n="createUser.fullName">Họ tên</th>
+                            <th class="text-center" data-i18n="common.role">Vai trò</th>
+                            <th class="text-center" data-i18n="common.status">Trạng thái</th>
+                            <th class="text-center" data-i18n="common.actions">Thao tác</th>
                         </tr>
                     </thead>
                     <tbody id="userListBody">
                         <tr>
                             <td colspan="5" class="empty-state">
                                 <i class="fas fa-spinner fa-spin" style="font-size: 2rem; margin-bottom: 10px;"></i>
-                                <p>Đang tải danh sách...</p>
+                                <p data-i18n="createUser.loadingList">Đang tải danh sách...</p>
                             </td>
                         </tr>
                     </tbody>

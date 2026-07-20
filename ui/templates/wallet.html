@@ -14,12 +14,11 @@
         <div
             class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom wallet-header">
             <div>
-                <h1 class="h2"><i class="fas fa-wallet"></i> Ví của tôi</h1>
-                <p class="text-muted mb-0">Nạp tiền, nâng cấp lên gói Quản lý và theo dõi lịch sử giao dịch</p>
+                <h1 class="h2"><i class="fas fa-wallet"></i> <span data-i18n="wallet.title">Ví của tôi</span></h1>
+                <p class="text-muted mb-0" data-i18n="wallet.subtitle">Nạp tiền, nâng cấp lên gói Quản lý và theo dõi lịch sử giao dịch</p>
             </div>
             <div class="btn-group wallet-actions">
-                <button class="btn btn-primary" onclick="openTopupModal()"><i class="fas fa-plus"></i> Nạp
-                    tiền</button>
+                <button class="btn btn-primary" onclick="openTopupModal()"><i class="fas fa-plus"></i> <span data-i18n="wallet.topup">Nạp tiền</span></button>
                 <button class="btn btn-outline-secondary" onclick="loadWalletDashboard()"><i
                         class="fas fa-sync"></i></button>
             </div>
@@ -28,18 +27,18 @@
         <div class="row g-3" id="walletMetrics">
             <div class="col-lg-4">
                 <div class="wallet-card">
-                    <div class="wallet-card-label">Số dư khả dụng</div>
+                    <div class="wallet-card-label" data-i18n="wallet.availableBalance">Số dư khả dụng</div>
                     <div class="wallet-card-value" id="walletBalance">0 VND</div>
                     <div class="wallet-card-foot">
-                        <span id="walletUpdatedAt">Đang tải...</span>
+                        <span id="walletUpdatedAt" data-i18n="common.loading">Đang tải...</span>
                     </div>
                 </div>
             </div>
             {% if user.role != 'admin' %}
             <div class="col-lg-4">
                 <div class="wallet-card">
-                    <div class="wallet-card-label">Gói Quản lý</div>
-                    <div class="wallet-card-value" id="subscriptionStatus">Chưa đăng ký</div>
+                    <div class="wallet-card-label" data-i18n="wallet.managerPlan">Gói Quản lý</div>
+                    <div class="wallet-card-value" id="subscriptionStatus" data-i18n="wallet.notSubscribed">Chưa đăng ký</div>
                     <div class="wallet-card-foot">
                         <span id="subscriptionExpiry">-</span>
                     </div>
@@ -47,13 +46,13 @@
             </div>
             <div class="col-lg-4">
                 <div class="wallet-card">
-                    <div class="wallet-card-label">Tự động gia hạn</div>
-                    <div class="wallet-card-value" id="autoRenewStatus">Tắt</div>
+                    <div class="wallet-card-label" data-i18n="wallet.autoRenew">Tự động gia hạn</div>
+                    <div class="wallet-card-value" id="autoRenewStatus" data-i18n="wallet.off">Tắt</div>
                     <div class="wallet-card-foot">
                         <div class="form-check form-switch">
                             <input class="form-check-input" type="checkbox" id="autoRenewToggle"
                                 onchange="toggleAutoRenew(this.checked)" disabled>
-                            <label class="form-check-label" for="autoRenewToggle">Tự động gia hạn nếu đủ số dư</label>
+                            <label class="form-check-label" for="autoRenewToggle" data-i18n="wallet.autoRenewHint">Tự động gia hạn nếu đủ số dư</label>
                         </div>
                     </div>
                 </div>
@@ -61,20 +60,20 @@
             {% else %}
             <div class="col-lg-4">
                 <div class="wallet-card" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
-                    <div class="wallet-card-label" style="color: rgba(255,255,255,0.9);">Tổng doanh thu</div>
+                    <div class="wallet-card-label" style="color: rgba(255,255,255,0.9);" data-i18n="wallet.totalRevenue">Tổng doanh thu</div>
                     <div class="wallet-card-value" style="color: white;" id="totalRevenue">0 VND</div>
                     <div class="wallet-card-foot" style="color: rgba(255,255,255,0.8);">
-                        <span>Từ các gói Quản lý</span>
+                        <span data-i18n="wallet.fromManagerPlans">Từ các gói Quản lý</span>
                     </div>
                 </div>
             </div>
             <div class="col-lg-4">
                 <div class="wallet-card" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);">
-                    <div class="wallet-card-label" style="color: rgba(255,255,255,0.9);">Quản lý đang hoạt động
+                    <div class="wallet-card-label" style="color: rgba(255,255,255,0.9);" data-i18n="wallet.activeManagers">Quản lý đang hoạt động
                     </div>
                     <div class="wallet-card-value" style="color: white;" id="activeManagers">0</div>
                     <div class="wallet-card-foot" style="color: rgba(255,255,255,0.8);">
-                        <span>Tài khoản VIP</span>
+                        <span data-i18n="wallet.vipAccounts">Tài khoản VIP</span>
                     </div>
                 </div>
             </div>
@@ -87,8 +86,8 @@
                 <div class="card h-100">
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h5 class="card-title mb-0"><i class="fas fa-star"></i> Chọn gói nâng cấp</h5>
-                            <small class="text-muted">Thanh toán bằng số dư ví</small>
+                            <h5 class="card-title mb-0"><i class="fas fa-star"></i> <span data-i18n="wallet.choosePlan">Chọn gói nâng cấp</span></h5>
+                            <small class="text-muted" data-i18n="wallet.payWithBalance">Thanh toán bằng số dư ví</small>
                         </div>
                         <div class="plan-grid" id="planGrid"></div>
                     </div>
@@ -99,18 +98,18 @@
                 <div class="card h-100">
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h5 class="card-title mb-0"><i class="fas fa-university"></i> Rút về tài khoản ngân hàng
+                            <h5 class="card-title mb-0"><i class="fas fa-university"></i> <span data-i18n="wallet.withdrawToBank">Rút về tài khoản ngân hàng</span>
                             </h5>
-                            <small class="text-muted">Chuyển số dư về tài khoản ngân hàng</small>
+                            <small class="text-muted" data-i18n="wallet.transferToBank">Chuyển số dư về tài khoản ngân hàng</small>
                         </div>
                         <div class="p-4 text-center">
                             <div class="mb-4">
                                 <i class="fas fa-money-bill-wave" style="font-size: 3rem; color: #10b981;"></i>
-                                <h4 class="mt-3">Rút doanh thu</h4>
-                                <p class="text-muted">Chuyển số dư từ ví về tài khoản ngân hàng của bạn</p>
+                                <h4 class="mt-3" data-i18n="wallet.withdrawRevenue">Rút doanh thu</h4>
+                                <p class="text-muted" data-i18n="wallet.withdrawRevenueDesc">Chuyển số dư từ ví về tài khoản ngân hàng của bạn</p>
                             </div>
                             <button class="btn btn-lg btn-success" onclick="openWithdrawModal()">
-                                <i class="fas fa-hand-holding-usd"></i> Rút tiền ngay
+                                <i class="fas fa-hand-holding-usd"></i> <span data-i18n="wallet.withdrawNow">Rút tiền ngay</span>
                             </button>
                         </div>
                     </div>
@@ -121,27 +120,27 @@
                 <div class="card h-100">
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h5 class="card-title mb-0"><i class="fas fa-history"></i> Lịch sử gần đây</h5>
+                            <h5 class="card-title mb-0"><i class="fas fa-history"></i> <span data-i18n="wallet.recentHistory">Lịch sử gần đây</span></h5>
                             <span class="badge bg-light text-dark" id="txnCount">0 giao dịch</span>
                         </div>
                         <div class="table-responsive" style="max-height: 320px;">
                             <table class="table table-sm table-hover align-middle">
                                 <thead>
                                     <tr>
-                                        <th>Mã</th>
-                                        <th>Số tiền</th>
-                                        <th>Loại</th>
-                                        <th>Trạng thái</th>
+                                        <th data-i18n="wallet.colCode">Mã</th>
+                                        <th data-i18n="wallet.colAmount">Số tiền</th>
+                                        <th data-i18n="wallet.colType">Loại</th>
+                                        <th data-i18n="common.status">Trạng thái</th>
                                     </tr>
                                 </thead>
                                 <tbody id="txnTableBody">
                                     <tr>
-                                        <td colspan="4" class="text-center text-muted">Đang tải...</td>
+                                        <td colspan="4" class="text-center text-muted" data-i18n="common.loading">Đang tải...</td>
                                     </tr>
                                 </tbody>
                             </table>
                         </div>
-                        <p class="small text-muted mt-2">Mọi giao dịch cần admin duyệt sẽ được đánh dấu
+                        <p class="small text-muted mt-2" data-i18n="wallet.pendingNote">Mọi giao dịch cần admin duyệt sẽ được đánh dấu
                             <strong>Đang chờ</strong>.
                         </p>
                     </div>
@@ -156,37 +155,37 @@
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Nạp tiền vào ví</h5>
+                <h5 class="modal-title" data-i18n="wallet.topupToWallet">Nạp tiền vào ví</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <div class="mb-3">
-                    <label class="form-label">Số tiền <span class="text-danger">*</span></label>
+                    <label class="form-label"><span data-i18n="wallet.amount">Số tiền</span> <span class="text-danger">*</span></label>
                     <div class="input-group">
                         <span class="input-group-text">VND</span>
                         <input type="number" class="form-control" id="topupAmount" min="50000" step="50000"
                             value="500000">
                     </div>
-                    <small class="text-muted">Tối thiểu 50.000 VND. Sau khi nạp, admin sẽ xác nhận và cộng tiền vào ví.</small>
+                    <small class="text-muted" data-i18n="wallet.topupHint">Tối thiểu 50.000 VND. Sau khi nạp, admin sẽ xác nhận và cộng tiền vào ví.</small>
                 </div>
                 <div class="mb-3">
-                    <label class="form-label">Phương thức thanh toán</label>
+                    <label class="form-label" data-i18n="sale.paymentMethod">Phương thức thanh toán</label>
                     <select class="form-select" id="topupMethod">
-                        <option value="bank_transfer">Chuyển khoản ngân hàng</option>
+                        <option value="bank_transfer" data-i18n="wallet.bankTransfer">Chuyển khoản ngân hàng</option>
                         <option value="momo">MoMo</option>
                         <option value="vnpay">VNPay</option>
-                        <option value="cash">Tiền mặt</option>
+                        <option value="cash" data-i18n="sale.cash">Tiền mặt</option>
                     </select>
                 </div>
                 <div class="mb-3">
-                    <label class="form-label">Mã tham chiếu / ghi chú</label>
+                    <label class="form-label" data-i18n="wallet.referenceCode">Mã tham chiếu / ghi chú</label>
                     <input type="text" class="form-control" id="topupReference" placeholder="VD: MOMO-123456">
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-i18n="common.cancel">Hủy</button>
                 <button type="button" class="btn btn-primary" onclick="submitTopup()"><i class="fas fa-paper-plane"></i>
-                    Gửi yêu cầu</button>
+                    <span data-i18n="wallet.sendRequest">Gửi yêu cầu</span></button>
             </div>
         </div>
     </div>
@@ -198,45 +197,45 @@
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header bg-success text-white">
-                <h5 class="modal-title"><i class="fas fa-university"></i> Rút về tài khoản ngân hàng</h5>
+                <h5 class="modal-title"><i class="fas fa-university"></i> <span data-i18n="wallet.withdrawToBank">Rút về tài khoản ngân hàng</span></h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <div class="alert alert-info">
-                    <i class="fas fa-info-circle"></i> Số dư khả dụng: <strong id="withdrawAvailableBalance">0
+                    <i class="fas fa-info-circle"></i> <span data-i18n="wallet.availableBalance">Số dư khả dụng</span>: <strong id="withdrawAvailableBalance">0
                         VND</strong>
                 </div>
                 <div class="mb-3">
-                    <label class="form-label">Số tiền cần rút <span class="text-danger">*</span></label>
+                    <label class="form-label"><span data-i18n="wallet.amountToWithdraw">Số tiền cần rút</span> <span class="text-danger">*</span></label>
                     <div class="input-group">
                         <span class="input-group-text">VND</span>
                         <input type="number" class="form-control" id="withdrawAmount" min="100000" step="50000"
                             placeholder="Nhập số tiền">
                     </div>
-                    <small class="text-muted">Tối thiểu 100.000 VND</small>
+                    <small class="text-muted" data-i18n="wallet.minWithdraw">Tối thiểu 100.000 VND</small>
                 </div>
                 <div class="mb-3">
-                    <label class="form-label">Tên ngân hàng <span class="text-danger">*</span></label>
+                    <label class="form-label"><span data-i18n="wallet.bankName">Tên ngân hàng</span> <span class="text-danger">*</span></label>
                     <input type="text" class="form-control" id="withdrawBankName" placeholder="VD: Vietcombank">
                 </div>
                 <div class="mb-3">
-                    <label class="form-label">Số tài khoản <span class="text-danger">*</span></label>
+                    <label class="form-label"><span data-i18n="wallet.accountNumber">Số tài khoản</span> <span class="text-danger">*</span></label>
                     <input type="text" class="form-control" id="withdrawAccountNumber" placeholder="VD: 0123456789">
                 </div>
                 <div class="mb-3">
-                    <label class="form-label">Tên chủ tài khoản <span class="text-danger">*</span></label>
+                    <label class="form-label"><span data-i18n="wallet.accountHolder">Tên chủ tài khoản</span> <span class="text-danger">*</span></label>
                     <input type="text" class="form-control" id="withdrawAccountName" placeholder="VD: NGUYEN VAN A">
                 </div>
                 <div class="mb-3">
-                    <label class="form-label">Ghi chú</label>
+                    <label class="form-label" data-i18n="customers.colNotes">Ghi chú</label>
                     <textarea class="form-control" id="withdrawNote" rows="2"
                         placeholder="Ghi chú tùy chọn (nếu có)"></textarea>
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-i18n="common.cancel">Hủy</button>
                 <button type="button" class="btn btn-success" onclick="submitWithdraw()">
-                    <i class="fas fa-check"></i> Xác nhận rút tiền
+                    <i class="fas fa-check"></i> <span data-i18n="wallet.confirmWithdraw">Xác nhận rút tiền</span>
                 </button>
             </div>
         </div>

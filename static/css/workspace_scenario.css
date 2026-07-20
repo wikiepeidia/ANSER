@@ -13,6 +13,7 @@
 
 .scenario-main {
     flex: 1;
+    min-width: 0; /* Let flex item shrink below its content's natural width instead of pushing the page into horizontal overflow */
     min-height: 100vh;
     margin-left: 280px;
     padding: 0 40px 40px;
@@ -51,7 +52,7 @@
     gap: 6px;
     padding: 4px 10px;
     border-radius: 999px;
-    background: rgba(102, 126, 234, 0.12);
+    background: rgba(0, 119, 182, 0.12);
     color: var(--primary);
     font-size: 13px;
     margin-bottom: 6px;
@@ -76,9 +77,9 @@
     min-height: calc(100vh - 190px);
 }
 
-/* Ensure sidebar in workspace uses theme tokens (light mode fix) */
+/* Sidebar in workspace matches the app-wide navy sidebar */
 .scenario-wrapper .modern-sidebar {
-    background: var(--surface-100);
+    background: var(--sidebar-bg);
     color: var(--sidebar-text);
     border-right: 1px solid var(--sidebar-border);
 }
@@ -92,38 +93,15 @@
 }
 
 .scenario-wrapper .modern-sidebar .menu-item {
-    background: var(--sidebar-surface);
     color: var(--sidebar-text);
-    border-color: transparent;
 }
 
-.scenario-wrapper .modern-sidebar .menu-label,
-.scenario-wrapper .modern-sidebar .menu-arrow {
-    color: var(--sidebar-muted);
+.scenario-wrapper .modern-sidebar .menu-label {
+    color: var(--sidebar-text);
 }
 
 .scenario-wrapper .modern-sidebar .menu-item:hover {
     background: var(--sidebar-hover-bg);
-    border-color: var(--sidebar-hover-border);
-}
-
-html[data-theme='dark'] .scenario-wrapper .modern-sidebar,
-body.dark-mode .scenario-wrapper .modern-sidebar {
-    background: rgba(15, 23, 42, 0.92);
-}
-
-html[data-theme='dark'] .scenario-wrapper .modern-sidebar .menu-item {
-    background: var(--sidebar-surface);
-}
-
-html[data-theme='dark'] .scenario-wrapper .modern-sidebar .menu-label,
-body.dark-mode .scenario-wrapper .modern-sidebar .menu-label {
-    color: var(--sidebar-text);
-}
-
-html[data-theme='dark'] .scenario-wrapper .modern-sidebar .menu-arrow,
-body.dark-mode .scenario-wrapper .modern-sidebar .menu-arrow {
-    color: var(--sidebar-muted);
 }
 
 .scenario-sidebar {
@@ -159,7 +137,7 @@ body.dark-mode .scenario-wrapper .modern-sidebar .menu-arrow {
 }
 
 .module-group.active {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #0077b6 0%, #003152 100%);
     border-color: transparent;
     color: var(--light-text);
 }
@@ -182,7 +160,7 @@ body.dark-mode .scenario-wrapper .modern-sidebar .menu-arrow {
 
 .module-item:hover {
     transform: translateX(6px);
-    border-color: rgba(102, 126, 234, 0.7);
+    border-color: rgba(0, 119, 182, 0.7);
 }
 
 .module-item h6 {
@@ -316,7 +294,7 @@ body.dark-mode .scenario-wrapper .modern-sidebar .menu-arrow {
 }
 
 .scenario-node.active {
-    border-color: #7c3aed;
+    border-color: #0077b6;
     box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.7), inset 0 0 0 1px rgba(255,255,255,0.1);
 }
 
@@ -356,7 +334,7 @@ body.dark-mode .scenario-wrapper .modern-sidebar .menu-arrow {
 
 #consoleOutput {
     margin: 0;
-    color: #a5b4fc;
+    color: #ADDFF1;
     font-family: "Fira Code", "SFMono-Regular", monospace;
     font-size: 13px;
     max-height: 160px;
@@ -388,7 +366,7 @@ body.dark-mode .scenario-wrapper .modern-sidebar .menu-arrow {
 }
 
 .inspector-tab.active {
-    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    background: linear-gradient(135deg, #003152, #0077b6);
     color: var(--light-text);
     border-color: transparent;
 }
@@ -565,9 +543,9 @@ body.dark-mode .scenario-statusbar {
     font-size: 22px;
 }
 
-.gradient-pink { background: linear-gradient(135deg, #ff6bcb, #845ef7); }
-.gradient-blue { background: linear-gradient(135deg, #4facfe, #00f2fe); }
-.gradient-green { background: linear-gradient(135deg, #43e97b, #38f9d7); }
+.gradient-pink { background: linear-gradient(135deg, #005f8e, #003152); }
+.gradient-blue { background: linear-gradient(135deg, #0077b6, #005f8e); }
+.gradient-green { background: linear-gradient(135deg, #0077b6, #003152); }
 
 .launch-card h4 {
     margin: 0 0 4px;
@@ -769,14 +747,14 @@ body.dark-mode .collection-body p {
     color: var(--primary);
 }
 
-.gradient-orange { background: linear-gradient(135deg, #ff9966, #ff5e62); }
-.gradient-blue { background: linear-gradient(135deg, #4facfe, #00f2fe); }
-.gradient-green { background: linear-gradient(135deg, #43e97b, #38f9d7); }
-.gradient-purple { background: linear-gradient(135deg, #8e2de2, #4a00e0); }
-.gradient-gold { background: linear-gradient(135deg, #f6d365, #fda085); }
-.gradient-cyan { background: linear-gradient(135deg, #30cfd0, #330867); }
-.gradient-violet { background: linear-gradient(135deg, #9333ea, #7c3aed); }
-.gradient-indigo { background: linear-gradient(135deg, #6366f1, #4f46e5); }
+.gradient-orange { background: linear-gradient(135deg, #003152, #001f36); }
+.gradient-blue { background: linear-gradient(135deg, #0077b6, #005f8e); }
+.gradient-green { background: linear-gradient(135deg, #0077b6, #003152); }
+.gradient-purple { background: linear-gradient(135deg, #005f8e, #001f36); }
+.gradient-gold { background: linear-gradient(135deg, #0077b6, #001f36); }
+.gradient-cyan { background: linear-gradient(135deg, #005f8e, #0077b6); }
+.gradient-violet { background: linear-gradient(135deg, #003152, #005f8e); }
+.gradient-indigo { background: linear-gradient(135deg, #003152, #001f36); }
 
 .scenario-tier-board {
     display: grid;
@@ -798,7 +776,7 @@ body.dark-mode .collection-body p {
 }
 
 .tier-card--free {
-    background: linear-gradient(180deg, rgba(99,102,241,0.12), rgba(99,102,241,0.04));
+    background: linear-gradient(180deg, rgba(0,49,82,0.12), rgba(0,49,82,0.04));
 }
 
 .tier-card--paid {
@@ -933,9 +911,9 @@ body.dark-mode .tier-actions .btn-outline-light {
 @media (max-width: 768px) {
     .scenario-main {
         margin-left: 0;
-        padding: 0 20px 20px;
+        padding: 76px 20px 20px; /* top offset clears the fixed 56px mobile topbar */
     }
-    
+
     .scenario-topbar {
         padding-left: 60px; /* Make space for the toggle button */
     }

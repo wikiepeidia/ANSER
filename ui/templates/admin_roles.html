@@ -19,14 +19,14 @@
     <main class="app-content main-content roles-page">
         <div
             class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-            <h1 class="h2"><i class="fas fa-user-shield"></i> Quản lý vai trò tài khoản</h1>
+            <h1 class="h2"><i class="fas fa-user-shield"></i> <span data-i18n="adminRoles.title">Quản lý vai trò tài khoản</span></h1>
         </div>
 
         <div class="row mb-3">
             <div class="col-md-12">
                 <div class="alert alert-info">
-                    <i class="fas fa-info-circle"></i> <strong>Lưu ý:</strong> Chỉ Admin mới có thể nâng cấp User
-                    lên Manager hoặc hạ cấp Manager xuống User.
+                    <i class="fas fa-info-circle"></i> <strong data-i18n="adminMgrs.note">Lưu ý:</strong> <span data-i18n="adminRoles.noteText">Chỉ Admin mới có thể nâng cấp User
+                    lên Manager hoặc hạ cấp Manager xuống User.</span>
                 </div>
             </div>
         </div>
@@ -72,7 +72,7 @@
         <ul class="nav nav-tabs mb-3" id="roleTabs">
             <li class="nav-item">
                 <a class="nav-link active" data-role="all" href="#" onclick="filterByRole('all'); return false;">
-                    <i class="fas fa-list"></i> Tất cả
+                    <i class="fas fa-list"></i> <span data-i18n="adminRoles.all">Tất cả</span>
                 </a>
             </li>
             <li class="nav-item">
@@ -95,17 +95,17 @@
         <!-- Bảng người dùng -->
         <div class="card">
             <div class="card-body">
-                <h5 class="card-title">Danh sách tài khoản</h5>
+                <h5 class="card-title" data-i18n="adminRoles.accountList">Danh sách tài khoản</h5>
                 <div class="table-responsive">
                     <table class="table table-hover">
                         <thead>
                             <tr>
-                                <th>ID</th>
-                                <th>Tên</th>
-                                <th>Email</th>
-                                <th>Vai trò</th>
-                                <th>Ngày tạo</th>
-                                <th>Thao tác</th>
+                                <th data-i18n="sale.colId">ID</th>
+                                <th data-i18n="common.name">Tên</th>
+                                <th data-i18n="common.email">Email</th>
+                                <th data-i18n="common.role">Vai trò</th>
+                                <th data-i18n="adminMgrs.createdDate">Ngày tạo</th>
+                                <th data-i18n="common.actions">Thao tác</th>
                             </tr>
                         </thead>
                         <tbody id="usersTableBody">

@@ -6,6 +6,14 @@
     min-height: 100vh;
 }
 
+@media (max-width: 767.98px) {
+    .main-content {
+        margin-left: 0;
+        padding: 15px;
+        padding-top: 76px; /* clears the fixed 56px mobile topbar */
+    }
+}
+
 .managers-page .card {
     background: var(--surface-100);
     border: 1px solid var(--border-soft);
@@ -131,7 +139,7 @@
 .managers-modal .form-control:focus,
 .managers-modal .form-select:focus {
     border-color: var(--primary);
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.25);
+    box-shadow: 0 0 0 3px rgba(0, 119, 182, 0.25);
     background: #1f2937;
     color: #ffffff;
 }

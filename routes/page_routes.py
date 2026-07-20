@@ -14,25 +14,28 @@ page_bp = Blueprint('pages', __name__)
 def _settings_config():
     return {
         'store': {
-            'title': 'Store Profile',
-            'description': 'Manage store identity, address, and currency.',
+            'title': 'Hồ sơ cửa hàng',
+            'description': 'Quản lý tên, địa chỉ và đơn vị tiền tệ của cửa hàng.',
             'icon': 'fa-store',
             'gradient': 'linear-gradient(135deg, #f6d365 0%, #fda085 100%)',
             'links': [],
+            'i18n_key': 'store',
         },
         'appearance': {
-            'title': 'Appearance',
-            'description': 'Customize workspace theme and layout.',
+            'title': 'Giao diện',
+            'description': 'Tuỳ chỉnh giao diện và ngôn ngữ hiển thị của không gian làm việc.',
             'icon': 'fa-palette',
             'gradient': 'linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%)',
             'links': [],
+            'i18n_key': 'appearance',
         },
         'system': {
-            'title': 'System & Backup',
-            'description': 'Database backups, storage management, and maintenance.',
+            'title': 'Hệ thống & Sao lưu',
+            'description': 'Sao lưu dữ liệu, quản lý lưu trữ và bảo trì hệ thống.',
             'icon': 'fa-server',
             'gradient': 'linear-gradient(135deg, #ff9a9e 0%, #fecfef 99%, #fecfef 100%)',
             'links': [],
+            'i18n_key': 'system',
         },
     }
 
@@ -84,7 +87,11 @@ def settings():
     config = _settings_config()
     all_settings = {}
     try:
-        with db_manager.get_business_connection() as conn:
+        # `get_business_db_connection` (không phải `get_business_connection`) là
+        # @contextmanager — `get_business_connection` trả PGShimConnection, vốn
+        # KHÔNG implement __enter__/__exit__, nên `with` ở đây từng ném
+        # TypeError lúc load settings.
+        with db_manager.get_business_db_connection() as conn:
             cursor = conn.cursor()
             cursor.execute('SELECT key, value FROM system_settings')
             for row in cursor.fetchall():

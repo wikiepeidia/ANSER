@@ -19,8 +19,8 @@
     <main class="app-content main-content">
         <div class="dashboard-header">
             <div class="header-title">
-                <h1><i class="fas fa-crown"></i> Dashboard quản trị</h1>
-                <p>Chào mừng bạn đến với dashboard quản trị</p>
+                <h1><i class="fas fa-crown"></i> <span data-i18n="adminDash.title">Dashboard quản trị</span></h1>
+                <p data-i18n="adminDash.welcome">Chào mừng bạn đến với dashboard quản trị</p>
             </div>
         </div>
 
@@ -30,7 +30,7 @@
                     <div class="stat-icon"><i class="fas fa-users"></i></div>
                     <div class="stat-content">
                         <div class="stat-number" id="totalUsers">0</div>
-                        <div class="stat-label">Người xem</div>
+                        <div class="stat-label" data-i18n="adminDash.viewers">Người xem</div>
                     </div>
                 </div>
             </div>
@@ -39,7 +39,7 @@
                     <div class="stat-icon"><i class="fas fa-user-tie"></i></div>
                     <div class="stat-content">
                         <div class="stat-number" id="totalManagers">0</div>
-                        <div class="stat-label">Quản lý</div>
+                        <div class="stat-label" data-i18n="common.role">Quản lý</div>
                     </div>
                 </div>
             </div>
@@ -48,7 +48,7 @@
                     <div class="stat-icon"><i class="fas fa-box"></i></div>
                     <div class="stat-content">
                         <div class="stat-number" id="totalProducts">0</div>
-                        <div class="stat-label">Sản phẩm</div>
+                        <div class="stat-label" data-i18n="sale.colProduct">Sản phẩm</div>
                     </div>
                 </div>
             </div>
@@ -57,7 +57,7 @@
                     <div class="stat-icon"><i class="fas fa-shopping-cart"></i></div>
                     <div class="stat-content">
                         <div class="stat-number" id="totalCustomers">0</div>
-                        <div class="stat-label">Khách hàng</div>
+                        <div class="stat-label" data-i18n="nav.customers">Khách hàng</div>
                     </div>
                 </div>
             </div>
@@ -65,14 +65,14 @@
 
         <div class="row mb-4">
             <div class="col-12">
-                <h3 class="section-title"><i class="fas fa-bolt"></i> Thao tác nhanh</h3>
+                <h3 class="section-title"><i class="fas fa-bolt"></i> <span data-i18n="dashboard.quickActions">Thao tác nhanh</span></h3>
             </div>
             <div class="col-md-3">
                 <a class="action-card action-analytics" href="{{ url_for('pages.admin_analytics') }}">
                     <div class="action-icon"><i class="fas fa-chart-line"></i></div>
                     <div class="action-content">
-                        <h4>Phân tích & Báo cáo</h4>
-                        <p>Xem doanh thu, lượng truy cập, lợi nhuận</p>
+                        <h4 data-i18n="nav.analyticsReports">Phân tích &amp; Báo cáo</h4>
+                        <p data-i18n="adminDash.viewRevenueStats">Xem doanh thu, lượng truy cập, lợi nhuận</p>
                     </div>
                     <div class="action-arrow"><i class="fas fa-arrow-right"></i></div>
                 </a>
@@ -81,8 +81,8 @@
                 <a class="action-card action-roles" href="{{ url_for('pages.admin_roles') }}">
                     <div class="action-icon"><i class="fas fa-user-shield"></i></div>
                     <div class="action-content">
-                        <h4>Quản lý vai trò</h4>
-                        <p>Nâng/hạ cấp tài khoản User ↔ Manager</p>
+                        <h4 data-i18n="adminDash.manageRoles">Quản lý vai trò</h4>
+                        <p data-i18n="adminDash.manageRolesDesc">Nâng/hạ cấp tài khoản User ↔ Manager</p>
                     </div>
                     <div class="action-arrow"><i class="fas fa-arrow-right"></i></div>
                 </a>
@@ -91,8 +91,8 @@
                 <a class="action-card action-managers" href="{{ url_for('pages.admin_managers') }}">
                     <div class="action-icon"><i class="fas fa-user-tie"></i></div>
                     <div class="action-content">
-                        <h4>Quản lý quản lý</h4>
-                        <p>Tạo và quản lý tài khoản Manager</p>
+                        <h4 data-i18n="adminDash.manageManagers">Quản lý quản lý</h4>
+                        <p data-i18n="adminDash.manageManagersDesc">Tạo và quản lý tài khoản Manager</p>
                     </div>
                     <div class="action-arrow"><i class="fas fa-arrow-right"></i></div>
                 </a>
@@ -101,7 +101,7 @@
 
         <div class="row mb-4">
             <div class="col-12">
-                <h3 class="section-title"><i class="fas fa-history"></i> Hoạt động gần đây</h3>
+                <h3 class="section-title"><i class="fas fa-history"></i> <span data-i18n="adminDash.recentActivity">Hoạt động gần đây</span></h3>
             </div>
             <div class="col-12">
                 <div class="activity-card">
@@ -117,9 +117,9 @@
         <div class="row">
             <div class="col-md-6">
                 <div class="info-card">
-                    <h4><i class="fas fa-info-circle"></i> Thông tin hệ thống</h4>
+                    <h4><i class="fas fa-info-circle"></i> <span data-i18n="adminDash.systemInfo">Thông tin hệ thống</span></h4>
                     <div class="info-item">
-                        <span class="info-label">Phiên bản:</span>
+                        <span class="info-label" data-i18n="adminDash.version">Phiên bản:</span>
                         <span class="info-value">v1.0.0</span>
                     </div>
                     <div class="info-item">
@@ -127,25 +127,25 @@
                         <span class="info-value">{{ db_type }}</span>
                     </div>
                     <div class="info-item">
-                        <span class="info-label">Thời gian hoạt động:</span>
+                        <span class="info-label" data-i18n="adminDash.uptime">Thời gian hoạt động:</span>
                         <span class="info-value" id="systemUptime">--</span>
                     </div>
                 </div>
             </div>
             <div class="col-md-6">
                 <div class="info-card">
-                    <h4><i class="fas fa-shield-alt"></i> Bảo mật</h4>
+                    <h4><i class="fas fa-shield-alt"></i> <span data-i18n="adminDash.security">Bảo mật</span></h4>
                     <div class="info-item">
-                        <span class="info-label">Xác thực:</span>
-                        <span class="info-value"><i class="fas fa-check-circle text-success"></i> Đã bật</span>
+                        <span class="info-label" data-i18n="adminDash.authentication">Xác thực:</span>
+                        <span class="info-value"><i class="fas fa-check-circle text-success"></i> <span data-i18n="adminDash.enabled">Đã bật</span></span>
                     </div>
                     <div class="info-item">
                         <span class="info-label">HTTPS:</span>
-                        <span class="info-value"><i class="fas fa-times-circle text-warning"></i> Chưa bật</span>
+                        <span class="info-value"><i class="fas fa-times-circle text-warning"></i> <span data-i18n="adminDash.notEnabled">Chưa bật</span></span>
                     </div>
                     <div class="info-item">
-                        <span class="info-label">Tự động sao lưu:</span>
-                        <span class="info-value"><i class="fas fa-check-circle text-success"></i> Hằng ngày</span>
+                        <span class="info-label" data-i18n="adminDash.autoBackup">Tự động sao lưu:</span>
+                        <span class="info-value"><i class="fas fa-check-circle text-success"></i> <span data-i18n="adminDash.daily">Hằng ngày</span></span>
                     </div>
                 </div>
             </div>

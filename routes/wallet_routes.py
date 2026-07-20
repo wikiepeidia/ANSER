@@ -69,7 +69,11 @@ def api_update_settings():
     if not setting_key:
         return jsonify({'success': False, 'message': 'Thiếu khóa cài đặt'}), 400
     try:
-        with db_manager.get_business_connection() as conn:
+        # `get_business_db_connection` (không phải `get_business_connection`) là
+        # @contextmanager — `get_business_connection` trả PGShimConnection, vốn
+        # KHÔNG implement __enter__/__exit__, nên `with` ở đây từng ném
+        # TypeError mỗi lần save setting.
+        with db_manager.get_business_db_connection() as conn:
             cursor = conn.cursor()
             cursor.execute(
                 '''INSERT INTO system_settings (key, value, group_name, updated_at)

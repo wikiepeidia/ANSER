@@ -55,7 +55,7 @@
     <link rel="icon" href="{{ url_for('static', filename='img/favicon.svg') }}" type="image/svg+xml">
     <link rel="shortcut icon" href="{{ url_for('static', filename='img/favicon.svg') }}">
     <link rel="apple-touch-icon" href="{{ url_for('static', filename='img/favicon.svg') }}">
-    <meta name="theme-color" content="#00a688">
+    <meta name="theme-color" content="#003152">
 
     {% block styles %}{% endblock %}
 </head>
@@ -96,6 +96,7 @@
         };
     </script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script defer src="{{ url_for('static', filename='js/i18n.js') }}"></script>
     <script defer src="{{ url_for('static', filename='js/base_theme.js') }}"></script>
     <script defer src="{{ url_for('static', filename='js/chat.js') }}"></script>
     <script defer src="{{ url_for('static', filename='js/script.js') }}"></script>

@@ -9,6 +9,16 @@
     min-height: 100vh;
 }
 
+@media (max-width: 767.98px) {
+    .main-content {
+        margin-left: 0;
+    }
+    .auto-import-page.main-content, .main-content.auto-import-page {
+        padding: 15px;
+        padding-top: 76px; /* clears the fixed 56px mobile topbar */
+    }
+}
+
 .auto-import-page .card:not([class*='bg-']) {
     background: var(--surface-100);
     border: 1px solid var(--border-soft);

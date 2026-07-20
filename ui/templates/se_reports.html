@@ -19,9 +19,9 @@
     <main class="app-content main-content reports-page">
         <div
             class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-            <h1 class="h2"><i class="fas fa-file-invoice-dollar"></i> SE - Báo cáo doanh thu & chi phí</h1>
+            <h1 class="h2"><i class="fas fa-file-invoice-dollar"></i> <span data-i18n="seReports.title">SE - Báo cáo doanh thu &amp; chi phí</span></h1>
             <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#scheduleReportModal">
-                <i class="fas fa-calendar-plus"></i> Lên lịch báo cáo
+                <i class="fas fa-calendar-plus"></i> <span data-i18n="seReports.scheduleReport">Lên lịch báo cáo</span>
             </button>
         </div>
 
@@ -29,7 +29,7 @@
             <div class="col-md-3">
                 <div class="card text-white bg-success">
                     <div class="card-body">
-                        <h6 class="card-title">Doanh thu (Tháng này)</h6>
+                        <h6 class="card-title" data-i18n="seReports.revenueThisMonth">Doanh thu (Tháng này)</h6>
                         <h2 id="monthRevenue">0 VND</h2>
                     </div>
                 </div>
@@ -37,7 +37,7 @@
             <div class="col-md-3">
                 <div class="card text-white bg-danger">
                     <div class="card-body">
-                        <h6 class="card-title">Chi phí (Tháng này)</h6>
+                        <h6 class="card-title" data-i18n="seReports.expenseThisMonth">Chi phí (Tháng này)</h6>
                         <h2 id="monthExpense">0 VND</h2>
                     </div>
                 </div>
@@ -45,7 +45,7 @@
             <div class="col-md-3">
                 <div class="card text-white bg-primary">
                     <div class="card-body">
-                        <h6 class="card-title">Lợi nhuận</h6>
+                        <h6 class="card-title" data-i18n="seReports.profit">Lợi nhuận</h6>
                         <h2 id="monthProfit">0 VND</h2>
                     </div>
                 </div>
@@ -53,7 +53,7 @@
             <div class="col-md-3">
                 <div class="card text-white bg-warning">
                     <div class="card-body">
-                        <h6 class="card-title">Báo cáo đã gửi</h6>
+                        <h6 class="card-title" data-i18n="seReports.reportsSent">Báo cáo đã gửi</h6>
                         <h2 id="reportsSent">0</h2>
                     </div>
                 </div>
@@ -62,24 +62,24 @@
 
         <div class="card mb-3">
             <div class="card-body">
-                <h5 class="card-title">Báo cáo đã lên lịch</h5>
+                <h5 class="card-title" data-i18n="seReports.scheduledReports">Báo cáo đã lên lịch</h5>
                 <div class="table-responsive">
                     <table class="table table-hover">
                         <thead>
                             <tr>
-                                <th>Tên báo cáo</th>
-                                <th>Loại</th>
-                                <th>Tần suất</th>
-                                <th>Kênh</th>
-                                <th>Trạng thái</th>
-                                <th>Lần gửi gần nhất</th>
-                                <th>Thao tác</th>
+                                <th data-i18n="seReports.reportName">Tên báo cáo</th>
+                                <th data-i18n="wallet.colType">Loại</th>
+                                <th data-i18n="seReports.frequency">Tần suất</th>
+                                <th data-i18n="seReports.channel">Kênh</th>
+                                <th data-i18n="common.status">Trạng thái</th>
+                                <th data-i18n="seReports.lastSent">Lần gửi gần nhất</th>
+                                <th data-i18n="common.actions">Thao tác</th>
                             </tr>
                         </thead>
                         <tbody id="scheduledReportsBody">
                             <tr>
                                 <td colspan="7" class="text-center">
-                                    Chưa có báo cáo đã lên lịch. Nhấn "Lên lịch báo cáo" để bắt đầu.
+                                    <span data-i18n="seReports.emptyState">Chưa có báo cáo đã lên lịch. Nhấn "Lên lịch báo cáo" để bắt đầu.</span>
                                 </td>
                             </tr>
                         </tbody>
@@ -90,27 +90,27 @@
 
         <div class="card">
             <div class="card-header card-header-surface">
-                <h5><i class="fas fa-chart-line"></i> Biểu đồ doanh thu & chi phí</h5>
+                <h5><i class="fas fa-chart-line"></i> <span data-i18n="seReports.revenueExpenseChart">Biểu đồ doanh thu &amp; chi phí</span></h5>
             </div>
             <div class="card-body">
                 <canvas id="revenueChart" height="80"></canvas>
                 <p class="text-center text-muted mt-3">
-                    <i class="fas fa-chart-bar"></i> Biểu đồ sẽ hiển thị khi có dữ liệu doanh thu và chi phí
+                    <i class="fas fa-chart-bar"></i> <span data-i18n="seReports.chartEmptyHint">Biểu đồ sẽ hiển thị khi có dữ liệu doanh thu và chi phí</span>
                 </p>
             </div>
         </div>
 
         <div class="card mt-3">
             <div class="card-header card-header-surface">
-                <h5><i class="fas fa-lightbulb"></i> Mẫu báo cáo</h5>
+                <h5><i class="fas fa-lightbulb"></i> <span data-i18n="seReports.reportTemplates">Mẫu báo cáo</span></h5>
             </div>
             <div class="card-body">
                 <div class="row">
                     <div class="col-md-4 mb-3">
                         <div class="card text-white bg-primary">
                             <div class="card-body">
-                                <h6 class="card-title"><i class="fas fa-calendar-day"></i> Báo cáo hằng ngày</h6>
-                                <p class="card-text">Tổng hợp doanh thu & chi phí mỗi ngày, gửi lúc 18:00.</p>
+                                <h6 class="card-title"><i class="fas fa-calendar-day"></i> <span data-i18n="seReports.dailyReport">Báo cáo hằng ngày</span></h6>
+                                <p class="card-text" data-i18n="seReports.dailyReportDesc">Tổng hợp doanh thu &amp; chi phí mỗi ngày, gửi lúc 18:00.</p>
                                 <button class="btn btn-sm btn-primary" onclick="alert('Mẫu: Báo cáo hằng ngày')">
                                     <i class="fas fa-plus"></i> Dùng
                                 </button>
@@ -120,8 +120,8 @@
                     <div class="col-md-4 mb-3">
                         <div class="card text-white bg-success">
                             <div class="card-body">
-                                <h6 class="card-title"><i class="fas fa-calendar-week"></i> Báo cáo hằng tuần</h6>
-                                <p class="card-text">Tóm tắt 7 ngày doanh thu & chi phí, gửi mỗi Chủ nhật.</p>
+                                <h6 class="card-title"><i class="fas fa-calendar-week"></i> <span data-i18n="seReports.weeklyReport">Báo cáo hằng tuần</span></h6>
+                                <p class="card-text" data-i18n="seReports.weeklyReportDesc">Tóm tắt 7 ngày doanh thu &amp; chi phí, gửi mỗi Chủ nhật.</p>
                                 <button class="btn btn-sm btn-success" onclick="alert('Mẫu: Báo cáo hằng tuần')">
                                     <i class="fas fa-plus"></i> Dùng
                                 </button>
@@ -131,8 +131,8 @@
                     <div class="col-md-4 mb-3">
                         <div class="card text-white bg-info">
                             <div class="card-body">
-                                <h6 class="card-title"><i class="fas fa-calendar-alt"></i> Báo cáo hằng tháng</h6>
-                                <p class="card-text">Báo cáo cuối tháng chi tiết, gửi vào ngày 1 hằng tháng.</p>
+                                <h6 class="card-title"><i class="fas fa-calendar-alt"></i> <span data-i18n="seReports.monthlyReport">Báo cáo hằng tháng</span></h6>
+                                <p class="card-text" data-i18n="seReports.monthlyReportDesc">Báo cáo cuối tháng chi tiết, gửi vào ngày 1 hằng tháng.</p>
                                 <button class="btn btn-sm btn-info" onclick="alert('Mẫu: Báo cáo hằng tháng')">
                                     <i class="fas fa-plus"></i> Dùng
                                 </button>
@@ -150,17 +150,17 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Lên lịch báo cáo mới</h5>
+                <h5 class="modal-title" data-i18n="seReports.newSchedule">Lên lịch báo cáo mới</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
             </div>
             <div class="modal-body">
                 <form id="scheduleReportForm">
                     <div class="mb-3">
-                        <label class="form-label">Tên báo cáo</label>
+                        <label class="form-label" data-i18n="seReports.reportName">Tên báo cáo</label>
                         <input type="text" class="form-control" name="name" required>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Loại báo cáo</label>
+                        <label class="form-label" data-i18n="seReports.reportType">Loại báo cáo</label>
                         <select class="form-select" name="report_type" required>
                             <option value="revenue_expense">Tóm tắt doanh thu & chi phí</option>
                             <option value="inventory">Tình trạng tồn kho</option>
@@ -168,7 +168,7 @@
                         </select>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Tần suất</label>
+                        <label class="form-label" data-i18n="seReports.frequency">Tần suất</label>
                         <select class="form-select" name="frequency" required>
                             <option value="daily">Hằng ngày</option>
                             <option value="weekly">Hằng tuần</option>
@@ -176,7 +176,7 @@
                         </select>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Kênh gửi</label>
+                        <label class="form-label" data-i18n="seReports.sendChannel">Kênh gửi</label>
                         <select class="form-select" name="channel" required>
                             <option value="email">Email</option>
                             <option value="slack">Slack</option>
@@ -184,14 +184,14 @@
                         </select>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Người nhận (phân tách bằng dấu phẩy)</label>
+                        <label class="form-label" data-i18n="seReports.recipients">Người nhận (phân tách bằng dấu phẩy)</label>
                         <input type="text" class="form-control" name="recipients" placeholder="email@example.com">
                     </div>
                 </form>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
-                <button type="button" class="btn btn-primary" onclick="submitScheduleReport()">Lên lịch</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-i18n="common.close">Đóng</button>
+                <button type="button" class="btn btn-primary" onclick="submitScheduleReport()" data-i18n="seReports.schedule">Lên lịch</button>
             </div>
         </div>
     </div>

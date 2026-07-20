@@ -9,7 +9,7 @@
     --auth-soft-surface: #f8f9ff;
     --auth-soft-surface-strong: #e8ecff;
     /* Light mode: Reverted to dark gradient */
-    --auth-left-gradient: linear-gradient(135deg, #6366f1 0%, #7c3aed 45%, #0ea5e9 100%);
+    --auth-left-gradient: linear-gradient(135deg, #003152 0%, #0077b6 45%, #0ea5e9 100%);
     --auth-left-text: #ffffff;
     --auth-feature-icon-bg: rgba(255, 255, 255, 0.2);
     --auth-feature-icon-color: #ffffff;
@@ -19,7 +19,7 @@
     --auth-input-border: #d7dbec;
     --auth-input-text: #141833;
     --auth-placeholder: #9ca3af;
-    --auth-input-focus-ring: rgba(99, 102, 241, 0.18);
+    --auth-input-focus-ring: rgba(0, 49, 82, 0.18);
     --auth-alert-success-bg: #d1fae5;
     --auth-alert-success-text: #065f46;
     --auth-alert-error-bg: #fee2e2;
@@ -41,7 +41,7 @@ body.dark-mode {
     --auth-divider-label-bg: rgba(7, 12, 25, 0.92);
     --auth-soft-surface: rgba(15, 23, 42, 0.75);
     --auth-soft-surface-strong: rgba(35, 46, 70, 0.9);
-    --auth-left-gradient: linear-gradient(135deg, #1f2657 0%, #4338ca 40%, #7c3aed 75%, #0ea5e9 100%);
+    --auth-left-gradient: linear-gradient(135deg, #1f2657 0%, #001529 40%, #0077b6 75%, #0ea5e9 100%);
     --auth-left-text: #ffffff;
     --auth-feature-icon-bg: rgba(255, 255, 255, 0.12);
     --auth-feature-icon-color: #f8fafc;
@@ -139,7 +139,7 @@ body.auth-page .auth-container {
 
 .benefit-item:hover {
     transform: translateY(-2px);
-    border-color: rgba(99, 102, 241, 0.4);
+    border-color: rgba(0, 49, 82, 0.4);
     background: rgba(255, 255, 255, 0.12);
 }
 
@@ -249,7 +249,7 @@ body.auth-page .auth-container {
 
 .form-input:focus {
     outline: none;
-    border-color: #6366f1;
+    border-color: #003152;
     box-shadow: 0 0 0 3px var(--auth-input-focus-ring);
 }
 
@@ -262,14 +262,14 @@ body.auth-page .auth-container {
     font-weight: 600;
     color: #fff;
     cursor: pointer;
-    background: linear-gradient(135deg, #6366f1 0%, #7c3aed 50%, #0ea5e9 100%);
-    box-shadow: 0 18px 30px rgba(79, 70, 229, 0.25);
+    background: linear-gradient(135deg, #003152 0%, #0077b6 50%, #0ea5e9 100%);
+    box-shadow: 0 18px 30px rgba(0, 31, 54, 0.25);
     transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .auth-btn:hover:not(:disabled) {
     transform: translateY(-2px);
-    box-shadow: 0 26px 38px rgba(79, 70, 229, 0.35);
+    box-shadow: 0 26px 38px rgba(0, 31, 54, 0.35);
 }
 
 .auth-btn:disabled {
@@ -330,7 +330,7 @@ html[data-theme='dark'] .google-signin-btn:hover {
 }
 
 .auth-switch a {
-    color: #6366f1;
+    color: #003152;
     font-weight: 600;
     text-decoration: none;
 }

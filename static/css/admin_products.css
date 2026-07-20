@@ -128,6 +128,12 @@
     margin-left: 280px;
 }
 
+@media (max-width: 767.98px) {
+    .main-content {
+        margin-left: 0;
+    }
+}
+
 /* Scoped products page styles to match global dark mode variables */
 .products-page .card {
     background: var(--surface-100) !important;
@@ -212,7 +218,7 @@ body.dark-mode .products-page .table tbody td * {
 .products-modal .form-control:focus,
 .products-modal .form-select:focus {
     border-color: var(--primary);
-    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+    box-shadow: 0 0 0 3px rgba(0, 49, 82, 0.15);
     background: var(--surface-100);
 }
 

@@ -1,6 +1,6 @@
 /* Automation Scenarios Styles */
 :root {
-    --scenario-gradient: var(--gradient-primary, linear-gradient(135deg, #667eea 0%, #764ba2 100%));
+    --scenario-gradient: var(--gradient-primary, linear-gradient(135deg, #0077b6 0%, #003152 100%));
     --scenario-surface: #f4f6fb;
     --scenario-panel: #ffffff;
     --scenario-panel-alt: #edf2ff;
@@ -8,11 +8,11 @@
     --scenario-border-strong: #ccd5f6;
     --scenario-muted: #6b7280;
     --scenario-text: #111827;
-    --scenario-accent: #667eea;
+    --scenario-accent: #0077b6;
     --scenario-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
     --scenario-card-bg: #ffffff;
     --scenario-card-soft: #f4f6fb;
-    --scenario-chip-bg: rgba(102, 126, 234, 0.12);
+    --scenario-chip-bg: rgba(0, 119, 182, 0.12);
 
     /* Unified layout + interaction tokens */
     --scenario-gutter: 32px;          /* outer padding for header / content / templates */
@@ -29,13 +29,13 @@ body.dark-mode {
     --scenario-panel: #0f172a;
     --scenario-panel-alt: #111c32;
     --scenario-border: rgba(148, 163, 184, 0.18);
-    --scenario-border-strong: rgba(102, 126, 234, 0.35);
+    --scenario-border-strong: rgba(0, 119, 182, 0.35);
     --scenario-muted: #94a3b8;
     --scenario-text: #f8fafc;
     --scenario-shadow: 0 30px 55px rgba(0, 0, 0, 0.45);
     --scenario-card-bg: rgba(15, 23, 42, 0.95);
     --scenario-card-soft: rgba(15, 23, 42, 0.75);
-    --scenario-chip-bg: rgba(99, 102, 241, 0.25);
+    --scenario-chip-bg: rgba(0, 49, 82, 0.25);
 }
 
 /* Dark-mode tweaks for the new container classes */
@@ -238,7 +238,7 @@ body.scenarios-page {
 }
 
 .add-folder-btn:hover {
-    background: rgba(102, 126, 234, 0.08);
+    background: rgba(0, 119, 182, 0.08);
 }
 
 .folder-item {
@@ -253,9 +253,9 @@ body.scenarios-page {
 }
 
 .folder-item.active {
-    background: rgba(102, 126, 234, 0.1);
+    background: rgba(0, 119, 182, 0.1);
     border-color: var(--scenario-border-strong);
-    box-shadow: 0 10px 25px rgba(102, 126, 234, 0.15);
+    box-shadow: 0 10px 25px rgba(0, 119, 182, 0.15);
 }
 
 .folder-item:hover:not(.active) {
@@ -267,7 +267,7 @@ body.scenarios-page {
     width: 38px;
     height: 38px;
     border-radius: 12px;
-    background: rgba(102, 126, 234, 0.12);
+    background: rgba(0, 119, 182, 0.12);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -294,6 +294,7 @@ body.scenarios-page {
 /* Main Content */
 .main-content {
     flex: 1;
+    min-width: 0; /* Let flex item shrink below its content's natural width instead of pushing the page into horizontal overflow */
     display: flex;
     flex-direction: column;
     background: var(--scenario-surface);
@@ -391,7 +392,7 @@ body.scenarios-page {
 .tab.active {
     background: var(--scenario-gradient);
     color: #ffffff;
-    box-shadow: 0 6px 18px rgba(102, 126, 234, 0.25);
+    box-shadow: 0 6px 18px rgba(0, 119, 182, 0.25);
 }
 
 .create-btn {
@@ -406,7 +407,7 @@ body.scenarios-page {
     align-items: center;
     gap: 8px;
     cursor: pointer;
-    box-shadow: 0 12px 25px rgba(102, 126, 234, 0.25);
+    box-shadow: 0 12px 25px rgba(0, 119, 182, 0.25);
     transition: transform var(--scenario-transition), box-shadow var(--scenario-transition);
 }
 
@@ -425,12 +426,12 @@ body.scenarios-page {
     transition: background var(--scenario-transition), color var(--scenario-transition), border-color var(--scenario-transition);
 }
 .btn-secondary:focus-visible {
-    outline: 2px solid var(--scenario-accent, #667eea);
+    outline: 2px solid var(--scenario-accent, #0077b6);
     outline-offset: 2px;
 }
 
 .create-btn:focus-visible {
-    outline: 2px solid var(--scenario-accent, #667eea);
+    outline: 2px solid var(--scenario-accent, #0077b6);
     outline-offset: 3px;
 }
 
@@ -498,7 +499,7 @@ body.scenarios-page {
     width: 72px;
     height: 72px;
     border-radius: 20px;
-    background: rgba(102, 126, 234, 0.12);
+    background: rgba(0, 119, 182, 0.12);
     color: var(--scenario-accent);
     display: flex;
     align-items: center;

@@ -582,6 +582,41 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 /**
+ * Sidebar item tooltip (collapsed state only).
+ * The sidebar scrolls its menu internally and uses backdrop-filter, both of
+ * which clip any CSS ::after tooltip that pops outside its own box. Instead,
+ * render the tooltip as a single element appended to <body> and position it
+ * with JS on hover, so it always escapes the sidebar's clipped/scrolled box.
+ */
+document.addEventListener('DOMContentLoaded', function () {
+    const sidebar = document.getElementById('main-sidebar');
+    if (!sidebar) return;
+
+    const items = sidebar.querySelectorAll('[data-tooltip]');
+    if (!items.length) return;
+
+    const tip = document.createElement('div');
+    tip.className = 'sidebar-tooltip';
+    document.body.appendChild(tip);
+
+    items.forEach(function (item) {
+        item.addEventListener('mouseenter', function () {
+            if (!sidebar.classList.contains('collapsed')) return;
+            const label = item.getAttribute('data-tooltip');
+            if (!label) return;
+            const rect = item.getBoundingClientRect();
+            tip.textContent = label;
+            tip.style.top = (rect.top + rect.height / 2) + 'px';
+            tip.style.left = (rect.right + 12) + 'px';
+            tip.classList.add('is-visible');
+        });
+        item.addEventListener('mouseleave', function () {
+            tip.classList.remove('is-visible');
+        });
+    });
+});
+
+/**
  * Mobile Sidebar Toggle
  */
 document.addEventListener('DOMContentLoaded', function() {
