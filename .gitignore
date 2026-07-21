@@ -71,7 +71,7 @@ evaluation/*
 #  before PyInstaller builds the exe, so as to inject date/other infos into it.
 *.manifest
 *.spec
-
+.planning-sanxuat-backup-20260720/
 # Installer logs
 pip-log.txt
 pip-delete-this-directory.txt
@@ -394,3 +394,8 @@ group_project_ai_ml.db
 
 # n8n proxy auto-generated credentials
 .n8n_creds.json
+JOBS.md
+PHASE2-VERIFY-CHECKLIST.md
+report/BAOCAO.md
+report/HUONG_DAN_CHAY_DU_AN.md
+report/KIEN_TRUC_3_APP.md
