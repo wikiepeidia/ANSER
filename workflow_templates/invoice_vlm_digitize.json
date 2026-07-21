@@ -1,0 +1,62 @@
+{
+  "name": "Số hóa hóa đơn VLM",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "invoice-digitize",
+        "responseMode": "lastNode",
+        "options": { "binaryData": true }
+      },
+      "id": "iv-webhook",
+      "name": "Nhận hóa đơn",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [180, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.BRAIN_URL }}/api/invoice/digitize",
+        "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "X-API-Token", "value": "={{ $env.BRAIN_TOKEN }}" }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            { "parameterType": "formBinaryData", "name": "invoice_image", "inputDataFieldName": "data" },
+            { "parameterType": "formData", "name": "source", "value": "={{ $json.body?.source || 'n8n' }}" }
+          ]
+        },
+        "options": { "timeout": 120000 }
+      },
+      "id": "iv-brain-call",
+      "name": "Gọi Brain số hóa hóa đơn",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "continueOnFail": true,
+      "position": [420, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first().json;\nlet branch, status, issues, message;\n\nif (item.error) {\n  branch = 'error';\n  status = 'error';\n  issues = [String(item.error)];\n  message = 'Không thể kết nối tới Brain để số hóa hóa đơn.';\n} else if (item.status === 'needs_manual_review') {\n  branch = 'needs_manual_review';\n  status = item.status;\n  issues = item.issues || [];\n  message = 'Hóa đơn cần được xem lại thủ công.';\n} else {\n  branch = 'pending_review';\n  status = item.status || 'pending_review';\n  issues = [];\n  message = 'Kết quả số hóa hóa đơn đã sẵn sàng để xem lại.';\n}\n\nreturn [{ json: { branch, status, issues, message, brain_response: item } }];"
+      },
+      "id": "iv-normalize",
+      "name": "Chuẩn hoá kết quả Brain",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [660, 300]
+    }
+  ],
+  "connections": {
+    "Nhận hóa đơn": { "main": [[{ "node": "Gọi Brain số hóa hóa đơn", "type": "main", "index": 0 }]] },
+    "Gọi Brain số hóa hóa đơn": { "main": [[{ "node": "Chuẩn hoá kết quả Brain", "type": "main", "index": 0 }]] }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" }
+}
