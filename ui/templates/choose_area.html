@@ -1,281 +1,139 @@
-{% extends "base.html" %} 
-{% block title %}Chọn mảng làm việc - {{ project_name }}{% endblock %} 
+{% extends "base.html" %}
 
-{% block styles %} 
-{{ super() }} 
-<style>
-    /* =========================================================
-       ANSER CHOOSE AREA: KINETIC GLASS & AMBIENT HUD THEME
-       ========================================================= */
-    :root {
-        --bg-void: #030305;
-        --panel-bg: rgba(12, 12, 18, 0.65);
-        
-        --neon-purple: #7c3aed;
-        --neon-blue: #0ea5e9;
-        --neon-green: #10b981;
-        --neon-danger: #ef4444;
-        
-        --text-pure: #ffffff;
-        --text-muted: #8b8b9a;
-        
-        --border-dim: rgba(255, 255, 255, 0.08);
-    }
+{% block title %}Chọn mảng làm việc - {{ project_name }}{% endblock %}
 
-    body {
-        background-color: var(--bg-void);
-        color: var(--text-pure);
-        font-family: 'Inter', -apple-system, sans-serif;
-        overflow: hidden; 
-    }
+{% block styles %}
+{{ super() }}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/choose_area.css') }}">
+{% endblock %}
 
-    /* --- AMBIENT LIGHTING ORBS --- */
-    .ambient-bg {
-        position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-        z-index: 0; pointer-events: none; overflow: hidden;
-    }
-
-    .orb {
-        position: absolute; border-radius: 50%; filter: blur(100px); opacity: 0.35;
-        animation: float 12s infinite ease-in-out alternate;
-    }
-
-    .orb-1 { width: 400px; height: 400px; background: var(--neon-blue); top: -100px; left: -100px; }
-    .orb-2 { width: 400px; height: 400px; background: var(--neon-purple); bottom: -100px; right: -100px; animation-delay: -5s; }
-
-    @keyframes float {
-        0% { transform: translateY(0) scale(1); }
-        100% { transform: translateY(30px) scale(1.1); }
-    }
-
-    /* --- PURE CSS ENTRANCE ANIMATIONS --- */
-    @keyframes fadeUpEntrance {
-        from { opacity: 0; transform: translateY(30px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-
-    .animate-fade-up {
-        opacity: 0; /* Start hidden to prevent flashing */
-        animation: fadeUpEntrance 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-    }
-
-    .delay-1 { animation-delay: 0.1s; }
-    .delay-2 { animation-delay: 0.25s; }
-    .delay-3 { animation-delay: 0.4s; }
-
-    @keyframes wave { 
-        0% { transform: rotate(0deg); } 
-        10% { transform: rotate(14deg); } 
-        20% { transform: rotate(-8deg); } 
-        30% { transform: rotate(14deg); } 
-        40% { transform: rotate(-4deg); } 
-        50% { transform: rotate(10deg); } 
-        60% { transform: rotate(0deg); } 
-        100% { transform: rotate(0deg); } 
-    }
-
-    /* --- MAIN WRAPPER --- */
-    .area-picker {
-        position: relative;
-        z-index: 1;
-        min-height: 100vh;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        padding: 40px 20px;
-    }
-
-    .area-picker__header { 
-        text-align: center; 
-        margin-bottom: 50px; 
-    }
-    
-    .area-picker__header h1 { 
-        font-weight: 800; 
-        font-size: 2.5rem; 
-        margin-bottom: 12px; 
-        letter-spacing: -1px;
-    }
-    
-    .area-picker__header p { 
-        color: var(--text-muted); 
-        font-size: 1.1rem;
-    }
-
-    /* --- THE CARDS --- */
-    .area-picker__grid {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 30px;
-        max-width: 850px;
-        width: 100%;
-    }
-
-    .area-card {
-        background: rgba(12, 12, 18, 0.4); 
-        border: 1px solid var(--border-dim);
-        border-radius: 24px; 
-        padding: 40px 30px; 
-        position: relative; 
-        overflow: hidden;
-        backdrop-filter: blur(20px); 
-        -webkit-backdrop-filter: blur(20px);
-        display: flex; 
-        flex-direction: column;
-        text-decoration: none;
-        color: inherit;
-        
-        /* The smooth rest state */
-        transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.4s ease, box-shadow 0.4s ease;
-    }
-
-    /* The Butter-Smooth Lift Effect */
-    .area-card:hover {
-        transform: translateY(-8px);
-        border-color: rgba(255, 255, 255, 0.15);
-        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.6);
-    }
-
-    /* Dynamic Spotlight Effect */
-    .area-card::before {
-        content: ""; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-        border-radius: inherit; padding: 2px;
-        background: radial-gradient(600px circle at var(--mouse-x) var(--mouse-y), rgba(255,255,255,0.4), transparent 40%);
-        -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-        -webkit-mask-composite: xor; mask-composite: exclude;
-        opacity: 0; transition: opacity 0.4s; pointer-events: none; z-index: 2;
-    }
-
-    .area-card::after {
-        content: ""; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-        opacity: 0; transition: opacity 0.4s; pointer-events: none; z-index: -1;
-    }
-
-    .area-card--retail::after {
-        background: radial-gradient(600px circle at var(--mouse-x) var(--mouse-y), rgba(16, 185, 129, 0.12), transparent 40%);
-    }
-
-    .area-card--san-xuat::after {
-        background: radial-gradient(600px circle at var(--mouse-x) var(--mouse-y), rgba(124, 58, 237, 0.12), transparent 40%);
-    }
-
-    .area-card:hover::before, .area-card:hover::after { opacity: 1; }
-
-    .area-card__icon {
-        width: 60px; height: 60px; border-radius: 16px;
-        background: rgba(255, 255, 255, 0.04);
-        border: 1px solid var(--border-dim);
-        display: flex; align-items: center; justify-content: center;
-        font-size: 26px; margin-bottom: 24px;
-        transition: transform 0.4s ease;
-    }
-
-    .area-card--retail .area-card__icon { color: var(--neon-green); }
-    .area-card--san-xuat .area-card__icon { color: var(--neon-purple); }
-
-    .area-card h3 { 
-        font-weight: 700; 
-        font-size: 1.5rem;
-        margin-bottom: 12px; 
-    }
-    
-    .area-card p { 
-        color: var(--text-muted); 
-        font-size: 1rem; 
-        margin-bottom: 24px; 
-        line-height: 1.6;
-        flex-grow: 1;
-    }
-    
-    .area-card__cta { 
-        font-weight: 600; 
-        font-size: 0.95rem; 
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        transition: gap 0.3s ease;
-    }
-
-    .area-card--retail .area-card__cta { color: var(--neon-green); }
-    .area-card--san-xuat .area-card__cta { color: var(--neon-purple); }
-
-    .area-card:hover .area-card__cta { gap: 14px; }
-
-    /* --- LOGOUT BUTTON --- */
-    .area-picker__logout {
-        margin-top: 60px;
-        display: inline-flex;
-        align-items: center;
-        gap: 10px;
-        padding: 14px 28px;
-        color: var(--text-muted);
-        font-weight: 600;
-        font-size: 1rem;
-        text-decoration: none;
-        border-radius: 14px;
-        background: rgba(255, 255, 255, 0.03);
-        border: 1px solid var(--border-dim);
-        backdrop-filter: blur(10px);
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    .area-picker__logout:hover {
-        transform: translateY(-4px);
-        color: var(--neon-danger);
-        background: rgba(239, 68, 68, 0.08);
-        border-color: rgba(239, 68, 68, 0.3);
-        box-shadow: 0 10px 25px rgba(239, 68, 68, 0.15);
-    }
-
-    @media (max-width: 768px) {
-        body { overflow: auto; }
-        .area-picker__grid { grid-template-columns: 1fr; }
-        .area-picker__header h1 { font-size: 2rem; }
-    }
-</style>
-{% endblock %} 
-
-{% block content %} 
-<div class="ambient-bg">
-    <div class="orb orb-1"></div>
-    <div class="orb orb-2"></div>
-</div>
-
+{% block content %}
 <div class="area-picker">
-  <div class="area-picker__header animate-fade-up delay-1">
-    <h1>Chào {{ user.name or user.email }} <span style="display:inline-block; animation: wave 2s infinite; transform-origin: 70% 70%;">👋</span></h1>
-    <p>Bạn muốn làm việc trong mảng nào hôm nay?</p>
-  </div>
-  
-  <div class="area-picker__grid">
-    <a href="{{ retail_origin }}" target="_blank" rel="noopener" class="area-card area-card--retail animate-fade-up delay-2">
-      <div class="area-card__icon"><i class="fas fa-store"></i></div>
-      <h3>Bán lẻ</h3>
-      <p>Quản lý bán hàng, tồn kho, khách hàng và hệ thống báo cáo thời gian thực cho chuỗi cửa hàng.</p>
-      <div class="area-card__cta">Khởi chạy hệ thống <i class="fas fa-arrow-right"></i></div>
+  <!-- Header -->
+  <header class="area-header">
+    <a href="/" class="header-logo">
+      <div class="header-logo-icon">
+        <i class="fas fa-layer-group"></i>
+      </div>
+      <span class="header-logo-text">ANSER</span>
     </a>
-    
-    <a href="{{ sanxuat_origin }}" target="_blank" rel="noopener" class="area-card area-card--san-xuat animate-fade-up delay-2">
-      <div class="area-card__icon"><i class="fas fa-industry"></i></div>
-      <h3>Sản xuất</h3>
-      <p>Môi trường vận hành độc lập. Quản lý dây chuyền, theo dõi nguyên vật liệu và điều phối sản xuất.</p>
-      <div class="area-card__cta">Khởi chạy hệ thống <i class="fas fa-arrow-right"></i></div>
-    </a>
-  </div>
+    <div class="header-user">
+      <div class="header-user-info">
+        <div class="header-user-name">{{ user.name or 'User' }}</div>
+        <div class="header-user-email">{{ user.email }}</div>
+      </div>
+      <div class="header-avatar">
+        {{ (user.name or user.email)|first|upper }}
+      </div>
+    </div>
+  </header>
 
-  <a href="{{ url_for('auth.logout') }}" class="area-picker__logout animate-fade-up delay-3">
-    <i class="fas fa-power-off"></i> Đăng xuất phiên
-  </a>
+  <!-- Main Content -->
+  <main class="area-content">
+    <!-- Intro -->
+    <div class="area-intro">
+      <h1>Chào {{ user.name or user.email }} 👋</h1>
+      <p>Chọn mảng làm việc để bắt đầu. Mỗi mảng sẽ mở trong tab riêng biệt.</p>
+    </div>
 
-</div> 
+    <!-- Cards Grid -->
+    <div class="area-grid">
+      <!-- Retail Card -->
+      <a href="{{ retail_origin }}" target="_blank" rel="noopener" class="area-card area-card--retail">
+        <div class="area-card__icon-wrap">
+          <i class="fas fa-store area-card__icon"></i>
+        </div>
+        <h3>Bán lẻ</h3>
+        <p>Hệ thống quản lý toàn diện cho chuỗi cửa hàng bán lẻ của bạn.</p>
+        
+        <!-- Mini Chart Preview -->
+        <div class="retail-chart">
+          <div class="retail-chart__bar"></div>
+          <div class="retail-chart__bar"></div>
+          <div class="retail-chart__bar"></div>
+          <div class="retail-chart__bar"></div>
+          <div class="retail-chart__bar"></div>
+        </div>
+
+        <!-- Features -->
+        <div class="area-card__features">
+          <div class="area-card__feature">
+            <i class="fas fa-check-circle"></i>
+            <span>Nhận dạng hóa đơn OCR</span>
+          </div>
+          <div class="area-card__feature">
+            <i class="fas fa-check-circle"></i>
+            <span>Dự đoán tồn kho LSTM</span>
+          </div>
+          <div class="area-card__feature">
+            <i class="fas fa-check-circle"></i>
+            <span>AI Agent tự động hóa</span>
+          </div>
+        </div>
+
+        <div class="area-card__cta">
+          Mở Bán lẻ <i class="fas fa-arrow-right"></i>
+        </div>
+      </a>
+
+      <!-- Sản xuất Card -->
+      <a href="{{ sanxuat_origin }}" target="_blank" rel="noopener" class="area-card area-card--sanxuat">
+        <div class="area-card__icon-wrap">
+          <i class="fas fa-industry area-card__icon"></i>
+        </div>
+        <h3>Sản xuất</h3>
+        <p>Hệ thống quản lý sản xuất với API và database độc lập.</p>
+        
+        <!-- Mini Workflow Preview -->
+        <div class="sanxuat-workflow">
+          <div class="sanxuat-workflow__node">
+            <i class="fas fa-upload"></i>
+          </div>
+          <div class="sanxuat-workflow__line"></div>
+          <div class="sanxuat-workflow__node sanxuat-workflow__node--active">
+            <i class="fas fa-cogs"></i>
+          </div>
+          <div class="sanxuat-workflow__line"></div>
+          <div class="sanxuat-workflow__node">
+            <i class="fas fa-chart-bar"></i>
+          </div>
+        </div>
+
+        <!-- Features -->
+        <div class="area-card__features">
+          <div class="area-card__feature">
+            <i class="fas fa-check-circle"></i>
+            <span>Quản lý quy trình sản xuất</span>
+          </div>
+          <div class="area-card__feature">
+            <i class="fas fa-check-circle"></i>
+            <span>Theo dõi tài nguyên & vật tư</span>
+          </div>
+          <div class="area-card__feature">
+            <i class="fas fa-check-circle"></i>
+            <span>Báo cáo & phân tích chi tiết</span>
+          </div>
+        </div>
+
+        <div class="area-card__cta">
+          Mở Sản xuất <i class="fas fa-arrow-right"></i>
+        </div>
+      </a>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="area-footer">
+    <a href="{{ url_for('auth.logout') }}">Đăng xuất</a> · © 2026 ANSER
+  </footer>
+</div>
 {% endblock %}
 
 {% block scripts %}
 {{ super() }}
 <script>
     window.addEventListener('load', () => {
-        /* Dynamic Cursor Spotlight (Visual ONLY, safely isolated) */
+        /* Dynamic Cursor Spotlight Effect */
         document.querySelectorAll(".area-card").forEach(card => {
             card.addEventListener("mousemove", e => {
                 const rect = card.getBoundingClientRect();
