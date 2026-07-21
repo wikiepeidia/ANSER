@@ -72,3 +72,56 @@ The workflow's Brain-call node has `continueOnFail: true`, so a failure produces
 `{"error": "<message>"}` on the item instead of killing the execution, and is treated
 identically to `needs_manual_review` for notification purposes — both route to the same
 Discord path.
+
+## Body Write-Back Contract (n8n -> Body)
+
+**Endpoint:** `POST http://host.docker.internal:5000/api/n8n/internal/invoice-import-draft`
+
+**This endpoint does not exist yet.** It is Body-side backend work, out of scope for this
+milestone (a teammate's parallel effort), matching the naming convention of the 3 existing
+`/api/n8n/internal/*` GET endpoints in `routes/n8n_api.py` (lines 304-369: `/warehouses`,
+`/low-stock`, `/iot-events`).
+
+Request body the workflow sends:
+
+```json
+{
+  "status": "pending_review",
+  "brain_response": "<full Brain response body>",
+  "source": "<source>",
+  "received_at": "<ISO timestamp>"
+}
+```
+
+**Safety invariant:** this call must never carry `status: "completed"` — its only job is
+to create a pending-review draft, never to finalize an import. The workflow enforces this
+by hardcoding the literal string `pending_review` in the write-back node's `jsonBody`
+expression, rather than passing Brain's status field through.
+
+## Auth Notes
+
+- The Brain call uses the `X-API-Token` header, matching Body's existing Brain-auth
+  mechanism in `core/services/ai_chat_service.py`.
+- The Body write-back call and the 3 existing `/api/n8n/internal/*` GET endpoints have
+  **no auth check** — verified directly against `routes/n8n_api.py`. This branch has no
+  `ANSER_WEBHOOK_TOKEN`-equivalent (unlike `anser-san-xuat`, which has one).
+- This is a known, pre-existing gap, not fixed this milestone — new auth scope is
+  explicitly deferred (see `01-CONTEXT.md` § Deferred Ideas).
+
+## Notification Contract
+
+The Discord webhook URL is read from the incoming webhook request body's `discord_url`
+field (`$('Nhận hóa đơn').first().json.body.discord_url`), matching
+`notify_discord.json`'s existing `webhookBody.discord_url` pattern exactly — see its
+`Tạo Discord Embed` code node — not a stored per-warehouse profile. The caller triggering
+the workflow must supply `discord_url` in their POST body for notifications to be
+deliverable; if omitted, the Discord send node will POST to an empty URL and fail silently
+within its own branch (does not affect the write-back path).
+
+## Open Questions for Brain Team
+
+- Exact JSON shape of `AgentMiddleware.process_ai_response()`'s Tier 2 return value —
+  currently undocumented, Brain-internal.
+- Confirm the `/api/invoice/digitize` path against Brain's actual router once it exists.
+- Confirm whether Brain expects `invoice_image` as a multipart file field (as this
+  contract assumes) or a base64-encoded JSON field instead.
