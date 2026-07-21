@@ -5,11 +5,67 @@
 {% block styles %}
 {{ super() }}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/admin_reports.css') }}">
+<style>
+    /* =========================================================
+       ANSER RETAIL: LINEAR / STRIPE LIGHT AESTHETIC
+       ========================================================= */
+    :root {
+        --app-bg: #F7F9FC; --card-bg: #FFFFFF; --text-main: #111827; --text-muted: #6B7280;
+        --border-light: #E5E7EB; --accent-primary: #6366F1;
+        --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05); --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.08);
+    }
+    html, body, .app-layout, .app-content, .main-content { background-color: var(--app-bg) !important; color: var(--text-main) !important; font-family: 'Inter', sans-serif; }
+    .dark-mode { background-color: var(--app-bg) !important; }
+
+    .border-bottom { border-bottom: 1px solid var(--border-light) !important; margin-bottom: 32px !important; padding-bottom: 16px !important; }
+    h1.h2 { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.02em; color: var(--text-main); display: flex; align-items: center; gap: 12px; margin:0;}
+    h1.h2 i { color: var(--text-muted); font-size: 1.25rem; }
+
+    .btn { border-radius: 8px; font-weight: 500; font-size: 0.875rem; padding: 8px 16px; border: 1px solid transparent; box-shadow: var(--shadow-sm); transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 8px; }
+    .btn-primary { background-color: var(--accent-primary) !important; color: #fff !important; }
+    .btn-primary:hover { background-color: #4F46E5 !important; transform: translateY(-1px); box-shadow: var(--shadow-md); }
+    .btn-secondary { background-color: #fff !important; color: var(--text-main) !important; border-color: var(--border-light) !important; }
+
+    .saas-stat-card { background: var(--card-bg) !important; border: 1px solid var(--border-light) !important; border-radius: 12px !important; box-shadow: var(--shadow-sm) !important; padding: 24px; transition: all 0.2s ease; height: 100%; }
+    .saas-stat-card:hover { border-color: #D1D5DB !important; box-shadow: var(--shadow-md) !important; transform: translateY(-2px); }
+    .saas-stat-card .card-body { padding: 0 !important; }
+    .saas-stat-card h6 { font-size: 0.875rem; font-weight: 600; color: var(--text-muted) !important; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px; }
+    .saas-stat-card h2 { font-size: 2rem; font-weight: 700; color: var(--text-main) !important; margin: 0; line-height: 1; letter-spacing: -0.02em; }
+
+    .card:not(.saas-stat-card):not(.saas-action-card) { background: var(--card-bg) !important; border: 1px solid var(--border-light) !important; border-radius: 12px !important; box-shadow: var(--shadow-sm) !important; overflow: hidden; margin-bottom: 24px;}
+    .card:not(.saas-stat-card) > .card-body { padding: 0; }
+    .card-title, .card-header { padding: 20px 24px; margin: 0; border-bottom: 1px solid var(--border-light); font-size: 1rem; font-weight: 600; color: var(--text-main); background: #fff !important; display: flex; align-items: center; gap: 8px;}
+    .card-title i, .card-header i { color: var(--text-muted); }
+    .card-body-inner { padding: 24px; }
+
+    .table { margin-bottom: 0; }
+    .table th { background-color: #F9FAFB; color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; padding: 12px 24px; border-bottom: 1px solid var(--border-light); font-weight: 600; }
+    .table td { padding: 16px 24px; vertical-align: middle; border-bottom: 1px solid var(--border-light); color: var(--text-main); font-size: 0.875rem; }
+
+    .saas-action-card { display: flex; flex-direction: column; padding: 20px; background: var(--card-bg); border: 1px solid var(--border-light); border-radius: 12px; box-shadow: var(--shadow-sm); transition: all 0.2s ease; text-align: left; height: 100%;}
+    .saas-action-card:hover { border-color: var(--accent-primary); box-shadow: var(--shadow-md); transform: translateY(-2px); }
+    .saas-action-card h6 { font-size: 0.95rem; font-weight: 600; color: var(--text-main); margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+    .saas-action-card h6 i { color: var(--accent-primary); }
+    .saas-action-card p { font-size: 0.85rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 16px; flex-grow: 1;}
+    .saas-action-card .btn { width: 100%; justify-content: center; background: #EEF2FF !important; color: var(--accent-primary) !important; border: none; box-shadow: none;}
+    .saas-action-card:hover .btn { background: var(--accent-primary) !important; color: #fff !important; }
+
+    .modal-content { border-radius: 16px; border: 1px solid var(--border-light); }
+    .modal-header, .modal-body, .modal-footer { border-color: var(--border-light); }
+    .form-control, .form-select { border-radius: 8px; border: 1px solid #D1D5DB; padding: 10px 14px; font-size: 0.9rem; }
+    .form-control:focus, .form-select:focus { border-color: var(--accent-primary); box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2); }
+</style>
 {% endblock %}
 
 {% block scripts %}
 {{ super() }}
 <script src="{{ url_for('static', filename='js/admin_reports.js') }}" defer></script>
+<script>
+    document.documentElement.setAttribute('data-theme', 'light');
+    document.documentElement.classList.remove('theme-dark');
+    document.body.classList.remove('dark-mode');
+    localStorage.setItem('theme-preference', 'light');
+</script>
 {% endblock %}
 
 {% block content %}
@@ -17,17 +73,16 @@
     {% include 'components/sidebar.html' %}
 
     <main class="app-content main-content reports-page">
-        <div
-            class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
             <h1 class="h2"><i class="fas fa-file-invoice-dollar"></i> <span data-i18n="seReports.title">SE - Báo cáo doanh thu &amp; chi phí</span></h1>
             <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#scheduleReportModal">
                 <i class="fas fa-calendar-plus"></i> <span data-i18n="seReports.scheduleReport">Lên lịch báo cáo</span>
             </button>
         </div>
 
-        <div class="row mb-3">
+        <div class="row mb-4">
             <div class="col-md-3">
-                <div class="card text-white bg-success">
+                <div class="card saas-stat-card">
                     <div class="card-body">
                         <h6 class="card-title" data-i18n="seReports.revenueThisMonth">Doanh thu (Tháng này)</h6>
                         <h2 id="monthRevenue">0 VND</h2>
@@ -35,7 +90,7 @@
                 </div>
             </div>
             <div class="col-md-3">
-                <div class="card text-white bg-danger">
+                <div class="card saas-stat-card">
                     <div class="card-body">
                         <h6 class="card-title" data-i18n="seReports.expenseThisMonth">Chi phí (Tháng này)</h6>
                         <h2 id="monthExpense">0 VND</h2>
@@ -43,7 +98,7 @@
                 </div>
             </div>
             <div class="col-md-3">
-                <div class="card text-white bg-primary">
+                <div class="card saas-stat-card">
                     <div class="card-body">
                         <h6 class="card-title" data-i18n="seReports.profit">Lợi nhuận</h6>
                         <h2 id="monthProfit">0 VND</h2>
@@ -51,7 +106,7 @@
                 </div>
             </div>
             <div class="col-md-3">
-                <div class="card text-white bg-warning">
+                <div class="card saas-stat-card">
                     <div class="card-body">
                         <h6 class="card-title" data-i18n="seReports.reportsSent">Báo cáo đã gửi</h6>
                         <h2 id="reportsSent">0</h2>
@@ -60,9 +115,11 @@
             </div>
         </div>
 
-        <div class="card mb-3">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title"><i class="fas fa-calendar-check"></i> <span data-i18n="seReports.scheduledReports">Báo cáo đã lên lịch</span></h5>
+            </div>
             <div class="card-body">
-                <h5 class="card-title" data-i18n="seReports.scheduledReports">Báo cáo đã lên lịch</h5>
                 <div class="table-responsive">
                     <table class="table table-hover">
                         <thead>
@@ -78,7 +135,7 @@
                         </thead>
                         <tbody id="scheduledReportsBody">
                             <tr>
-                                <td colspan="7" class="text-center">
+                                <td colspan="7" class="text-center text-muted py-4">
                                     <span data-i18n="seReports.emptyState">Chưa có báo cáo đã lên lịch. Nhấn "Lên lịch báo cáo" để bắt đầu.</span>
                                 </td>
                             </tr>
@@ -88,55 +145,43 @@
             </div>
         </div>
 
-        <div class="card">
-            <div class="card-header card-header-surface">
-                <h5><i class="fas fa-chart-line"></i> <span data-i18n="seReports.revenueExpenseChart">Biểu đồ doanh thu &amp; chi phí</span></h5>
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title"><i class="fas fa-chart-line"></i> <span data-i18n="seReports.revenueExpenseChart">Biểu đồ doanh thu &amp; chi phí</span></h5>
             </div>
-            <div class="card-body">
+            <div class="card-body card-body-inner">
                 <canvas id="revenueChart" height="80"></canvas>
-                <p class="text-center text-muted mt-3">
-                    <i class="fas fa-chart-bar"></i> <span data-i18n="seReports.chartEmptyHint">Biểu đồ sẽ hiển thị khi có dữ liệu doanh thu và chi phí</span>
+                <p class="text-center text-muted mt-4 mb-0" style="font-size: 0.85rem;">
+                    <i class="fas fa-chart-bar me-1"></i> <span data-i18n="seReports.chartEmptyHint">Biểu đồ sẽ hiển thị khi có dữ liệu doanh thu và chi phí</span>
                 </p>
             </div>
         </div>
 
-        <div class="card mt-3">
-            <div class="card-header card-header-surface">
-                <h5><i class="fas fa-lightbulb"></i> <span data-i18n="seReports.reportTemplates">Mẫu báo cáo</span></h5>
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title"><i class="fas fa-lightbulb"></i> <span data-i18n="seReports.reportTemplates">Mẫu báo cáo</span></h5>
             </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-4 mb-3">
-                        <div class="card text-white bg-primary">
-                            <div class="card-body">
-                                <h6 class="card-title"><i class="fas fa-calendar-day"></i> <span data-i18n="seReports.dailyReport">Báo cáo hằng ngày</span></h6>
-                                <p class="card-text" data-i18n="seReports.dailyReportDesc">Tổng hợp doanh thu &amp; chi phí mỗi ngày, gửi lúc 18:00.</p>
-                                <button class="btn btn-sm btn-primary" onclick="alert('Mẫu: Báo cáo hằng ngày')">
-                                    <i class="fas fa-plus"></i> Dùng
-                                </button>
-                            </div>
+            <div class="card-body card-body-inner">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <div class="saas-action-card">
+                            <h6><i class="fas fa-calendar-day"></i> <span data-i18n="seReports.dailyReport">Báo cáo hằng ngày</span></h6>
+                            <p data-i18n="seReports.dailyReportDesc">Tổng hợp doanh thu &amp; chi phí mỗi ngày, gửi lúc 18:00.</p>
+                            <button class="btn btn-sm" onclick="alert('Mẫu: Báo cáo hằng ngày')"><i class="fas fa-plus"></i> Dùng mẫu</button>
                         </div>
                     </div>
-                    <div class="col-md-4 mb-3">
-                        <div class="card text-white bg-success">
-                            <div class="card-body">
-                                <h6 class="card-title"><i class="fas fa-calendar-week"></i> <span data-i18n="seReports.weeklyReport">Báo cáo hằng tuần</span></h6>
-                                <p class="card-text" data-i18n="seReports.weeklyReportDesc">Tóm tắt 7 ngày doanh thu &amp; chi phí, gửi mỗi Chủ nhật.</p>
-                                <button class="btn btn-sm btn-success" onclick="alert('Mẫu: Báo cáo hằng tuần')">
-                                    <i class="fas fa-plus"></i> Dùng
-                                </button>
-                            </div>
+                    <div class="col-md-4">
+                        <div class="saas-action-card">
+                            <h6><i class="fas fa-calendar-week"></i> <span data-i18n="seReports.weeklyReport">Báo cáo hằng tuần</span></h6>
+                            <p data-i18n="seReports.weeklyReportDesc">Tóm tắt 7 ngày doanh thu &amp; chi phí, gửi mỗi Chủ nhật.</p>
+                            <button class="btn btn-sm" onclick="alert('Mẫu: Báo cáo hằng tuần')"><i class="fas fa-plus"></i> Dùng mẫu</button>
                         </div>
                     </div>
-                    <div class="col-md-4 mb-3">
-                        <div class="card text-white bg-info">
-                            <div class="card-body">
-                                <h6 class="card-title"><i class="fas fa-calendar-alt"></i> <span data-i18n="seReports.monthlyReport">Báo cáo hằng tháng</span></h6>
-                                <p class="card-text" data-i18n="seReports.monthlyReportDesc">Báo cáo cuối tháng chi tiết, gửi vào ngày 1 hằng tháng.</p>
-                                <button class="btn btn-sm btn-info" onclick="alert('Mẫu: Báo cáo hằng tháng')">
-                                    <i class="fas fa-plus"></i> Dùng
-                                </button>
-                            </div>
+                    <div class="col-md-4">
+                        <div class="saas-action-card">
+                            <h6><i class="fas fa-calendar-alt"></i> <span data-i18n="seReports.monthlyReport">Báo cáo hằng tháng</span></h6>
+                            <p data-i18n="seReports.monthlyReportDesc">Báo cáo cuối tháng chi tiết, gửi vào ngày 1 hằng tháng.</p>
+                            <button class="btn btn-sm" onclick="alert('Mẫu: Báo cáo hằng tháng')"><i class="fas fa-plus"></i> Dùng mẫu</button>
                         </div>
                     </div>
                 </div>
@@ -196,5 +241,4 @@
         </div>
     </div>
 </div>
-
 {% endblock %}

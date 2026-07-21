@@ -5,26 +5,82 @@
 {% block styles %}
 {{ super() }}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/wallet.css') }}">
+<style>
+    /* =========================================================
+       ANSER RETAIL: LINEAR / STRIPE LIGHT AESTHETIC
+       ========================================================= */
+    :root {
+        --app-bg: #F7F9FC; --card-bg: #FFFFFF; --text-main: #111827; --text-muted: #6B7280;
+        --border-light: #E5E7EB; --accent-primary: #6366F1;
+        --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05); --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.08);
+    }
+    html, body, .app-layout, .app-content, .main-content { background-color: var(--app-bg) !important; color: var(--text-main) !important; font-family: 'Inter', sans-serif; }
+    .dark-mode { background-color: var(--app-bg) !important; }
+
+    .wallet-header { border-bottom: 1px solid var(--border-light) !important; margin-bottom: 32px !important; padding-bottom: 16px !important; }
+    h1.h2 { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.02em; color: var(--text-main); display: flex; align-items: center; gap: 12px; margin:0;}
+    h1.h2 i { color: var(--text-muted); font-size: 1.25rem; }
+
+    .btn { border-radius: 8px; font-weight: 500; font-size: 0.875rem; padding: 8px 16px; border: 1px solid transparent; box-shadow: var(--shadow-sm); transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 8px; }
+    .btn-primary { background-color: var(--accent-primary) !important; color: #fff !important; }
+    .btn-primary:hover { background-color: #4F46E5 !important; transform: translateY(-1px); box-shadow: var(--shadow-md); }
+    .btn-success { background-color: #10B981 !important; color: #fff !important; }
+    .btn-outline-secondary { background-color: #fff !important; color: var(--text-main) !important; border-color: var(--border-light) !important; box-shadow: var(--shadow-sm) !important; }
+    .btn-outline-secondary:hover { background-color: #F9FAFB !important; }
+
+    /* Wallet Specific Cards */
+    .wallet-card { background: var(--card-bg) !important; border: 1px solid var(--border-light) !important; border-radius: 12px; padding: 24px; box-shadow: var(--shadow-sm); display: flex; flex-direction: column; justify-content: space-between; height: 100%; transition: all 0.2s;}
+    .wallet-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); border-color: #D1D5DB !important; }
+    .wallet-card-label { font-size: 0.875rem; font-weight: 600; color: var(--text-muted) !important; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px; }
+    .wallet-card-value { font-size: 2.25rem; font-weight: 700; color: var(--text-main) !important; line-height: 1; margin-bottom: 16px; letter-spacing: -0.02em;}
+    .wallet-card-foot { font-size: 0.85rem; color: var(--text-muted); }
+
+    .card { background: var(--card-bg) !important; border: 1px solid var(--border-light) !important; border-radius: 12px !important; box-shadow: var(--shadow-sm) !important; overflow: hidden; margin-bottom: 24px;}
+    .card-body { padding: 24px; }
+    .card-title { font-size: 1rem; font-weight: 600; color: var(--text-main); display: flex; align-items: center; gap: 8px;}
+    .card-title i { color: var(--text-muted); }
+
+    .table th { background-color: #F9FAFB; color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; padding: 12px 24px; border-bottom: 1px solid var(--border-light); font-weight: 600; }
+    .table td { padding: 16px 24px; vertical-align: middle; border-bottom: 1px solid var(--border-light); color: var(--text-main); font-size: 0.875rem; }
+
+    .modal-content { border-radius: 16px; border: 1px solid var(--border-light); }
+    .modal-header, .modal-body, .modal-footer { border-color: var(--border-light); }
+    .modal-header.bg-success { background: #fff !important; color: var(--text-main) !important; }
+    .modal-header.bg-success .modal-title i { color: #10B981; }
+    .btn-close-white { filter: invert(1) grayscale(100%) brightness(200%); }
+    .form-control, .form-select { border-radius: 8px; border: 1px solid #D1D5DB; padding: 10px 14px; font-size: 0.9rem; }
+    .form-control:focus, .form-select:focus { border-color: var(--accent-primary); box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2); }
+</style>
 {% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script src="{{ url_for('static', filename='js/wallet.js') }}" defer></script>
+<script>
+    document.documentElement.setAttribute('data-theme', 'light');
+    document.documentElement.classList.remove('theme-dark');
+    document.body.classList.remove('dark-mode');
+    localStorage.setItem('theme-preference', 'light');
+</script>
+{% endblock %}
+
 {% block content %}
 <div class="app-layout">
     {% include 'components/sidebar.html' %}
 
     <main class="app-content main-content">
-        <div
-            class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom wallet-header">
+        <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom wallet-header">
             <div>
                 <h1 class="h2"><i class="fas fa-wallet"></i> <span data-i18n="wallet.title">Ví của tôi</span></h1>
-                <p class="text-muted mb-0" data-i18n="wallet.subtitle">Nạp tiền, nâng cấp lên gói Quản lý và theo dõi lịch sử giao dịch</p>
+                <p class="text-muted mb-0 mt-1" style="font-size: 0.9rem;" data-i18n="wallet.subtitle">Nạp tiền, nâng cấp lên gói Quản lý và theo dõi lịch sử giao dịch</p>
             </div>
-            <div class="btn-group wallet-actions">
+            <div class="btn-group wallet-actions mt-3 mt-md-0">
                 <button class="btn btn-primary" onclick="openTopupModal()"><i class="fas fa-plus"></i> <span data-i18n="wallet.topup">Nạp tiền</span></button>
-                <button class="btn btn-outline-secondary" onclick="loadWalletDashboard()"><i
-                        class="fas fa-sync"></i></button>
+                <button class="btn btn-outline-secondary" onclick="loadWalletDashboard()"><i class="fas fa-sync"></i></button>
             </div>
         </div>
 
-        <div class="row g-3" id="walletMetrics">
+        <div class="row g-4 mb-4" id="walletMetrics">
             <div class="col-lg-4">
                 <div class="wallet-card">
                     <div class="wallet-card-label" data-i18n="wallet.availableBalance">Số dư khả dụng</div>
@@ -38,7 +94,7 @@
             <div class="col-lg-4">
                 <div class="wallet-card">
                     <div class="wallet-card-label" data-i18n="wallet.managerPlan">Gói Quản lý</div>
-                    <div class="wallet-card-value" id="subscriptionStatus" data-i18n="wallet.notSubscribed">Chưa đăng ký</div>
+                    <div class="wallet-card-value" id="subscriptionStatus" style="font-size: 1.8rem;" data-i18n="wallet.notSubscribed">Chưa đăng ký</div>
                     <div class="wallet-card-foot">
                         <span id="subscriptionExpiry">-</span>
                     </div>
@@ -47,32 +103,31 @@
             <div class="col-lg-4">
                 <div class="wallet-card">
                     <div class="wallet-card-label" data-i18n="wallet.autoRenew">Tự động gia hạn</div>
-                    <div class="wallet-card-value" id="autoRenewStatus" data-i18n="wallet.off">Tắt</div>
+                    <div class="wallet-card-value" id="autoRenewStatus" style="font-size: 1.8rem;" data-i18n="wallet.off">Tắt</div>
                     <div class="wallet-card-foot">
-                        <div class="form-check form-switch">
+                        <div class="form-check form-switch mt-1">
                             <input class="form-check-input" type="checkbox" id="autoRenewToggle"
                                 onchange="toggleAutoRenew(this.checked)" disabled>
-                            <label class="form-check-label" for="autoRenewToggle" data-i18n="wallet.autoRenewHint">Tự động gia hạn nếu đủ số dư</label>
+                            <label class="form-check-label" style="font-size: 0.85rem;" for="autoRenewToggle" data-i18n="wallet.autoRenewHint">Tự động gia hạn nếu đủ số dư</label>
                         </div>
                     </div>
                 </div>
             </div>
             {% else %}
             <div class="col-lg-4">
-                <div class="wallet-card" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
-                    <div class="wallet-card-label" style="color: rgba(255,255,255,0.9);" data-i18n="wallet.totalRevenue">Tổng doanh thu</div>
-                    <div class="wallet-card-value" style="color: white;" id="totalRevenue">0 VND</div>
-                    <div class="wallet-card-foot" style="color: rgba(255,255,255,0.8);">
+                <div class="wallet-card" style="border-left: 4px solid #10B981 !important;">
+                    <div class="wallet-card-label" data-i18n="wallet.totalRevenue">Tổng doanh thu</div>
+                    <div class="wallet-card-value" id="totalRevenue">0 VND</div>
+                    <div class="wallet-card-foot">
                         <span data-i18n="wallet.fromManagerPlans">Từ các gói Quản lý</span>
                     </div>
                 </div>
             </div>
             <div class="col-lg-4">
-                <div class="wallet-card" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);">
-                    <div class="wallet-card-label" style="color: rgba(255,255,255,0.9);" data-i18n="wallet.activeManagers">Quản lý đang hoạt động
-                    </div>
-                    <div class="wallet-card-value" style="color: white;" id="activeManagers">0</div>
-                    <div class="wallet-card-foot" style="color: rgba(255,255,255,0.8);">
+                <div class="wallet-card" style="border-left: 4px solid #3B82F6 !important;">
+                    <div class="wallet-card-label" data-i18n="wallet.activeManagers">Quản lý đang hoạt động</div>
+                    <div class="wallet-card-value" id="activeManagers">0</div>
+                    <div class="wallet-card-foot">
                         <span data-i18n="wallet.vipAccounts">Tài khoản VIP</span>
                     </div>
                 </div>
@@ -80,12 +135,12 @@
             {% endif %}
         </div>
 
-        <div class="row mt-4">
+        <div class="row">
             {% if user.role != 'admin' %}
             <div class="col-lg-7 mb-4">
                 <div class="card h-100">
                     <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
                             <h5 class="card-title mb-0"><i class="fas fa-star"></i> <span data-i18n="wallet.choosePlan">Chọn gói nâng cấp</span></h5>
                             <small class="text-muted" data-i18n="wallet.payWithBalance">Thanh toán bằng số dư ví</small>
                         </div>
@@ -96,19 +151,19 @@
             {% else %}
             <div class="col-lg-7 mb-4">
                 <div class="card h-100">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div class="card-body d-flex flex-column">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
                             <h5 class="card-title mb-0"><i class="fas fa-university"></i> <span data-i18n="wallet.withdrawToBank">Rút về tài khoản ngân hàng</span>
                             </h5>
                             <small class="text-muted" data-i18n="wallet.transferToBank">Chuyển số dư về tài khoản ngân hàng</small>
                         </div>
-                        <div class="p-4 text-center">
-                            <div class="mb-4">
-                                <i class="fas fa-money-bill-wave" style="font-size: 3rem; color: #10b981;"></i>
-                                <h4 class="mt-3" data-i18n="wallet.withdrawRevenue">Rút doanh thu</h4>
-                                <p class="text-muted" data-i18n="wallet.withdrawRevenueDesc">Chuyển số dư từ ví về tài khoản ngân hàng của bạn</p>
+                        <div class="p-4 text-center flex-grow-1 d-flex flex-column justify-content-center align-items-center">
+                            <div class="mb-4" style="background: #ECFDF5; width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto;">
+                                <i class="fas fa-money-bill-wave" style="font-size: 2rem; color: #10B981;"></i>
                             </div>
-                            <button class="btn btn-lg btn-success" onclick="openWithdrawModal()">
+                            <h4 class="mb-2" style="font-weight: 700;" data-i18n="wallet.withdrawRevenue">Rút doanh thu</h4>
+                            <p class="text-muted mb-4" style="max-width: 300px;" data-i18n="wallet.withdrawRevenueDesc">Chuyển số dư từ ví về tài khoản ngân hàng của bạn một cách nhanh chóng.</p>
+                            <button class="btn btn-success" style="padding: 12px 24px;" onclick="openWithdrawModal()">
                                 <i class="fas fa-hand-holding-usd"></i> <span data-i18n="wallet.withdrawNow">Rút tiền ngay</span>
                             </button>
                         </div>
@@ -119,12 +174,12 @@
             <div class="col-lg-5 mb-4">
                 <div class="card h-100">
                     <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
                             <h5 class="card-title mb-0"><i class="fas fa-history"></i> <span data-i18n="wallet.recentHistory">Lịch sử gần đây</span></h5>
-                            <span class="badge bg-light text-dark" id="txnCount">0 giao dịch</span>
+                            <span class="badge" style="background: #F3F4F6; color: var(--text-muted); border: 1px solid var(--border-light);" id="txnCount">0 giao dịch</span>
                         </div>
-                        <div class="table-responsive" style="max-height: 320px;">
-                            <table class="table table-sm table-hover align-middle">
+                        <div class="table-responsive" style="max-height: 320px; border: 1px solid var(--border-light); border-radius: 8px;">
+                            <table class="table table-sm table-hover align-middle mb-0">
                                 <thead>
                                     <tr>
                                         <th data-i18n="wallet.colCode">Mã</th>
@@ -135,13 +190,13 @@
                                 </thead>
                                 <tbody id="txnTableBody">
                                     <tr>
-                                        <td colspan="4" class="text-center text-muted" data-i18n="common.loading">Đang tải...</td>
+                                        <td colspan="4" class="text-center text-muted py-4" data-i18n="common.loading">Đang tải...</td>
                                     </tr>
                                 </tbody>
                             </table>
                         </div>
-                        <p class="small text-muted mt-2" data-i18n="wallet.pendingNote">Mọi giao dịch cần admin duyệt sẽ được đánh dấu
-                            <strong>Đang chờ</strong>.
+                        <p class="small text-muted mt-3 mb-0" data-i18n="wallet.pendingNote">
+                            <i class="fas fa-info-circle me-1"></i> Mọi giao dịch cần admin duyệt sẽ được đánh dấu <strong>Đang chờ</strong>.
                         </p>
                     </div>
                 </div>
@@ -155,18 +210,17 @@
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" data-i18n="wallet.topupToWallet">Nạp tiền vào ví</h5>
+                <h5 class="modal-title"><i class="fas fa-plus-circle me-2" style="color: var(--accent-primary)"></i> <span data-i18n="wallet.topupToWallet">Nạp tiền vào ví</span></h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <div class="mb-3">
                     <label class="form-label"><span data-i18n="wallet.amount">Số tiền</span> <span class="text-danger">*</span></label>
                     <div class="input-group">
-                        <span class="input-group-text">VND</span>
-                        <input type="number" class="form-control" id="topupAmount" min="50000" step="50000"
-                            value="500000">
+                        <span class="input-group-text bg-light">VND</span>
+                        <input type="number" class="form-control" id="topupAmount" min="50000" step="50000" value="500000">
                     </div>
-                    <small class="text-muted" data-i18n="wallet.topupHint">Tối thiểu 50.000 VND. Sau khi nạp, admin sẽ xác nhận và cộng tiền vào ví.</small>
+                    <small class="text-muted mt-2 d-block" data-i18n="wallet.topupHint">Tối thiểu 50.000 VND. Sau khi nạp, admin sẽ xác nhận và cộng tiền vào ví.</small>
                 </div>
                 <div class="mb-3">
                     <label class="form-label" data-i18n="sale.paymentMethod">Phương thức thanh toán</label>
@@ -184,35 +238,32 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-i18n="common.cancel">Hủy</button>
-                <button type="button" class="btn btn-primary" onclick="submitTopup()"><i class="fas fa-paper-plane"></i>
+                <button type="button" class="btn btn-primary" onclick="submitTopup()"><i class="fas fa-paper-plane me-1"></i>
                     <span data-i18n="wallet.sendRequest">Gửi yêu cầu</span></button>
             </div>
         </div>
     </div>
-
 </div>
 
 <!-- Modal: Rút tiền (Admin) -->
 <div class="modal fade" id="withdrawModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
-            <div class="modal-header bg-success text-white">
-                <h5 class="modal-title"><i class="fas fa-university"></i> <span data-i18n="wallet.withdrawToBank">Rút về tài khoản ngân hàng</span></h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-university me-2" style="color: #10B981"></i> <span data-i18n="wallet.withdrawToBank">Rút về tài khoản ngân hàng</span></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <div class="alert alert-info">
-                    <i class="fas fa-info-circle"></i> <span data-i18n="wallet.availableBalance">Số dư khả dụng</span>: <strong id="withdrawAvailableBalance">0
-                        VND</strong>
+                <div class="alert alert-info" style="background: #EEF2FF; border-color: #C7D2FE; color: #4338CA;">
+                    <i class="fas fa-info-circle"></i> <span data-i18n="wallet.availableBalance">Số dư khả dụng</span>: <strong id="withdrawAvailableBalance">0 VND</strong>
                 </div>
                 <div class="mb-3">
                     <label class="form-label"><span data-i18n="wallet.amountToWithdraw">Số tiền cần rút</span> <span class="text-danger">*</span></label>
                     <div class="input-group">
-                        <span class="input-group-text">VND</span>
-                        <input type="number" class="form-control" id="withdrawAmount" min="100000" step="50000"
-                            placeholder="Nhập số tiền">
+                        <span class="input-group-text bg-light">VND</span>
+                        <input type="number" class="form-control" id="withdrawAmount" min="100000" step="50000" placeholder="Nhập số tiền">
                     </div>
-                    <small class="text-muted" data-i18n="wallet.minWithdraw">Tối thiểu 100.000 VND</small>
+                    <small class="text-muted mt-1 d-block" data-i18n="wallet.minWithdraw">Tối thiểu 100.000 VND</small>
                 </div>
                 <div class="mb-3">
                     <label class="form-label"><span data-i18n="wallet.bankName">Tên ngân hàng</span> <span class="text-danger">*</span></label>
@@ -228,24 +279,16 @@
                 </div>
                 <div class="mb-3">
                     <label class="form-label" data-i18n="customers.colNotes">Ghi chú</label>
-                    <textarea class="form-control" id="withdrawNote" rows="2"
-                        placeholder="Ghi chú tùy chọn (nếu có)"></textarea>
+                    <textarea class="form-control" id="withdrawNote" rows="2" placeholder="Ghi chú tùy chọn (nếu có)"></textarea>
                 </div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-i18n="common.cancel">Hủy</button>
                 <button type="button" class="btn btn-success" onclick="submitWithdraw()">
-                    <i class="fas fa-check"></i> <span data-i18n="wallet.confirmWithdraw">Xác nhận rút tiền</span>
+                    <i class="fas fa-check me-1"></i> <span data-i18n="wallet.confirmWithdraw">Xác nhận rút tiền</span>
                 </button>
             </div>
         </div>
     </div>
 </div>
-
-
-{% endblock %}
-
-{% block scripts %}
-{{ super() }}
-<script src="{{ url_for('static', filename='js/wallet.js') }}" defer></script>
 {% endblock %}

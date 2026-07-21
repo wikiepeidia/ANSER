@@ -5,11 +5,69 @@
 {% block styles %}
 {{ super() }}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/admin_auto_import.css') }}">
+<style>
+    /* =========================================================
+       ANSER RETAIL: LINEAR / STRIPE LIGHT AESTHETIC
+       ========================================================= */
+    :root {
+        --app-bg: #F7F9FC; --card-bg: #FFFFFF; --text-main: #111827; --text-muted: #6B7280;
+        --border-light: #E5E7EB; --accent-primary: #6366F1;
+        --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05); --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.08);
+    }
+    html, body, .app-layout, .app-content, .main-content { background-color: var(--app-bg) !important; color: var(--text-main) !important; font-family: 'Inter', sans-serif; }
+    .dark-mode { background-color: var(--app-bg) !important; }
+
+    .border-bottom { border-bottom: 1px solid var(--border-light) !important; margin-bottom: 32px !important; padding-bottom: 16px !important; }
+    h1.h2 { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.02em; color: var(--text-main); display: flex; align-items: center; gap: 12px; margin:0;}
+    h1.h2 i { color: var(--text-muted); font-size: 1.25rem; }
+
+    .btn { border-radius: 8px; font-weight: 500; font-size: 0.875rem; padding: 8px 16px; border: 1px solid transparent; box-shadow: var(--shadow-sm); transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 8px; }
+    .btn-primary { background-color: var(--accent-primary) !important; color: #fff !important; }
+    .btn-primary:hover { background-color: #4F46E5 !important; transform: translateY(-1px); box-shadow: var(--shadow-md); }
+    .btn-secondary { background-color: #fff !important; color: var(--text-main) !important; border-color: var(--border-light) !important; }
+
+    .alert-info { background-color: #EEF2FF; border-color: #C7D2FE; color: #4338CA; border-radius: 12px; padding: 16px 20px; font-size: 0.9rem; margin-bottom: 24px;}
+
+    .saas-stat-card { background: var(--card-bg) !important; border: 1px solid var(--border-light) !important; border-radius: 12px !important; box-shadow: var(--shadow-sm) !important; padding: 24px; transition: all 0.2s ease; height: 100%; }
+    .saas-stat-card:hover { border-color: #D1D5DB !important; box-shadow: var(--shadow-md) !important; transform: translateY(-2px); }
+    .saas-stat-card .card-body { padding: 0 !important; }
+    .saas-stat-card h5 { font-size: 0.875rem; font-weight: 600; color: var(--text-muted) !important; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px; }
+    .saas-stat-card h2, .saas-stat-card #lastRun { font-size: 2rem; font-weight: 700; color: var(--text-main) !important; margin: 0; line-height: 1; letter-spacing: -0.02em; }
+
+    .card:not(.saas-stat-card):not(.saas-action-card) { background: var(--card-bg) !important; border: 1px solid var(--border-light) !important; border-radius: 12px !important; box-shadow: var(--shadow-sm) !important; overflow: hidden; margin-bottom: 24px;}
+    .card:not(.saas-stat-card) > .card-body { padding: 0; }
+    .card-title, .card-header { padding: 20px 24px; margin: 0; border-bottom: 1px solid var(--border-light); font-size: 1rem; font-weight: 600; color: var(--text-main); background: #fff !important; display: flex; align-items: center; gap: 8px;}
+    .card-title i, .card-header i { color: var(--text-muted); }
+    .card-body-inner { padding: 24px; }
+
+    .table { margin-bottom: 0; }
+    .table th { background-color: #F9FAFB; color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; padding: 12px 24px; border-bottom: 1px solid var(--border-light); font-weight: 600; }
+    .table td { padding: 16px 24px; vertical-align: middle; border-bottom: 1px solid var(--border-light); color: var(--text-main); font-size: 0.875rem; }
+
+    .saas-action-card { display: flex; flex-direction: column; padding: 20px; background: var(--card-bg); border: 1px solid var(--border-light); border-radius: 12px; box-shadow: var(--shadow-sm); transition: all 0.2s ease; text-align: left; height: 100%;}
+    .saas-action-card:hover { border-color: var(--accent-primary); box-shadow: var(--shadow-md); transform: translateY(-2px); }
+    .saas-action-card h6 { font-size: 0.95rem; font-weight: 600; color: var(--text-main); margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+    .saas-action-card h6 i { color: var(--accent-primary); }
+    .saas-action-card p { font-size: 0.85rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 16px; flex-grow: 1;}
+    .saas-action-card .btn { width: 100%; justify-content: center; background: #EEF2FF !important; color: var(--accent-primary) !important; border: none; box-shadow: none;}
+    .saas-action-card:hover .btn { background: var(--accent-primary) !important; color: #fff !important; }
+
+    .modal-content { border-radius: 16px; border: 1px solid var(--border-light); }
+    .modal-header, .modal-body, .modal-footer { border-color: var(--border-light); }
+    .form-control, .form-select { border-radius: 8px; border: 1px solid #D1D5DB; padding: 10px 14px; font-size: 0.9rem; }
+    .form-control:focus, .form-select:focus { border-color: var(--accent-primary); box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2); }
+</style>
 {% endblock %}
 
 {% block scripts %}
 {{ super() }}
 <script src="{{ url_for('static', filename='js/admin_auto_import.js') }}" defer></script>
+<script>
+    document.documentElement.setAttribute('data-theme', 'light');
+    document.documentElement.classList.remove('theme-dark');
+    document.body.classList.remove('dark-mode');
+    localStorage.setItem('theme-preference', 'light');
+</script>
 {% endblock %}
 
 {% block content %}
@@ -17,8 +75,7 @@
     {% include 'components/sidebar.html' %}
 
     <main class="app-content main-content auto-import-page">
-        <div
-            class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
             <h1 class="h2"><i class="fas fa-sync-alt"></i> <span data-i18n="seAuto.title">SE - Tự động nhập hàng</span></h1>
             <button class="btn btn-primary" onclick="openAddAutomationModal()">
                 <i class="fas fa-plus"></i> <span data-i18n="seAuto.createRule">Tạo quy tự động</span>
@@ -26,40 +83,41 @@
         </div>
 
         <div class="alert alert-info">
-            <i class="fas fa-magic"></i> <strong data-i18n="seAuto.featureLabel">Tính năng:</strong> <span data-i18n="seAuto.featureDesc">Thiết lập các kịch bản tự động để tự nhập hàng khi
-            tồn kho sản phẩm thấp hơn ngưỡng hoặc theo lịch cố định.</span>
+            <i class="fas fa-magic"></i> <strong data-i18n="seAuto.featureLabel">Tính năng:</strong> <span data-i18n="seAuto.featureDesc">Thiết lập các kịch bản tự động để tự nhập hàng khi tồn kho sản phẩm thấp hơn ngưỡng hoặc theo lịch cố định.</span>
         </div>
 
-        <div class="row mb-3">
+        <div class="row mb-4">
             <div class="col-md-4">
-                <div class="card text-white bg-primary">
+                <div class="card saas-stat-card">
                     <div class="card-body">
                         <h5 class="card-title"><i class="fas fa-robot"></i> <span data-i18n="seAuto.activeRules">Quy tự động đang chạy</span></h5>
-                        <h2 id="activeAutomations" class="text-white">0</h2>
+                        <h2 id="activeAutomations">0</h2>
                     </div>
                 </div>
             </div>
             <div class="col-md-4">
-                <div class="card text-white bg-success">
+                <div class="card saas-stat-card">
                     <div class="card-body">
                         <h5 class="card-title"><i class="fas fa-check-circle"></i> <span data-i18n="imports.completed">Hoàn thành</span></h5>
-                        <h2 id="completedRuns" class="text-white">0</h2>
+                        <h2 id="completedRuns">0</h2>
                     </div>
                 </div>
             </div>
             <div class="col-md-4">
-                <div class="card text-white bg-warning">
+                <div class="card saas-stat-card">
                     <div class="card-body">
                         <h5 class="card-title"><i class="fas fa-clock"></i> <span data-i18n="seAuto.lastRun">Lần chạy gần nhất</span></h5>
-                        <h5 id="lastRun" class="text-white" data-i18n="seAuto.none">Chưa có</h5>
+                        <h2 id="lastRun" data-i18n="seAuto.none" style="font-size: 1.5rem; color: var(--text-muted) !important; font-weight: 500;">Chưa có</h2>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="card">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title"><i class="fas fa-list-ul"></i> <span data-i18n="seAuto.ruleList">Danh sách quy tự động</span></h5>
+            </div>
             <div class="card-body">
-                <h5 class="card-title" data-i18n="seAuto.ruleList">Danh sách quy tự động</h5>
                 <div class="table-responsive">
                     <table class="table table-hover">
                         <thead>
@@ -74,7 +132,7 @@
                         </thead>
                         <tbody id="automationsTableBody">
                             <tr>
-                                <td colspan="6" class="text-center">
+                                <td colspan="6" class="text-center text-muted py-4">
                                     <span data-i18n="seAuto.emptyState">Chưa có quy tự động nào. Nhấn "Tạo quy tự động" để bắt đầu.</span>
                                 </td>
                             </tr>
@@ -84,33 +142,24 @@
             </div>
         </div>
 
-        <div class="card mt-3">
-            <div class="card-header card-header-surface">
-                <h5><i class="fas fa-lightbulb"></i> <span data-i18n="seAuto.suggestions">Gợi ý quy tự động</span></h5>
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title"><i class="fas fa-lightbulb"></i> <span data-i18n="seAuto.suggestions">Gợi ý quy tự động</span></h5>
             </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <div class="card border-info">
-                            <div class="card-body">
-                                <h6 class="card-title"><i class="fas fa-warehouse"></i> <span data-i18n="seAuto.lowStockTitle">Tự nhập khi tồn kho thấp</span>
-                                </h6>
-                                <p class="card-text" data-i18n="seAuto.lowStockDesc">Tự động tạo đơn nhập khi tồn kho sản phẩm thấp hơn ngưỡng.</p>
-                                <button class="btn btn-sm btn-info" onclick="useTemplate('low_stock')">
-                                    <i class="fas fa-plus"></i> <span data-i18n="seAuto.useTemplate">Dùng mẫu</span>
-                                </button>
-                            </div>
+            <div class="card-body card-body-inner">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="saas-action-card">
+                            <h6><i class="fas fa-warehouse"></i> <span data-i18n="seAuto.lowStockTitle">Tự nhập khi tồn kho thấp</span></h6>
+                            <p data-i18n="seAuto.lowStockDesc">Tự động tạo đơn nhập khi tồn kho sản phẩm thấp hơn ngưỡng.</p>
+                            <button class="btn btn-sm" onclick="useTemplate('low_stock')"><i class="fas fa-plus"></i> <span data-i18n="seAuto.useTemplate">Dùng mẫu</span></button>
                         </div>
                     </div>
-                    <div class="col-md-6 mb-3">
-                        <div class="card border-success">
-                            <div class="card-body">
-                                <h6 class="card-title"><i class="fas fa-calendar-alt"></i> <span data-i18n="seAuto.scheduledTitle">Nhập theo lịch</span></h6>
-                                <p class="card-text" data-i18n="seAuto.scheduledDesc">Tự động nhập theo lịch: hằng ngày, hằng tuần, hằng tháng.</p>
-                                <button class="btn btn-sm btn-success" onclick="useTemplate('scheduled')">
-                                    <i class="fas fa-plus"></i> <span data-i18n="seAuto.useTemplate">Dùng mẫu</span>
-                                </button>
-                            </div>
+                    <div class="col-md-6">
+                        <div class="saas-action-card">
+                            <h6><i class="fas fa-calendar-alt"></i> <span data-i18n="seAuto.scheduledTitle">Nhập theo lịch</span></h6>
+                            <p data-i18n="seAuto.scheduledDesc">Tự động nhập theo lịch: hằng ngày, hằng tuần, hằng tháng.</p>
+                            <button class="btn btn-sm" onclick="useTemplate('scheduled')"><i class="fas fa-plus"></i> <span data-i18n="seAuto.useTemplate">Dùng mẫu</span></button>
                         </div>
                     </div>
                 </div>
@@ -131,8 +180,7 @@
                 <form id="automationForm">
                     <div class="mb-3">
                         <label class="form-label"><span data-i18n="seAuto.ruleName">Tên quy tự động</span> <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" name="name" required
-                            placeholder="VD: Tự nhập khi hết hàng">
+                        <input type="text" class="form-control" name="name" required placeholder="VD: Tự nhập khi hết hàng">
                     </div>
                     <div class="mb-3">
                         <label class="form-label" data-i18n="seAuto.ruleType">Loại quy tự động</label>
@@ -149,12 +197,12 @@
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Ngưỡng tồn kho</label>
                                 <input type="number" class="form-control" id="cfgThreshold" value="10" min="1">
-                                <div class="form-text">Kích hoạt khi tồn kho thấp hơn con số này</div>
+                                <div class="form-text mt-1">Kích hoạt khi tồn kho thấp hơn con số này</div>
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Số lượng đặt thêm</label>
                                 <input type="number" class="form-control" id="cfgReorderQty" value="50" min="1">
-                                <div class="form-text">Số đơn vị cần đặt thêm</div>
+                                <div class="form-text mt-1">Số đơn vị cần đặt thêm</div>
                             </div>
                         </div>
                         <div class="mb-3">
@@ -200,7 +248,7 @@
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Số ngày dự báo</label>
                                 <input type="number" class="form-control" id="cfgLookAhead" value="30" min="7" max="90">
-                                <div class="form-text">Dự báo trước bao nhiêu ngày</div>
+                                <div class="form-text mt-1">Dự báo trước bao nhiêu ngày</div>
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Tự động duyệt đơn</label>
@@ -212,7 +260,7 @@
                         </div>
                     </div>
 
-                    <div class="mb-3 form-check">
+                    <div class="mb-3 form-check mt-3">
                         <input type="checkbox" class="form-check-input" name="active" id="automationActive" checked>
                         <label class="form-check-label" for="automationActive" data-i18n="seAuto.activateNow">Kích hoạt ngay</label>
                     </div>
@@ -225,5 +273,4 @@
         </div>
     </div>
 </div>
-
 {% endblock %}

@@ -5,11 +5,53 @@
 {% block styles %}
 {{ super() }}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/admin_customers.css') }}">
+<style>
+    /* =========================================================
+       ANSER RETAIL: LINEAR / STRIPE LIGHT AESTHETIC
+       ========================================================= */
+    :root {
+        --app-bg: #F7F9FC; --card-bg: #FFFFFF; --text-main: #111827; --text-muted: #6B7280;
+        --border-light: #E5E7EB; --accent-primary: #6366F1;
+        --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05); --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.08);
+    }
+    html, body, .app-layout, .app-content, .main-content { background-color: var(--app-bg) !important; color: var(--text-main) !important; font-family: 'Inter', sans-serif; }
+    .dark-mode { background-color: var(--app-bg) !important; }
+
+    .border-bottom { border-bottom: 1px solid var(--border-light) !important; margin-bottom: 32px !important; padding-bottom: 16px !important; }
+    h1.h2 { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.02em; color: var(--text-main); display: flex; align-items: center; gap: 12px; margin:0;}
+    h1.h2 i { color: var(--text-muted); font-size: 1.25rem; }
+
+    .btn { border-radius: 8px; font-weight: 500; font-size: 0.875rem; padding: 8px 16px; border: 1px solid transparent; box-shadow: var(--shadow-sm); transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 8px; }
+    .btn-primary { background-color: var(--accent-primary) !important; color: #fff !important; }
+    .btn-primary:hover { background-color: #4F46E5 !important; transform: translateY(-1px); box-shadow: var(--shadow-md); }
+    .btn-secondary { background-color: #fff !important; color: var(--text-main) !important; border-color: var(--border-light) !important; }
+
+    .card { background: var(--card-bg) !important; border: 1px solid var(--border-light) !important; border-radius: 12px !important; box-shadow: var(--shadow-sm) !important; overflow: hidden; margin-bottom: 24px;}
+    .card-body { padding: 0; }
+
+    .table { margin-bottom: 0; }
+    .table th { background-color: #F9FAFB; color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; padding: 12px 24px; border-bottom: 1px solid var(--border-light); font-weight: 600; border-top: none;}
+    .table td { padding: 16px 24px; vertical-align: middle; border-bottom: 1px solid var(--border-light); color: var(--text-main); font-size: 0.875rem; }
+    .table-hover tbody tr:hover { background-color: #F9FAFB; }
+    .table tbody tr:last-child td { border-bottom: none; }
+
+    .modal-content { border-radius: 16px; border: 1px solid var(--border-light); }
+    .modal-header, .modal-body, .modal-footer { border-color: var(--border-light); }
+    .form-control { border-radius: 8px; border: 1px solid #D1D5DB; padding: 10px 14px; font-size: 0.9rem; }
+    .form-control:focus { border-color: var(--accent-primary); box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2); }
+    .form-label { font-weight: 600; color: var(--text-main); font-size: 0.875rem; margin-bottom: 8px; }
+</style>
 {% endblock %}
 
 {% block scripts %}
 {{ super() }}
 <script src="{{ url_for('static', filename='js/admin_customers.js') }}" defer></script>
+<script>
+    document.documentElement.setAttribute('data-theme', 'light');
+    document.documentElement.classList.remove('theme-dark');
+    document.body.classList.remove('dark-mode');
+    localStorage.setItem('theme-preference', 'light');
+</script>
 {% endblock %}
 
 {% block content %}
@@ -17,8 +59,7 @@
     {% include 'components/sidebar.html' %}
 
     <main class="app-content main-content customers-page">
-        <div
-            class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
             <h1 class="h2"><i class="fas fa-users"></i> <span data-i18n="customers.title">Quản lý khách hàng</span></h1>
             <button class="btn btn-primary" onclick="openAddCustomerModal()">
                 <i class="fas fa-plus"></i> <span data-i18n="customers.addCustomer">Thêm khách hàng</span>
@@ -42,8 +83,8 @@
                         </thead>
                         <tbody id="customersTableBody">
                             <tr>
-                                <td colspan="7" class="text-center">
-                                    <div class="spinner-border" role="status"></div>
+                                <td colspan="7" class="text-center py-4">
+                                    <div class="spinner-border text-primary" role="status"></div>
                                 </td>
                             </tr>
                         </tbody>
@@ -59,46 +100,45 @@
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="customerModalTitle" data-i18n="customers.addCustomer">Thêm khách hàng</h5>
+                <h5 class="modal-title" id="customerModalTitle" style="font-weight: 700;" data-i18n="customers.addCustomer">Thêm khách hàng</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body">
+            <div class="modal-body p-4">
                 <input type="hidden" id="customerId">
                 <div class="row">
-                    <div class="col-md-6 mb-3">
+                    <div class="col-md-6 mb-4">
                         <label class="form-label"><span data-i18n="customers.codeLabel">Mã KH</span> <span class="text-danger">*</span></label>
                         <input type="text" class="form-control" id="customerCode" required>
                     </div>
-                    <div class="col-md-6 mb-3">
+                    <div class="col-md-6 mb-4">
                         <label class="form-label"><span data-i18n="customers.colName">Tên khách hàng</span> <span class="text-danger">*</span></label>
                         <input type="text" class="form-control" id="customerName" required>
                     </div>
                 </div>
                 <div class="row">
-                    <div class="col-md-6 mb-3">
+                    <div class="col-md-6 mb-4">
                         <label class="form-label" data-i18n="customers.colPhone">Số điện thoại</label>
                         <input type="tel" class="form-control" id="customerPhone">
                     </div>
-                    <div class="col-md-6 mb-3">
+                    <div class="col-md-6 mb-4">
                         <label class="form-label" data-i18n="common.email">Email</label>
                         <input type="email" class="form-control" id="customerEmail">
                     </div>
                 </div>
-                <div class="mb-3">
+                <div class="mb-4">
                     <label class="form-label" data-i18n="customers.colAddress">Địa chỉ</label>
                     <input type="text" class="form-control" id="customerAddress">
                 </div>
-                <div class="mb-3">
+                <div class="mb-2">
                     <label class="form-label" data-i18n="customers.colNotes">Ghi chú</label>
                     <textarea class="form-control" id="customerNotes" rows="3"></textarea>
                 </div>
             </div>
-            <div class="modal-footer">
+            <div class="modal-footer bg-light p-3">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-i18n="common.cancel">Hủy</button>
                 <button type="button" class="btn btn-primary" onclick="saveCustomer()" data-i18n="common.save">Lưu</button>
             </div>
         </div>
     </div>
 </div>
-
 {% endblock %}
