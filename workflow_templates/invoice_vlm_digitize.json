@@ -51,11 +51,106 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [660, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            { "value1": "={{ $json.branch }}", "operation": "equals", "value2": "error" }
+          ]
+        }
+      },
+      "id": "iv-if-error",
+      "name": "Có lỗi kết nối Brain?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            { "value1": "={{ $json.branch }}", "operation": "equals", "value2": "needs_manual_review" }
+          ]
+        }
+      },
+      "id": "iv-if-manual",
+      "name": "Cần xem lại thủ công?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [1140, 420]
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\nconst webhookBody = $('Nhận hóa đơn').first().json.body || {};\nconst discordUrl = webhookBody.discord_url || '';\nconst isError = input.branch === 'error';\n\nconst issuesList = (input.issues && input.issues.length)\n  ? input.issues.map(i => `• ${i}`).join('\\n')\n  : '_Không có chi tiết._';\n\nconst embed = {\n  title: isError\n    ? '🔴 Lỗi kết nối Brain khi số hóa hóa đơn'\n    : '🟠 Hóa đơn cần xem lại thủ công',\n  color: isError ? 0xE53935 : 0xFF9800,\n  description: `${input.message}\\n\\n${issuesList}`,\n  footer: { text: 'ANSER Invoice VLM' },\n  timestamp: new Date().toISOString()\n};\n\nreturn [{ json: { discordUrl, embed } }];"
+      },
+      "id": "iv-discord-format",
+      "name": "Tạo thông báo Discord",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1380, 180]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.discordUrl }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ embeds: [$json.embed] }) }}",
+        "options": {}
+      },
+      "id": "iv-discord-send",
+      "name": "Gửi Discord",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [1620, 180]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:5000/api/n8n/internal/invoice-import-draft",
+        "authentication": "none",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ status: 'pending_review', brain_response: $json.brain_response, source: ($('Nhận hóa đơn').first().json.body || {}).source || 'n8n', received_at: new Date().toISOString() }) }}",
+        "options": {}
+      },
+      "id": "iv-writeback",
+      "name": "Ghi phiếu chờ duyệt vào Body",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [1140, 580]
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\nreturn [{ json: { success: true, ...input } }];"
+      },
+      "id": "iv-response",
+      "name": "Trả kết quả",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1860, 380]
     }
   ],
   "connections": {
     "Nhận hóa đơn": { "main": [[{ "node": "Gọi Brain số hóa hóa đơn", "type": "main", "index": 0 }]] },
-    "Gọi Brain số hóa hóa đơn": { "main": [[{ "node": "Chuẩn hoá kết quả Brain", "type": "main", "index": 0 }]] }
+    "Gọi Brain số hóa hóa đơn": { "main": [[{ "node": "Chuẩn hoá kết quả Brain", "type": "main", "index": 0 }]] },
+    "Chuẩn hoá kết quả Brain": { "main": [[{ "node": "Có lỗi kết nối Brain?", "type": "main", "index": 0 }]] },
+    "Có lỗi kết nối Brain?": {
+      "main": [
+        [{ "node": "Tạo thông báo Discord", "type": "main", "index": 0 }],
+        [{ "node": "Cần xem lại thủ công?", "type": "main", "index": 0 }]
+      ]
+    },
+    "Cần xem lại thủ công?": {
+      "main": [
+        [{ "node": "Tạo thông báo Discord", "type": "main", "index": 0 }],
+        [{ "node": "Ghi phiếu chờ duyệt vào Body", "type": "main", "index": 0 }]
+      ]
+    },
+    "Tạo thông báo Discord": { "main": [[{ "node": "Gửi Discord", "type": "main", "index": 0 }]] },
+    "Gửi Discord": { "main": [[{ "node": "Trả kết quả", "type": "main", "index": 0 }]] },
+    "Ghi phiếu chờ duyệt vào Body": { "main": [[{ "node": "Trả kết quả", "type": "main", "index": 0 }]] }
   },
   "active": false,
   "settings": { "executionOrder": "v1" }
