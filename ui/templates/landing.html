@@ -91,6 +91,23 @@
             transform: translateY(-2px); box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
         }
 
+        /* Hamburger Button */
+        .navbar-hamburger {
+            display: none;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid var(--border-dim);
+            border-radius: 10px;
+            padding: 10px 14px;
+            color: var(--text-pure);
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .navbar-hamburger:hover {
+            background: rgba(255, 255, 255, 0.12);
+        }
+
         /* --- HERO SECTION --- */
         .hero {
             min-height: 100vh; display: flex; flex-direction: column; justify-content: center;
@@ -237,12 +254,55 @@
         }
 
         /* Dual Engine Mock */
-        .engine-nodes { display: flex; justify-content: space-around; align-items: center; height: 110px; }
+        .engine-nodes { 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            gap: 12px; 
+            height: auto; 
+            flex-wrap: wrap;
+            padding: 16px 0;
+        }
         .engine-chip {
             padding: 12px 20px; background: rgba(0, 0, 0, 0.5); border: 1px solid var(--border-dim);
             border-radius: 12px; font-weight: 600; font-size: 0.9rem; text-align: center;
         }
         .engine-chip.active { border-color: var(--neon-blue); color: var(--neon-blue); box-shadow: 0 0 15px rgba(14, 165, 233, 0.2); }
+
+        /* Workflow Steps Preview */
+        .workflow-steps {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            gap: 12px;
+            padding: 16px 0;
+        }
+
+        .workflow-step {
+            padding: 12px 18px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--border-dim);
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .workflow-step i:first-child {
+            color: var(--text-muted);
+        }
+
+        .workflow-step:has(.fa-bolt) i { color: #f59e0b !important; }
+        .workflow-step:has(.fa-cogs) i { color: var(--neon-blue) !important; }
+        .workflow-step:has(.fa-google) i { color: var(--neon-green) !important; }
+
+        .workflow-arrow {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
 
         /* --- AI CHAT SHOWCASE SECTION --- */
         .ai-section {
@@ -288,12 +348,9 @@
         .footer h2 { font-size: clamp(2.5rem, 4vw, 4rem); font-weight: 800; letter-spacing: -1.5px; margin-bottom: 30px; }
         .footer-bottom { margin-top: 80px; padding-top: 30px; border-top: 1px solid var(--border-dim); display: flex; justify-content: space-between; color: var(--text-muted); font-size: 0.9rem; }
 
-        @media (max-width: 992px) {
-            .span-8, .span-4, .span-6 { grid-column: span 12; }
-            .hero { padding-top: 120px; }
-            .navbar-links { display: none; }
-        }
+        /* Laptop specific overrides (handled by responsive.css for smaller screens) */
     </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/responsive.css') }}">
 </head>
 <body>
 
@@ -313,6 +370,9 @@
             <a href="{{ url_for('auth.signin') }}" class="nav-item">Đăng nhập</a>
             <a href="{{ url_for('auth.signup') }}" class="btn-nav">Bắt đầu ngay</a>
         </div>
+        <button class="navbar-hamburger" aria-label="Toggle menu">
+            <i class="fas fa-bars"></i>
+        </button>
     </nav>
 
     <section class="hero">
@@ -391,12 +451,12 @@
                 <h3>Tự động hóa luồng công việc</h3>
                 <p>Thiết lập các kịch bản phản ứng linh hoạt. Tự động gửi Email, đồng bộ dữ liệu Google Sheets/Drive và gửi cảnh báo Discord.</p>
                 <div class="interactive-preview">
-                    <div style="display: flex; gap: 16px; align-items: center; justify-content: center; height: 100px;">
-                        <div style="padding: 12px 18px; background: rgba(0,0,0,0.5); border: 1px solid var(--border-dim); border-radius: 12px;"><i class="fas fa-bolt" style="color: #f59e0b;"></i> Trigger</div>
-                        <i class="fas fa-chevron-right" style="color: var(--text-muted);"></i>
-                        <div style="padding: 12px 18px; background: rgba(0,0,0,0.5); border: 1px solid var(--border-dim); border-radius: 12px;"><i class="fas fa-cogs" style="color: var(--neon-blue);"></i> AI Engine</div>
-                        <i class="fas fa-chevron-right" style="color: var(--text-muted);"></i>
-                        <div style="padding: 12px 18px; background: rgba(0,0,0,0.5); border: 1px solid var(--border-dim); border-radius: 12px;"><i class="fab fa-google" style="color: var(--neon-green);"></i> Sync Sheets</div>
+                    <div class="workflow-steps">
+                        <div class="workflow-step"><i class="fas fa-bolt"></i> Trigger</div>
+                        <i class="fas fa-chevron-right workflow-arrow"></i>
+                        <div class="workflow-step"><i class="fas fa-cogs"></i> AI Engine</div>
+                        <i class="fas fa-chevron-right workflow-arrow"></i>
+                        <div class="workflow-step"><i class="fab fa-google"></i> Sync Sheets</div>
                     </div>
                 </div>
             </div>
@@ -444,6 +504,35 @@
     
     <script>
         gsap.registerPlugin(ScrollTrigger);
+
+        /* Hamburger Menu Toggle */
+        document.addEventListener('DOMContentLoaded', () => {
+            const hamburger = document.querySelector('.navbar-hamburger');
+            const navLinks = document.querySelector('.navbar-links');
+
+            if (hamburger && navLinks) {
+                hamburger.addEventListener('click', () => {
+                    navLinks.classList.toggle('active');
+                    const icon = hamburger.querySelector('i');
+                    if (navLinks.classList.contains('active')) {
+                        icon.classList.remove('fa-bars');
+                        icon.classList.add('fa-times');
+                    } else {
+                        icon.classList.remove('fa-times');
+                        icon.classList.add('fa-bars');
+                    }
+                });
+
+                // Close menu when clicking on a link
+                navLinks.querySelectorAll('a').forEach(link => {
+                    link.addEventListener('click', () => {
+                        navLinks.classList.remove('active');
+                        hamburger.querySelector('i').classList.remove('fa-times');
+                        hamburger.querySelector('i').classList.add('fa-bars');
+                    });
+                });
+            }
+        });
 
         window.addEventListener('load', () => {
             /* 1. Entrance Animations */
