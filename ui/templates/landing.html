@@ -3,244 +3,524 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ANSER - Định hình tương lai bán lẻ</title>
+    <title>ANSER - Thống Lĩnh Dữ Liệu. Tối Ưu Tương Lai.</title>
     
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
-        /* --- LINEAR.APP TRUE BLACK THEME --- */
+        /* =========================================================
+           ANSER LANDING PAGE: KINETIC GLASS & AMBIENT HUD THEME
+           ========================================================= */
         :root {
-            --bg-void: #000000; --bg-surface: #0a0a0a; --bg-elevated: #121212;
-            --text-high: #ffffff; --text-med: #a1a1aa; --text-low: #52525b;
-            --border-subtle: rgba(255, 255, 255, 0.08); --border-hover: rgba(255, 255, 255, 0.15);
+            --bg-void: #030305;
+            --panel-bg: rgba(12, 12, 18, 0.65);
+            
+            --neon-purple: #7c3aed;
+            --neon-blue: #0ea5e9;
+            --neon-green: #10b981;
+            
+            --text-pure: #ffffff;
+            --text-muted: #8b8b9a;
+            
+            --border-dim: rgba(255, 255, 255, 0.08);
+            --border-glow: rgba(124, 58, 237, 0.4);
+            --glass-bg: rgba(255, 255, 255, 0.02);
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
 
-        /* CRITICAL FIX: Removed overflow-x: hidden from HTML to prevent Scrollbar hijacking */
         body {
-            background-color: var(--bg-void); color: var(--text-high);
-            font-family: 'Inter', sans-serif; overflow-x: hidden;
+            background-color: var(--bg-void);
+            color: var(--text-pure);
+            font-family: 'Inter', -apple-system, sans-serif;
+            overflow-x: hidden;
+            line-height: 1.6;
         }
 
-        a { text-decoration: none; }
+        a { text-decoration: none; color: inherit; }
 
+        /* --- AMBIENT LIGHTING ORBS --- */
+        .ambient-bg {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            z-index: 0; pointer-events: none; overflow: hidden;
+        }
+
+        .orb {
+            position: absolute; border-radius: 50%; filter: blur(100px); opacity: 0.35;
+            animation: float 12s infinite ease-in-out alternate;
+        }
+
+        .orb-1 { width: 500px; height: 500px; background: var(--neon-purple); top: -150px; left: -100px; }
+        .orb-2 { width: 450px; height: 450px; background: var(--neon-blue); top: 40%; right: -150px; animation-delay: -4s; }
+        .orb-3 { width: 400px; height: 400px; background: var(--neon-green); bottom: -100px; left: 20%; animation-delay: -8s; }
+
+        @keyframes float {
+            0% { transform: translateY(0) scale(1); }
+            100% { transform: translateY(40px) scale(1.08); }
+        }
+
+        /* --- NAVBAR --- */
         .navbar {
             position: fixed; top: 0; left: 0; width: 100%;
-            padding: 16px 8%; display: flex; justify-content: space-between; align-items: center;
-            background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-            z-index: 1000; border-bottom: 1px solid transparent; transition: border-color 0.4s ease;
+            padding: 20px 8%; display: flex; justify-content: space-between; align-items: center;
+            background: rgba(3, 3, 5, 0.7); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px);
+            z-index: 1000; border-bottom: 1px solid var(--border-dim); transition: all 0.3s ease;
         }
-        .navbar.scrolled { border-bottom: 1px solid var(--border-subtle); }
-        .navbar-logo { font-size: 1.2rem; font-weight: 700; color: var(--text-high); display: flex; align-items: center; gap: 8px; }
+
+        .navbar-logo {
+            font-size: 1.4rem; font-weight: 800; letter-spacing: -1px;
+            display: flex; align-items: center; gap: 10px;
+        }
+
+        .navbar-logo i {
+            font-size: 1.5rem;
+            background: linear-gradient(135deg, var(--neon-green), #38f9d7);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+
         .navbar-links { display: flex; gap: 32px; align-items: center; }
-        .nav-item { color: var(--text-med); font-weight: 500; font-size: 0.9rem; transition: color 0.2s ease; }
-        .nav-item:hover { color: var(--text-high); }
-        .btn-primary { background: var(--text-high); color: var(--bg-void); padding: 8px 16px; border-radius: 6px; font-weight: 600; font-size: 0.9rem; transition: all 0.2s ease; }
-        .btn-primary:hover { background: #e0e0e0; transform: translateY(-1px); }
+        .nav-item { color: var(--text-muted); font-weight: 500; font-size: 0.95rem; transition: color 0.2s ease; }
+        .nav-item:hover { color: var(--text-pure); text-shadow: 0 0 10px rgba(255,255,255,0.3); }
 
-        .hero { min-height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; position: relative; padding: 0 5%; }
-        .hero-glow { position: absolute; top: -10%; left: 50%; transform: translateX(-50%); width: 800px; height: 600px; background: radial-gradient(circle, rgba(255,255,255,0.06) 0%, transparent 60%); z-index: -1; border-radius: 50%; pointer-events: none; }
-        .hero-badge { background: rgba(255,255,255,0.03); border: 1px solid var(--border-subtle); color: var(--text-med); padding: 6px 14px; border-radius: 100px; font-size: 0.85rem; font-weight: 500; margin-bottom: 30px; }
-        .hero-title { font-size: clamp(3.5rem, 7vw, 7rem); font-weight: 800; line-height: 1.05; letter-spacing: -0.04em; margin-bottom: 24px; max-width: 900px; }
-        .hero-subtitle { font-size: 1.25rem; color: var(--text-med); max-width: 600px; margin: 0 auto 40px; line-height: 1.6; }
-
-        .section-wrapper { padding: 160px 8%; max-width: 1400px; margin: 0 auto; position: relative; }
-        .section-title { text-align: center; font-size: 3.5rem; font-weight: 800; margin-bottom: 100px; }
-        .bento-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 24px; }
-        
-        .card { background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: 16px; padding: 40px; transition: border-color 0.3s, background 0.3s; display: flex; flex-direction: column; }
-        .card:hover { border-color: var(--border-hover); background: var(--bg-elevated); }
-        .card.span-8 { grid-column: span 8; min-height: 400px; }
-        .card.span-4 { grid-column: span 4; min-height: 400px; }
-        .card.span-6 { grid-column: span 6; min-height: 350px; }
-        @media (max-width: 900px) { .card.span-8, .card.span-4, .card.span-6 { grid-column: span 12; } }
-
-        .card-icon { width: 48px; height: 48px; border-radius: 12px; background: rgba(255,255,255,0.03); display: flex; justify-content: center; align-items: center; font-size: 1.2rem; margin-bottom: 24px; border: 1px solid var(--border-subtle); }
-        .card h3 { font-size: 1.5rem; font-weight: 600; margin-bottom: 12px; }
-        .card p { color: var(--text-med); line-height: 1.6; font-size: 1rem; }
-
-        .abstract-container { margin-top: auto; padding-top: 40px; width: 100%; }
-        .laser-box { height: 100px; border: 1px solid var(--border-subtle); border-radius: 8px; background: var(--bg-void); position: relative; overflow: hidden; display: flex; align-items: center; padding: 0 20px; }
-        .laser-line { position: absolute; top: 0; left: 0; width: 100%; height: 2px; background: #ffffff; box-shadow: 0 0 15px #ffffff; }
-        .chart-box { display: flex; align-items: flex-end; gap: 8px; height: 120px; border-bottom: 1px solid var(--border-subtle); }
-        .chart-bar { flex: 1; background: rgba(255,255,255,0.1); border-radius: 4px 4px 0 0; }
-        .chart-bar.active { background: #ffffff; box-shadow: 0 0 20px rgba(255,255,255,0.2); }
-        .workflow-box { display: flex; gap: 12px; align-items: center; }
-        .workflow-node { width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--border-hover); display: flex; justify-content: center; align-items: center; font-size: 0.8rem; }
-        .workflow-line { flex: 1; height: 1px; background: var(--border-subtle); }
-
-        .footer { border-top: 1px solid var(--border-subtle); padding: 160px 8% 40px; text-align: center; }
-        .footer h2 { font-size: 4rem; font-weight: 800; letter-spacing: -2px; margin-bottom: 40px; }
-        .footer-bottom { margin-top: 120px; padding-top: 30px; border-top: 1px solid var(--border-subtle); display: flex; justify-content: space-between; color: var(--text-low); font-size: 0.9rem; }
-
-        /* ERROR BANNER STYLES */
-        #error-banner {
-            display: none; position: fixed; top: 0; left: 0; width: 100%; background: #dc2626; color: white;
-            text-align: center; padding: 15px; z-index: 9999; font-weight: bold; font-family: monospace;
+        .btn-nav {
+            background: var(--text-pure); color: var(--bg-void); padding: 10px 22px;
+            border-radius: 12px; font-weight: 700; font-size: 0.9rem; transition: all 0.3s ease;
+        }
+        .btn-nav:hover {
+            transform: translateY(-2px); box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
         }
 
-        /* INITIAL GSAP STATES */
-        .hero-fade, .section-fade { opacity: 0; transform: translateY(30px); }
-        .gsap-pop-card { opacity: 0; transform: translateY(100px) scale(0.85); }
+        /* --- HERO SECTION --- */
+        .hero {
+            min-height: 100vh; display: flex; flex-direction: column; justify-content: center;
+            align-items: center; text-align: center; position: relative; z-index: 1; padding: 140px 5% 60px;
+            perspective: 1000px;
+        }
+
+        .hero-badge {
+            display: inline-flex; align-items: center; gap: 8px;
+            background: rgba(124, 58, 237, 0.12); border: 1px solid var(--border-glow);
+            color: #a78bfa; padding: 6px 16px; border-radius: 100px; font-size: 0.85rem;
+            font-weight: 600; margin-bottom: 28px; text-transform: uppercase; letter-spacing: 1px;
+        }
+
+        .hero-badge i { font-size: 0.75rem; color: var(--neon-green); }
+
+        .hero-title {
+            font-size: clamp(2.8rem, 5.5vw, 5.5rem); font-weight: 800; line-height: 1.08;
+            letter-spacing: -2px; margin-bottom: 24px; max-width: 950px;
+            background: linear-gradient(180deg, #ffffff 0%, #a1a1aa 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+
+        .hero-subtitle {
+            font-size: clamp(1.05rem, 1.4vw, 1.25rem); color: var(--text-muted);
+            max-width: 720px; margin: 0 auto 40px; line-height: 1.6; font-weight: 400;
+        }
+
+        .hero-actions { display: flex; gap: 16px; justify-content: center; align-items: center; }
+
+        /* Ultra-subtle Magnetic Buttons */
+        .magnetic-btn {
+            display: inline-block; cursor: pointer;
+            transition: transform 0.2s ease-out;
+        }
+
+        .btn-primary-glow {
+            display: inline-block;
+            background: linear-gradient(135deg, var(--neon-purple) 0%, var(--neon-blue) 100%);
+            color: var(--text-pure); padding: 16px 36px; border-radius: 14px; font-weight: 700;
+            font-size: 1rem; transition: box-shadow 0.3s ease; box-shadow: 0 10px 30px rgba(124, 58, 237, 0.4);
+        }
+
+        .magnetic-btn:hover .btn-primary-glow {
+            box-shadow: 0 12px 35px rgba(124, 58, 237, 0.55);
+        }
+
+        .btn-secondary-glass {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border-dim);
+            color: var(--text-pure); padding: 16px 32px; border-radius: 14px; font-weight: 600;
+            font-size: 1rem; transition: background 0.3s ease, border-color 0.3s ease; backdrop-filter: blur(10px);
+        }
+
+        .magnetic-btn:hover .btn-secondary-glass {
+            background: rgba(255, 255, 255, 0.09); border-color: rgba(255, 255, 255, 0.18);
+        }
+
+        /* --- BENTO GRID SECTION --- */
+        .section-wrapper {
+            position: relative; z-index: 1; padding: 120px 8%; max-width: 1400px; margin: 0 auto;
+        }
+
+        .section-header { text-align: center; margin-bottom: 80px; }
+        .section-tag { color: var(--neon-blue); font-weight: 700; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 12px; }
+        .section-title { font-size: clamp(2.2rem, 3.5vw, 3.2rem); font-weight: 800; letter-spacing: -1px; }
+
+        .bento-grid {
+            display: grid; grid-template-columns: repeat(12, 1fr); gap: 24px;
+            perspective: 1200px;
+        }
+
+        .bento-card {
+            background: rgba(12, 12, 18, 0.4); 
+            border: 1px solid var(--border-dim);
+            border-radius: 24px; padding: 40px; position: relative; overflow: hidden;
+            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            display: flex; flex-direction: column; 
+            transform-style: preserve-3d;
+            transition: transform 0.2s ease-out, border-color 0.4s ease;
+        }
+
+        .bento-card::before {
+            content: ""; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            border-radius: inherit; padding: 2px;
+            background: radial-gradient(600px circle at var(--mouse-x) var(--mouse-y), rgba(255,255,255,0.35), transparent 40%);
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor; mask-composite: exclude;
+            opacity: 0; transition: opacity 0.4s; pointer-events: none; z-index: 2;
+        }
+
+        .bento-card::after {
+            content: ""; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            background: radial-gradient(600px circle at var(--mouse-x) var(--mouse-y), rgba(124, 58, 237, 0.12), transparent 40%);
+            opacity: 0; transition: opacity 0.4s; pointer-events: none; z-index: -1;
+        }
+
+        .bento-card:hover::before, .bento-card:hover::after { opacity: 1; }
+
+        .span-8 { grid-column: span 8; min-height: 420px; }
+        .span-4 { grid-column: span 4; min-height: 420px; }
+        .span-6 { grid-column: span 6; min-height: 380px; }
+
+        .card-icon {
+            width: 52px; height: 52px; border-radius: 14px; background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--border-dim); display: flex; justify-content: center; align-items: center;
+            font-size: 1.3rem; margin-bottom: 24px; color: var(--neon-blue);
+        }
+
+        .bento-card h3 { font-size: 1.5rem; font-weight: 700; margin-bottom: 12px; }
+        .bento-card p { color: var(--text-muted); font-size: 0.98rem; line-height: 1.6; }
+
+        .interactive-preview { margin-top: auto; padding-top: 30px; width: 100%; }
+
+        /* Scanner Mock */
+        .ocr-box {
+            background: rgba(0, 0, 0, 0.6); border: 1px solid var(--border-dim);
+            border-radius: 12px; padding: 20px; height: 130px; position: relative; overflow: hidden;
+            display: flex; align-items: center; font-family: monospace; font-size: 0.85rem; color: var(--neon-green);
+        }
+
+        .laser-line {
+            position: absolute; top: 0; left: 0; width: 100%; height: 3px;
+            background: var(--neon-green); box-shadow: 0 0 15px var(--neon-green);
+            animation: scan 2.5s infinite ease-in-out alternate;
+        }
+
+        @keyframes scan { 0% { top: 0%; } 100% { top: 95%; } }
+
+        /* Chart Mock */
+        .chart-box {
+            display: flex; align-items: flex-end; gap: 12px; height: 120px;
+            border-bottom: 1px solid var(--border-dim); padding-bottom: 10px;
+        }
+
+        .chart-bar {
+            flex: 1; background: rgba(255, 255, 255, 0.08); border-radius: 6px 6px 0 0;
+            transition: height 1s ease;
+        }
+
+        .chart-bar.predicted {
+            background: linear-gradient(180deg, var(--neon-purple) 0%, rgba(124, 58, 237, 0.2) 100%);
+            box-shadow: 0 0 15px rgba(124, 58, 237, 0.4);
+        }
+
+        /* Dual Engine Mock */
+        .engine-nodes { display: flex; justify-content: space-around; align-items: center; height: 110px; }
+        .engine-chip {
+            padding: 12px 20px; background: rgba(0, 0, 0, 0.5); border: 1px solid var(--border-dim);
+            border-radius: 12px; font-weight: 600; font-size: 0.9rem; text-align: center;
+        }
+        .engine-chip.active { border-color: var(--neon-blue); color: var(--neon-blue); box-shadow: 0 0 15px rgba(14, 165, 233, 0.2); }
+
+        /* --- AI CHAT SHOWCASE SECTION --- */
+        .ai-section {
+            background: linear-gradient(180deg, rgba(124, 58, 237, 0.05) 0%, transparent 100%);
+            border-top: 1px solid var(--border-dim); border-bottom: 1px solid var(--border-dim);
+        }
+
+        .chat-mock-container {
+            max-width: 800px; margin: 0 auto; background: rgba(0, 0, 0, 0.7);
+            border: 1px solid var(--border-dim); border-radius: 20px; overflow: hidden;
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.8);
+        }
+
+        .chat-header {
+            padding: 16px 24px; background: rgba(255, 255, 255, 0.03);
+            border-bottom: 1px solid var(--border-dim); display: flex; align-items: center; gap: 12px;
+            font-weight: 600; font-size: 0.9rem; color: var(--text-muted);
+        }
+
+        .chat-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--neon-green); }
+
+        .chat-body { padding: 30px; display: flex; flex-direction: column; gap: 20px; }
+
+        .chat-bubble {
+            max-width: 80%; padding: 14px 20px; border-radius: 16px; font-size: 0.95rem; line-height: 1.5;
+        }
+
+        .chat-bubble.user {
+            align-self: flex-end; background: var(--neon-purple); color: #fff; border-bottom-right-radius: 4px;
+        }
+
+        .chat-bubble.ai {
+            align-self: flex-start; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border-dim);
+            border-bottom-left-radius: 4px; color: var(--text-pure);
+        }
+
+        /* --- FOOTER --- */
+        .footer {
+            position: relative; z-index: 1; padding: 120px 8% 40px; text-align: center;
+            background: radial-gradient(circle at 50% 0%, rgba(124, 58, 237, 0.15) 0%, transparent 70%);
+        }
+
+        .footer h2 { font-size: clamp(2.5rem, 4vw, 4rem); font-weight: 800; letter-spacing: -1.5px; margin-bottom: 30px; }
+        .footer-bottom { margin-top: 80px; padding-top: 30px; border-top: 1px solid var(--border-dim); display: flex; justify-content: space-between; color: var(--text-muted); font-size: 0.9rem; }
+
+        @media (max-width: 992px) {
+            .span-8, .span-4, .span-6 { grid-column: span 12; }
+            .hero { padding-top: 120px; }
+            .navbar-links { display: none; }
+        }
     </style>
 </head>
 <body>
 
-    <div id="error-banner">⚠️ DIAGNOSTIC ALERT: Your browser or Adblocker blocked the GSAP Animation Library from loading. Animations are disabled.</div>
+    <div class="ambient-bg">
+        <div class="orb orb-1"></div>
+        <div class="orb orb-2"></div>
+        <div class="orb orb-3"></div>
+    </div>
 
-    <header class="navbar">
-        <a href="#" class="navbar-logo"><i class="fas fa-layer-group"></i> ANSER</a>
+    <nav class="navbar">
+        <a href="#" class="navbar-logo">
+            <i class="fas fa-rocket"></i> ANSER
+        </a>
         <div class="navbar-links">
             <a href="#features" class="nav-item">Tính năng</a>
-            <a href="{{ url_for('auth.signin') if 'auth.signin' in request.endpoint else '/auth/signin' }}" class="nav-item">Đăng nhập</a>
-            <a href="{{ url_for('auth.signup') if 'auth.signup' in request.endpoint else '/auth/signup' }}" class="btn-primary">Bắt đầu</a>
+            <a href="#ai-assistant" class="nav-item">Trợ lý AI</a>
+            <a href="{{ url_for('auth.signin') }}" class="nav-item">Đăng nhập</a>
+            <a href="{{ url_for('auth.signup') }}" class="btn-nav">Bắt đầu ngay</a>
         </div>
-    </header>
+    </nav>
 
     <section class="hero">
-        <div class="hero-glow"></div>
-        <div class="hero-badge hero-fade">ANSER Engine v2.0</div>
-        <h1 class="hero-title hero-fade">Chuẩn hóa dữ liệu.<br>Dự báo tương lai.</h1>
-        <p class="hero-subtitle hero-fade">Hệ điều hành tối thượng cho doanh nghiệp bán lẻ. Nhận dạng hóa đơn OCR, dự đoán tồn kho LSTM và AI Agent hoàn toàn tự động.</p>
-        
-        <div class="hero-fade">
-            <a href="{{ url_for('auth.signup') if 'auth.signup' in request.endpoint else '/auth/signup' }}" class="btn-primary" style="padding: 14px 28px; font-size: 1rem; margin-top: 16px;">
-                Tạo không gian làm việc
-            </a>
+        <div class="hero-badge">
+            <i class="fas fa-circle"></i> ANSER Engine v2.0 Live
+        </div>
+        <h1 class="hero-title">
+            Thống Lĩnh Dữ Liệu.<br>Tối Ưu Tương Lai.
+        </h1>
+        <p class="hero-subtitle">
+            Nền tảng điều hành doanh nghiệp thế hệ mới. Tích hợp AI bám sát ngữ cảnh, trích xuất hóa đơn OCR tự động và dự báo chuỗi cung ứng bằng mạng nơ-ron LSTM.
+        </p>
+        <div class="hero-actions">
+            <div class="magnetic-btn">
+                <a href="{{ url_for('auth.signup') }}" class="btn-primary-glow">
+                    Khởi tạo không gian làm việc
+                </a>
+            </div>
+            <div class="magnetic-btn">
+                <a href="{{ url_for('auth.signin') }}" class="btn-secondary-glass">
+                    Khám phá Demo
+                </a>
+            </div>
         </div>
     </section>
 
     <section id="features" class="section-wrapper">
-        <h2 class="section-title section-fade">Hệ sinh thái tự động</h2>
+        <div class="section-header">
+            <div class="section-tag">Hệ sinh thái cốt lõi</div>
+            <h2 class="section-title glitch-text" data-text="Công nghệ vượt xa ERP truyền thống">Công nghệ vượt xa ERP truyền thống</h2>
+        </div>
 
         <div class="bento-grid">
-            
-            <div class="card span-8 gsap-pop-card">
-                <div class="card-icon"><i class="fas fa-file-invoice"></i></div>
-                <h3>Thị giác máy tính OCR</h3>
-                <p>Quét, đọc và trích xuất dữ liệu từ hàng ngàn biên lai. Biến hình ảnh tĩnh thành dữ liệu JSON ngay lập tức.</p>
-                <div class="abstract-container">
-                    <div class="laser-box">
+            <div class="bento-card span-8">
+                <div class="card-icon"><i class="fas fa-file-invoice-dollar"></i></div>
+                <h3>Thị giác máy tính & Quét OCR</h3>
+                <p>Số hóa chứng từ và hóa đơn GTGT tự động. Tự động trích xuất các trường dữ liệu thô thành cấu trúc chuẩn JSON không cần nhập liệu thủ công.</p>
+                <div class="interactive-preview">
+                    <div class="ocr-box">
                         <div class="laser-line"></div>
-                        <span style="color: var(--text-low); font-family: monospace;">{ "status": "extracted", "id": "INV-1029", "total": "5,000,000" }</span>
+                        <span>{ "status": "extracted", "invoice_id": "INV-2026", "vendor": "ANSER Retail", "total": "15,500,000" }</span>
                     </div>
                 </div>
             </div>
 
-            <div class="card span-4 gsap-pop-card">
-                <div class="card-icon"><i class="fab fa-google"></i></div>
-                <h3>Đồng bộ Google</h3>
-                <p>Kết nối mượt mà với Sheets và Drive. Dữ liệu của bạn luôn được cập nhật liên tục.</p>
-                <div class="abstract-container">
-                    <div style="height: 100px; border: 1px solid var(--border-subtle); border-radius: 8px; background: var(--bg-void); display: flex; flex-direction: column; gap: 8px; padding: 16px;">
-                        <div style="height: 12px; width: 80%; background: rgba(255,255,255,0.1); border-radius: 4px;"></div>
-                        <div style="height: 12px; width: 60%; background: rgba(255,255,255,0.1); border-radius: 4px;"></div>
-                        <div style="height: 12px; width: 90%; background: rgba(255,255,255,0.1); border-radius: 4px;"></div>
+            <div class="bento-card span-4">
+                <div class="card-icon"><i class="fas fa-network-wired"></i></div>
+                <h3>Đồng bộ Bán Lẻ & Sản Xuất</h3>
+                <p>Gateway phân luồng mượt mà giữa cửa hàng Bán lẻ (:5002) và dây chuyền Sản xuất (:5003) trên cùng một hạ tầng bảo mật.</p>
+                <div class="interactive-preview">
+                    <div class="engine-nodes">
+                        <div class="engine-chip active"><i class="fas fa-store"></i> Retail</div>
+                        <i class="fas fa-arrows-alt-h" style="color: var(--text-muted);"></i>
+                        <div class="engine-chip active"><i class="fas fa-industry"></i> Sản xuất</div>
                     </div>
                 </div>
             </div>
 
-            <div class="card span-6 gsap-pop-card">
-                <div class="card-icon"><i class="fas fa-robot"></i></div>
-                <h3>AI Agents Độc Lập</h3>
-                <p>Lực lượng lao động số hoạt động 24/7 để phân tích dữ liệu và lên kế hoạch kinh doanh.</p>
-                <div class="abstract-container">
-                    <div class="workflow-box">
-                        <div class="workflow-node"><i class="fas fa-check"></i></div><div class="workflow-line"></div>
-                        <div class="workflow-node" style="border-color: #fff; background: #fff; color: #000;"><i class="fas fa-sync fa-spin"></i></div><div class="workflow-line"></div>
-                        <div class="workflow-node" style="border-color: var(--border-subtle); color: var(--text-low);"><i class="fas fa-lock"></i></div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="card span-6 gsap-pop-card">
+            <div class="bento-card span-4">
                 <div class="card-icon"><i class="fas fa-chart-line"></i></div>
-                <h3>Dự Báo LSTM</h3>
-                <p>Mạng nơ-ron quét qua dữ liệu lịch sử để dự đoán nhu cầu thị trường, chấm dứt tình trạng cháy hàng.</p>
-                <div class="abstract-container">
+                <h3>Dự báo rủi ro & Nhu cầu</h3>
+                <p>Mạng nơ-ron học sâu LSTM phân tích chuỗi thời gian, dự báo chính xác xu hướng tồn kho và đưa ra cảnh báo thiếu hụt.</p>
+                <div class="interactive-preview">
                     <div class="chart-box">
-                        <div class="chart-bar gsap-bar" style="height: 30%;"></div>
-                        <div class="chart-bar gsap-bar" style="height: 50%;"></div>
-                        <div class="chart-bar gsap-bar" style="height: 40%;"></div>
-                        <div class="chart-bar gsap-bar" style="height: 70%;"></div>
-                        <div class="chart-bar gsap-bar active" style="height: 90%;"></div>
+                        <div class="chart-bar" style="height: 35%;"></div>
+                        <div class="chart-bar" style="height: 55%;"></div>
+                        <div class="chart-bar" style="height: 45%;"></div>
+                        <div class="chart-bar predicted" style="height: 85%;"></div>
+                        <div class="chart-bar predicted" style="height: 95%;"></div>
                     </div>
                 </div>
             </div>
 
+            <div class="bento-card span-8">
+                <div class="card-icon"><i class="fas fa-robot"></i></div>
+                <h3>Tự động hóa luồng công việc</h3>
+                <p>Thiết lập các kịch bản phản ứng linh hoạt. Tự động gửi Email, đồng bộ dữ liệu Google Sheets/Drive và gửi cảnh báo Discord.</p>
+                <div class="interactive-preview">
+                    <div style="display: flex; gap: 16px; align-items: center; justify-content: center; height: 100px;">
+                        <div style="padding: 12px 18px; background: rgba(0,0,0,0.5); border: 1px solid var(--border-dim); border-radius: 12px;"><i class="fas fa-bolt" style="color: #f59e0b;"></i> Trigger</div>
+                        <i class="fas fa-chevron-right" style="color: var(--text-muted);"></i>
+                        <div style="padding: 12px 18px; background: rgba(0,0,0,0.5); border: 1px solid var(--border-dim); border-radius: 12px;"><i class="fas fa-cogs" style="color: var(--neon-blue);"></i> AI Engine</div>
+                        <i class="fas fa-chevron-right" style="color: var(--text-muted);"></i>
+                        <div style="padding: 12px 18px; background: rgba(0,0,0,0.5); border: 1px solid var(--border-dim); border-radius: 12px;"><i class="fab fa-google" style="color: var(--neon-green);"></i> Sync Sheets</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="ai-assistant" class="section-wrapper ai-section">
+        <div class="section-header">
+            <div class="section-tag">Trợ lý điều hành AI</div>
+            <h2 class="section-title glitch-text" data-text="Hỏi đáp trực tiếp với dữ liệu doanh nghiệp">Hỏi đáp trực tiếp với dữ liệu doanh nghiệp</h2>
+        </div>
+
+        <div class="chat-mock-container">
+            <div class="chat-header">
+                <div class="chat-dot"></div> Trợ lý ANSER AI - Trực tuyến
+            </div>
+            <div class="chat-body">
+                <div class="chat-bubble user">
+                    Tồn kho sản phẩm Bán Lẻ tháng này ra sao? Có rủi ro thiếu hàng không?
+                </div>
+                <div class="chat-bubble ai">
+                    <i class="fas fa-robot" style="color: var(--neon-blue); margin-right: 8px;"></i>
+                    Theo mô hình <strong>LSTM Forecasting</strong>, nhu cầu dự kiến tăng <strong>32%</strong>. Tồn kho hiện tại đủ đáp ứng 5 ngày. Đã tự động kích hoạt luồng cảnh báo nhập hàng.
+                </div>
+            </div>
         </div>
     </section>
 
     <footer class="footer">
-        <h2 class="section-fade">Bắt đầu kỷ nguyên mới.</h2>
-        <a href="{{ url_for('auth.signup') if 'auth.signup' in request.endpoint else '/auth/signup' }}" class="btn-primary section-fade" style="padding: 16px 40px; font-size: 1.1rem; background: #fff; color: #000;">Triển khai ANSER ngay</a>
-        <div class="footer-bottom"><span>© 2026 ANSER.</span><span>Hệ thống: Online</span></div>
+        <h2 class="glitch-text" data-text="Sẵn sàng tối ưu hóa vận hành?">Sẵn sàng tối ưu hóa vận hành?</h2>
+        <div class="magnetic-btn" style="margin-top: 20px;">
+            <a href="{{ url_for('auth.signup') }}" class="btn-primary-glow" style="padding: 18px 48px; font-size: 1.1rem;">
+                Triển khai ANSER ngay hôm nay
+            </a>
+        </div>
+        <div class="footer-bottom">
+            <span>© 2026 ANSER Engine. All rights reserved.</span>
+            <span>Hệ thống: Online (Port 5000)</span>
+        </div>
     </footer>
 
+    <!-- Animations using GSAP & Custom JS -->
     <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.2/dist/gsap.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.2/dist/ScrollTrigger.min.js"></script>
-
+    
     <script>
         gsap.registerPlugin(ScrollTrigger);
 
         window.addEventListener('load', () => {
+            /* 1. Entrance Animations */
+            gsap.from(".hero-title, .hero-subtitle, .hero-actions", {
+                opacity: 0, y: 30, duration: 1, stagger: 0.2, ease: "power3.out"
+            });
+
+            gsap.utils.toArray('.bento-card').forEach(card => {
+                gsap.from(card, {
+                    opacity: 0, y: 50, duration: 0.8, ease: "power2.out",
+                    scrollTrigger: { trigger: card, start: "top 88%" }
+                });
+            });
+
+            /* 2. DYNAMIC CURSOR SPOTLIGHT & SUBTLE PARALLAX */
+            document.querySelectorAll(".bento-card").forEach(card => {
+                card.addEventListener("mousemove", e => {
+                    const rect = card.getBoundingClientRect();
+                    const x = e.clientX - rect.left;
+                    const y = e.clientY - rect.top;
+                    
+                    card.style.setProperty("--mouse-x", `${x}px`);
+                    card.style.setProperty("--mouse-y", `${y}px`);
+
+                    /* Toned-down subtle tilt (0.5deg) */
+                    const centerX = rect.width / 2;
+                    const centerY = rect.height / 2;
+                    const rotateX = ((y - centerY) / centerY) * -0.5;
+                    const rotateY = ((x - centerX) / centerX) * 0.5;
+                    
+                    card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.005, 1.005, 1.005)`;
+                });
+
+                card.addEventListener("mouseleave", () => {
+                    card.style.transform = `perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)`;
+                });
+            });
+
+            /* 3. ULTRA-SUBTLE MAGNETIC BUTTONS */
+            const magnets = document.querySelectorAll('.magnetic-btn');
+            magnets.forEach(magnet => {
+                magnet.addEventListener('mousemove', (e) => {
+                    const rect = magnet.getBoundingClientRect();
+                    const x = (e.clientX - rect.left) - rect.width / 2;
+                    const y = (e.clientY - rect.top) - rect.height / 2;
+                    /* Minimal 4% subtle magnetic movement */
+                    magnet.style.transform = `translate(${x * 0.04}px, ${y * 0.04}px)`;
+                });
+                magnet.addEventListener('mouseleave', () => {
+                    magnet.style.transform = 'translate(0px, 0px)';
+                });
+            });
+
+            /* 4. CYBER-SCRAMBLE TEXT REVEAL ON SCROLL */
+            const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%&*";
             
-            // 1. Hero Reveal
-            gsap.fromTo(".hero-fade", 
-                { autoAlpha: 0, y: 30 },
-                { autoAlpha: 1, y: 0, duration: 1, stagger: 0.15, ease: "power3.out" }
-            );
-
-            // 2. Navbar Blur Trigger
-            window.addEventListener('scroll', () => {
-                if (window.scrollY > 50) {
-                    document.querySelector('.navbar').classList.add('scrolled');
-                } else {
-                    document.querySelector('.navbar').classList.remove('scrolled');
-                }
-            });
-
-            // 3. THE SCRUB POP-IN (LINEAR STYLE)
-            gsap.utils.toArray('.gsap-pop-card').forEach(card => {
-                gsap.fromTo(card,
-                    { opacity: 0, scale: 0.85, y: 50 },
-                    {
-                        opacity: 1, scale: 1, y: 0,
-                        ease: "none",
-                        scrollTrigger: {
-                            trigger: card,
-                            start: "top 95%",
-                            end: "top 60%",
-                            scrub: 1,
-                            markers: false // <--- THIS REMOVES THE LINES STICKING OUT
-                        }
-                    }
-                );
-            });
-
-            // 4. Section Fades
-            gsap.utils.toArray('.section-fade').forEach(el => {
-                gsap.fromTo(el,
-                    { opacity: 0, y: 40 },
-                    { 
-                        opacity: 1, y: 0, duration: 0.8, ease: "power3.out",
-                        scrollTrigger: {
-                            trigger: el,
-                            start: "top 85%",
-                            toggleActions: "play none none reverse"
-                        }
-                    }
-                );
-            });
-
-            // 5. Internal Animations
-            gsap.to(".laser-line", { top: "100%", duration: 2, ease: "none", repeat: -1, yoyo: true });
-            
-            gsap.from(".gsap-bar", {
-                height: 0, duration: 1.5, stagger: 0.1, ease: "power3.out",
-                scrollTrigger: { trigger: ".chart-box", start: "top 85%" }
+            document.querySelectorAll('.glitch-text').forEach(el => {
+                let originalText = el.getAttribute('data-text');
+                
+                ScrollTrigger.create({
+                    trigger: el,
+                    start: "top 85%",
+                    onEnter: () => {
+                        let iterations = 0;
+                        const interval = setInterval(() => {
+                            el.innerText = originalText.split("")
+                                .map((letter, index) => {
+                                    if(index < iterations) return originalText[index];
+                                    return letters[Math.floor(Math.random() * letters.length)];
+                                }).join("");
+                            
+                            if(iterations >= originalText.length) clearInterval(interval);
+                            iterations += 1/3;
+                        }, 20);
+                    },
+                    once: true
+                });
             });
         });
     </script>
