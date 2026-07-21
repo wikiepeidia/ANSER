@@ -2012,6 +2012,29 @@ body.dark-mode .social-btn {
         transform: translateX(0);
         box-shadow: 4px 0 25px rgba(0,0,0,0.2);
     }
+
+    /* Mobile sidebar is off-canvas (hidden/open via transform), not icon-only.
+       A "collapsed" preference saved from a previous desktop session must not
+       shrink it to the 60px icon rail here — force the full menu back. */
+    .modern-sidebar.collapsed {
+        width: 280px;
+    }
+    .modern-sidebar.collapsed .sidebar-user {
+        display: flex !important;
+    }
+    .modern-sidebar.collapsed .warehouse-switcher {
+        display: block !important;
+    }
+    .modern-sidebar.collapsed .section-title {
+        display: flex !important;
+    }
+    .modern-sidebar.collapsed .menu-label,
+    .modern-sidebar.collapsed .logout-label {
+        display: inline !important;
+    }
+    .modern-sidebar.collapsed .menu-item {
+        justify-content: flex-start;
+    }
 }
 
 /* Global Mobile Layout Fixes */
