@@ -66,6 +66,7 @@ MANIFEST
 evaluate_models/*
 evaluate_models/
 evaluation/*
+notebooks/
 # PyInstaller
 #  Usually these files are written by a python script from a template
 #  before PyInstaller builds the exe, so as to inject date/other infos into it.
@@ -75,7 +76,7 @@ evaluation/*
 # Installer logs
 pip-log.txt
 pip-delete-this-directory.txt
-ANSER_AI/
+
 # Unit test / coverage reports
 htmlcov/
 .tox/
