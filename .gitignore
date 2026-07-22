@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+
+# Environment and secrets
+.env
+.env.*
+secrets/ai_config.json
+
+
+# Local data and model artifacts
+src/models/
+src/data/*.db
+src/data/**/*.db
+*.pt
+*.bin
+*.safetensors
+
+# Build and IDE
+dist/
+build/
+.DS_Store
+.idea/
+.vscode/
+*.bak
+checkpoints/
+models/
+src/data/*.jsonl
+offline_training/*.jsonl
+offline_training/product_catalogs.json
+*.pyc

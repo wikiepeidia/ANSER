@@ -1,0 +1,123 @@
+{
+    "gateway:CustomWebHook": {
+        "module": "gateway:CustomWebHook",
+        "version": 1,
+        "parameters": {
+            "hook": "REQUIRED_VALUE",
+            "maxResults": "REQUIRED_VALUE"
+        },
+        "desc": "Auto-extracted from So sa\u0301nh gia\u0301 nha\u0323\u0302p.blueprint.json"
+    },
+    "google-sheets:clearValuesFromRange": {
+        "module": "google-sheets:clearValuesFromRange",
+        "version": 2,
+        "parameters": {},
+        "desc": "Auto-extracted from So sa\u0301nh gia\u0301 nha\u0323\u0302p.blueprint.json"
+    },
+    "google-sheets:getSheetContent": {
+        "module": "google-sheets:getSheetContent",
+        "version": 2,
+        "parameters": {},
+        "desc": "Auto-extracted from So sa\u0301nh gia\u0301 nha\u0323\u0302p.blueprint.json"
+    },
+    "builtin:BasicRouter": {
+        "module": "builtin:BasicRouter",
+        "version": 1,
+        "parameters": {},
+        "desc": "Auto-extracted from So sa\u0301nh gia\u0301 nha\u0323\u0302p.blueprint.json"
+    },
+    "google-email:TriggerNewEmail": {
+        "module": "google-email:TriggerNewEmail",
+        "version": 2,
+        "parameters": {
+            "folder": "REQUIRED_VALUE",
+            "xGmRaw": "REQUIRED_VALUE",
+            "account": "REQUIRED_VALUE",
+            "markSeen": true,
+            "maxResults": "REQUIRED_VALUE",
+            "searchType": "REQUIRED_VALUE"
+        },
+        "desc": "Auto-extracted from Ba\u0301o ca\u0301o tho\u0302\u0301ng ke\u0302 sa\u0309n pha\u0302\u0309m theo tha\u0301ng.blueprint.json"
+    },
+    "util:SetVariable2": {
+        "module": "util:SetVariable2",
+        "version": 1,
+        "parameters": {},
+        "desc": "Auto-extracted from Ba\u0301o ca\u0301o tho\u0302\u0301ng ke\u0302 sa\u0309n pha\u0302\u0309m theo tha\u0301ng.blueprint.json"
+    },
+    "regexp:GetElementsFromText": {
+        "module": "regexp:GetElementsFromText",
+        "version": 1,
+        "parameters": {
+            "continueWhenNoRes": false
+        },
+        "desc": "Auto-extracted from Ba\u0301o ca\u0301o tho\u0302\u0301ng ke\u0302 sa\u0309n pha\u0302\u0309m theo tha\u0301ng.blueprint.json"
+    },
+    "http:ActionSendData": {
+        "module": "http:ActionSendData",
+        "version": 3,
+        "parameters": {
+            "handleErrors": true,
+            "useNewZLibDeCompress": true
+        },
+        "desc": "Auto-extracted from Ba\u0301o ca\u0301o tho\u0302\u0301ng ke\u0302 sa\u0309n pha\u0302\u0309m theo tha\u0301ng.blueprint.json"
+    },
+    "google-drive:uploadAFile": {
+        "module": "google-drive:uploadAFile",
+        "version": 4,
+        "parameters": {},
+        "desc": "Auto-extracted from Ba\u0301o ca\u0301o tho\u0302\u0301ng ke\u0302 sa\u0309n pha\u0302\u0309m theo tha\u0301ng.blueprint.json"
+    },
+    "builtin:BasicAggregator": {
+        "module": "builtin:BasicAggregator",
+        "version": 1,
+        "parameters": {
+            "feeder": "REQUIRED_VALUE"
+        },
+        "desc": "Auto-extracted from Ba\u0301o ca\u0301o tho\u0302\u0301ng ke\u0302 sa\u0309n pha\u0302\u0309m theo tha\u0301ng.blueprint.json"
+    },
+    "gemini-ai:createACompletionGeminiPro": {
+        "module": "gemini-ai:createACompletionGeminiPro",
+        "version": 1,
+        "parameters": {},
+        "desc": "Auto-extracted from Ba\u0301o ca\u0301o tho\u0302\u0301ng ke\u0302 sa\u0309n pha\u0302\u0309m theo tha\u0301ng.blueprint.json"
+    },
+    "google-sheets:updateRow": {
+        "module": "google-sheets:updateRow",
+        "version": 2,
+        "parameters": {},
+        "desc": "Auto-extracted from Ba\u0301o ca\u0301o tho\u0302\u0301ng ke\u0302 sa\u0309n pha\u0302\u0309m theo tha\u0301ng.blueprint.json"
+    },
+    "google-sheets:updateMultipleRows": {
+        "module": "google-sheets:updateMultipleRows",
+        "version": 2,
+        "parameters": {},
+        "desc": "Auto-extracted from Danh sa\u0301ch kha\u0301ch ha\u0300ng.blueprint.json"
+    },
+    "http:ActionGetFile": {
+        "module": "http:ActionGetFile",
+        "version": 3,
+        "parameters": {
+            "handleErrors": false
+        },
+        "desc": "Auto-extracted from Tu\u031b\u0323 \u0111o\u0323\u0302ng \u0111a\u0306ng ba\u0300i.blueprint.json"
+    },
+    "image:Resize": {
+        "module": "image:Resize",
+        "version": 2,
+        "parameters": {},
+        "desc": "Auto-extracted from Tu\u031b\u0323 \u0111o\u0323\u0302ng \u0111a\u0306ng ba\u0300i.blueprint.json"
+    },
+    "gemini-ai:uploadAFile": {
+        "module": "gemini-ai:uploadAFile",
+        "version": 1,
+        "parameters": {},
+        "desc": "Auto-extracted from Tu\u031b\u0323 \u0111o\u0323\u0302ng \u0111a\u0306ng ba\u0300i.blueprint.json"
+    },
+    "facebook-pages:CreatePostWithPhotos": {
+        "module": "facebook-pages:CreatePostWithPhotos",
+        "version": 6,
+        "parameters": {},
+        "desc": "Auto-extracted from Tu\u031b\u0323 \u0111o\u0323\u0302ng \u0111a\u0306ng ba\u0300i.blueprint.json"
+    }
+}

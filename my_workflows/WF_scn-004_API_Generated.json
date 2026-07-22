@@ -1,0 +1,386 @@
+{
+    "name": "Test",
+    "flow": [
+        {
+            "id": 1,
+            "module": "gateway:CustomWebHook",
+            "version": 1,
+            "parameters": {
+                "hook": 7777777,
+                "maxResults": 1
+            },
+            "mapper": {},
+            "metadata": {
+                "designer": {
+                    "x": 0,
+                    "y": 0
+                },
+                "restore": {
+                    "parameters": {
+                        "hook": {
+                            "data": {
+                                "editable": "true"
+                            },
+                            "label": "My test hook"
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "hook",
+                        "type": "hook:gateway-webhook",
+                        "label": "Webhook",
+                        "required": true
+                    },
+                    {
+                        "name": "maxResults",
+                        "type": "number",
+                        "label": "Maximum number of results"
+                    }
+                ]
+            }
+        },
+        {
+            "id": 2,
+            "module": "google-sheets:clearValuesFromRange",
+            "version": 2,
+            "parameters": {
+                "__IMTCONN__": 7707707
+            },
+            "mapper": {
+                "from": "drive",
+                "range": "A1:A",
+                "sheet": "Yêu cầu",
+                "select": "list",
+                "spreadsheetId": "/1m5M-BojGOKCpd0wW9Rkh2XgrlCkLPX_k/1balm_A5AoK2PAB1uQcDsZdalRoFlwgcS/1k9yjut3k1tl6XHwP2knFljpfLZFuKwH9EqWh7FwNDlM",
+                "value": "test"
+            },
+            "metadata": {
+                "designer": {
+                    "x": 300,
+                    "y": 0
+                },
+                "restore": {
+                    "expect": {
+                        "from": {
+                            "label": "My drive"
+                        },
+                        "sheet": {
+                            "label": "Yêu cầu"
+                        },
+                        "select": {
+                            "label": "Search by path"
+                        },
+                        "spreadsheetId": {
+                            "path": [
+                                "Test",
+                                "Tổng hợp",
+                                "Tìm sản phẩm"
+                            ]
+                        },
+                        "value": {
+                            "label": "Tìm sản phẩm"
+                        }
+                    },
+                    "parameters": {
+                        "__IMTCONN__": {
+                            "data": {
+                                "scoped": "true",
+                                "connection": "google"
+                            },
+                            "label": "My Google connection (sonht.23bi14386@usth.edu.vn)"
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "__IMTCONN__",
+                        "type": "account:google",
+                        "label": "Connection",
+                        "required": true
+                    }
+                ],
+                "expect": [
+                    {
+                        "name": "select",
+                        "type": "select",
+                        "label": "Search Method",
+                        "required": true,
+                        "validate": {
+                            "enum": [
+                                "list",
+                                "fromAll",
+                                "map"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "range",
+                        "type": "text",
+                        "label": "Range",
+                        "required": true
+                    },
+                    {
+                        "name": "value",
+                        "type": "text",
+                        "label": "Sheet Name",
+                        "required": true
+                    },
+                    {
+                        "name": "from",
+                        "type": "select",
+                        "label": "Drive",
+                        "required": true,
+                        "validate": {
+                            "enum": [
+                                "drive",
+                                "share",
+                                "team"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "spreadsheetId",
+                        "type": "file",
+                        "label": "Spreadsheet ID",
+                        "required": true
+                    },
+                    {
+                        "name": "sheet",
+                        "type": "select",
+                        "label": "Sheet Name",
+                        "required": true
+                    }
+                ]
+            }
+        },
+        {
+            "id": 3,
+            "module": "google-sheets:getSheetContent",
+            "version": 2,
+            "parameters": {
+                "__IMTCONN__": 7707707
+            },
+            "mapper": {
+                "from": "drive",
+                "range": "A2:Z",
+                "select": "list",
+                "sheetId": "Yêu cầu",
+                "spreadsheetId": "/1m5M-BojGOKCpd0wW9Rkh2XgrlCkLPX_k/1balm_A5AoK2PAB1uQcDsZdalRoFlwgcS/1k9yjut3k1tl6XHwP2knFljpfLZFuKwH9EqWh7FwNDlM",
+                "value": "test",
+                "withHeaders": true
+            },
+            "metadata": {
+                "designer": {
+                    "x": 600,
+                    "y": 0
+                },
+                "restore": {
+                    "expect": {
+                        "from": {
+                            "label": "My drive"
+                        },
+                        "range": {
+                            "label": "A2:Z"
+                        },
+                        "select": {
+                            "label": "Search by path"
+                        },
+                        "sheetId": {
+                            "label": "Yêu cầu"
+                        },
+                        "spreadsheetId": {
+                            "path": [
+                                "Test",
+                                "Tổng hợp",
+                                "Tìm sản phẩm"
+                            ]
+                        },
+                        "value": {
+                            "label": "Tìm sản phẩm"
+                        },
+                        "withHeaders": {
+                            "label": "Yes"
+                        }
+                    },
+                    "parameters": {
+                        "__IMTCONN__": {
+                            "data": {
+                                "scoped": "true",
+                                "connection": "google"
+                            },
+                            "label": "My Google connection (sonht.23bi14386@usth.edu.vn)"
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "__IMTCONN__",
+                        "type": "account:google",
+                        "label": "Connection",
+                        "required": true
+                    }
+                ],
+                "expect": [
+                    {
+                        "name": "select",
+                        "type": "select",
+                        "label": "Search Method",
+                        "required": true,
+                        "validate": {
+                            "enum": [
+                                "list",
+                                "fromAll",
+                                "map"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "range",
+                        "type": "text",
+                        "label": "Range",
+                        "required": true
+                    },
+                    {
+                        "name": "value",
+                        "type": "text",
+                        "label": "Sheet Name",
+                        "required": true
+                    },
+                    {
+                        "name": "from",
+                        "type": "select",
+                        "label": "Drive",
+                        "required": true,
+                        "validate": {
+                            "enum": [
+                                "drive",
+                                "share",
+                                "team"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "spreadsheetId",
+                        "type": "file",
+                        "label": "Spreadsheet ID",
+                        "required": true
+                    },
+                    {
+                        "name": "sheetId",
+                        "type": "select",
+                        "label": "Sheet Name",
+                        "required": true
+                    },
+                    {
+                        "name": "withHeaders",
+                        "type": "boolean",
+                        "label": "Table contains headers",
+                        "required": true
+                    }
+                ]
+            }
+        },
+        {
+            "id": 4,
+            "module": "regexp:getElementsFromText",
+            "version": 1,
+            "parameters": {},
+            "mapper": {
+                "text": "{{3.content}}",
+                "pattern": "##http_urls",
+                "requireProtocol": true,
+                "specialCharsPattern": "- & % "
+            },
+            "metadata": {
+                "designer": {
+                    "x": 900,
+                    "y": 0
+                },
+                "restore": {
+                    "expect": {
+                        "pattern": {
+                            "label": "HTTP address"
+                        },
+                        "requireProtocol": {
+                            "label": "Yes"
+                        },
+                        "specialCharsPattern": {
+                            "label": "- & % "
+                        }
+                    }
+                },
+                "expect": [
+                    {
+                        "name": "text",
+                        "type": "text",
+                        "label": "Input text",
+                        "required": true
+                    },
+                    {
+                        "name": "pattern",
+                        "type": "select",
+                        "label": "Pattern",
+                        "required": true,
+                        "validate": {
+                            "enum": [
+                                "alphanumeric",
+                                "email",
+                                "http_urls",
+                                "ip",
+                                "numeric",
+                                "phone_number_sniffing",
+                                "simple_emails",
+                                "slugs",
+                                "url_params",
+                                "utf_words"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "requireProtocol",
+                        "type": "boolean",
+                        "label": "The URL should contain the protocol (http/https)",
+                        "required": true
+                    },
+                    {
+                        "name": "specialCharsPattern",
+                        "type": "text",
+                        "label": "Additional characters allowed in the match word"
+                    }
+                ]
+            }
+        },
+        {
+            "id": 5,
+            "module": "google-drive:getFileContent",
+            "version": 2,
+            "parameters": {
+                "__IMTCONN__": 7707707
+            },
+            "mapper": {
+                "fileId": "{{4.urls}}",
+                "from": "drive",
+                "select": "list",
+                "value": "test",
+                "version": "latest"
+            },
+            "metadata": {
+                "designer": {
+                    "x": 1200,
+                    "y": 0
+                },
+                "restore": {
+                    "expect": {
+                        "from": {
+                            "label": "My drive"
+                        },
+                        "select": {
+                            "label": "Search by path"
+                        }
+                    }
+                }
+            }
+        }
+    ]
+}

@@ -1,0 +1,34 @@
+[BẢNG CỐT LÕI — BÁN LẺ]
+products(id, code, name, category, unit, price, stock_quantity, description, created_by, created_at, updated_at, image_url)
+sales(id, user_id, total_amount, amount_given, change_amount, items, payment_method, workspace_id, category, created_at)
+customers(id, code, name, phone, email, address, notes, created_by, created_at, updated_at)
+import_transactions(id, code, supplier_name, total_amount, notes, status, created_by, created_at)
+import_details(id, import_id, product_id, quantity, unit_price, total_price)
+export_transactions(id, code, customer_id, total_amount, notes, status, created_by, created_at)
+export_details(id, export_id, product_id, quantity, unit_price, total_price)
+warehouses(id, name, low_stock_threshold, discord_webhook_url, is_active, created_by, created_at)
+warehouse_stock(id, warehouse_id, product_id, stock_quantity, updated_at, UNIQUE(warehouse_id, product_id))
+workflows(id, user_id, name, description, data, created_at, updated_at)
+
+[BẢNG PHỤ TRỢ]
+users(id, email, password, password_version, name, ...)
+workspaces(id, user_id, name, type, description, ...)
+items(id, workspace_id, title, description, type, ...)
+activity_logs(id, user_id, action, details, ip_address, ...)
+ai_chat_history(id, user_id, role, content, created_at)
+chat_sessions(id, user_id, workspace_id, title, last_active)
+chat_attachments(id, session_id, file_name, file_type, analysis_summary, ...)
+wallets(id, user_id, balance, currency, updated_at)
+wallet_transactions(id, user_id, amount, currency, type, ...)
+scheduled_reports(id, name, report_type, frequency, channel, ...)
+se_automations(id, name, type, config, enabled, ...)
+manager_subscriptions(id, user_id, subscription_type, amount, start_date, ...)
+subscription_history(id, user_id, subscription_type, amount, payment_date, ...)
+system_settings(key, value, group_name, updated_at)
+
+[N8N INTERNAL API]
+GET  /api/n8n/internal/warehouses    — danh sách kho
+GET  /api/n8n/internal/low-stock     — sản phẩm sắp hết
+GET  /api/n8n/internal/iot-events    — sự kiện IoT
+POST /api/n8n/workflows/{id}/run     — chạy workflow
+POST /api/n8n/workflows/{id}/activate
