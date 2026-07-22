@@ -4,6 +4,7 @@ import os
 import secrets
 import json
 import glob
+import hmac
 
 import requests as _req
 from flask import Blueprint, jsonify, request
@@ -11,6 +12,8 @@ from flask_login import login_required
 
 from core.config import Config
 from core.logger import get_logger
+import core.services.invoice_draft_service as invoice_draft_service
+from core.services.service_errors import ServiceValidationError
 
 logger = get_logger(__name__)
 
@@ -399,6 +402,47 @@ def internal_low_stock():
         return jsonify({'success': True, 'threshold': threshold, 'count': len(items), 'items': items})
     except Exception as exc:
         return jsonify({'success': False, 'error': str(exc), 'items': []})
+
+
+@n8n_api_bp.route('/api/n8n/internal/invoice-import-draft', methods=['POST'])
+def internal_invoice_import_draft():
+    """Internal endpoint for n8n workflows — shared-secret auth required.
+
+    Receives a clean, VLM-extracted invoice (Brain's real /ocr response
+    shape) and writes it as a pending_review import draft. Never mutates
+    live stock, never trusts a client-supplied status. See 02-CONTEXT.md
+    for the full request/response contract.
+    """
+    from flask import current_app
+
+    # Read fresh per-request (not cached at module import time like
+    # _N8N_ORIGIN above) so the token can be reconfigured/monkeypatched
+    # independently of module import order.
+    expected = Config.ANSER_N8N_INTERNAL_TOKEN
+    provided = request.headers.get('X-Webhook-Token', '')
+    if not expected or not hmac.compare_digest(provided, expected):
+        return jsonify({'success': False, 'error': 'unauthorized'}), 401
+
+    body = request.get_json(silent=True)
+    if not isinstance(body, dict):
+        return jsonify({'success': False, 'error': 'invalid_json_body'}), 400
+
+    db = current_app.extensions.get('database')
+    if not db:
+        return jsonify({'success': False, 'error': 'DB not available'}), 500
+
+    conn = db.get_business_connection()
+    try:
+        result = invoice_draft_service.create_invoice_draft(conn, body)
+    except ServiceValidationError as exc:
+        return jsonify({'success': False, 'error': str(exc)}), 400
+    except Exception as exc:
+        logger.error('[n8n] invoice-import-draft failed: %s', exc, exc_info=True)
+        return jsonify({'success': False, 'error': str(exc)}), 500
+    finally:
+        conn.close()
+
+    return jsonify({'success': True, **result}), 200
 
 
 def _detect_trigger(nodes):
