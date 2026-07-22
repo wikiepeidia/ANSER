@@ -75,7 +75,7 @@ evaluation/*
 # Installer logs
 pip-log.txt
 pip-delete-this-directory.txt
-
+ANSER_AI/
 # Unit test / coverage reports
 htmlcov/
 .tox/
@@ -399,3 +399,4 @@ PHASE2-VERIFY-CHECKLIST.md
 report/BAOCAO.md
 report/HUONG_DAN_CHAY_DU_AN.md
 report/KIEN_TRUC_3_APP.md
+ANSER_AI
