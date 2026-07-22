@@ -19,7 +19,7 @@ def test_suppliers_and_material_batches_schema(app):
         conn.execute(
             """
             INSERT INTO material_batches
-                (code, material_code, material_name, unit, supplier_id, quantity, created_at)
+                (batch_code, material_code, material_name, unit, supplier_id, quantity, created_at)
             VALUES (?, ?, ?, ?, ?, ?, ?)
             """,
             ('LO-TEST', 'NVL-001', 'Vai cotton', 'm', supplier_id, 10, now()),
@@ -27,7 +27,7 @@ def test_suppliers_and_material_batches_schema(app):
         conn.commit()
 
         batch_row = conn.execute(
-            "SELECT qc_status, is_deleted FROM material_batches WHERE code = ?",
+            "SELECT qc_status, is_deleted FROM material_batches WHERE batch_code = ?",
             ('LO-TEST',),
         ).fetchone()
         assert batch_row['qc_status'] == 'pending'
@@ -84,19 +84,19 @@ def test_qc_results_schema(app):
     conn = get_connection()
     try:
         conn.execute(
-            "INSERT INTO qc_results (batch_id, qc_status, created_at) VALUES (?, ?, ?)",
-            (1, 'pending', now()),
+            "INSERT INTO qc_results (batch_id, result, tested_at) VALUES (?, ?, ?)",
+            (1, 'pass', now()),
         )
         conn.commit()
 
         row = conn.execute(
-            "SELECT qc_note FROM qc_results WHERE batch_id = 1",
+            "SELECT detail FROM qc_results WHERE batch_id = 1",
         ).fetchone()
-        assert row['qc_note'] == ''
+        assert row['detail'] == ''
 
         conn.execute(
-            "INSERT INTO qc_results (batch_id, qc_status, created_at) VALUES (?, ?, ?)",
-            (1, 'passed', now()),
+            "INSERT INTO qc_results (batch_id, result, tested_at) VALUES (?, ?, ?)",
+            (1, 'pass', now()),
         )
         conn.commit()
 
@@ -104,6 +104,40 @@ def test_qc_results_schema(app):
             "SELECT COUNT(*) AS c FROM qc_results WHERE batch_id = 1",
         ).fetchone()
         assert count_row['c'] == 2
+    finally:
+        conn.close()
+
+
+def test_qc_results_fail_trigger_blocks_batch(app):
+    """The DB trigger (not app code) must flip material_batches.qc_status
+    to 'failed' on its own when a qc_results row is inserted with
+    result='fail' -- inserts directly via SQL, no route/app-level dual-write
+    involved, to prove the trigger itself is what's enforcing the block."""
+    conn = get_connection()
+    try:
+        cur = conn.execute(
+            "INSERT INTO material_batches (material_code, material_name, quantity, created_at) "
+            "VALUES (?, ?, ?, ?)",
+            ('NVL-TRIGGER-TEST', 'Trigger test material', 10, now()),
+        )
+        batch_id = cur.lastrowid
+        conn.commit()
+
+        before = conn.execute(
+            "SELECT qc_status FROM material_batches WHERE id = ?", (batch_id,),
+        ).fetchone()
+        assert before['qc_status'] == 'pending'
+
+        conn.execute(
+            "INSERT INTO qc_results (batch_id, result, tested_at) VALUES (?, ?, ?)",
+            (batch_id, 'fail', now()),
+        )
+        conn.commit()
+
+        after = conn.execute(
+            "SELECT qc_status FROM material_batches WHERE id = ?", (batch_id,),
+        ).fetchone()
+        assert after['qc_status'] == 'failed'
     finally:
         conn.close()
 

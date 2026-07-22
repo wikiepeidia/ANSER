@@ -42,7 +42,7 @@ def test_record_qc_result(logged_in_client):
             'SELECT * FROM qc_results WHERE batch_id = ?', (batch_id,)
         ).fetchall()
         assert len(rows) == 1
-        assert rows[0]['qc_status'] == 'passed'
+        assert rows[0]['result'] == 'pass'
     finally:
         conn.close()
 

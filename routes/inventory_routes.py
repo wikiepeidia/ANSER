@@ -73,20 +73,38 @@ def _resolve_supplier(conn, name, user_id):
     return cur.lastrowid
 
 
+def _resolve_material_product(conn, material, user_id):
+    """Resolve a MATERIALS_CATALOG material into a real products.id (NVL is
+    modeled as a product too, per material_batches.material_product_id),
+    auto-creating it on first use -- same find-or-create shape as
+    _resolve_supplier above."""
+    row = conn.execute('SELECT id FROM products WHERE code = ?', (material['code'],)).fetchone()
+    if row:
+        return row['id']
+    cur = conn.execute(
+        'INSERT INTO products (code, name, unit, created_by, created_at, updated_at) '
+        'VALUES (?, ?, ?, ?, ?, ?)',
+        (material['code'], material['name'], material['unit'], user_id, now(), now()),
+    )
+    return cur.lastrowid
+
+
 def _serialize_batch(row):
     return {
         'id': row['id'],
-        'code': row['code'],
+        'code': row['batch_code'],
         'materialCode': row['material_code'],
         'materialName': row['material_name'],
+        'materialProductId': row['material_product_id'],
         'unit': row['unit'],
         'supplierId': row['supplier_id'],
         'supplierName': row['supplier_name'] or '',
         'quantity': row['quantity'],
-        'receivedAt': row['received_at'],
+        'receivedAt': row['import_date'],
         'expiryDate': row['expiry_date'] or '',
         'qcStatus': row['qc_status'],
         'qcNote': row['qc_note'] or '',
+        'locationId': row['location_id'],
         'notes': row['notes'] or '',
     }
 
@@ -127,7 +145,7 @@ def get_material_batches():
     conn = get_connection()
     try:
         rows = conn.execute(
-            f'{_BATCH_SELECT} WHERE b.is_deleted = FALSE ORDER BY b.received_at DESC'
+            f'{_BATCH_SELECT} WHERE b.is_deleted = FALSE ORDER BY b.import_date DESC'
         ).fetchall()
         return jsonify({'success': True, 'batches': [_serialize_batch(r) for r in rows]})
     finally:
@@ -146,16 +164,19 @@ def create_material_batch():
     conn = get_connection()
     try:
         supplier_id = _resolve_supplier(conn, data.get('supplierName'), current_user.id)
+        material_product_id = _resolve_material_product(conn, material, current_user.id)
+        location_id = data.get('locationId')
         cur = conn.execute(
-            'INSERT INTO material_batches (material_code, material_name, unit, supplier_id, '
-            'quantity, expiry_date, notes, created_by, created_at) '
-            'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-            (material['code'], material['name'], material['unit'], supplier_id, quantity,
-             data.get('expiryDate') or '', data.get('notes', ''), current_user.id, now()),
+            'INSERT INTO material_batches (material_code, material_name, material_product_id, '
+            'unit, supplier_id, quantity, expiry_date, notes, location_id, created_by, created_at) '
+            'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            (material['code'], material['name'], material_product_id, material['unit'], supplier_id,
+             quantity, data.get('expiryDate') or '', data.get('notes', ''), location_id,
+             current_user.id, now()),
         )
         batch_id = cur.lastrowid
         code = f'LO-{2000 + batch_id}'
-        conn.execute('UPDATE material_batches SET code = ? WHERE id = ?', (code, batch_id))
+        conn.execute('UPDATE material_batches SET batch_code = ? WHERE id = ?', (code, batch_id))
         conn.commit()
         return jsonify({'success': True, 'id': batch_id, 'code': code})
     except Exception as e:
@@ -198,11 +219,13 @@ def update_material_batch(batch_id):
         if not row:
             return jsonify({'success': False, 'message': 'Không tìm thấy lô nguyên liệu'}), 404
         supplier_id = _resolve_supplier(conn, data.get('supplierName'), current_user.id)
+        material_product_id = _resolve_material_product(conn, material, current_user.id)
+        location_id = data.get('locationId')
         conn.execute(
-            'UPDATE material_batches SET material_code=?, material_name=?, unit=?, supplier_id=?, '
-            'quantity=?, expiry_date=?, notes=? WHERE id=?',
-            (material['code'], material['name'], material['unit'], supplier_id, quantity,
-             data.get('expiryDate') or '', data.get('notes', ''), batch_id),
+            'UPDATE material_batches SET material_code=?, material_name=?, material_product_id=?, '
+            'unit=?, supplier_id=?, quantity=?, expiry_date=?, notes=?, location_id=? WHERE id=?',
+            (material['code'], material['name'], material_product_id, material['unit'], supplier_id,
+             quantity, data.get('expiryDate') or '', data.get('notes', ''), location_id, batch_id),
         )
         conn.commit()
         return jsonify({'success': True, 'message': 'Cập nhật lô nguyên liệu thành công'})
@@ -270,6 +293,11 @@ def trace_material_batch(batch_id):
 
 QC_STATUSES = ('pending', 'passed', 'failed')
 
+# qc_results.result uses its own short 'pass'/'fail' vocabulary (see
+# core/sanxuat_db.py's trigger, which only acts on 'fail') -- distinct from
+# material_batches.qc_status's 'pending'/'passed'/'failed'.
+_QC_RESULT_BY_STATUS = {'passed': 'pass', 'failed': 'fail'}
+
 
 @inventory_bp.route('/api/material-batches/<int:batch_id>/qc-result', methods=['POST'])
 @login_required
@@ -288,10 +316,15 @@ def record_qc_result(batch_id):
         if not row:
             return jsonify({'success': False, 'message': 'Không tìm thấy lô nguyên liệu'}), 404
 
+        result = _QC_RESULT_BY_STATUS.get(qc_status, qc_status)
         conn.execute(
-            'INSERT INTO qc_results (batch_id, qc_status, qc_note, created_at) VALUES (?, ?, ?, ?)',
-            (batch_id, qc_status, qc_note, now()),
+            'INSERT INTO qc_results (batch_id, tested_by, test_type, result, detail, tested_at) '
+            'VALUES (?, ?, ?, ?, ?, ?)',
+            (batch_id, data.get('testedBy') or '', data.get('testType') or '', result, qc_note, now()),
         )
+        # Belt-and-suspenders with the DB trigger (which only fires on
+        # result='fail') -- this still needs to run explicitly so a
+        # 'passed' result is reflected on material_batches too.
         conn.execute(
             'UPDATE material_batches SET qc_status = ?, qc_note = ? WHERE id = ?',
             (qc_status, qc_note, batch_id),

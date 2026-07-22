@@ -131,10 +131,10 @@ def test_lab_result_insert(client):
     conn = get_connection()
     try:
         batch_id = conn.execute(
-            'SELECT id FROM material_batches WHERE code = ?', (code,),
+            'SELECT id FROM material_batches WHERE batch_code = ?', (code,),
         ).fetchone()['id']
         rows = conn.execute(
-            'SELECT qc_status, qc_note FROM qc_results WHERE batch_id = ?', (batch_id,),
+            'SELECT result, detail FROM qc_results WHERE batch_id = ?', (batch_id,),
         ).fetchall()
         batch_row = conn.execute(
             'SELECT qc_status FROM material_batches WHERE id = ?', (batch_id,),
@@ -142,8 +142,8 @@ def test_lab_result_insert(client):
     finally:
         conn.close()
     assert len(rows) == 1
-    assert rows[0]['qc_status'] == 'passed'
-    assert rows[0]['qc_note'] == 'Kiểm định bởi Nguyễn Văn A'
+    assert rows[0]['result'] == 'pass'
+    assert rows[0]['detail'] == 'Kiểm định bởi Nguyễn Văn A'
     assert batch_row['qc_status'] == 'passed'
 
     resp2 = client.post('/api/n8n/internal/rag/lab-result-insert', json={
@@ -161,7 +161,7 @@ def test_lab_result_insert(client):
     conn = get_connection()
     try:
         rows2 = conn.execute(
-            'SELECT qc_status FROM qc_results WHERE batch_id = ?', (batch_id,),
+            'SELECT result FROM qc_results WHERE batch_id = ?', (batch_id,),
         ).fetchall()
         batch_row2 = conn.execute(
             'SELECT qc_status FROM material_batches WHERE id = ?', (batch_id,),

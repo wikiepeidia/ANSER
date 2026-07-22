@@ -25,7 +25,7 @@ from flask_login import login_required
 from core.config import Config
 from core.extensions import csrf
 from core.sanxuat_db import get_connection, now
-from routes.inventory_routes import _find_material, _resolve_supplier
+from routes.inventory_routes import _find_material, _resolve_supplier, _resolve_material_product
 
 logger = logging.getLogger(__name__)
 
@@ -432,16 +432,17 @@ def _internal_material_batch_insert(payload):
     conn = get_connection()
     try:
         supplier_id = _resolve_supplier(conn, payload.get('farmer'), None)
+        material_product_id = _resolve_material_product(conn, material, None)
         cur = conn.execute(
-            'INSERT INTO material_batches (material_code, material_name, unit, supplier_id, '
-            'quantity, expiry_date, notes, created_by, created_at) '
-            'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-            (material['code'], material['name'], material['unit'], supplier_id, quantity,
-             '', '', None, now()),
+            'INSERT INTO material_batches (material_code, material_name, material_product_id, '
+            'unit, supplier_id, quantity, expiry_date, notes, created_by, created_at) '
+            'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            (material['code'], material['name'], material_product_id, material['unit'], supplier_id,
+             quantity, '', '', None, now()),
         )
         batch_id = cur.lastrowid
         code = f'LO-{2000 + batch_id}'
-        conn.execute('UPDATE material_batches SET code = ? WHERE id = ?', (code, batch_id))
+        conn.execute('UPDATE material_batches SET batch_code = ? WHERE id = ?', (code, batch_id))
         conn.commit()
         return {'success': True, 'id': batch_id, 'code': code,
                 'lot_code': code, 'farmer': payload.get('farmer') or '',
@@ -506,7 +507,7 @@ def _resolve_batch_id_by_code(conn, batch_code):
     2's 02-05 checkpoint (never a SQLite-only 0/1 integer literal).
     """
     row = conn.execute(
-        'SELECT id FROM material_batches WHERE code = ? AND is_deleted = FALSE',
+        'SELECT id FROM material_batches WHERE batch_code = ? AND is_deleted = FALSE',
         (batch_code,),
     ).fetchone()
     return row['id'] if row else None
@@ -532,12 +533,13 @@ def _internal_lab_result_insert(payload):
         pesticide_ok = payload.get('pesticide_ok') is True
         heavy_metal_ok = payload.get('heavy_metal_ok') is True
         qc_status = 'passed' if pesticide_ok and heavy_metal_ok else 'failed'
+        result = 'pass' if qc_status == 'passed' else 'fail'
         tested_by = payload.get('tested_by') or ''
         qc_note = f'Kiểm định bởi {tested_by}' if tested_by else ''
         cur = conn.execute(
-            'INSERT INTO qc_results (batch_id, qc_status, qc_note, created_at) '
-            'VALUES (?, ?, ?, ?)',
-            (batch_id, qc_status, qc_note, now()),
+            'INSERT INTO qc_results (batch_id, tested_by, test_type, result, detail, tested_at) '
+            'VALUES (?, ?, ?, ?, ?, ?)',
+            (batch_id, tested_by, 'lab_test', result, qc_note, now()),
         )
         qc_result_id = cur.lastrowid
         conn.execute(

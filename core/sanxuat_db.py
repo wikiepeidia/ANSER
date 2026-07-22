@@ -11,260 +11,6 @@ from datetime import datetime
 
 from core.config import Config
 
-SCHEMA_SQLITE = """
-CREATE TABLE IF NOT EXISTS products (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    code TEXT UNIQUE NOT NULL,
-    name TEXT NOT NULL,
-    category TEXT,
-    unit TEXT DEFAULT 'cái',
-    price REAL DEFAULT 0,
-    stock_quantity INTEGER DEFAULT 0,
-    description TEXT,
-    image_url TEXT,
-    created_by INTEGER,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE IF NOT EXISTS customers (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    code TEXT UNIQUE,
-    name TEXT NOT NULL,
-    phone TEXT,
-    email TEXT,
-    address TEXT,
-    notes TEXT,
-    created_by INTEGER,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE IF NOT EXISTS import_transactions (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    code TEXT,
-    supplier_name TEXT,
-    total_amount REAL DEFAULT 0,
-    notes TEXT,
-    status TEXT DEFAULT 'completed',
-    created_by INTEGER,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE IF NOT EXISTS import_details (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    import_id INTEGER NOT NULL,
-    product_id INTEGER,
-    quantity REAL DEFAULT 0,
-    unit_price REAL DEFAULT 0,
-    total_price REAL DEFAULT 0
-);
-
-CREATE TABLE IF NOT EXISTS export_transactions (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    code TEXT,
-    customer_id INTEGER,
-    total_amount REAL DEFAULT 0,
-    notes TEXT,
-    status TEXT DEFAULT 'completed',
-    created_by INTEGER,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE IF NOT EXISTS export_details (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    export_id INTEGER NOT NULL,
-    product_id INTEGER,
-    quantity REAL DEFAULT 0,
-    unit_price REAL DEFAULT 0,
-    total_price REAL DEFAULT 0
-);
-
--- Sink for n8n workflow callbacks (RAG_BASE_URL / NOTIFY_URL nodes in
--- workflow_templates/manuf_*.json). Each row is one HTTP call an n8n
--- workflow made back into this app while running.
-CREATE TABLE IF NOT EXISTS automation_events (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    action TEXT NOT NULL,
-    payload TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- production_orders table (real backend for the Phase 1 mock in static/js/store.js).
--- code is id-derived ('DH-' || (1000+id)) so it's set via UPDATE right after
--- INSERT, once the id is known (see routes/production_routes.py).
-CREATE TABLE IF NOT EXISTS production_orders (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    code TEXT UNIQUE,
-    product_code TEXT NOT NULL,
-    product_name TEXT NOT NULL,
-    quantity REAL NOT NULL,
-    unit TEXT DEFAULT 'cái',
-    customer_name TEXT,
-    notes TEXT,
-    status TEXT NOT NULL DEFAULT 'draft',
-    created_by INTEGER,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    approved_at TIMESTAMP,
-    approved_by INTEGER,
-    is_deleted INTEGER DEFAULT 0,
-    deleted_at TIMESTAMP
-);
-
--- production_order_events: per-order timeline ("Nhật ký quy trình" panel on
--- production-order-detail.html) — system-generated create + transition
--- events, populated by routes/production_routes.py.
-CREATE TABLE IF NOT EXISTS production_order_events (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    order_id INTEGER NOT NULL,
-    event TEXT NOT NULL,
-    note TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- bom_lines: master-data BOM (bill of materials) per product_code, full-
--- replaced on every save (routes/production_routes.py's PUT /api/bom/<code>
--- deletes all rows for a product then bulk-inserts the cleaned list).
-CREATE TABLE IF NOT EXISTS bom_lines (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    product_code TEXT NOT NULL,
-    code TEXT NOT NULL,
-    name TEXT NOT NULL,
-    unit TEXT DEFAULT 'cái',
-    unit_cost REAL DEFAULT 0,
-    qty_per_unit REAL NOT NULL
-);
-
-CREATE INDEX IF NOT EXISTS idx_bom_lines_product_code ON bom_lines(product_code);
-
--- suppliers: master data for material_batches.supplier_id. code is
--- id-derived ('NCC-' || zero-padded 3-digit id), set via UPDATE right after
--- INSERT once the id is known (see routes/*_routes.py), same pattern as
--- production_orders.code.
-CREATE TABLE IF NOT EXISTS suppliers (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    code TEXT UNIQUE,
-    name TEXT NOT NULL,
-    contact TEXT,
-    phone TEXT,
-    email TEXT,
-    address TEXT,
-    notes TEXT,
-    created_by INTEGER,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    is_deleted INTEGER DEFAULT 0,
-    deleted_at TIMESTAMP
-);
-
--- material_batches: real backend for the mock's materialBatches array.
--- code is id-derived ('LO-' || (2000+id)). supplier_id is a nullable FK
--- (no REFERENCES clause, matching this app's existing tables' style, e.g.
--- production_order_events.order_id) ready for 02-02's resolver to populate.
--- qc_status/qc_note are reserved for Phase 3 (QC-01) -- no route this
--- phase writes to them.
-CREATE TABLE IF NOT EXISTS material_batches (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    code TEXT UNIQUE,
-    material_code TEXT NOT NULL,
-    material_name TEXT NOT NULL,
-    unit TEXT DEFAULT 'cái',
-    supplier_id INTEGER,
-    quantity REAL NOT NULL,
-    received_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    expiry_date TEXT,
-    qc_status TEXT NOT NULL DEFAULT 'pending',
-    qc_note TEXT DEFAULT '',
-    notes TEXT DEFAULT '',
-    created_by INTEGER,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    is_deleted INTEGER DEFAULT 0,
-    deleted_at TIMESTAMP
-);
-
-CREATE INDEX IF NOT EXISTS idx_material_batches_material_code ON material_batches(material_code);
-CREATE INDEX IF NOT EXISTS idx_material_batches_supplier_id ON material_batches(supplier_id);
-
--- warehouses: unlike batches/suppliers, code is client-supplied at creation
--- time (NOT NULL), not server-generated.
-CREATE TABLE IF NOT EXISTS warehouses (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    code TEXT UNIQUE NOT NULL,
-    name TEXT NOT NULL,
-    address TEXT,
-    created_by INTEGER,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    is_deleted INTEGER DEFAULT 0,
-    deleted_at TIMESTAMP
-);
-
-CREATE TABLE IF NOT EXISTS warehouse_locations (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    warehouse_id INTEGER NOT NULL,
-    code TEXT NOT NULL,
-    name TEXT NOT NULL,
-    is_deleted INTEGER DEFAULT 0,
-    deleted_at TIMESTAMP
-);
-
-CREATE INDEX IF NOT EXISTS idx_warehouse_locations_warehouse_id ON warehouse_locations(warehouse_id);
-
--- stock_ledger: append-only / event-sourced. Every write is an INSERT;
--- current stock is always derived via SUM(quantity_delta), never a
--- mutated column. entry_type in ('transfer_out', 'transfer_in',
--- 'adjustment'). transfer_group is shared by a transfer's 2 rows, NULL
--- for adjustment rows. counterparty_warehouse_id/counterparty_location_id
--- are transfer-only; system_qty_snapshot/counted_qty are adjustment-only.
-CREATE TABLE IF NOT EXISTS stock_ledger (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    entry_type TEXT NOT NULL,
-    warehouse_id INTEGER NOT NULL,
-    location_id INTEGER NOT NULL,
-    product_code TEXT NOT NULL,
-    product_name TEXT NOT NULL,
-    unit TEXT DEFAULT 'cái',
-    quantity_delta REAL NOT NULL,
-    transfer_group TEXT,
-    counterparty_warehouse_id INTEGER,
-    counterparty_location_id INTEGER,
-    system_qty_snapshot REAL,
-    counted_qty REAL,
-    note TEXT DEFAULT '',
-    created_by INTEGER,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE INDEX IF NOT EXISTS idx_stock_ledger_wlp ON stock_ledger(warehouse_id, location_id, product_code);
-CREATE INDEX IF NOT EXISTS idx_stock_ledger_transfer_group ON stock_ledger(transfer_group);
-
--- qc_results: immutable audit log for QC-01 (Phase 2.1). Never UPDATEd or
--- DELETEd -- the "current" QC status lives on material_batches.qc_status/
--- qc_note (dual-write, populated in the same transaction by 02.1-02's
--- POST .../qc-result route); this table is history only. No is_deleted
--- column by design (append-only, matching production_order_events'
--- exact precedent).
-CREATE TABLE IF NOT EXISTS qc_results (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    batch_id INTEGER NOT NULL,
-    qc_status TEXT NOT NULL,
-    qc_note TEXT DEFAULT '',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE INDEX IF NOT EXISTS idx_qc_results_batch_id ON qc_results(batch_id);
-
--- material_batch_events: append-only process-event log for QC-03/QC-04
--- (Phase 2.1), structurally identical to production_order_events
--- (batch_id instead of order_id). No enum/CHECK constraint on `event` --
--- the mock's own addProcessEvent never validates its event string either.
-CREATE TABLE IF NOT EXISTS material_batch_events (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    batch_id INTEGER NOT NULL,
-    event TEXT NOT NULL,
-    note TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE INDEX IF NOT EXISTS idx_material_batch_events_batch_id ON material_batch_events(batch_id);
-"""
 
 SCHEMA_PG = """
 CREATE TABLE IF NOT EXISTS products (
@@ -408,23 +154,27 @@ CREATE TABLE IF NOT EXISTS suppliers (
 );
 
 -- material_batches: real backend for the mock's materialBatches array.
--- code is id-derived ('LO-' || (2000+id)). supplier_id is a nullable FK
--- (no REFERENCES clause, matching this app's existing tables' style, e.g.
--- production_order_events.order_id) ready for 02-02's resolver to populate.
--- qc_status/qc_note are reserved for Phase 3 (QC-01) -- no route this
--- phase writes to them.
+-- batch_code is id-derived ('LO-' || (2000+id)). supplier_id/material_product_id/
+-- location_id are nullable FKs (no REFERENCES clause, matching this app's
+-- existing tables' style, e.g. production_order_events.order_id).
+-- material_product_id is resolved/auto-created from MATERIALS_CATALOG the
+-- same way supplier_id is resolved from a free-text supplier name (NVL is
+-- modeled as a product too). qc_status/qc_note are reserved for Phase 3
+-- (QC-01) -- no route this phase writes to them.
 CREATE TABLE IF NOT EXISTS material_batches (
     id SERIAL PRIMARY KEY,
-    code TEXT UNIQUE,
+    batch_code TEXT UNIQUE,
     material_code TEXT NOT NULL,
     material_name TEXT NOT NULL,
+    material_product_id INTEGER,
     unit TEXT DEFAULT 'cái',
     supplier_id INTEGER,
     quantity REAL NOT NULL,
-    received_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    import_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     expiry_date TEXT,
     qc_status TEXT NOT NULL DEFAULT 'pending',
     qc_note TEXT DEFAULT '',
+    location_id INTEGER,
     notes TEXT DEFAULT '',
     created_by INTEGER,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -434,6 +184,41 @@ CREATE TABLE IF NOT EXISTS material_batches (
 
 CREATE INDEX IF NOT EXISTS idx_material_batches_material_code ON material_batches(material_code);
 CREATE INDEX IF NOT EXISTS idx_material_batches_supplier_id ON material_batches(supplier_id);
+
+-- Migration for a material_batches table that already exists from before
+-- batch_code/import_date/material_product_id/location_id existed (the
+-- CREATE TABLE IF NOT EXISTS above is a no-op against it) -- renames are
+-- guarded so this stays a no-op on repeat runs, same idempotency guarantee
+-- as the rest of this schema.
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'material_batches' AND column_name = 'code')
+       AND NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'material_batches' AND column_name = 'batch_code') THEN
+        ALTER TABLE material_batches RENAME COLUMN code TO batch_code;
+    END IF;
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'material_batches' AND column_name = 'received_at')
+       AND NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'material_batches' AND column_name = 'import_date') THEN
+        ALTER TABLE material_batches RENAME COLUMN received_at TO import_date;
+    END IF;
+END $$;
+
+ALTER TABLE material_batches ADD COLUMN IF NOT EXISTS material_product_id INTEGER;
+ALTER TABLE material_batches ADD COLUMN IF NOT EXISTS location_id INTEGER;
+
+-- batch_usage: links a material_batches row to the production_orders row
+-- that consumed it, with quantity -- 2-way traceability (lo NVL -> cac don
+-- da dung no, va don san xuat -> cac lo NVL da dung), independent of
+-- TRACE-02's existing BOM-membership heuristic in routes/inventory_routes.py.
+CREATE TABLE IF NOT EXISTS batch_usage (
+    id SERIAL PRIMARY KEY,
+    batch_id INTEGER NOT NULL,
+    order_id INTEGER NOT NULL,
+    quantity_used REAL NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_batch_usage_batch_id ON batch_usage(batch_id);
+CREATE INDEX IF NOT EXISTS idx_batch_usage_order_id ON batch_usage(order_id);
 
 -- warehouses: unlike batches/suppliers, code is client-supplied at creation
 -- time (NOT NULL), not server-generated.
@@ -490,18 +275,64 @@ CREATE INDEX IF NOT EXISTS idx_stock_ledger_transfer_group ON stock_ledger(trans
 -- qc_results: immutable audit log for QC-01 (Phase 2.1). Never UPDATEd or
 -- DELETEd -- the "current" QC status lives on material_batches.qc_status/
 -- qc_note (dual-write, populated in the same transaction by 02.1-02's
--- POST .../qc-result route); this table is history only. No is_deleted
--- column by design (append-only, matching production_order_events'
--- exact precedent).
+-- POST .../qc-result route, AND independently enforced by the trigger
+-- below); this table is history only. No is_deleted column by design
+-- (append-only, matching production_order_events' exact precedent).
+-- result is 'pass'/'fail' (short form, this table's own vocabulary) --
+-- distinct from material_batches.qc_status's 'pending'/'passed'/'failed'.
 CREATE TABLE IF NOT EXISTS qc_results (
     id SERIAL PRIMARY KEY,
     batch_id INTEGER NOT NULL,
-    qc_status TEXT NOT NULL,
-    qc_note TEXT DEFAULT '',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    tested_by TEXT,
+    test_type TEXT,
+    result TEXT NOT NULL,
+    detail TEXT DEFAULT '',
+    tested_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE INDEX IF NOT EXISTS idx_qc_results_batch_id ON qc_results(batch_id);
+
+-- Migration for a qc_results table that already exists from before
+-- tested_by/test_type/result/detail/tested_at existed (same guarded-rename
+-- idempotency pattern as material_batches' migration above).
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'qc_results' AND column_name = 'qc_status')
+       AND NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'qc_results' AND column_name = 'result') THEN
+        ALTER TABLE qc_results RENAME COLUMN qc_status TO result;
+    END IF;
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'qc_results' AND column_name = 'qc_note')
+       AND NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'qc_results' AND column_name = 'detail') THEN
+        ALTER TABLE qc_results RENAME COLUMN qc_note TO detail;
+    END IF;
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'qc_results' AND column_name = 'created_at')
+       AND NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'qc_results' AND column_name = 'tested_at') THEN
+        ALTER TABLE qc_results RENAME COLUMN created_at TO tested_at;
+    END IF;
+END $$;
+
+ALTER TABLE qc_results ADD COLUMN IF NOT EXISTS tested_by TEXT;
+ALTER TABLE qc_results ADD COLUMN IF NOT EXISTS test_type TEXT;
+
+-- Trigger: a qc_results row inserted with result='fail' blocks that batch
+-- from production use by forcing material_batches.qc_status='failed',
+-- independent of whichever route/script performed the INSERT (the Python
+-- routes below also set it explicitly in the same request -- this trigger
+-- is the authoritative enforcement, not just a convenience mirror).
+CREATE OR REPLACE FUNCTION fn_qc_results_fail_blocks_batch() RETURNS TRIGGER AS $$
+BEGIN
+    IF NEW.result = 'fail' THEN
+        UPDATE material_batches SET qc_status = 'failed' WHERE id = NEW.batch_id;
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_qc_results_fail_blocks_batch ON qc_results;
+CREATE TRIGGER trg_qc_results_fail_blocks_batch
+    AFTER INSERT ON qc_results
+    FOR EACH ROW
+    EXECUTE FUNCTION fn_qc_results_fail_blocks_batch();
 
 -- material_batch_events: append-only process-event log for QC-03/QC-04
 -- (Phase 2.1), structurally identical to production_order_events
