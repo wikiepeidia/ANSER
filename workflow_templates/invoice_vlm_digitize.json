@@ -108,7 +108,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "http://host.docker.internal:5000/api/n8n/internal/invoice-import-draft",
+        "url": "http://host.docker.internal:5002/api/n8n/internal/invoice-import-draft",
         "authentication": "none",
         "sendHeaders": true,
         "headerParameters": {

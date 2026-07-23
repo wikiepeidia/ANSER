@@ -89,7 +89,7 @@ unchanged from before, and still treated as its own branch (checked first in
 
 ## Body Write-Back Contract (n8n -> Body)
 
-**Endpoint:** `POST http://host.docker.internal:5000/api/n8n/internal/invoice-import-draft`
+**Endpoint:** `POST http://host.docker.internal:5002/api/n8n/internal/invoice-import-draft`
 
 This endpoint now exists — shipped in Phase 2 as
 `core/services/invoice_draft_service.create_invoice_draft()`, wired at
