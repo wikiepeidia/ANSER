@@ -95,3 +95,11 @@ _NORMALIZE_CASES = [
 )
 def test_normalizer_routes_to_expected_branch(case_id, mocked_response, expected_branch):
     assert _run_normalizer(mocked_response)["branch"] == expected_branch
+
+
+def test_writeback_header_references_internal_token_env_var():
+    node = _find_node(_load_workflow()["nodes"], "iv-writeback")
+    parameters = node["parameters"]["headerParameters"]["parameters"]
+    token_header = next((p for p in parameters if p.get("name") == "X-Webhook-Token"), None)
+    assert token_header is not None, "iv-writeback has no X-Webhook-Token header entry"
+    assert "$env.ANSER_N8N_INTERNAL_TOKEN" in token_header["value"]
