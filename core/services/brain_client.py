@@ -9,10 +9,12 @@ logger = get_logger(__name__)
 
 # Qwen2-VL's visual-token count (and therefore VRAM) scales with input
 # resolution. A full-resolution phone photo can push CUDA OOM on an
-# already-loaded L4 GPU (confirmed live: "Tried to allocate 37.60 GiB").
-# 1536px on the long side is comfortably enough for a VLM to read invoice
-# text/tables while keeping memory bounded.
-MAX_IMAGE_DIMENSION = 1536
+# already-loaded L4 GPU (confirmed live: "Tried to allocate 37.60 GiB",
+# then still OOMing at 1.81 GiB once session VRAM pressure had built up
+# to <2GB free — the cap alone can't save you once headroom is this
+# tight, but keeping it modest still helps). 1024px on the long side is
+# still plenty for a VLM to read invoice text/tables.
+MAX_IMAGE_DIMENSION = 1024
 
 
 def _downscale_if_needed(file_bytes, filename=None):
