@@ -44,7 +44,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const item = $input.first().json;\nlet branch, status, issues, message;\n\nif (item.error) {\n  branch = 'error';\n  status = 'error';\n  issues = [String(item.error)];\n  message = 'Không thể kết nối tới Brain để số hóa hóa đơn.';\n} else if (item.status === 'needs_manual_review') {\n  branch = 'needs_manual_review';\n  status = item.status;\n  issues = item.issues || [];\n  message = 'Hóa đơn cần được xem lại thủ công.';\n} else {\n  branch = 'pending_review';\n  status = item.status || 'pending_review';\n  issues = [];\n  message = 'Kết quả số hóa hóa đơn đã sẵn sàng để xem lại.';\n}\n\nreturn [{ json: { branch, status, issues, message, brain_response: item } }];"
+        "jsCode": "const item = $input.first().json;\nlet branch, issues, message;\n\nif (item.error) {\n  branch = 'error';\n  issues = [String(item.error)];\n  message = 'Không thể kết nối tới Brain để số hóa hóa đơn.';\n} else if (item.success !== true || item.needs_manual_review) {\n  branch = 'needs_manual_review';\n  if (item.error) {\n    issues = [String(item.error)];\n  } else if (item.validation && item.validation.is_valid === false) {\n    issues = [`Lệch số liệu: tính lại = ${item.validation.calculated_total}, chênh lệch = ${item.validation.difference}`];\n  } else {\n    issues = ['Không có chi tiết cụ thể, cần xem lại thủ công.'];\n  }\n  message = 'Hóa đơn cần được xem lại thủ công.';\n} else {\n  branch = 'pending_review';\n  issues = [];\n  message = 'Kết quả số hóa hóa đơn đã sẵn sàng để xem lại.';\n}\n\nreturn [{ json: { branch, issues, message, brain_response: item } }];"
       },
       "id": "iv-normalize",
       "name": "Chuẩn hoá kết quả Brain",
