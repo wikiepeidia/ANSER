@@ -195,6 +195,24 @@
                                             </select>
                                             <div class="form-text mt-2">Email báo cáo doanh số tự động gửi vào đúng giờ này mỗi ngày (mặc định 20:00) — đổi cho khớp giờ đóng cửa thực tế của cửa hàng. Nếu automation "Báo cáo doanh số hàng ngày" đã bật trong n8n, đổi giờ ở đây có hiệu lực ngay, không cần deploy lại.</div>
                                         </div>
+                                        <div class="mb-4">
+                                            <label class="form-label">Giờ gửi báo cáo doanh thu hàng tuần</label>
+                                            <select class="form-select setting-input" name="weekly_report_hour" data-group="system">
+                                                {% for h in range(0, 24) %}
+                                                <option value="{{ h }}" {% if all_settings.get('weekly_report_hour', '20')|string == h|string %}selected{% endif %}>{{ '%02d:00'|format(h) }}</option>
+                                                {% endfor %}
+                                            </select>
+                                            <div class="form-text mt-2">Gửi mỗi 7 ngày, vào đúng giờ này. Cần automation "Báo cáo doanh số hàng tuần" đã bật trong n8n để có hiệu lực ngay.</div>
+                                        </div>
+                                        <div class="mb-4">
+                                            <label class="form-label">Giờ gửi báo cáo doanh thu hàng tháng</label>
+                                            <select class="form-select setting-input" name="monthly_report_hour" data-group="system">
+                                                {% for h in range(0, 24) %}
+                                                <option value="{{ h }}" {% if all_settings.get('monthly_report_hour', '20')|string == h|string %}selected{% endif %}>{{ '%02d:00'|format(h) }}</option>
+                                                {% endfor %}
+                                            </select>
+                                            <div class="form-text mt-2">Gửi mỗi 30 ngày, vào đúng giờ này. Cần automation "Báo cáo doanh số hàng tháng" đã bật trong n8n để có hiệu lực ngay.</div>
+                                        </div>
                                         {% endif %}
                                     </form>
                                 </div>

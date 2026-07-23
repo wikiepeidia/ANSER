@@ -83,10 +83,10 @@ def api_update_settings():
                 (setting_key, data.get('value'), data.get('group')),
             )
             conn.commit()
-        if setting_key == 'daily_report_hour':
+        if setting_key in ('daily_report_hour', 'weekly_report_hour', 'monthly_report_hour'):
             try:
-                from routes.n8n_api import sync_daily_report_hour
-                sync_daily_report_hour(data.get('value'))
+                from routes.n8n_api import sync_report_hour
+                sync_report_hour(setting_key, data.get('value'))
             except Exception:
                 pass  # workflow not deployed yet, or n8n unreachable — setting is still saved
         return jsonify({'success': True, 'message': 'Đã cập nhật cài đặt'})
