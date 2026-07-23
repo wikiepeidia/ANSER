@@ -17,20 +17,20 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "={{ $env.BRAIN_URL }}/api/invoice/digitize",
+        "url": "={{ $env.BRAIN_URL }}/ocr",
         "authentication": "none",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "X-API-Token", "value": "={{ $env.BRAIN_TOKEN }}" }
+            { "name": "X-API-Token", "value": "={{ $env.BRAIN_TOKEN }}" },
+            { "name": "ngrok-skip-browser-warning", "value": "true" }
           ]
         },
         "sendBody": true,
         "contentType": "multipart-form-data",
         "bodyParameters": {
           "parameters": [
-            { "parameterType": "formBinaryData", "name": "invoice_image", "inputDataFieldName": "data" },
-            { "parameterType": "formData", "name": "source", "value": "={{ $json.body?.source || 'n8n' }}" }
+            { "parameterType": "formBinaryData", "name": "file", "inputDataFieldName": "data" }
           ]
         },
         "options": { "timeout": 120000 }
@@ -44,7 +44,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const item = $input.first().json;\nlet branch, status, issues, message;\n\nif (item.error) {\n  branch = 'error';\n  status = 'error';\n  issues = [String(item.error)];\n  message = 'Không thể kết nối tới Brain để số hóa hóa đơn.';\n} else if (item.status === 'needs_manual_review') {\n  branch = 'needs_manual_review';\n  status = item.status;\n  issues = item.issues || [];\n  message = 'Hóa đơn cần được xem lại thủ công.';\n} else {\n  branch = 'pending_review';\n  status = item.status || 'pending_review';\n  issues = [];\n  message = 'Kết quả số hóa hóa đơn đã sẵn sàng để xem lại.';\n}\n\nreturn [{ json: { branch, status, issues, message, brain_response: item } }];"
+        "jsCode": "const item = $input.first().json;\nlet branch, issues, message;\n\nif (item.error) {\n  branch = 'error';\n  issues = [String(item.error)];\n  message = 'Không thể kết nối tới Brain để số hóa hóa đơn.';\n} else if (item.success !== true || item.needs_manual_review) {\n  branch = 'needs_manual_review';\n  if (item.error) {\n    issues = [String(item.error)];\n  } else if (item.validation && item.validation.is_valid === false) {\n    issues = [`Lệch số liệu: tính lại = ${item.validation.calculated_total}, chênh lệch = ${item.validation.difference}`];\n  } else {\n    issues = ['Không có chi tiết cụ thể, cần xem lại thủ công.'];\n  }\n  message = 'Hóa đơn cần được xem lại thủ công.';\n} else {\n  branch = 'pending_review';\n  issues = [];\n  message = 'Kết quả số hóa hóa đơn đã sẵn sàng để xem lại.';\n}\n\nreturn [{ json: { branch, issues, message, brain_response: item } }];"
       },
       "id": "iv-normalize",
       "name": "Chuẩn hoá kết quả Brain",
@@ -108,11 +108,17 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "http://host.docker.internal:5000/api/n8n/internal/invoice-import-draft",
+        "url": "http://host.docker.internal:5002/api/n8n/internal/invoice-import-draft",
         "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "X-Webhook-Token", "value": "={{ $env.ANSER_N8N_INTERNAL_TOKEN }}" }
+          ]
+        },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ status: 'pending_review', brain_response: $json.brain_response, source: ($('Nhận hóa đơn').first().json.body || {}).source || 'n8n', received_at: new Date().toISOString() }) }}",
+        "jsonBody": "={{ JSON.stringify({ success: true, needs_manual_review: false, invoice: $json.brain_response.invoice, source: ($('Nhận hóa đơn').first().json.body || {}).source || 'n8n_vlm' }) }}",
         "options": {}
       },
       "id": "iv-writeback",

@@ -72,6 +72,8 @@ notebooks/
 #  before PyInstaller builds the exe, so as to inject date/other infos into it.
 *.manifest
 *.spec
+.environments/
+.environment/
 .planning-sanxuat-backup-20260720/
 # Installer logs
 pip-log.txt
