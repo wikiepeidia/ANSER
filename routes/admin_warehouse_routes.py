@@ -13,7 +13,7 @@ admin_warehouse_bp = Blueprint('admin_warehouses', __name__)
 
 
 @admin_warehouse_bp.route('/api/admin/warehouses', methods=['GET'])
-@require_role('admin')
+@require_role('manager')
 def list_warehouses():
     conn = current_app.extensions['database'].get_business_connection()
     c = conn.cursor()
@@ -37,7 +37,7 @@ def list_warehouses():
 
 
 @admin_warehouse_bp.route('/api/admin/warehouses', methods=['POST'])
-@require_role('admin')
+@require_role('manager')
 def create_warehouse():
     data = request.get_json(silent=True) or {}
     name = (data.get('name') or '').strip()
@@ -60,7 +60,7 @@ def create_warehouse():
 
 
 @admin_warehouse_bp.route('/api/admin/warehouses/<int:warehouse_id>/update', methods=['POST'])
-@require_role('admin')
+@require_role('manager')
 def update_warehouse(warehouse_id):
     data = request.get_json(silent=True) or {}
     name = (data.get('name') or '').strip()
@@ -84,7 +84,7 @@ def update_warehouse(warehouse_id):
 
 
 @admin_warehouse_bp.route('/api/admin/warehouses/<int:warehouse_id>/delete', methods=['POST'])
-@require_role('admin')
+@require_role('manager')
 def delete_warehouse(warehouse_id):
     conn = current_app.extensions['database'].get_business_connection()
     c = conn.cursor()

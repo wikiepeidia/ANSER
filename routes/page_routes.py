@@ -103,7 +103,7 @@ def admin_managers():
 
 
 @page_bp.route('/admin/warehouses')
-@require_role('admin', redirect_to='pages.workspace')
+@require_role('manager', redirect_to='pages.workspace')
 def admin_warehouses():
     return render_template('admin_warehouses.html', user=current_user)
 
