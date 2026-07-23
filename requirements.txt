@@ -1,2 +1,54 @@
-# Default requirements for the main web application
--r requirements-base.txt
+# Default requirements for the main web application.
+#
+# Previously split as `-r requirements-base.txt`. Flattened inline because
+# Railway/Nixpacks-style zero-config builds copy requirements.txt alone into
+# an early pip-cache layer before the rest of the repo is present, so a `-r`
+# reference to a sibling file resolves to a nonexistent path inside the build
+# container ("Could not open requirements file: ... requirements-base.txt")
+# even though the file exists fine locally and in git. A single self-contained
+# file is immune to that build-copy-order issue regardless of build system.
+
+# Web Frameworks & Server
+Flask>=3.0,<4.0
+Flask-Login>=0.6.3,<0.7
+Flask-WTF>=1.2.1,<1.3
+Flask-Talisman>=1.1.0,<1.2
+Flask-Limiter>=3.5.0,<3.6
+Werkzeug
+requests
+gunicorn>=21.2,<22.0
+
+# Authentication & Configuration
+oauthlib
+authlib
+google-auth-oauthlib
+google-auth-httplib2
+google-api-python-client
+google-analytics-data
+
+# Core Numerical & Data Science
+numpy>=1.21.0
+pandas
+openpyxl
+pytz
+lunardate
+
+# Database
+SQLAlchemy>=2.0
+alembic
+psycopg[binary]
+passlib[bcrypt]
+python-dotenv
+psycopg2-binary
+gdown
+
+# Async Tasks
+redis>=5.0.0
+rq>=1.16.0
+APScheduler>=3.10,<4.0
+
+# Used by core/services/dl_client.py (legacy invoice OCR proxy, still live)
+opencv-python-headless>=4.5.0
+
+# Used by core/agent_middleware.py
+json_repair
