@@ -52,3 +52,8 @@ opencv-python-headless>=4.5.0
 
 # Used by core/agent_middleware.py
 json_repair
+
+# Used by core/services/brain_client.py to downscale images before sending
+# to Brain's /ocr (Qwen2-VL's VRAM use scales with resolution — a
+# full-resolution photo can CUDA OOM an already-loaded GPU)
+Pillow
