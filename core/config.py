@@ -72,6 +72,13 @@ class Config:
     # This app (Retail) only reads the shared session cookie it issues.
     GATEWAY_ORIGIN = os.environ.get('GATEWAY_ORIGIN', 'http://127.0.0.1:5000')
 
+    # Shared secret for POST /api/n8n/internal/invoice-import-draft — the
+    # only internal n8n endpoint in this app that requires auth (the 3
+    # sibling GET endpoints stay unauthenticated by explicit, separate
+    # decision). Empty by default so an unconfigured deployment fails
+    # closed rather than silently accepting unauthenticated writes.
+    ANSER_N8N_INTERNAL_TOKEN = os.environ.get('ANSER_N8N_INTERNAL_TOKEN', '')
+
     # UI Themes
     THEMES = {
         'auth': {

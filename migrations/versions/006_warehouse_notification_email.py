@@ -2,14 +2,14 @@
 alongside the existing discord_webhook_url, for shop owners/managers who
 don't use Discord.
 
-Revision ID: 005
-Revises: 004
+Revision ID: 006
+Revises: 005
 """
 from alembic import op
 import sqlalchemy as sa
 
-revision = '005'
-down_revision = '004'
+revision = '006'
+down_revision = '005'
 branch_labels = None
 depends_on = None
 

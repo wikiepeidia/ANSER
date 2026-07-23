@@ -4,6 +4,11 @@ import pytest
 
 os.environ.setdefault("USE_POSTGRES", "False")
 os.environ.setdefault("OAUTHLIB_INSECURE_TRANSPORT", "1")
+# create_app() raises RuntimeError if SECRET_KEY is left at its insecure
+# default outside of FLASK_ENV=development — needed for the `app`/`client`
+# fixtures below to build a real Flask app in a test process that has no
+# .env-provided SECRET_KEY.
+os.environ.setdefault("FLASK_ENV", "development")
 
 import app as app_module
 

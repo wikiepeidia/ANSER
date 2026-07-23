@@ -11,13 +11,13 @@ active' scheduler. The app now sets both explicitly on insert (defense in
 depth for SQLite dev, where this migration doesn't apply), but production
 rows inserted through any other path still need a working default.
 
-Revision ID: 006
-Revises: 005
+Revision ID: 007
+Revises: 006
 """
 from alembic import op
 
-revision = '006'
-down_revision = '005'
+revision = '007'
+down_revision = '006'
 branch_labels = None
 depends_on = None
 

@@ -17,13 +17,13 @@ Concretely, before this migration:
     (nothing looks it up by id), but same landmine if that changes.
   - manager_subscriptions: no unique constraint on user_id at all.
 
-Revision ID: 009
-Revises: 008
+Revision ID: 010
+Revises: 009
 """
 from alembic import op
 
-revision = '009'
-down_revision = '008'
+revision = '010'
+down_revision = '009'
 branch_labels = None
 depends_on = None
 

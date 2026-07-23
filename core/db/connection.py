@@ -315,6 +315,8 @@ class Database:
                 status TEXT DEFAULT 'completed',
                 created_by INTEGER,
                 warehouse_id INTEGER,
+                source TEXT,
+                raw_ocr_json TEXT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
             CREATE TABLE IF NOT EXISTS import_details (
@@ -323,7 +325,9 @@ class Database:
                 product_id INTEGER,
                 quantity REAL DEFAULT 0,
                 unit_price REAL DEFAULT 0,
-                total_price REAL DEFAULT 0
+                total_price REAL DEFAULT 0,
+                raw_name TEXT,
+                is_reduced_vat INTEGER
             );
             CREATE TABLE IF NOT EXISTS export_transactions (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -487,6 +491,18 @@ class Database:
         for table in ('sales', 'import_transactions', 'export_transactions'):
             if 'warehouse_id' not in self.get_table_columns(table, cursor=c):
                 c.execute(f'ALTER TABLE {table} ADD COLUMN warehouse_id INTEGER')
+
+        # Same backfill pattern as warehouse_id above, for the invoice-draft
+        # write-back columns (migration 005) — makes pre-existing local .db
+        # files pick these up too, not just freshly created ones.
+        for table, column, sqltype in (
+            ('import_transactions', 'source', 'TEXT'),
+            ('import_transactions', 'raw_ocr_json', 'TEXT'),
+            ('import_details', 'raw_name', 'TEXT'),
+            ('import_details', 'is_reduced_vat', 'INTEGER'),
+        ):
+            if column not in self.get_table_columns(table, cursor=c):
+                c.execute(f'ALTER TABLE {table} ADD COLUMN {column} {sqltype}')
 
         conn.commit()
         conn.close()

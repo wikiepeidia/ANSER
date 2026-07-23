@@ -6,13 +6,13 @@ but was never in an Alembic migration, so a fresh Postgres database
 provisioned from migrations alone (e.g. a new BUSINESS_POSTGRES_URL split
 off later, or a clean deploy) would be missing it entirely.
 
-Revision ID: 007
-Revises: 006
+Revision ID: 008
+Revises: 007
 """
 from alembic import op
 
-revision = '007'
-down_revision = '006'
+revision = '008'
+down_revision = '007'
 branch_labels = None
 depends_on = None
 

@@ -66,6 +66,7 @@ MANIFEST
 evaluate_models/*
 evaluate_models/
 evaluation/*
+notebooks/
 # PyInstaller
 #  Usually these files are written by a python script from a template
 #  before PyInstaller builds the exe, so as to inject date/other infos into it.
@@ -399,3 +400,4 @@ PHASE2-VERIFY-CHECKLIST.md
 report/BAOCAO.md
 report/HUONG_DAN_CHAY_DU_AN.md
 report/KIEN_TRUC_3_APP.md
+ANSER_AI

@@ -17,13 +17,13 @@ cast is safe and lossless. The UNIQUE(user_id) constraint added in 009
 survives the type change automatically (Postgres rebuilds the backing
 index).
 
-Revision ID: 011
-Revises: 010
+Revision ID: 012
+Revises: 011
 """
 from alembic import op
 
-revision = '011'
-down_revision = '010'
+revision = '012'
+down_revision = '011'
 branch_labels = None
 depends_on = None
 
