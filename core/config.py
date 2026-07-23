@@ -34,7 +34,22 @@ class Config:
     # n8n host port — override with N8N_PORT env var if 5680 collides with
     # another local project's docker-compose (e.g. a separate n8n stack).
     N8N_PORT = os.environ.get('N8N_PORT', '5680')
-    N8N_ORIGIN = f"http://localhost:{N8N_PORT}"
+    # In production n8n runs as its own separate service (its own container/
+    # deploy, not something reachable at "localhost" from this app's
+    # container) — N8N_ORIGIN must be set to its real URL. Falls back to
+    # localhost so local dev (docker-compose, same host) keeps working
+    # unchanged without needing this var set.
+    N8N_ORIGIN = os.environ.get('N8N_ORIGIN', f"http://localhost:{N8N_PORT}")
+
+    # The reverse direction: how n8n (wherever it runs) calls back into
+    # *this* app's own /api/n8n/internal/* endpoints (daily-sales,
+    # warehouses, expiring-products, ...). Workflow template JSON files
+    # hardcode the local-dev value (host.docker.internal:5002, the address
+    # a same-host Docker container uses to reach this app on the host) —
+    # deploy_template() substitutes it for this value before importing into
+    # n8n, so in production this must be set to this app's own real public/
+    # internal URL (e.g. https://anser-retail.up.railway.app).
+    ANSER_APP_ORIGIN = os.environ.get('ANSER_APP_ORIGIN', 'http://host.docker.internal:5002')
 
     # SMTP for emails this app sends directly (core/smtp_mailer.py — the
     # in-app scheduled-reports runner). This process runs on the host, not

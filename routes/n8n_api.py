@@ -900,7 +900,13 @@ def deploy_template():
         return jsonify({'success': False, 'error': 'Template not found'}), 404
     try:
         with open(fp, encoding='utf-8') as f:
-            wf = json.load(f)
+            raw = f.read()
+        # Templates hardcode the local-dev callback address (see
+        # Config.ANSER_APP_ORIGIN) — swap it for the real one before this
+        # ever reaches n8n, so a production n8n instance calls back into
+        # this app correctly instead of a Docker-Desktop-only hostname.
+        raw = raw.replace('http://host.docker.internal:5002', Config.ANSER_APP_ORIGIN)
+        wf = json.loads(raw)
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 

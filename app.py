@@ -321,15 +321,18 @@ def run_n8n():
     """Check n8n reachability. n8n is expected to run externally (Docker or local)."""
     import socket
     import time
+    from urllib.parse import urlparse
     from core.config import Config
-    port = int(Config.N8N_PORT)
+    parsed = urlparse(Config.N8N_ORIGIN)
+    host = parsed.hostname or 'localhost'
+    port = parsed.port or int(Config.N8N_PORT)
     for _ in range(10):
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as _s:
-            if _s.connect_ex(('localhost', port)) == 0:
-                print(f'[n8n] Detected on port {port}.', flush=True)
+            if _s.connect_ex((host, port)) == 0:
+                print(f'[n8n] Detected on {host}:{port}.', flush=True)
                 return
         time.sleep(2)
-    print(f'[n8n] Warning: n8n not reachable on port {port}. '
+    print(f'[n8n] Warning: n8n not reachable on {host}:{port}. '
           'Start Docker container: docker start anser-n8n', flush=True)
 
 

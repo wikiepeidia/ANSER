@@ -61,8 +61,8 @@ LEARNING_RATE = 0.001
 
 # Flask Settings
 FLASK_DEBUG = False
-FLASK_HOST = '127.0.0.1'
-FLASK_PORT = 5000
+FLASK_HOST = os.getenv('FLASK_HOST', '127.0.0.1')
+FLASK_PORT = int(os.getenv('PORT', os.getenv('FLASK_PORT', 5000)))
 
 # History Storage
 MAX_INVOICE_HISTORY = 300
