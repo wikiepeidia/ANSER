@@ -299,8 +299,8 @@ document.addEventListener('DOMContentLoaded', function() {
             formData.append('file', file);
 
             try {
-                // Call our backend proxy which calls the DL service
-                const response = await fetch('/api/dl/detect', {
+                // Call our backend proxy which forwards to Brain's real /ocr endpoint
+                const response = await fetch('/api/brain/ocr', {
                     method: 'POST',
                     body: formData,
                     headers: {

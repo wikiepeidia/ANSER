@@ -94,6 +94,17 @@ class Config:
     # closed rather than silently accepting unauthenticated writes.
     ANSER_N8N_INTERNAL_TOKEN = os.environ.get('ANSER_N8N_INTERNAL_TOKEN', '')
 
+    # Brain (external VLM invoice-digitization service, ngrok-tunneled) —
+    # this app's own Flask process reads these from its own .env
+    # independently. Separate from the n8n-runtime BRAIN_URL/BRAIN_TOKEN
+    # environment variables documented in
+    # workflow_templates/invoice_vlm_digitize.CONTRACT.md, which n8n reads
+    # via `$env.BRAIN_URL`/`$env.BRAIN_TOKEN` inside its own container/
+    # process — both may point at the same Brain instance. Empty by default
+    # so an unconfigured deployment fails closed rather than crashing.
+    BRAIN_URL = os.environ.get('BRAIN_URL', '')
+    BRAIN_TOKEN = os.environ.get('BRAIN_TOKEN', '')
+
     # UI Themes
     THEMES = {
         'auth': {
