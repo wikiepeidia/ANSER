@@ -59,13 +59,30 @@ Brain's `/ocr` response takes one of three shapes, confirmed directly against
     "items": [{"name": "...", "price": 0, "qty": 0, "is_reduced_vat": false}],
     "total": 0
   },
-  "validation": {"is_valid": true, "calculated_total": 0, "difference": 0},
+  "validation": {
+    "is_valid": true,
+    "calculated_total": 0,
+    "stated_total": 0,
+    "difference": 0,
+    "tolerance": 0,
+    "lines": [{"name": "...", "base": 0, "tax_rate": 0.1, "line_total": 0}]
+  },
   "needs_manual_review": false
 }
 ```
 
 `needs_manual_review` is a top-level boolean field — there is no status-string field
 anywhere in Brain's real response (unlike v1.0's speculative `status` string).
+
+**Live-confirmed 2026-07-23** against a real running Brain instance (not just read from
+source): `validation` has more fields than originally documented from source alone —
+`stated_total`, `tolerance`, and a per-line `lines[]` breakdown (`name`, `base`, `tax_rate`,
+`line_total`) in addition to `is_valid`/`calculated_total`/`difference`. None of the extra
+fields are consumed by Body's write-back endpoint (`_require_clean_invoice()` only checks
+`success`/`needs_manual_review`/`invoice.items`/`invoice.total`), so this doesn't change the
+integration contract — documented here for completeness. The deterministic-first arithmetic
+re-check was also confirmed live: a real mismatch between extracted line totals and the
+stated total correctly produced `is_valid: false` and `needs_manual_review: true`.
 
 **(b) Brain business-logic failure** — either:
 
