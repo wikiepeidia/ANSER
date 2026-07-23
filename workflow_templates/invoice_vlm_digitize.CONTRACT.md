@@ -91,36 +91,61 @@ unchanged from before, and still treated as its own branch (checked first in
 
 **Endpoint:** `POST http://host.docker.internal:5000/api/n8n/internal/invoice-import-draft`
 
-**This endpoint does not exist yet.** It is Body-side backend work, out of scope for this
-milestone (a teammate's parallel effort), matching the naming convention of the 3 existing
-`/api/n8n/internal/*` GET endpoints in `routes/n8n_api.py` (lines 304-369: `/warehouses`,
-`/low-stock`, `/iot-events`).
+This endpoint now exists — shipped in Phase 2 as
+`core/services/invoice_draft_service.create_invoice_draft()`, wired at
+`routes/n8n_api.py`'s `POST /api/n8n/internal/invoice-import-draft` handler (lines
+702-740). It is a dedicated insert-only writer, deliberately separate from
+`inventory_tx_service.create_import_transaction()`: it always writes
+`status='pending_review'` as a literal SQL value, never mutates `warehouse_stock` or
+`products.stock_quantity`, and never auto-creates a `products` row for an unmatched line
+item.
 
 Request body the workflow sends:
 
 ```json
 {
-  "status": "pending_review",
-  "brain_response": "<full Brain response body>",
-  "source": "<source>",
-  "received_at": "<ISO timestamp>"
+  "success": true,
+  "needs_manual_review": false,
+  "invoice": {"items": [{"name": "...", "price": 0, "qty": 0, "is_reduced_vat": false}], "total": 0},
+  "source": "n8n_vlm"
 }
 ```
 
-**Safety invariant:** this call must never carry `status: "completed"` — its only job is
-to create a pending-review draft, never to finalize an import. The workflow enforces this
-by hardcoding the literal string `pending_review` in the write-back node's `jsonBody`
-expression, rather than passing Brain's status field through.
+`supplier_name`, `notes`, `warehouse_id` are optional per Phase 2's contract — this
+workflow omits them, since no source value for them is currently available from the
+webhook payload.
+
+**Header:** `X-Webhook-Token: {ANSER_N8N_INTERNAL_TOKEN}`
+
+Body's real responses (`routes/n8n_api.py`, `invoice_draft_service.py`):
+
+- **`200`** — `{"success": true, "id": ..., "code": "...", "status": "pending_review", "matched_count": ..., "unmatched_count": ...}`
+- **`400`** — `{"success": false, "error": "<validation message>"}` (e.g. missing
+  `invoice.items`, `payload.success` not `true`, `needs_manual_review` truthy) — raised by
+  `_require_clean_invoice()`.
+- **`401`** — `{"success": false, "error": "unauthorized"}` (missing/wrong
+  `X-Webhook-Token`).
+
+**Safety invariant:** this call must never carry `success: false` or
+`needs_manual_review: true` — its only job is to create a pending-review draft from a
+clean, reviewable result. This is enforced by two independent layers: the workflow
+hardcodes the literal booleans `success: true` and `needs_manual_review: false` in the
+write-back node's `jsonBody` expression (never read from `$json.brain_response`), and
+Body's own `_require_clean_invoice()` independently re-validates and rejects
+`success !== true` or a truthy `needs_manual_review` server-side.
 
 ## Auth Notes
 
-- The Brain call uses the `X-API-Token` header, matching Body's existing Brain-auth
-  mechanism in `core/services/ai_chat_service.py`.
-- The Body write-back call and the 3 existing `/api/n8n/internal/*` GET endpoints have
-  **no auth check** — verified directly against `routes/n8n_api.py`. This branch has no
-  `ANSER_WEBHOOK_TOKEN`-equivalent (unlike `anser-san-xuat`, which has one).
-- This is a known, pre-existing gap, not fixed this milestone — new auth scope is
-  explicitly deferred (see `01-CONTEXT.md` § Deferred Ideas).
+- The Brain call uses the `X-API-Token` header (unchanged), plus the new
+  `ngrok-skip-browser-warning` header, matching Body's existing Brain-auth mechanism in
+  `core/services/ai_chat_service.py`.
+- The Body write-back call now HAS an auth check — `X-Webhook-Token` is compared via
+  `hmac.compare_digest` against `Config.ANSER_N8N_INTERNAL_TOKEN` in `routes/n8n_api.py`,
+  failing closed (`401 unauthorized`) when the header is missing/wrong or the env var is
+  unset.
+- The 3 existing unauthenticated `/api/n8n/internal/*` GET endpoints (`/warehouses`,
+  `/low-stock`, `/iot-events`) remain unauthenticated — that is an explicit, separate
+  scoping decision (v2 `FUTR-03`), not an oversight, and no longer this endpoint's gap.
 
 ## Notification Contract
 
@@ -134,8 +159,14 @@ within its own branch (does not affect the write-back path).
 
 ## Open Questions for Brain Team
 
-- Exact JSON shape of `AgentMiddleware.process_ai_response()`'s Tier 2 return value —
-  currently undocumented, Brain-internal.
-- Confirm the `/api/invoice/digitize` path against Brain's actual router once it exists.
-- Confirm whether Brain expects `invoice_image` as a multipart file field (as this
-  contract assumes) or a base64-encoded JSON field instead.
+- Exact multipart property name a real trigger source (Discord forward vs. scan-station
+  webhook) will actually populate on the incoming webhook — still unconfirmed, since no
+  trigger source has been chosen yet. The webhook's own `inputDataFieldName: "data"`
+  assumption (`iv-brain-call`'s `bodyParameters`) is untested against a live trigger;
+  verify it empirically via n8n's binary-data inspector once a real trigger source is
+  chosen, rather than assuming it's correct.
+
+The exact endpoint path and response shape for Brain's `/ocr` call are no longer open
+questions — both were confirmed directly against Brain's real route/schema source
+(`ANSER_AI/src/api/routes/documents.py`, `schemas.py`) this session; see Request/Response
+Contract above.
