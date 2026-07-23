@@ -9,16 +9,22 @@ async function loadDashboardStats() {
 
         const data = await response.json();
         if (data.success) {
+            // Cập nhật Doanh thu hôm nay
+            const todayRevenueEl = document.querySelector('[data-stat="today_revenue"]');
+            if (todayRevenueEl) todayRevenueEl.textContent = formatCurrency(data.today_revenue);
+            const todayCountEl = document.querySelector('[data-stat="today_sales_count"]');
+            if (todayCountEl) todayCountEl.textContent = `${data.today_sales_count} đơn hôm nay`;
+
             // Cập nhật Doanh thu
-            const revenueEl = document.querySelector('.glance-card:nth-child(1) h3');
+            const revenueEl = document.querySelector('[data-stat="revenue"]');
             if (revenueEl) revenueEl.textContent = formatCurrency(data.revenue);
 
             // Cập nhật Đơn hàng mới
-            const ordersEl = document.querySelector('.glance-card:nth-child(2) h3');
+            const ordersEl = document.querySelector('[data-stat="new_orders"]');
             if (ordersEl) ordersEl.textContent = data.new_orders;
 
             // Cập nhật Yêu cầu trả hàng
-            const returnsEl = document.querySelector('.glance-card:nth-child(3) h3');
+            const returnsEl = document.querySelector('[data-stat="pending_returns"]');
             if (returnsEl) returnsEl.textContent = data.pending_returns;
 
             // Cập nhật Credits

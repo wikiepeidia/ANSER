@@ -44,7 +44,24 @@ def get_dashboard_stats(user_id, warehouse_id=None):
         new_orders = c.fetchone()['cnt'] or 0
         c.execute('SELECT COUNT(*) AS cnt FROM workflows WHERE user_id = ?', (user_id,))
         active_projects = c.fetchone()['cnt'] or 0
-        return {'revenue': revenue, 'new_orders': new_orders, 'active_projects': active_projects}
+
+        # Today's actual POS revenue — from `sales` (the real checkout table,
+        # same source daily_sales_report's email reads via
+        # /api/n8n/internal/daily-sales), not `export_transactions` above
+        # (a different, warehouse-transfer-style revenue figure). Staff need
+        # this one: "how much did we sell today," not month-to-date exports.
+        if warehouse_id:
+            c.execute("SELECT COUNT(*) AS cnt, COALESCE(SUM(total_amount), 0) AS total FROM sales "
+                      "WHERE warehouse_id = ? AND created_at >= ?", (warehouse_id, start_of_day))
+        else:
+            c.execute("SELECT COUNT(*) AS cnt, COALESCE(SUM(total_amount), 0) AS total FROM sales "
+                      "WHERE created_at >= ?", (start_of_day,))
+        row = c.fetchone()
+        today_revenue = float(row['total'] or 0)
+        today_sales_count = row['cnt'] or 0
+
+        return {'revenue': revenue, 'new_orders': new_orders, 'active_projects': active_projects,
+                'today_revenue': today_revenue, 'today_sales_count': today_sales_count}
     finally:
         conn.close()
 

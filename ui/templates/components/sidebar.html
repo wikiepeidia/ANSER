@@ -137,6 +137,10 @@
                 <i class="fas fa-store"></i>
                 <span data-i18n="nav.businessManagement">Quản lý kinh doanh</span>
             </div>
+            <a class="menu-item" href="{{ url_for('pages.dashboard') }}" data-tooltip="Doanh thu hôm nay" data-i18n-tooltip="nav.todayRevenue">
+                <i class="fas fa-chart-pie menu-icon"></i>
+                <span class="menu-label" data-i18n="nav.todayRevenue">Doanh thu hôm nay</span>
+            </a>
             <a class="menu-item" href="{{ url_for('pages.customers') }}" data-tooltip="Khách hàng" data-i18n-tooltip="nav.customers">
                 <i class="fas fa-users menu-icon"></i>
                 <span class="menu-label" data-i18n="nav.customers">Khách hàng</span>

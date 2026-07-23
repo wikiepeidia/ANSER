@@ -53,6 +53,7 @@ class _DBMock:
 # ── DDL snippets ──────────────────────────────────────────────────────────────
 
 _EXPORT_TX = "CREATE TABLE export_transactions (id INTEGER PRIMARY KEY AUTOINCREMENT, total_amount REAL, created_at TEXT DEFAULT CURRENT_TIMESTAMP)"
+_SALES = "CREATE TABLE sales (id INTEGER PRIMARY KEY AUTOINCREMENT, total_amount REAL, warehouse_id INTEGER, created_at TEXT DEFAULT CURRENT_TIMESTAMP)"
 _IMPORT_TX = "CREATE TABLE import_transactions (id INTEGER PRIMARY KEY AUTOINCREMENT, total_amount REAL, created_at TEXT DEFAULT CURRENT_TIMESTAMP)"
 _WORKFLOWS  = "CREATE TABLE workflows (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, name TEXT, data TEXT, created_at TEXT DEFAULT CURRENT_TIMESTAMP, updated_at TEXT DEFAULT CURRENT_TIMESTAMP)"
 _SCHEDULED_REPORTS = """CREATE TABLE scheduled_reports (
@@ -88,7 +89,7 @@ _WALLETS = """CREATE TABLE wallets (
 
 @pytest.fixture()
 def ops_conn(monkeypatch):
-    c = _conn(_EXPORT_TX, _IMPORT_TX, _WORKFLOWS, _SCHEDULED_REPORTS, _SE_AUTOMATIONS)
+    c = _conn(_EXPORT_TX, _SALES, _IMPORT_TX, _WORKFLOWS, _SCHEDULED_REPORTS, _SE_AUTOMATIONS)
     monkeypatch.setattr(ops, "db_manager", _DBMock(c))
     return c
 
