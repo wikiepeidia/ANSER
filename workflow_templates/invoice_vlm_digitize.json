@@ -17,20 +17,20 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "={{ $env.BRAIN_URL }}/api/invoice/digitize",
+        "url": "={{ $env.BRAIN_URL }}/ocr",
         "authentication": "none",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "X-API-Token", "value": "={{ $env.BRAIN_TOKEN }}" }
+            { "name": "X-API-Token", "value": "={{ $env.BRAIN_TOKEN }}" },
+            { "name": "ngrok-skip-browser-warning", "value": "true" }
           ]
         },
         "sendBody": true,
         "contentType": "multipart-form-data",
         "bodyParameters": {
           "parameters": [
-            { "parameterType": "formBinaryData", "name": "invoice_image", "inputDataFieldName": "data" },
-            { "parameterType": "formData", "name": "source", "value": "={{ $json.body?.source || 'n8n' }}" }
+            { "parameterType": "formBinaryData", "name": "file", "inputDataFieldName": "data" }
           ]
         },
         "options": { "timeout": 120000 }
