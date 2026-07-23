@@ -110,9 +110,15 @@
         "method": "POST",
         "url": "http://host.docker.internal:5000/api/n8n/internal/invoice-import-draft",
         "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "X-Webhook-Token", "value": "={{ $env.ANSER_N8N_INTERNAL_TOKEN }}" }
+          ]
+        },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ status: 'pending_review', brain_response: $json.brain_response, source: ($('Nhận hóa đơn').first().json.body || {}).source || 'n8n', received_at: new Date().toISOString() }) }}",
+        "jsonBody": "={{ JSON.stringify({ success: true, needs_manual_review: false, invoice: $json.brain_response.invoice, source: ($('Nhận hóa đơn').first().json.body || {}).source || 'n8n_vlm' }) }}",
         "options": {}
       },
       "id": "iv-writeback",
