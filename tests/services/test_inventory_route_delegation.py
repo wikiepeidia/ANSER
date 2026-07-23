@@ -23,6 +23,9 @@ class _DbManagerStub:
     def get_connection(self):
         return self._conn
 
+    def get_business_connection(self):
+        return self._conn
+
 
 def _call_wrapped(route_fn, path, payload, db_stub, user_id, extra_extensions=None):
     wrapped = getattr(route_fn, "__wrapped__", route_fn)

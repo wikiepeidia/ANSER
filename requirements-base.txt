@@ -10,6 +10,7 @@ Flask-Talisman>=1.1.0,<1.2
 Flask-Limiter>=3.5.0,<3.6
 Werkzeug
 requests
+gunicorn>=21.2,<22.0
 
 # Authentication & Configuration
 oauthlib
@@ -38,3 +39,4 @@ gdown
 # Async Tasks
 redis>=5.0.0
 rq>=1.16.0
+APScheduler>=3.10,<4.0

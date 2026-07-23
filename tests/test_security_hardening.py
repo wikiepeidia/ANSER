@@ -90,18 +90,18 @@ def test_operations_reports_and_automations_are_owner_scoped(sqlite_db, monkeypa
         cursor.execute("INSERT INTO export_transactions (total_amount, created_by) VALUES (?, ?)", (900, 2))
         cursor.execute("INSERT INTO import_transactions (total_amount, created_by) VALUES (?, ?)", (40, 1))
         cursor.execute("INSERT INTO import_transactions (total_amount, created_by) VALUES (?, ?)", (300, 2))
+        report_id = "report-mine"
         cursor.execute(
-            "INSERT INTO scheduled_reports (name, report_type, frequency, channel, recipients, created_by, last_sent_at)"
-            " VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)",
-            ("Mine", "sales", "daily", "email", "a@test.com", 1),
+            "INSERT INTO scheduled_reports (id, name, report_type, frequency, channel, recipients, created_by, last_sent_at)"
+            " VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)",
+            (report_id, "Mine", "sales", "daily", "email", "a@test.com", 1),
         )
-        report_id = cursor.lastrowid
+        other_report_id = "report-other"
         cursor.execute(
-            "INSERT INTO scheduled_reports (name, report_type, frequency, channel, recipients, created_by)"
-            " VALUES (?, ?, ?, ?, ?, ?)",
-            ("Other", "sales", "daily", "email", "b@test.com", 2),
+            "INSERT INTO scheduled_reports (id, name, report_type, frequency, channel, recipients, created_by)"
+            " VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (other_report_id, "Other", "sales", "daily", "email", "b@test.com", 2),
         )
-        other_report_id = cursor.lastrowid
         cursor.execute(
             "INSERT INTO se_automations (name, type, config, enabled, created_by) VALUES (?, ?, ?, ?, ?)",
             ("Mine", "low_stock", "{}", 1, 1),

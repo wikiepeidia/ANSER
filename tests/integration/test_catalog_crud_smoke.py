@@ -38,7 +38,8 @@ def _create_test_schema(db_path):
             created_by INTEGER,
             created_at TEXT DEFAULT CURRENT_TIMESTAMP,
             updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
-            image_url TEXT
+            image_url TEXT,
+            expiry_date TEXT
         )'''
     )
     cursor.execute(
@@ -87,6 +88,13 @@ def catalog_client(app, tmp_path):
     db_path = tmp_path / 'catalog-smoke.db'
     old_db_path = db_manager.db_path
     old_use_postgres = db_manager.use_postgres
+    # SESSION_COOKIE_DOMAIN is pinned to 127.0.0.1 (app.py) so the session
+    # cookie is shared with the sibling Gateway/Manufacturing apps in local
+    # dev. The Flask test client defaults requests to http://localhost/,
+    # a domain mismatch that silently drops the cookie — pin SERVER_NAME so
+    # the client's default host lines up with the cookie's domain.
+    old_server_name = app.config.get('SERVER_NAME')
+    app.config['SERVER_NAME'] = '127.0.0.1'
 
     db_manager.db_path = str(db_path)
     db_manager.use_postgres = False
@@ -101,6 +109,7 @@ def catalog_client(app, tmp_path):
     finally:
         db_manager.db_path = old_db_path
         db_manager.use_postgres = old_use_postgres
+        app.config['SERVER_NAME'] = old_server_name
 
 
 @pytest.mark.parametrize(

@@ -133,6 +133,9 @@ class _DBMock:
     def get_connection(self):
         return _PersistentConn(self._conn)
 
+    def get_business_connection(self):
+        return _PersistentConn(self._conn)
+
     def get_table_columns(self, table_name, cursor=None):
         c = cursor or self._conn.cursor()
         c.execute(f"PRAGMA table_info({table_name})")

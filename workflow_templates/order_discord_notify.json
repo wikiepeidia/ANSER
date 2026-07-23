@@ -1,5 +1,5 @@
 {
-  "name": "Đơn hàng mới → Discord",
+  "name": "Đơn hàng mới → Email",
   "nodes": [
     {
       "parameters": {
@@ -16,7 +16,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const order = $input.first().json.body;\nconst type = order.type || 'import';\nconst isImport = type === 'import';\nconst discordUrl = order.discord_url || '';\n\nconst items = order.items || [];\nlet itemLines = '';\nlet totalAmount = 0;\n\nfor (const item of items.slice(0, 10)) {\n  const name = item.product_name || item.name || 'SP';\n  const qty = item.quantity || 0;\n  const price = item.price || item.unit_price || 0;\n  const amount = qty * price;\n  totalAmount += amount;\n  itemLines += `▸ **${name}** × ${qty} — ${new Intl.NumberFormat('vi-VN').format(amount)} ₫\\n`;\n}\nif (items.length > 10) itemLines += `_... và ${items.length - 10} sản phẩm khác_\\n`;\n\nconst embed = {\n  title: isImport ? '📦 Phiếu nhập kho mới' : '📤 Đơn xuất kho mới',\n  color: isImport ? 0x4CAF50 : 0xFF6B35,\n  description: itemLines || '_Không có sản phẩm_',\n  fields: [\n    { name: 'Loại', value: isImport ? 'Nhập kho' : 'Xuất kho', inline: true },\n    { name: 'Số SP', value: String(items.length), inline: true },\n    { name: 'Tổng tiền', value: new Intl.NumberFormat('vi-VN').format(totalAmount) + ' ₫', inline: true },\n    { name: 'Người tạo', value: order.user || 'ANSER User', inline: true },\n    { name: 'Ghi chú', value: order.notes || '_không có_', inline: false }\n  ],\n  footer: { text: 'ANSER Automation' },\n  timestamp: new Date().toISOString()\n};\n\nreturn [{ json: { discordUrl, embed, summary: { type, items: items.length, total: totalAmount } } }];"
+        "jsCode": "const order = $input.first().json.body;\nconst type = order.type || 'import';\nconst isImport = type === 'import';\nconst email = order.email || '';\n\nconst items = order.items || [];\nlet itemRows = '';\nlet totalAmount = 0;\n\nfor (const item of items.slice(0, 10)) {\n  const name = item.product_name || item.name || 'SP';\n  const qty = item.quantity || 0;\n  const price = item.price || item.unit_price || 0;\n  const amount = qty * price;\n  totalAmount += amount;\n  itemRows += `<tr><td>${name}</td><td>${qty}</td><td>${new Intl.NumberFormat('vi-VN').format(amount)} đ</td></tr>`;\n}\nif (items.length > 10) itemRows += `<tr><td colspan=\"3\">... và ${items.length - 10} sản phẩm khác</td></tr>`;\n\nconst html = `<h2>${isImport ? '📦 Phiếu nhập kho mới' : '📤 Đơn xuất kho mới'}</h2><table border=\"1\" cellpadding=\"6\" cellspacing=\"0\"><tr><th>Sản phẩm</th><th>SL</th><th>Thành tiền</th></tr>${itemRows || '<tr><td colspan=\"3\">Không có sản phẩm</td></tr>'}</table><p>Loại: <b>${isImport ? 'Nhập kho' : 'Xuất kho'}</b> — Số SP: <b>${items.length}</b> — Tổng tiền: <b>${new Intl.NumberFormat('vi-VN').format(totalAmount)} đ</b></p><p>Người tạo: ${order.user || 'ANSER User'}</p><p>Ghi chú: ${order.notes || 'không có'}</p>`;\n\nreturn [{ json: { email, email_subject: isImport ? 'Phiếu nhập kho mới' : 'Đơn xuất kho mới', email_html: html, summary: { type, items: items.length, total: totalAmount } } }];"
       },
       "id": "on-format",
       "name": "Tạo thông báo",
@@ -26,28 +26,49 @@
     },
     {
       "parameters": {
-        "method": "POST",
-        "url": "={{ $json.discordUrl }}",
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ embeds: [$json.embed] }) }}",
-        "options": {}
+        "conditions": {
+          "string": [{ "value1": "={{ $json.email }}", "operation": "isNotEmpty" }]
+        }
       },
-      "id": "on-discord",
-      "name": "Gửi Discord",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4,
+      "id": "on-if-email",
+      "name": "Có email?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
       "position": [680, 300]
     },
     {
       "parameters": {
-        "jsCode": "const s = $('Tạo thông báo').first().json.summary;\nreturn [{ json: { success: true, message: `Đã gửi Discord! ${s.type === 'import' ? 'Nhập' : 'Xuất'} ${s.items} SP, tổng ${new Intl.NumberFormat('vi-VN').format(s.total)} ₫` } }];"
+        "fromEmail": "alerts@anser.local",
+        "toEmail": "={{ $json.email }}",
+        "subject": "={{ $json.email_subject }}",
+        "html": "={{ $json.email_html }}",
+        "options": {}
+      },
+      "id": "on-email",
+      "name": "Gửi Email",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [900, 200]
+    },
+    {
+      "parameters": {
+        "jsCode": "const s = $('Tạo thông báo').first().json.summary;\nreturn [{ json: { success: true, message: `Đã gửi email! ${s.type === 'import' ? 'Nhập' : 'Xuất'} ${s.items} SP, tổng ${new Intl.NumberFormat('vi-VN').format(s.total)} đ` } }];"
       },
       "id": "on-response",
       "name": "Trả kết quả",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [900, 300]
+      "position": [1120, 200]
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{ json: { success: false, message: 'Thiếu địa chỉ email người nhận (body.email)' } }];"
+      },
+      "id": "on-no-email",
+      "name": "Báo thiếu email",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [900, 420]
     }
   ],
   "connections": {
@@ -55,9 +76,15 @@
       "main": [[{ "node": "Tạo thông báo", "type": "main", "index": 0 }]]
     },
     "Tạo thông báo": {
-      "main": [[{ "node": "Gửi Discord", "type": "main", "index": 0 }]]
+      "main": [[{ "node": "Có email?", "type": "main", "index": 0 }]]
     },
-    "Gửi Discord": {
+    "Có email?": {
+      "main": [
+        [{ "node": "Gửi Email", "type": "main", "index": 0 }],
+        [{ "node": "Báo thiếu email", "type": "main", "index": 0 }]
+      ]
+    },
+    "Gửi Email": {
       "main": [[{ "node": "Trả kết quả", "type": "main", "index": 0 }]]
     }
   },

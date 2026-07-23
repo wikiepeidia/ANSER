@@ -285,13 +285,15 @@ class Database:
                 created_by INTEGER,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                image_url TEXT
+                image_url TEXT,
+                expiry_date TEXT
             );
             CREATE TABLE IF NOT EXISTS warehouses (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 name TEXT NOT NULL,
                 low_stock_threshold INTEGER DEFAULT 10,
                 discord_webhook_url TEXT,
+                notification_email TEXT,
                 is_active INTEGER DEFAULT 1,
                 created_by INTEGER,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -422,7 +424,7 @@ class Database:
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
             CREATE TABLE IF NOT EXISTS scheduled_reports (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                id TEXT PRIMARY KEY,
                 name TEXT,
                 report_type TEXT,
                 frequency TEXT,
@@ -468,6 +470,13 @@ class Database:
                 value TEXT,
                 group_name TEXT,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+            CREATE TABLE IF NOT EXISTS iot_events (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                device_id TEXT NOT NULL,
+                event_type TEXT NOT NULL,
+                payload TEXT DEFAULT '{}',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
         ''')
 

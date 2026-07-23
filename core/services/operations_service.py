@@ -1,8 +1,12 @@
 """Operations / analytics / reports / automations business logic — extracted from operations_routes."""
 import json
-from datetime import datetime
+import uuid
+from datetime import datetime, timedelta
 
 from core.extensions import db_manager
+from core.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 def _can_access_all(role):
@@ -103,16 +107,22 @@ def get_scheduled_reports(user_id=None, role='user'):
 
 
 def create_scheduled_report(name, report_type, frequency, channel, recipients, created_by):
+    """id/status are set explicitly rather than left to column defaults —
+    production's scheduled_reports table predates Alembic and (until
+    migration 006) had neither, so every row created here ended up with
+    id=NULL, status=NULL: undeletable and invisible to the scheduler."""
     conn = db_manager.get_business_connection()
     c = conn.cursor()
     try:
+        report_id = uuid.uuid4().hex[:12]
         c.execute(
             '''INSERT INTO scheduled_reports
-               (name, report_type, frequency, channel, recipients, created_by)
-               VALUES (?, ?, ?, ?, ?, ?)''',
-            (name, report_type, frequency, channel, recipients, created_by),
+               (id, name, report_type, frequency, channel, recipients, status, created_by)
+               VALUES (?, ?, ?, ?, ?, ?, 'active', ?)''',
+            (report_id, name, report_type, frequency, channel, recipients, created_by),
         )
         conn.commit()
+        return report_id
     except Exception:
         conn.rollback()
         raise
@@ -229,3 +239,112 @@ def delete_automation(automation_id, user_id=None, role='user'):
         raise
     finally:
         conn.close()
+
+
+# ── Scheduled reports execution ──────────────────────────────────────────────
+# Actually sends what /se/reports's "Lên lịch báo cáo" form creates — that
+# form used to only INSERT into scheduled_reports and stop there (no
+# process ever read the table back out). run_due_scheduled_reports() is
+# that missing process; core/report_scheduler.py calls it periodically.
+
+_FREQUENCY_DELTA = {
+    'daily': timedelta(days=1),
+    'weekly': timedelta(days=7),
+    'monthly': timedelta(days=30),
+}
+
+
+def _parse_ts(value):
+    if value is None:
+        return None
+    if isinstance(value, datetime):
+        return value
+    text = str(value)[:26]
+    for fmt in ('%Y-%m-%d %H:%M:%S.%f', '%Y-%m-%d %H:%M:%S',
+                '%Y-%m-%dT%H:%M:%S.%f', '%Y-%m-%dT%H:%M:%S'):
+        try:
+            return datetime.strptime(text, fmt)
+        except ValueError:
+            continue
+    return None
+
+
+def _is_due(frequency, last_sent_at):
+    last = _parse_ts(last_sent_at)
+    if last is None:
+        return True
+    delta = _FREQUENCY_DELTA.get(frequency, timedelta(days=1))
+    return datetime.now() >= last + delta
+
+
+def _build_report_email(conn, report_type):
+    """Return (subject, html) for a known report_type, or (None, None)."""
+    c = conn.cursor()
+    since = (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d %H:%M:%S')
+
+    if report_type == 'revenue_expense':
+        c.execute('SELECT COALESCE(SUM(total_amount), 0) AS total FROM export_transactions WHERE created_at >= ?', (since,))
+        revenue = float(c.fetchone()['total'] or 0)
+        c.execute('SELECT COALESCE(SUM(total_amount), 0) AS total FROM import_transactions WHERE created_at >= ?', (since,))
+        expense = float(c.fetchone()['total'] or 0)
+        fmt = lambda n: f'{n:,.0f}'.replace(',', '.')
+        html = (f'<h2>Tóm tắt doanh thu & chi phí (24h qua)</h2>'
+                f'<p>Doanh thu: <b>{fmt(revenue)} đ</b></p>'
+                f'<p>Chi phí: <b>{fmt(expense)} đ</b></p>'
+                f'<p>Lợi nhuận: <b>{fmt(revenue - expense)} đ</b></p>')
+        return 'Báo cáo doanh thu & chi phí', html
+
+    if report_type == 'inventory':
+        c.execute('SELECT name, code, stock_quantity FROM products WHERE stock_quantity < 10 ORDER BY stock_quantity ASC LIMIT 20')
+        rows = c.fetchall()
+        items = ''.join(
+            f"<tr><td>{r['name']}</td><td>{r['code']}</td><td>{r['stock_quantity']}</td></tr>" for r in rows
+        ) or '<tr><td colspan="3">Không có sản phẩm nào dưới ngưỡng 10</td></tr>'
+        html = (f'<h2>Tình trạng tồn kho</h2>'
+                f'<table border="1" cellpadding="6" cellspacing="0">'
+                f'<tr><th>Sản phẩm</th><th>Mã</th><th>Còn lại</th></tr>{items}</table>')
+        return 'Báo cáo tồn kho', html
+
+    if report_type == 'customer_activity':
+        c.execute('SELECT COUNT(*) AS cnt FROM customers WHERE created_at >= ?', (since,))
+        new_customers = c.fetchone()['cnt'] or 0
+        html = f'<h2>Hoạt động khách hàng</h2><p>Khách hàng mới (24h qua): <b>{new_customers}</b></p>'
+        return 'Báo cáo hoạt động khách hàng', html
+
+    return None, None
+
+
+def run_due_scheduled_reports():
+    """Send every scheduled_reports row that's due. Only channel='email' is
+    implemented — 'slack'/'download' rows are logged and left un-sent
+    (last_sent_at untouched) rather than silently marked as delivered."""
+    from core.smtp_mailer import send_smtp_email
+
+    conn = db_manager.get_business_connection()
+    c = conn.cursor()
+    c.execute(
+        "SELECT id, name, report_type, frequency, channel, recipients, last_sent_at "
+        "FROM scheduled_reports WHERE status = 'active'"
+    )
+    rows = c.fetchall()
+
+    sent = 0
+    for r in rows:
+        if not _is_due(r['frequency'], r['last_sent_at']):
+            continue
+        if r['channel'] != 'email' or not r['recipients']:
+            logger.info('[reports] Skipping "%s": channel=%s not implemented or no recipients',
+                        r['name'], r['channel'])
+            continue
+        subject, html = _build_report_email(conn, r['report_type'])
+        if not subject:
+            logger.warning('[reports] Unknown report_type "%s" for report id=%s', r['report_type'], r['id'])
+            continue
+        if send_smtp_email(r['recipients'], f'{subject} — {r["name"]}', html):
+            now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            c.execute('UPDATE scheduled_reports SET last_sent_at = ? WHERE id = ?', (now, r['id']))
+            conn.commit()
+            sent += 1
+            logger.info('[reports] Sent "%s" to %s', r['name'], r['recipients'])
+    conn.close()
+    return sent

@@ -5,31 +5,28 @@ an independent alert profile (threshold + Discord webhook) that the
 low_stock_alert n8n workflow loops over via /api/n8n/internal/warehouses.
 """
 from flask import Blueprint, current_app, jsonify, request
-from flask_login import current_user, login_required
+from flask_login import current_user
+
+from core.security import require_role
 
 admin_warehouse_bp = Blueprint('admin_warehouses', __name__)
 
 
-def _forbidden():
-    return jsonify({'success': False, 'message': 'Không có quyền truy cập'}), 403
-
-
 @admin_warehouse_bp.route('/api/admin/warehouses', methods=['GET'])
-@login_required
+@require_role('admin')
 def list_warehouses():
-    if not hasattr(current_user, 'role') or current_user.role != 'admin':
-        return _forbidden()
     conn = current_app.extensions['database'].get_business_connection()
     c = conn.cursor()
     c.execute(
-        'SELECT id, name, low_stock_threshold, discord_webhook_url, is_active, created_at'
-        ' FROM warehouses ORDER BY created_at DESC'
+        'SELECT id, name, low_stock_threshold, discord_webhook_url, notification_email,'
+        ' is_active, created_at FROM warehouses ORDER BY created_at DESC'
     )
     warehouses = [
         {
             'id': r['id'], 'name': r['name'],
             'low_stock_threshold': r['low_stock_threshold'],
             'discord_webhook_url': r['discord_webhook_url'],
+            'notification_email': r['notification_email'],
             'is_active': bool(r['is_active']),
             'created_at': r['created_at'],
         }
@@ -40,23 +37,22 @@ def list_warehouses():
 
 
 @admin_warehouse_bp.route('/api/admin/warehouses', methods=['POST'])
-@login_required
+@require_role('admin')
 def create_warehouse():
-    if not hasattr(current_user, 'role') or current_user.role != 'admin':
-        return _forbidden()
     data = request.get_json(silent=True) or {}
     name = (data.get('name') or '').strip()
     if not name:
         return jsonify({'success': False, 'message': 'Thiếu tên kho'}), 400
     threshold = data.get('low_stock_threshold', 10)
     discord_webhook_url = (data.get('discord_webhook_url') or '').strip()
+    notification_email = (data.get('notification_email') or '').strip()
 
     conn = current_app.extensions['database'].get_business_connection()
     c = conn.cursor()
     c.execute(
-        '''INSERT INTO warehouses (name, low_stock_threshold, discord_webhook_url, created_by)
-           VALUES (?, ?, ?, ?)''',
-        (name, threshold, discord_webhook_url or None, current_user.id),
+        '''INSERT INTO warehouses (name, low_stock_threshold, discord_webhook_url, notification_email, created_by)
+           VALUES (?, ?, ?, ?, ?)''',
+        (name, threshold, discord_webhook_url or None, notification_email or None, current_user.id),
     )
     conn.commit()
     conn.close()
@@ -64,24 +60,23 @@ def create_warehouse():
 
 
 @admin_warehouse_bp.route('/api/admin/warehouses/<int:warehouse_id>/update', methods=['POST'])
-@login_required
+@require_role('admin')
 def update_warehouse(warehouse_id):
-    if not hasattr(current_user, 'role') or current_user.role != 'admin':
-        return _forbidden()
     data = request.get_json(silent=True) or {}
     name = (data.get('name') or '').strip()
     if not name:
         return jsonify({'success': False, 'message': 'Thiếu tên kho'}), 400
     threshold = data.get('low_stock_threshold', 10)
     discord_webhook_url = (data.get('discord_webhook_url') or '').strip()
+    notification_email = (data.get('notification_email') or '').strip()
     is_active = 1 if data.get('is_active', True) else 0
 
     conn = current_app.extensions['database'].get_business_connection()
     c = conn.cursor()
     c.execute(
-        '''UPDATE warehouses SET name=?, low_stock_threshold=?, discord_webhook_url=?, is_active=?
-           WHERE id=?''',
-        (name, threshold, discord_webhook_url or None, is_active, warehouse_id),
+        '''UPDATE warehouses SET name=?, low_stock_threshold=?, discord_webhook_url=?,
+           notification_email=?, is_active=? WHERE id=?''',
+        (name, threshold, discord_webhook_url or None, notification_email or None, is_active, warehouse_id),
     )
     conn.commit()
     conn.close()
@@ -89,10 +84,8 @@ def update_warehouse(warehouse_id):
 
 
 @admin_warehouse_bp.route('/api/admin/warehouses/<int:warehouse_id>/delete', methods=['POST'])
-@login_required
+@require_role('admin')
 def delete_warehouse(warehouse_id):
-    if not hasattr(current_user, 'role') or current_user.role != 'admin':
-        return _forbidden()
     conn = current_app.extensions['database'].get_business_connection()
     c = conn.cursor()
     c.execute('DELETE FROM warehouses WHERE id=?', (warehouse_id,))

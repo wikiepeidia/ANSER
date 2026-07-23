@@ -45,6 +45,47 @@ def logout():
 
 # ── Customers ──────────────────────────────────────────────────────────────
 
+def _notify_n8n_new_customer(customer_data):
+    """Fire-and-forget: notify staff when a new customer is created —
+    new_customer_welcome.json's webhook had no caller anywhere in the app
+    (customers are created via this route, not via that n8n webhook), so it
+    never fired outside a manual API call. Recipient is the active
+    warehouse's notification_email, same convention as
+    inventory_routes.py's _notify_n8n_order; skips silently if none set.
+    """
+    import threading
+    import requests
+
+    warehouse_id = session.get('active_warehouse_id')
+    email = ''
+    if warehouse_id:
+        conn = db_manager.get_business_connection()
+        try:
+            c = conn.cursor()
+            c.execute('SELECT notification_email FROM warehouses WHERE id = ?', (warehouse_id,))
+            row = c.fetchone()
+            email = (row['notification_email'] if row else '') or ''
+        finally:
+            conn.close()
+    if not email:
+        return
+
+    def _send():
+        try:
+            requests.post(f'{Config.N8N_ORIGIN}/webhook/new-customer', json={
+                'name': customer_data.get('name'),
+                'code': customer_data.get('code'),
+                'email': customer_data.get('email'),
+                'phone': customer_data.get('phone'),
+                'address': customer_data.get('address'),
+                'notify_email': email,
+            }, timeout=10)
+        except Exception:
+            pass
+
+    threading.Thread(target=_send, daemon=True).start()
+
+
 @main_bp.route('/api/customers', methods=['GET'])
 @login_required
 def api_get_customers():
@@ -69,6 +110,7 @@ def api_create_customer():
             data.get('address', ''), data.get('notes', ''), current_user.id,
         )
         if ok:
+            _notify_n8n_new_customer(data)
             return jsonify({'success': True, 'message': 'Tạo khách hàng thành công'})
         return jsonify({'success': False, 'message': err}), 400
     finally:
@@ -133,7 +175,7 @@ def api_create_product():
         ok, err = create_product(
             conn, data['code'], data['name'], data.get('category', ''), data.get('unit', 'cái'),
             data.get('price', 0), data.get('stock_quantity', 0), data.get('description', ''),
-            current_user.id, data.get('image_url', ''),
+            current_user.id, data.get('image_url', ''), data.get('expiry_date'),
         )
         if ok:
             return jsonify({'success': True, 'message': 'Tạo sản phẩm thành công'})
@@ -152,6 +194,7 @@ def api_update_product(product_id):
             conn, product_id, data['name'], data.get('category', ''), data.get('unit', 'cái'),
             data.get('price', 0), data.get('stock_quantity', 0), data.get('description', ''),
             data.get('image_url', ''), current_user.id, getattr(current_user, 'role', 'user'),
+            data.get('expiry_date'),
         )
         return jsonify({'success': True, 'message': 'Cập nhật sản phẩm thành công'})
     except LookupError as e:

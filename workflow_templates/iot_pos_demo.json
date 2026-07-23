@@ -1,5 +1,5 @@
 {
-  "name": "Demo POS — IoT → NeonDB → Discord",
+  "name": "Demo POS — IoT → NeonDB → Email",
   "nodes": [
     {
       "parameters": {
@@ -16,7 +16,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const raw = $input.first().json;\nconst body = (raw.body && typeof raw.body === 'object') ? raw.body : raw;\nconst missing = [];\nif (!body.device_id)  missing.push('device_id');\nif (!body.event_type) missing.push('event_type');\nif (missing.length > 0) {\n  return [{ json: { valid: false, error: `Thiếu trường bắt buộc: ${missing.join(', ')}` } }];\n}\nconst amount = body.payload?.amount || 0;\nconst d = {\n  valid: true,\n  device_id:  String(body.device_id),\n  event_type: String(body.event_type),\n  payload:    body.payload || {},\n  amount_vnd: amount,\n  amount_fmt: new Intl.NumberFormat('vi-VN').format(amount) + ' VND'\n};\nd.request_body = JSON.stringify({ device_id: d.device_id, event_type: d.event_type, payload: d.payload });\nreturn [{ json: d }];"
+        "jsCode": "const raw = $input.first().json;\nconst body = (raw.body && typeof raw.body === 'object') ? raw.body : raw;\nconst missing = [];\nif (!body.device_id)  missing.push('device_id');\nif (!body.event_type) missing.push('event_type');\nif (missing.length > 0) {\n  return [{ json: { valid: false, error: `Thiếu trường bắt buộc: ${missing.join(', ')}` } }];\n}\nconst amount = body.payload?.amount || 0;\nconst d = {\n  valid: true,\n  device_id:  String(body.device_id),\n  event_type: String(body.event_type),\n  payload:    body.payload || {},\n  amount_vnd: amount,\n  amount_fmt: new Intl.NumberFormat('vi-VN').format(amount) + ' VND',\n  notify_email: body.notify_email || ''\n};\nd.request_body = JSON.stringify({ device_id: d.device_id, event_type: d.event_type, payload: d.payload });\nreturn [{ json: d }];"
       },
       "id": "pos-code-001",
       "name": "Kiểm tra và làm giàu dữ liệu",
@@ -39,7 +39,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "http://rag-service:8001/iot-insert",
+        "url": "http://host.docker.internal:5002/api/n8n/internal/iot-events",
         "authentication": "none",
         "sendBody": true,
         "contentType": "raw",
@@ -55,42 +55,51 @@
     },
     {
       "parameters": {
-        "jsCode": "const dbResult = $input.first().json;\nconst orig = $('Kiểm tra và làm giàu dữ liệu').first().json;\nconst d = { ...orig, db_id: dbResult.id, created_at: dbResult.created_at, db_ok: true };\nconst isInvoice = ['sale_completed', 'payment_received', 'invoice'].includes(d.event_type);\nd.discord_body = JSON.stringify({\n  embeds: [{\n    title: (isInvoice ? 'Hóa đơn mới' : 'Sự kiện POS') + ' — ' + d.device_id,\n    color: isInvoice ? 52307 : 16744448,\n    fields: [\n      { name: 'Thiết bị',  value: d.device_id,             inline: true  },\n      { name: 'Loại',      value: d.event_type,            inline: true  },\n      { name: 'DB Record', value: '#' + (d.db_id || '?'),  inline: true  },\n      { name: 'Số tiền',   value: d.amount_fmt || 'N/A',   inline: true  },\n      { name: 'Thời gian', value: d.created_at || new Date().toISOString(), inline: false }\n    ],\n    footer: { text: 'n8n IoT Pipeline • NeonDB' }\n  }]\n});\nd.response_201 = JSON.stringify({ status: 'ok', id: d.db_id, device: d.device_id, event: d.event_type, timestamp: d.created_at });\nreturn [{ json: d }];"
+        "jsCode": "const dbResult = $input.first().json;\nconst orig = $('Kiểm tra và làm giàu dữ liệu').first().json;\nconst d = { ...orig, db_id: dbResult.id, created_at: dbResult.created_at, db_ok: true };\nconst isInvoice = ['sale_completed', 'payment_received', 'invoice'].includes(d.event_type);\nd.email_subject = (isInvoice ? 'Hóa đơn mới' : 'Sự kiện POS') + ' — ' + d.device_id;\nd.email_html = `<h2>${d.email_subject}</h2><p>Thiết bị: <b>${d.device_id}</b></p><p>Loại: ${d.event_type}</p><p>DB Record: #${d.db_id || '?'}</p><p>Số tiền: ${d.amount_fmt || 'N/A'}</p><p>Thời gian: ${d.created_at || new Date().toISOString()}</p>`;\nd.response_201 = JSON.stringify({ status: 'ok', id: d.db_id, device: d.device_id, event: d.event_type, timestamp: d.created_at });\nreturn [{ json: d }];"
       },
       "id": "pos-code-002",
-      "name": "Làm giàu & dựng Discord embed",
+      "name": "Làm giàu & dựng nội dung email",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [1060, 180]
     },
     {
       "parameters": {
-        "method": "POST",
-        "url": "https://discord.com/api/webhooks/1515444369480745063/ZlYUlYstgHrc5-P7lZTrcZcsGVGrqo2rvxq_IAPPREB_YP4ci1EZVe0oVC7SZX1Da89R",
-        "authentication": "none",
-        "sendBody": true,
-        "contentType": "raw",
-        "rawContentType": "application/json",
-        "body": "={{ $json.discord_body }}",
-        "options": {}
+        "conditions": {
+          "string": [{ "value1": "={{ $json.notify_email }}", "operation": "isNotEmpty" }]
+        }
       },
-      "id": "pos-httpreq-002",
-      "name": "Gửi thông báo Discord",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.4,
+      "id": "pos-if-email",
+      "name": "Có email báo?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
       "position": [1280, 180]
     },
     {
       "parameters": {
+        "fromEmail": "alerts@anser.local",
+        "toEmail": "={{ $json.notify_email }}",
+        "subject": "={{ $json.email_subject }}",
+        "html": "={{ $json.email_html }}",
+        "options": {}
+      },
+      "id": "pos-httpreq-002",
+      "name": "Gửi thông báo Email",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [1500, 120]
+    },
+    {
+      "parameters": {
         "respondWith": "json",
-        "responseBody": "={{ $('Làm giàu & dựng Discord embed').first().json.response_201 }}",
+        "responseBody": "={{ $('Làm giàu & dựng nội dung email').first().json.response_201 }}",
         "options": { "responseCode": 201 }
       },
       "id": "pos-respond-201",
       "name": "Trả về 201",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
-      "position": [1500, 180]
+      "position": [1720, 180]
     },
     {
       "parameters": {
@@ -114,9 +123,15 @@
         [{ "node": "Trả về 400",     "type": "main", "index": 0 }]
       ]
     },
-    "Gọi iot-insert":       { "main": [[{ "node": "Làm giàu & dựng Discord embed",  "type": "main", "index": 0 }]] },
-    "Làm giàu & dựng Discord embed":{ "main": [[{ "node": "Gửi thông báo Discord",          "type": "main", "index": 0 }]] },
-    "Gửi thông báo Discord":        { "main": [[{ "node": "Trả về 201",             "type": "main", "index": 0 }]] }
+    "Gọi iot-insert":       { "main": [[{ "node": "Làm giàu & dựng nội dung email",  "type": "main", "index": 0 }]] },
+    "Làm giàu & dựng nội dung email":{ "main": [[{ "node": "Có email báo?",          "type": "main", "index": 0 }]] },
+    "Có email báo?": {
+      "main": [
+        [{ "node": "Gửi thông báo Email", "type": "main", "index": 0 }],
+        [{ "node": "Trả về 201",          "type": "main", "index": 0 }]
+      ]
+    },
+    "Gửi thông báo Email":        { "main": [[{ "node": "Trả về 201",             "type": "main", "index": 0 }]] }
   },
   "active": false,
   "settings": { "executionOrder": "v1" }

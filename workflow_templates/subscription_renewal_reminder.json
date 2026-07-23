@@ -1,0 +1,75 @@
+{
+  "name": "Nhắc gia hạn gói dịch vụ",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": { "interval": [{ "field": "hours", "hoursInterval": 24, "triggerAtHour": 9 }] }
+      },
+      "id": "sr-trigger",
+      "name": "Mỗi ngày 9h",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [180, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "http://host.docker.internal:5002/api/n8n/internal/expiring-subscriptions",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [{ "name": "days", "value": "7" }]
+        },
+        "authentication": "none",
+        "options": {}
+      },
+      "id": "sr-fetch",
+      "name": "Lấy gói sắp hết hạn",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [420, 300]
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "subscriptions",
+        "options": {}
+      },
+      "id": "sr-split",
+      "name": "Tách từng gói",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [660, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const sub = $json;\nconst daysLeft = Math.max(0, Math.ceil((new Date(sub.end_date) - new Date()) / 86400000));\nconst html = `<h2>⏰ Gói dịch vụ sắp hết hạn</h2><p>Xin chào <b>${sub.user_name}</b>,</p><p>Gói <b>${sub.subscription_type || 'dịch vụ'}</b> của bạn sẽ hết hạn vào <b>${sub.end_date}</b> (còn ${daysLeft} ngày).</p><p>Vui lòng gia hạn để không bị gián đoạn dịch vụ.</p>`;\nreturn [{ json: { email_to: sub.user_email, email_subject: 'Gói dịch vụ sắp hết hạn — còn ' + daysLeft + ' ngày', email_html: html } }];"
+      },
+      "id": "sr-format",
+      "name": "Tạo nội dung nhắc",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "fromEmail": "alerts@anser.local",
+        "toEmail": "={{ $json.email_to }}",
+        "subject": "={{ $json.email_subject }}",
+        "html": "={{ $json.email_html }}",
+        "options": {}
+      },
+      "id": "sr-email",
+      "name": "Gửi Email",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [1140, 300]
+    }
+  ],
+  "connections": {
+    "Mỗi ngày 9h":         { "main": [[{ "node": "Lấy gói sắp hết hạn", "type": "main", "index": 0 }]] },
+    "Lấy gói sắp hết hạn": { "main": [[{ "node": "Tách từng gói",       "type": "main", "index": 0 }]] },
+    "Tách từng gói":       { "main": [[{ "node": "Tạo nội dung nhắc",   "type": "main", "index": 0 }]] },
+    "Tạo nội dung nhắc":   { "main": [[{ "node": "Gửi Email",           "type": "main", "index": 0 }]] }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" }
+}

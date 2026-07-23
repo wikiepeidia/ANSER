@@ -41,6 +41,8 @@ class _DBMock:
         self.use_postgres = False
     def get_connection(self):
         return _PersistentConn(self._conn)
+    def get_business_connection(self):
+        return _PersistentConn(self._conn)
     def get_table_columns(self, table, cursor=None):
         c = cursor or self._conn.cursor()
         c.execute(f"PRAGMA table_info({table})")
@@ -54,7 +56,7 @@ _EXPORT_TX = "CREATE TABLE export_transactions (id INTEGER PRIMARY KEY AUTOINCRE
 _IMPORT_TX = "CREATE TABLE import_transactions (id INTEGER PRIMARY KEY AUTOINCREMENT, total_amount REAL, created_at TEXT DEFAULT CURRENT_TIMESTAMP)"
 _WORKFLOWS  = "CREATE TABLE workflows (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, name TEXT, data TEXT, created_at TEXT DEFAULT CURRENT_TIMESTAMP, updated_at TEXT DEFAULT CURRENT_TIMESTAMP)"
 _SCHEDULED_REPORTS = """CREATE TABLE scheduled_reports (
-    id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, report_type TEXT,
+    id TEXT PRIMARY KEY, name TEXT, report_type TEXT,
     frequency TEXT, channel TEXT, recipients TEXT, status TEXT DEFAULT 'active',
     last_sent_at TEXT, created_by INTEGER, created_at TEXT DEFAULT CURRENT_TIMESTAMP)"""
 _SE_AUTOMATIONS = """CREATE TABLE se_automations (

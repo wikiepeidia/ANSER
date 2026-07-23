@@ -1,12 +1,12 @@
 {
-  "name": "Báo cáo doanh số hàng ngày",
+  "name": "Báo cáo doanh số hàng tháng",
   "nodes": [
     {
       "parameters": {
-        "rule": { "interval": [{ "field": "hours", "hoursInterval": 24, "triggerAtHour": 20 }] }
+        "rule": { "interval": [{ "field": "days", "daysInterval": 30, "triggerAtHour": 20 }] }
       },
-      "id": "ds-trigger",
-      "name": "Mỗi ngày 20h",
+      "id": "msr-trigger",
+      "name": "Mỗi 30 ngày",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
       "position": [180, 300]
@@ -15,11 +15,15 @@
       "parameters": {
         "method": "GET",
         "url": "http://host.docker.internal:5002/api/n8n/internal/daily-sales",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [{ "name": "days", "value": "30" }]
+        },
         "authentication": "none",
         "options": {}
       },
-      "id": "ds-fetch",
-      "name": "Lấy doanh số hôm nay",
+      "id": "msr-fetch",
+      "name": "Lấy doanh số 30 ngày",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [420, 300]
@@ -31,7 +35,7 @@
         "authentication": "none",
         "options": {}
       },
-      "id": "ds-warehouses",
+      "id": "msr-warehouses",
       "name": "Lấy email người nhận",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
@@ -39,9 +43,9 @@
     },
     {
       "parameters": {
-        "jsCode": "const data = $('Lấy doanh số hôm nay').first().json;\nconst s = data.summary || {};\nconst tops = data.top_products || [];\nconst warehouses = $input.first().json.warehouses || [];\nconst emails = [...new Set(warehouses.map(w => w.notification_email).filter(Boolean))];\nconst fmt = n => new Intl.NumberFormat('vi-VN').format(n);\nconst rows = tops.map((p,i) => `<tr><td>${i+1}</td><td>${p.product_name}</td><td>${p.qty_sold}</td><td>${fmt(p.revenue)} đ</td></tr>`).join('') || '<tr><td colspan=\"4\">Chưa có dữ liệu</td></tr>';\nconst html = `<h2>📊 Báo cáo doanh số ${data.date}</h2><p>Tổng đơn hàng: <b>${s.total_orders || 0}</b> — Doanh thu: <b>${fmt(s.total_revenue || 0)} đ</b> — Nhân viên bán: <b>${s.unique_staff || 0}</b></p><h3>Top sản phẩm</h3><table border=\"1\" cellpadding=\"6\" cellspacing=\"0\"><tr><th>#</th><th>Sản phẩm</th><th>SL bán</th><th>Doanh thu</th></tr>${rows}</table><p style=\"color:#888\">ANSER Auto Report — ${new Date().toISOString()}</p>`;\nreturn [{ json: {\n  email_to: emails.join(','),\n  email_subject: `📊 Báo cáo doanh số hôm nay — ${data.date}`,\n  email_html: html,\n} }];"
+        "jsCode": "const data = $('Lấy doanh số 30 ngày').first().json;\nconst s = data.summary || {};\nconst tops = data.top_products || [];\nconst warehouses = $input.first().json.warehouses || [];\nconst emails = [...new Set(warehouses.map(w => w.notification_email).filter(Boolean))];\nconst fmt = n => new Intl.NumberFormat('vi-VN').format(n);\nconst rows = tops.map((p,i) => `<tr><td>${i+1}</td><td>${p.product_name}</td><td>${p.qty_sold}</td><td>${fmt(p.revenue)} đ</td></tr>`).join('') || '<tr><td colspan=\"4\">Chưa có dữ liệu</td></tr>';\nconst html = `<h2>📊 Báo cáo doanh số tháng qua (${data.period})</h2><p>Tổng đơn hàng: <b>${s.total_orders || 0}</b> — Doanh thu: <b>${fmt(s.total_revenue || 0)} đ</b> — Nhân viên bán: <b>${s.unique_staff || 0}</b></p><h3>Top sản phẩm</h3><table border=\"1\" cellpadding=\"6\" cellspacing=\"0\"><tr><th>#</th><th>Sản phẩm</th><th>SL bán</th><th>Doanh thu</th></tr>${rows}</table><p style=\"color:#888\">ANSER Auto Report — ${new Date().toISOString()}</p>`;\nreturn [{ json: {\n  email_to: emails.join(','),\n  email_subject: `📊 Báo cáo doanh số hàng tháng — ${data.date}`,\n  email_html: html,\n} }];"
       },
-      "id": "ds-format",
+      "id": "msr-format",
       "name": "Tạo báo cáo",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -53,7 +57,7 @@
           "string": [{ "value1": "={{ $json.email_to }}", "operation": "isNotEmpty" }]
         }
       },
-      "id": "ds-if",
+      "id": "msr-if",
       "name": "Có người nhận?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
@@ -67,7 +71,7 @@
         "html": "={{ $json.email_html }}",
         "options": {}
       },
-      "id": "ds-email",
+      "id": "msr-email",
       "name": "Gửi Email",
       "type": "n8n-nodes-base.emailSend",
       "typeVersion": 2.1,
@@ -75,8 +79,8 @@
     }
   ],
   "connections": {
-    "Mỗi ngày 20h":         { "main": [[{ "node": "Lấy doanh số hôm nay", "type": "main", "index": 0 }]] },
-    "Lấy doanh số hôm nay": { "main": [[{ "node": "Lấy email người nhận", "type": "main", "index": 0 }]] },
+    "Mỗi 30 ngày":          { "main": [[{ "node": "Lấy doanh số 30 ngày", "type": "main", "index": 0 }]] },
+    "Lấy doanh số 30 ngày": { "main": [[{ "node": "Lấy email người nhận", "type": "main", "index": 0 }]] },
     "Lấy email người nhận": { "main": [[{ "node": "Tạo báo cáo",          "type": "main", "index": 0 }]] },
     "Tạo báo cáo":          { "main": [[{ "node": "Có người nhận?",      "type": "main", "index": 0 }]] },
     "Có người nhận?": {

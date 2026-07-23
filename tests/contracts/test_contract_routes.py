@@ -111,7 +111,7 @@ def test_analytics_dashboard_reports_automations_routes_remain_registered_after_
         "/api/dashboard/stats": {"GET"},
         "/api/reports/stats": {"GET"},
         "/api/reports/scheduled": {"GET", "POST"},
-        "/api/reports/scheduled/<int:report_id>": {"DELETE"},
+        "/api/reports/scheduled/<report_id>": {"DELETE"},
         "/api/automations": {"GET", "POST"},
         "/api/automations/<int:automation_id>": {"PUT", "DELETE"},
     }

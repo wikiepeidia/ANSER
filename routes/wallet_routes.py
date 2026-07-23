@@ -5,6 +5,7 @@ from flask import Blueprint, jsonify, render_template, request
 from flask_login import current_user, login_required
 
 from core.extensions import db_manager
+from core.security import require_role
 from core.services.wallet_service import (
     create_topup_request, create_withdrawal, get_pending_transactions,
     get_wallet_data, process_transaction, toggle_auto_renew, upgrade_subscription,
@@ -82,6 +83,12 @@ def api_update_settings():
                 (setting_key, data.get('value'), data.get('group')),
             )
             conn.commit()
+        if setting_key == 'daily_report_hour':
+            try:
+                from routes.n8n_api import sync_daily_report_hour
+                sync_daily_report_hour(data.get('value'))
+            except Exception:
+                pass  # workflow not deployed yet, or n8n unreachable — setting is still saved
         return jsonify({'success': True, 'message': 'Đã cập nhật cài đặt'})
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
@@ -111,10 +118,8 @@ def api_topup_wallet():
 
 
 @wallet_bp.route('/api/admin/wallet/withdraw', methods=['POST'])
-@login_required
+@require_role('admin')
 def api_admin_withdraw():
-    if not hasattr(current_user, 'role') or current_user.role != 'admin':
-        return jsonify({'success': False, 'message': 'Không có quyền truy cập'}), 403
     data = request.get_json() or {}
     try:
         amount = int(data.get('amount', 0))
@@ -178,10 +183,8 @@ def api_user_toggle_auto_renew():
 
 
 @wallet_bp.route('/api/admin/wallet/pending', methods=['GET'])
-@login_required
+@require_role('admin')
 def api_admin_pending_wallet_transactions():
-    if not hasattr(current_user, 'role') or current_user.role != 'admin':
-        return jsonify({'success': False, 'message': 'Không có quyền truy cập'}), 403
     conn = db_manager.get_business_connection()
     conn.row_factory = sqlite3.Row
     auth_conn = db_manager.get_connection()
@@ -197,10 +200,8 @@ def api_admin_pending_wallet_transactions():
 
 
 @wallet_bp.route('/api/admin/wallet/pending/<int:transaction_id>', methods=['POST'])
-@login_required
+@require_role('admin')
 def api_admin_process_wallet_transaction(transaction_id):
-    if not hasattr(current_user, 'role') or current_user.role != 'admin':
-        return jsonify({'success': False, 'message': 'Không có quyền truy cập'}), 403
     data = request.get_json() or {}
     action = data.get('action')
     note = (data.get('note') or '').strip()

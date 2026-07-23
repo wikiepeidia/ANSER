@@ -186,6 +186,15 @@
                                                 value="{{ all_settings.get('keep_images_days', '30') }}" data-group="system">
                                             <div class="form-text mt-2">Ảnh cũ hơn số ngày này sẽ tự động bị xóa để tiết kiệm dung lượng.</div>
                                         </div>
+                                        <div class="mb-4">
+                                            <label class="form-label">Giờ gửi báo cáo doanh thu hàng ngày</label>
+                                            <select class="form-select setting-input" name="daily_report_hour" data-group="system">
+                                                {% for h in range(0, 24) %}
+                                                <option value="{{ h }}" {% if all_settings.get('daily_report_hour', '20')|string == h|string %}selected{% endif %}>{{ '%02d:00'|format(h) }}</option>
+                                                {% endfor %}
+                                            </select>
+                                            <div class="form-text mt-2">Email báo cáo doanh số tự động gửi vào đúng giờ này mỗi ngày (mặc định 20:00) — đổi cho khớp giờ đóng cửa thực tế của cửa hàng. Nếu automation "Báo cáo doanh số hàng ngày" đã bật trong n8n, đổi giờ ở đây có hiệu lực ngay, không cần deploy lại.</div>
+                                        </div>
                                         {% endif %}
                                     </form>
                                 </div>

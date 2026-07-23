@@ -5,7 +5,7 @@
       "parameters": {
         "httpMethod": "POST",
         "path": "new-customer",
-        "responseMode": "responseNode",
+        "responseMode": "lastNode",
         "options": {}
       },
       "id": "nc-webhook",
@@ -16,10 +16,10 @@
     },
     {
       "parameters": {
-        "jsCode": "const raw = $input.first().json;\nconst body = (raw.body && typeof raw.body === 'object') ? raw.body : raw;\nif (!body.name) {\n  return [{ json: { valid: false, error: 'Thiếu tên khách hàng (name)' } }];\n}\nreturn [{ json: {\n  valid: true,\n  name:    String(body.name),\n  email:   body.email || null,\n  phone:   body.phone || null,\n  address: body.address || null,\n  request_body: JSON.stringify({ name: body.name, email: body.email || null, phone: body.phone || null, address: body.address || null })\n} }];"
+        "jsCode": "const raw = $input.first().json;\nconst body = (raw.body && typeof raw.body === 'object') ? raw.body : raw;\nconst name = body.name || '';\nconst notify_email = body.notify_email || '';\nconst html = `<h2>👋 Khách hàng mới!</h2><p>Tên: <b>${name}</b></p><p>Mã KH: <b>${body.code || '—'}</b></p><p>SĐT: ${body.phone || 'Chưa có'}</p><p>Email: ${body.email || 'Chưa có'}</p><p>Địa chỉ: ${body.address || 'Chưa có'}</p>`;\nreturn [{ json: { name, notify_email, email_html: html } }];"
       },
-      "id": "nc-validate",
-      "name": "Validate thông tin",
+      "id": "nc-format",
+      "name": "Tạo thông báo",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [420, 300]
@@ -27,96 +27,49 @@
     {
       "parameters": {
         "conditions": {
-          "boolean": [{ "value1": "={{ $json.valid }}", "value2": true }]
+          "string": [{ "value1": "={{ $json.notify_email }}", "operation": "isNotEmpty" }]
         }
       },
-      "id": "nc-if",
-      "name": "Hợp lệ?",
+      "id": "nc-if-email",
+      "name": "Có email báo?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [660, 300]
     },
     {
       "parameters": {
-        "method": "POST",
-        "url": "http://rag-service:8001/customer-insert",
-        "authentication": "none",
-        "sendBody": true,
-        "contentType": "raw",
-        "rawContentType": "application/json",
-        "body": "={{ $json.request_body }}",
+        "fromEmail": "alerts@anser.local",
+        "toEmail": "={{ $json.notify_email }}",
+        "subject": "Khách hàng mới!",
+        "html": "={{ $json.email_html }}",
         "options": {}
       },
-      "id": "nc-insert",
-      "name": "Lưu vào NeonDB",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.4,
-      "position": [900, 180]
+      "id": "nc-email",
+      "name": "Gửi Email",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [900, 200]
     },
     {
       "parameters": {
-        "jsCode": "const db = $input.first().json;\nconst orig = $('Validate thông tin').first().json;\nconst body = {\n  embeds: [{\n    title: '👋 Khách hàng mới!',\n    color: 3447003,\n    fields: [\n      { name: 'Tên', value: orig.name, inline: true },\n      { name: 'Mã KH', value: db.code || '—', inline: true },\n      { name: 'SĐT', value: orig.phone || 'Chưa có', inline: true },\n      { name: 'Email', value: orig.email || 'Chưa có', inline: true },\n      { name: 'Địa chỉ', value: orig.address || 'Chưa có', inline: false }\n    ],\n    footer: { text: 'ANSER CRM • NeonDB' },\n    timestamp: new Date().toISOString()\n  }]\n};\nconst resp = { status: 'ok', id: db.id, code: db.code, name: orig.name };\nreturn [{ json: { discord_body: JSON.stringify(body), response_201: JSON.stringify(resp) } }];"
+        "jsCode": "return [{ json: { success: true } }];"
       },
-      "id": "nc-format",
-      "name": "Tạo thông báo",
+      "id": "nc-noop",
+      "name": "Không có email báo",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1140, 180]
-    },
-    {
-      "parameters": {
-        "method": "POST",
-        "url": "https://discord.com/api/webhooks/1515444369480745063/ZlYUlYstgHrc5-P7lZTrcZcsGVGrqo2rvxq_IAPPREB_YP4ci1EZVe0oVC7SZX1Da89R",
-        "authentication": "none",
-        "sendBody": true,
-        "contentType": "raw",
-        "rawContentType": "application/json",
-        "body": "={{ $json.discord_body }}",
-        "options": {}
-      },
-      "id": "nc-discord",
-      "name": "Gửi Discord",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.4,
-      "position": [1380, 180]
-    },
-    {
-      "parameters": {
-        "respondWith": "json",
-        "responseBody": "={{ $('Tạo thông báo').first().json.response_201 }}",
-        "options": { "responseCode": 201 }
-      },
-      "id": "nc-respond-ok",
-      "name": "Trả 201",
-      "type": "n8n-nodes-base.respondToWebhook",
-      "typeVersion": 1,
-      "position": [1620, 180]
-    },
-    {
-      "parameters": {
-        "respondWith": "json",
-        "responseBody": "={{ JSON.stringify({ error: $json.error, status: 400 }) }}",
-        "options": { "responseCode": 400 }
-      },
-      "id": "nc-respond-err",
-      "name": "Trả 400",
-      "type": "n8n-nodes-base.respondToWebhook",
-      "typeVersion": 1,
       "position": [900, 420]
     }
   ],
   "connections": {
-    "Nhận khách mới":     { "main": [[{ "node": "Validate thông tin", "type": "main", "index": 0 }]] },
-    "Validate thông tin":  { "main": [[{ "node": "Hợp lệ?",           "type": "main", "index": 0 }]] },
-    "Hợp lệ?": {
+    "Nhận khách mới": { "main": [[{ "node": "Tạo thông báo", "type": "main", "index": 0 }]] },
+    "Tạo thông báo":   { "main": [[{ "node": "Có email báo?", "type": "main", "index": 0 }]] },
+    "Có email báo?": {
       "main": [
-        [{ "node": "Lưu vào NeonDB", "type": "main", "index": 0 }],
-        [{ "node": "Trả 400",        "type": "main", "index": 0 }]
+        [{ "node": "Gửi Email", "type": "main", "index": 0 }],
+        [{ "node": "Không có email báo", "type": "main", "index": 0 }]
       ]
-    },
-    "Lưu vào NeonDB":    { "main": [[{ "node": "Tạo thông báo",      "type": "main", "index": 0 }]] },
-    "Tạo thông báo":      { "main": [[{ "node": "Gửi Discord",        "type": "main", "index": 0 }]] },
-    "Gửi Discord":        { "main": [[{ "node": "Trả 201",            "type": "main", "index": 0 }]] }
+    }
   },
   "active": false,
   "settings": { "executionOrder": "v1" }

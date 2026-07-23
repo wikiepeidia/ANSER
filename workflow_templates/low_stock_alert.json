@@ -14,7 +14,7 @@
     {
       "parameters": {
         "method": "GET",
-        "url": "http://host.docker.internal:5000/api/n8n/internal/warehouses",
+        "url": "http://host.docker.internal:5002/api/n8n/internal/warehouses",
         "authentication": "none",
         "options": {}
       },
@@ -38,7 +38,7 @@
     {
       "parameters": {
         "method": "GET",
-        "url": "={{ 'http://host.docker.internal:5000/api/n8n/internal/low-stock?threshold=' + $json.low_stock_threshold }}",
+        "url": "={{ 'http://host.docker.internal:5002/api/n8n/internal/low-stock?threshold=' + $json.low_stock_threshold }}",
         "authentication": "none",
         "options": {}
       },
@@ -62,7 +62,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const data = $input.first().json;\nconst warehouse = $('Tách từng kho').item.json;\nconst items = data.items || [];\nconst list = items.map(p => `⚠️ **${p.name}** (${p.code}) — còn **${p.stock_quantity}** | giá ${new Intl.NumberFormat('vi-VN').format(p.price)} đ`).join('\\n');\nconst body = {\n  embeds: [{\n    title: `🚨 Cảnh báo tồn kho thấp — ${warehouse.name}`,\n    color: 16744448,\n    description: `Có **${items.length}** sản phẩm dưới ngưỡng ${data.threshold}:\\n\\n${list}`,\n    footer: { text: 'ANSER Stock Alert' },\n    timestamp: new Date().toISOString()\n  }]\n};\nreturn [{ json: { discord_body: JSON.stringify(body), discord_webhook_url: warehouse.discord_webhook_url } }];"
+        "jsCode": "const data = $input.first().json;\nconst warehouse = $('Tách từng kho').item.json;\nconst items = data.items || [];\nconst rows = items.map(p => `<tr><td>${p.name}</td><td>${p.code}</td><td>${p.stock_quantity}</td><td>${new Intl.NumberFormat('vi-VN').format(p.price)} đ</td></tr>`).join('');\nconst html = `<h2>🚨 Cảnh báo tồn kho thấp — ${warehouse.name}</h2><p>Có <b>${items.length}</b> sản phẩm dưới ngưỡng ${data.threshold}:</p><table border=\"1\" cellpadding=\"6\" cellspacing=\"0\"><tr><th>Sản phẩm</th><th>Mã</th><th>Còn lại</th><th>Giá</th></tr>${rows}</table><p style=\"color:#888\">ANSER Stock Alert — ${new Date().toISOString()}</p>`;\nreturn [{ json: {\n  email_to: warehouse.notification_email,\n  email_subject: `🚨 Cảnh báo tồn kho thấp — ${warehouse.name}`,\n  email_html: html,\n} }];"
       },
       "id": "ls-format",
       "name": "Tạo cảnh báo",
@@ -72,20 +72,29 @@
     },
     {
       "parameters": {
-        "method": "POST",
-        "url": "={{ $json.discord_webhook_url }}",
-        "authentication": "none",
-        "sendBody": true,
-        "contentType": "raw",
-        "rawContentType": "application/json",
-        "body": "={{ $json.discord_body }}",
+        "conditions": {
+          "string": [{ "value1": "={{ $json.email_to }}", "operation": "isNotEmpty" }]
+        }
+      },
+      "id": "ls-if-email",
+      "name": "Có email nhận?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [1620, 180]
+    },
+    {
+      "parameters": {
+        "fromEmail": "alerts@anser.local",
+        "toEmail": "={{ $json.email_to }}",
+        "subject": "={{ $json.email_subject }}",
+        "html": "={{ $json.email_html }}",
         "options": {}
       },
-      "id": "ls-discord",
-      "name": "Gửi Discord",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.4,
-      "position": [1620, 180]
+      "id": "ls-email",
+      "name": "Gửi Email",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [1860, 120]
     }
   ],
   "connections": {
@@ -99,7 +108,13 @@
         []
       ]
     },
-    "Tạo cảnh báo":      { "main": [[{ "node": "Gửi Discord", "type": "main", "index": 0 }]] }
+    "Tạo cảnh báo":      { "main": [[{ "node": "Có email nhận?", "type": "main", "index": 0 }]] },
+    "Có email nhận?": {
+      "main": [
+        [{ "node": "Gửi Email", "type": "main", "index": 0 }],
+        []
+      ]
+    }
   },
   "active": false,
   "settings": { "executionOrder": "v1" }

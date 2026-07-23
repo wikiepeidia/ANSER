@@ -1,8 +1,9 @@
 """Admin and user-management routes — admin_user_bp Blueprint."""
 from flask import Blueprint, jsonify, request
-from flask_login import current_user, login_required
+from flask_login import current_user
 
 from core.extensions import db_manager
+from core.security import require_role
 from core.services.user_service import (
     admin_delete_user, delete_user, get_all_users,
     get_users_for_manager, reset_password, set_user_role,
@@ -12,10 +13,8 @@ admin_user_bp = Blueprint('admin_users', __name__)
 
 
 @admin_user_bp.route('/api/admin/users')
-@login_required
+@require_role('admin')
 def admin_get_users():
-    if not hasattr(current_user, 'role') or current_user.role != 'admin':
-        return jsonify({'success': False, 'message': 'Không có quyền truy cập'}), 403
     try:
         users = get_all_users()
         return jsonify({'success': True, 'users': users})
@@ -24,27 +23,21 @@ def admin_get_users():
 
 
 @admin_user_bp.route('/api/admin/activity')
-@login_required
+@require_role('admin')
 def admin_get_activity():
-    if not hasattr(current_user, 'role') or current_user.role != 'admin':
-        return jsonify({'success': False, 'message': 'Không có quyền truy cập'}), 403
     activities = db_manager.get_recent_activities(limit=20)
     return jsonify({'success': True, 'activities': activities})
 
 
 @admin_user_bp.route('/api/admin/stats')
-@login_required
+@require_role('admin')
 def admin_get_stats():
-    if not hasattr(current_user, 'role') or current_user.role != 'admin':
-        return jsonify({'success': False, 'message': 'Không có quyền truy cập'}), 403
     return jsonify({'success': True, 'stats': {'users': 0, 'managers': 0, 'products': 0, 'customers': 0}})
 
 
 @admin_user_bp.route('/api/admin/create-manager', methods=['POST'])
-@login_required
+@require_role('admin')
 def admin_create_manager():
-    if not hasattr(current_user, 'role') or current_user.role != 'admin':
-        return jsonify({'success': False, 'message': 'Không có quyền truy cập'}), 403
     data = request.get_json()
     if not data or 'email' not in data or 'name' not in data or 'password' not in data:
         return jsonify({'success': False, 'message': 'Thiếu các trường bắt buộc'}), 400
@@ -53,10 +46,10 @@ def admin_create_manager():
         name_parts = data['name'].split()
         first_name = name_parts[0] if name_parts else ''
         last_name = ' '.join(name_parts[1:]) if len(name_parts) > 1 else ''
-        
+
         user_id = db_manager.create_user(
-            data['email'], data['password'], 
-            first_name=first_name, last_name=last_name, 
+            data['email'], data['password'],
+            first_name=first_name, last_name=last_name,
             role='manager'
         )
         return jsonify({'success': True, 'message': 'Tạo manager thành công', 'user_id': user_id})
@@ -65,10 +58,8 @@ def admin_create_manager():
 
 
 @admin_user_bp.route('/api/create-user', methods=['POST'])
-@login_required
+@require_role('manager')
 def create_user():
-    if not hasattr(current_user, 'role') or current_user.role not in ['admin', 'manager']:
-        return jsonify({'success': False, 'message': 'Không có quyền truy cập'}), 403
     data = request.get_json()
     if not data or 'email' not in data or 'password' not in data:
         return jsonify({'success': False, 'message': 'Thiếu các trường bắt buộc'}), 400
@@ -76,8 +67,8 @@ def create_user():
         first_name = data.get('first_name', '')
         last_name = data.get('last_name', '')
         user_id = db_manager.create_user(
-            data['email'], data['password'], 
-            first_name=first_name, last_name=last_name, 
+            data['email'], data['password'],
+            first_name=first_name, last_name=last_name,
             role='employee', manager_id=current_user.id,
         )
         return jsonify({'success': True, 'message': 'Tạo tài khoản nhân viên thành công', 'user_id': user_id})
@@ -86,10 +77,8 @@ def create_user():
 
 
 @admin_user_bp.route('/api/users', methods=['GET'])
-@login_required
+@require_role('manager')
 def get_users():
-    if not hasattr(current_user, 'role') or current_user.role not in ['admin', 'manager']:
-        return jsonify({'success': False, 'message': 'Không có quyền truy cập'}), 403
     role_filter = request.args.get('role')
     try:
         if current_user.role == 'manager':
@@ -102,10 +91,8 @@ def get_users():
 
 
 @admin_user_bp.route('/api/users/<int:user_id>', methods=['DELETE'])
-@login_required
+@require_role('manager')
 def delete_user_account(user_id):
-    if not hasattr(current_user, 'role') or current_user.role not in ['admin', 'manager']:
-        return jsonify({'success': False, 'message': 'Không có quyền truy cập'}), 403
     if user_id == current_user.id:
         return jsonify({'success': False, 'message': 'Không thể xóa tài khoản của chính mình'}), 400
     try:
@@ -120,10 +107,8 @@ def delete_user_account(user_id):
 
 
 @admin_user_bp.route('/api/users/<int:user_id>/reset-password', methods=['POST'])
-@login_required
+@require_role('manager')
 def reset_user_password(user_id):
-    if not hasattr(current_user, 'role') or current_user.role not in ['admin', 'manager']:
-        return jsonify({'success': False, 'message': 'Không có quyền truy cập'}), 403
     data = request.get_json()
     if not data or 'password' not in data:
         return jsonify({'success': False, 'message': 'Thiếu mật khẩu'}), 400
@@ -140,10 +125,8 @@ def reset_user_password(user_id):
 
 
 @admin_user_bp.route('/api/admin/users/<int:user_id>', methods=['DELETE'])
-@login_required
+@require_role('admin')
 def admin_delete_user_route(user_id):
-    if not hasattr(current_user, 'role') or current_user.role != 'admin':
-        return jsonify({'success': False, 'message': 'Không có quyền truy cập'}), 403
     if user_id == current_user.id:
         return jsonify({'success': False, 'message': 'Không thể xóa tài khoản của chính mình'}), 400
     try:
@@ -156,10 +139,8 @@ def admin_delete_user_route(user_id):
 
 
 @admin_user_bp.route('/api/admin/users/promote', methods=['POST'])
-@login_required
+@require_role('admin')
 def admin_promote_user():
-    if not hasattr(current_user, 'role') or current_user.role != 'admin':
-        return jsonify({'success': False, 'message': 'Không có quyền truy cập'}), 403
     data = request.get_json()
     user_id = data.get('user_id')
     new_role = data.get('role', 'manager')
@@ -181,10 +162,8 @@ def admin_promote_user():
 
 
 @admin_user_bp.route('/api/admin/users/demote', methods=['POST'])
-@login_required
+@require_role('admin')
 def admin_demote_user():
-    if not hasattr(current_user, 'role') or current_user.role != 'admin':
-        return jsonify({'success': False, 'message': 'Không có quyền truy cập'}), 403
     data = request.get_json()
     user_id = data.get('user_id')
     new_role = data.get('role', 'user')
@@ -206,10 +185,8 @@ def admin_demote_user():
 
 
 @admin_user_bp.route('/api/manager/users-permissions')
-@login_required
+@require_role('manager')
 def manager_get_users_permissions():
-    if not hasattr(current_user, 'role') or current_user.role not in ['admin', 'manager']:
-        return jsonify({'success': False, 'message': 'Không có quyền truy cập'}), 403
     try:
         users = db_manager.get_all_users_with_permissions()
         return jsonify({'success': True, 'users': users})

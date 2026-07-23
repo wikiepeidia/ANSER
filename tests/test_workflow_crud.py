@@ -118,7 +118,7 @@ def test_service_save_and_list_workflow(conn):
         conn, user_id=5,
         payload={"name": "Sales Flow", "data": {"nodes": []}},
     )
-    assert result["message"] == "Workflow saved successfully"
+    assert result["message"] == "Đã lưu workflow thành công"
     wid = result["id"]
     assert wid > 0
 

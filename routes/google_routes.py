@@ -100,7 +100,7 @@ def google_authorize():
         session.permanent = True
         flash('Google login successful!', 'success')
         if role == 'admin':
-            return redirect(url_for('pages.admin_workspace'))
+            return redirect(url_for('pages.admin_dashboard'))
         return redirect(url_for('pages.workspace'))
 
     except Exception as e:

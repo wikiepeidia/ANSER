@@ -4,6 +4,7 @@ import os
 from flask import Blueprint, jsonify, request, session
 from flask_login import current_user, login_required
 
+from core.security import require_role
 from core.services.analytics_service import analytics_service
 from core.services.operations_service import (
     create_automation, create_scheduled_report, delete_automation,
@@ -18,10 +19,8 @@ operations_bp = Blueprint('operations', __name__)
 
 
 @operations_bp.route('/api/admin/analytics/data', methods=['GET'])
-@login_required
+@require_role('manager')
 def api_get_analytics_data():
-    if not hasattr(current_user, 'role') or current_user.role not in ['admin', 'manager']:
-        return jsonify({'success': False, 'message': 'Không có quyền truy cập'}), 403
     property_id = request.args.get('property_id')
     if request.args.get('force') in ('1', 'true', 'yes'):
         try:
@@ -35,10 +34,8 @@ def api_get_analytics_data():
 
 
 @operations_bp.route('/api/admin/analytics/clear_cache', methods=['POST'])
-@login_required
+@require_role('manager')
 def api_admin_clear_analytics_cache():
-    if not hasattr(current_user, 'role') or current_user.role not in ['admin', 'manager']:
-        return jsonify({'success': False, 'message': 'Không có quyền truy cập'}), 403
     try:
         cache_file = os.path.join(os.getcwd(), 'secrets', 'ga_cache.json')
         if os.path.exists(cache_file):
@@ -61,7 +58,7 @@ def api_get_dashboard_stats():
 
 
 @operations_bp.route('/api/reports/stats', methods=['GET'])
-@login_required
+@require_role('manager')
 def api_get_report_stats():
     try:
         stats = get_report_stats(
@@ -74,7 +71,7 @@ def api_get_report_stats():
 
 
 @operations_bp.route('/api/reports/scheduled', methods=['GET'])
-@login_required
+@require_role('manager')
 def api_get_scheduled_reports():
     try:
         reports = get_scheduled_reports(current_user.id, getattr(current_user, 'role', 'user'))
@@ -84,7 +81,7 @@ def api_get_scheduled_reports():
 
 
 @operations_bp.route('/api/reports/scheduled', methods=['POST'])
-@login_required
+@require_role('manager')
 def api_create_scheduled_report():
     data = request.get_json()
     try:
@@ -97,8 +94,8 @@ def api_create_scheduled_report():
         return jsonify({'success': False, 'message': str(e)}), 500
 
 
-@operations_bp.route('/api/reports/scheduled/<int:report_id>', methods=['DELETE'])
-@login_required
+@operations_bp.route('/api/reports/scheduled/<report_id>', methods=['DELETE'])
+@require_role('manager')
 def api_delete_scheduled_report(report_id):
     try:
         delete_scheduled_report(report_id, current_user.id, getattr(current_user, 'role', 'user'))

@@ -99,7 +99,7 @@ def get_all_products(conn, warehouse_id=None, user_id=None, role='user'):
         query = (
             'SELECT p.id, p.code, p.name, p.category, p.unit, p.price,'
             ' COALESCE(ws.stock_quantity, 0) AS stock_quantity,'
-            ' p.description, p.created_at, p.image_url'
+            ' p.description, p.created_at, p.image_url, p.expiry_date'
             ' FROM products p'
             ' LEFT JOIN warehouse_stock ws ON ws.product_id = p.id AND ws.warehouse_id = ?'
         )
@@ -111,7 +111,7 @@ def get_all_products(conn, warehouse_id=None, user_id=None, role='user'):
         c.execute(query, tuple(params))
     else:
         query = (
-            'SELECT id, code, name, category, unit, price, stock_quantity, description, created_at, image_url'
+            'SELECT id, code, name, category, unit, price, stock_quantity, description, created_at, image_url, expiry_date'
             ' FROM products'
         )
         params = []
@@ -124,18 +124,20 @@ def get_all_products(conn, warehouse_id=None, user_id=None, role='user'):
     return [
         {'id': r['id'], 'code': r['code'], 'name': r['name'], 'category': r['category'],
          'unit': r['unit'], 'price': r['price'], 'stock_quantity': r['stock_quantity'],
-         'description': r['description'], 'created_at': r['created_at'], 'image_url': r['image_url']}
+         'description': r['description'], 'created_at': r['created_at'], 'image_url': r['image_url'],
+         'expiry_date': r['expiry_date']}
         for r in rows
     ]
 
 
-def create_product(conn, code, name, category, unit, price, stock_quantity, description, created_by, image_url=''):
+def create_product(conn, code, name, category, unit, price, stock_quantity, description, created_by,
+                    image_url='', expiry_date=None):
     c = conn.cursor()
     try:
         c.execute(
-            '''INSERT INTO products (code, name, category, unit, price, stock_quantity, description, created_by, image_url)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)''',
-            (code, name, category, unit, price, stock_quantity, description, created_by, image_url or None),
+            '''INSERT INTO products (code, name, category, unit, price, stock_quantity, description, created_by, image_url, expiry_date)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+            (code, name, category, unit, price, stock_quantity, description, created_by, image_url or None, expiry_date or None),
         )
         conn.commit()
         return True, None
@@ -147,12 +149,12 @@ def create_product(conn, code, name, category, unit, price, stock_quantity, desc
 
 
 def update_product(conn, product_id, name, category, unit, price, stock_quantity,
-                   description, image_url='', user_id=None, role='user'):
+                   description, image_url='', user_id=None, role='user', expiry_date=None):
     c = conn.cursor()
     try:
         query = '''UPDATE products SET name=?, category=?, unit=?, price=?, stock_quantity=?,
-               description=?, image_url=?, updated_at=CURRENT_TIMESTAMP WHERE id=?'''
-        params = [name, category, unit, price, stock_quantity, description, image_url or None, product_id]
+               description=?, image_url=?, expiry_date=?, updated_at=CURRENT_TIMESTAMP WHERE id=?'''
+        params = [name, category, unit, price, stock_quantity, description, image_url or None, expiry_date or None, product_id]
         if user_id is not None and not _can_access_all(role):
             query += ' AND created_by=?'
             params.append(user_id)

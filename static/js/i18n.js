@@ -185,6 +185,7 @@
             'products.next': 'Tiếp theo',
             'products.codeLabel': 'Mã SP',
             'products.stockQty': 'Số lượng tồn kho',
+            'products.expiryDate': 'Hạn sử dụng (nếu có)',
             'products.imageUrl': 'Hình ảnh (URL)',
 
             'imports.title': 'Quản lý nhập hàng',
@@ -320,6 +321,7 @@
             'adminWh.alertThreshold': 'Ngưỡng cảnh báo',
             'adminWh.stockAlertThreshold': 'Ngưỡng cảnh báo tồn kho',
             'adminWh.alertHint': 'Cảnh báo khi tồn kho sản phẩm dưới mức này',
+            'adminWh.notificationEmail': 'Email nhận thông báo',
             'adminWh.discordWebhookUrl': 'Discord Webhook URL',
             'adminWh.active': 'Đang hoạt động',
 
@@ -708,6 +710,7 @@
             'products.next': 'Next',
             'products.codeLabel': 'Product Code',
             'products.stockQty': 'Stock Quantity',
+            'products.expiryDate': 'Expiry Date (optional)',
             'products.imageUrl': 'Image (URL)',
 
             'imports.title': 'Import Management',
@@ -843,6 +846,7 @@
             'adminWh.alertThreshold': 'Alert Threshold',
             'adminWh.stockAlertThreshold': 'Stock Alert Threshold',
             'adminWh.alertHint': 'Alert when product stock falls below this level',
+            'adminWh.notificationEmail': 'Notification Email',
             'adminWh.discordWebhookUrl': 'Discord Webhook URL',
             'adminWh.active': 'Active',
 

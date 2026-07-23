@@ -70,6 +70,7 @@ function openAddProductModal() {
     document.getElementById('productUnit').value = 'pcs';
     document.getElementById('productPrice').value = '0';
     document.getElementById('productStock').value = '0';
+    document.getElementById('productExpiryDate').value = '';
     document.getElementById('productDescription').value = '';
     document.getElementById('productImageUrl').value = '';
     document.getElementById('productImagePreview').classList.add('d-none');
@@ -90,6 +91,7 @@ function editProduct(id) {
     document.getElementById('productUnit').value = product.unit;
     document.getElementById('productPrice').value = product.price;
     document.getElementById('productStock').value = product.stock_quantity;
+    document.getElementById('productExpiryDate').value = product.expiry_date || '';
     document.getElementById('productDescription').value = product.description || '';
     const imgUrl = product.image_url || '';
     document.getElementById('productImageUrl').value = imgUrl;
@@ -110,6 +112,7 @@ async function saveProduct() {
     const unit = document.getElementById('productUnit').value.trim();
     const price = parseFloat(document.getElementById('productPrice').value);
     const stock_quantity = parseInt(document.getElementById('productStock').value, 10);
+    const expiry_date = document.getElementById('productExpiryDate').value || null;
     const description = document.getElementById('productDescription').value.trim();
     const image_url = document.getElementById('productImageUrl').value.trim();
 
@@ -118,7 +121,7 @@ async function saveProduct() {
         return;
     }
 
-    const payload = { code, name, category, unit, price, stock_quantity, description, image_url };
+    const payload = { code, name, category, unit, price, stock_quantity, expiry_date, description, image_url };
 
     try {
         let response;

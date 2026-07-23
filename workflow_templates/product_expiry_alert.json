@@ -1,0 +1,113 @@
+{
+  "name": "Cảnh báo sản phẩm sắp hết hạn",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": { "interval": [{ "field": "hours", "hoursInterval": 24, "triggerAtHour": 8 }] }
+      },
+      "id": "pe-trigger",
+      "name": "Mỗi ngày 8h",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [180, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "http://host.docker.internal:5002/api/n8n/internal/expiring-products",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [{ "name": "days", "value": "7" }]
+        },
+        "authentication": "none",
+        "options": {}
+      },
+      "id": "pe-fetch",
+      "name": "Lấy sản phẩm sắp hết hạn",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [420, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "number": [{ "value1": "={{ $json.count }}", "operation": "larger", "value2": 0 }]
+        }
+      },
+      "id": "pe-if",
+      "name": "Có SP sắp hết hạn?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [660, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "http://host.docker.internal:5002/api/n8n/internal/warehouses",
+        "authentication": "none",
+        "options": {}
+      },
+      "id": "pe-warehouses",
+      "name": "Lấy email người nhận",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [900, 200]
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $('Lấy sản phẩm sắp hết hạn').first().json;\nconst warehouses = $input.first().json.warehouses || [];\nconst emails = [...new Set(warehouses.map(w => w.notification_email).filter(Boolean))];\nconst items = data.items || [];\nconst rows = items.map(p => `<tr><td>${p.name}</td><td>${p.code}</td><td>${p.stock_quantity}</td><td>${p.expiry_date}</td></tr>`).join('');\nconst html = `<h2>⏳ Cảnh báo sản phẩm sắp hết hạn sử dụng</h2><p>Có <b>${items.length}</b> sản phẩm hết hạn trong ${data.threshold_days} ngày tới:</p><table border=\"1\" cellpadding=\"6\" cellspacing=\"0\"><tr><th>Sản phẩm</th><th>Mã</th><th>Tồn kho</th><th>Hạn dùng</th></tr>${rows}</table>`;\nreturn [{ json: {\n  email_to: emails.join(','),\n  email_subject: `⏳ Cảnh báo ${items.length} sản phẩm sắp hết hạn sử dụng`,\n  email_html: html,\n} }];"
+      },
+      "id": "pe-format",
+      "name": "Tạo cảnh báo",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1140, 200]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [{ "value1": "={{ $json.email_to }}", "operation": "isNotEmpty" }]
+        }
+      },
+      "id": "pe-if-email",
+      "name": "Có email nhận?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [1380, 200]
+    },
+    {
+      "parameters": {
+        "fromEmail": "alerts@anser.local",
+        "toEmail": "={{ $json.email_to }}",
+        "subject": "={{ $json.email_subject }}",
+        "html": "={{ $json.email_html }}",
+        "options": {}
+      },
+      "id": "pe-email",
+      "name": "Gửi Email",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [1620, 140]
+    }
+  ],
+  "connections": {
+    "Mỗi ngày 8h":              { "main": [[{ "node": "Lấy sản phẩm sắp hết hạn", "type": "main", "index": 0 }]] },
+    "Lấy sản phẩm sắp hết hạn": { "main": [[{ "node": "Có SP sắp hết hạn?", "type": "main", "index": 0 }]] },
+    "Có SP sắp hết hạn?": {
+      "main": [
+        [{ "node": "Lấy email người nhận", "type": "main", "index": 0 }],
+        []
+      ]
+    },
+    "Lấy email người nhận": { "main": [[{ "node": "Tạo cảnh báo", "type": "main", "index": 0 }]] },
+    "Tạo cảnh báo":         { "main": [[{ "node": "Có email nhận?", "type": "main", "index": 0 }]] },
+    "Có email nhận?": {
+      "main": [
+        [{ "node": "Gửi Email", "type": "main", "index": 0 }],
+        []
+      ]
+    }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" }
+}

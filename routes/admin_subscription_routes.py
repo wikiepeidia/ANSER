@@ -1,7 +1,7 @@
 """Admin subscription-management routes — admin_sub_bp Blueprint."""
 from flask import Blueprint, jsonify, request
-from flask_login import current_user, login_required
 
+from core.security import require_role
 from core.services.subscription_service import (
     check_expired_subscriptions, extend_subscription, get_all_subscriptions,
     get_subscription_history, set_auto_renew,
@@ -11,18 +11,14 @@ admin_sub_bp = Blueprint('admin_subs', __name__)
 
 
 @admin_sub_bp.route('/api/admin/subscriptions', methods=['GET'])
-@login_required
+@require_role('admin')
 def api_get_subscriptions():
-    if not hasattr(current_user, 'role') or current_user.role != 'admin':
-        return jsonify({'success': False, 'message': 'Không có quyền truy cập'}), 403
     return jsonify({'success': True, 'subscriptions': get_all_subscriptions()})
 
 
 @admin_sub_bp.route('/api/admin/subscription/auto-renew', methods=['POST'])
-@login_required
+@require_role('admin')
 def api_toggle_auto_renew():
-    if not hasattr(current_user, 'role') or current_user.role != 'admin':
-        return jsonify({'success': False, 'message': 'Không có quyền truy cập'}), 403
     data = request.get_json()
     user_id = data.get('user_id')
     auto_renew = data.get('auto_renew', False)
@@ -36,10 +32,8 @@ def api_toggle_auto_renew():
 
 
 @admin_sub_bp.route('/api/admin/subscription/extend', methods=['POST'])
-@login_required
+@require_role('admin')
 def api_extend_subscription():
-    if not hasattr(current_user, 'role') or current_user.role != 'admin':
-        return jsonify({'success': False, 'message': 'Không có quyền truy cập'}), 403
     data = request.get_json()
     user_id = data.get('user_id')
     plan_type = data.get('plan_type')
@@ -59,18 +53,14 @@ def api_extend_subscription():
 
 
 @admin_sub_bp.route('/api/admin/subscription-history', methods=['GET'])
-@login_required
+@require_role('admin')
 def api_get_subscription_history():
-    if not hasattr(current_user, 'role') or current_user.role != 'admin':
-        return jsonify({'success': False, 'message': 'Không có quyền truy cập'}), 403
     return jsonify({'success': True, 'history': get_subscription_history()})
 
 
 @admin_sub_bp.route('/api/admin/extend-subscription', methods=['POST'])
-@login_required
+@require_role('admin')
 def api_extend_subscription_v2():
-    if not hasattr(current_user, 'role') or current_user.role != 'admin':
-        return jsonify({'success': False, 'message': 'Không có quyền truy cập'}), 403
     data = request.get_json()
     user_id = data.get('user_id')
     subscription_type = data.get('subscription_type')
@@ -88,10 +78,8 @@ def api_extend_subscription_v2():
 
 
 @admin_sub_bp.route('/api/admin/check-expired-subscriptions', methods=['POST'])
-@login_required
+@require_role('admin')
 def api_check_expired_subscriptions():
-    if not hasattr(current_user, 'role') or current_user.role != 'admin':
-        return jsonify({'success': False, 'message': 'Không có quyền truy cập'}), 403
     try:
         count = check_expired_subscriptions()
         return jsonify({'success': True, 'demoted_count': count,

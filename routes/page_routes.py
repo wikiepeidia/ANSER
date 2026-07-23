@@ -5,6 +5,7 @@ from flask_login import current_user, login_required
 from core.config import Config
 from core.extensions import db_manager
 from core.logger import get_logger
+from core.security import require_role
 
 logger = get_logger(__name__)
 
@@ -51,22 +52,10 @@ def index():
 
 
 @page_bp.route('/admin')
-@login_required
+@require_role('admin', redirect_to='pages.workspace')
 def admin_dashboard():
-    if not hasattr(current_user, 'role') or current_user.role != 'admin':
-        flash('You do not have permission to access this page', 'error')
-        return redirect(url_for('pages.workspace'))
     db_type = 'PostgreSQL' if getattr(Config, 'USE_POSTGRES', False) else 'SQLite'
     return render_template('admin_dashboard.html', user=current_user, db_type=db_type)
-
-
-@page_bp.route('/admin/workspace')
-@login_required
-def admin_workspace():
-    if not hasattr(current_user, 'role') or current_user.role != 'admin':
-        flash('You do not have permission to access this page', 'error')
-        return redirect(url_for('pages.workspace'))
-    return redirect(url_for('pages.admin_dashboard'))
 
 
 @page_bp.route('/dashboard')
@@ -102,56 +91,38 @@ def settings():
 
 
 @page_bp.route('/manager/create-user')
-@login_required
+@require_role('manager', redirect_to='pages.workspace')
 def create_user_account():
-    if not hasattr(current_user, 'role') or current_user.role not in ['admin', 'manager']:
-        flash('You do not have permission to access this page', 'error')
-        return redirect(url_for('pages.workspace'))
     return render_template('create_user_account.html', user=current_user)
 
 
 @page_bp.route('/admin/managers')
-@login_required
+@require_role('admin', redirect_to='pages.workspace')
 def admin_managers():
-    if not hasattr(current_user, 'role') or current_user.role != 'admin':
-        flash('You do not have permission to access this page', 'error')
-        return redirect(url_for('pages.workspace'))
     return render_template('admin_managers.html', user=current_user)
 
 
 @page_bp.route('/admin/warehouses')
-@login_required
+@require_role('admin', redirect_to='pages.workspace')
 def admin_warehouses():
-    if not hasattr(current_user, 'role') or current_user.role != 'admin':
-        flash('You do not have permission to access this page', 'error')
-        return redirect(url_for('pages.workspace'))
     return render_template('admin_warehouses.html', user=current_user)
 
 
 @page_bp.route('/admin/roles')
-@login_required
+@require_role('admin', redirect_to='pages.workspace')
 def admin_roles():
-    if not hasattr(current_user, 'role') or current_user.role != 'admin':
-        flash('You do not have permission to access this page', 'error')
-        return redirect(url_for('pages.workspace'))
     return render_template('admin_roles.html', user=current_user)
 
 
 @page_bp.route('/admin/analytics')
-@login_required
+@require_role('manager', redirect_to='pages.workspace')
 def admin_analytics():
-    if not hasattr(current_user, 'role') or current_user.role not in ['admin', 'manager']:
-        flash('You do not have permission to access this page', 'error')
-        return redirect(url_for('pages.workspace'))
     return render_template('admin_analytics.html', user=current_user, analytics_data=None)
 
 
 @page_bp.route('/admin/subscriptions')
-@login_required
+@require_role('admin', redirect_to='pages.workspace')
 def admin_subscriptions():
-    if not hasattr(current_user, 'role') or current_user.role != 'admin':
-        flash('You do not have permission to access this page', 'error')
-        return redirect(url_for('pages.workspace'))
     return render_template('admin_subscriptions.html', user=current_user)
 
 
@@ -186,7 +157,7 @@ def se_auto_import():
 
 
 @page_bp.route('/se/reports')
-@login_required
+@require_role('manager', redirect_to='pages.workspace')
 def se_reports():
     return render_template('se_reports.html', user=current_user)
 

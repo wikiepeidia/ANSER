@@ -36,6 +36,33 @@ class Config:
     N8N_PORT = os.environ.get('N8N_PORT', '5680')
     N8N_ORIGIN = f"http://localhost:{N8N_PORT}"
 
+    # SMTP for emails this app sends directly (core/smtp_mailer.py — the
+    # in-app scheduled-reports runner). This process runs on the host, not
+    # in Docker, so it reaches MailHog via its published host port.
+    # Override with real SMTP (Gmail/Brevo/SendGrid/...) before going live.
+    SMTP_HOST = os.environ.get('SMTP_HOST', '127.0.0.1')
+    SMTP_PORT = int(os.environ.get('SMTP_PORT', '1025'))
+    SMTP_USER = os.environ.get('SMTP_USER', '')
+    SMTP_PASS = os.environ.get('SMTP_PASS', '')
+    SMTP_FROM = os.environ.get('SMTP_FROM', 'alerts@anser.local')
+    SMTP_SECURE = os.environ.get('SMTP_SECURE', 'False').lower() == 'true'
+
+    # SMTP as reached from *inside* the n8n container (its "Send Email"
+    # nodes — low-stock alerts, daily sales report) — Docker compose service
+    # name, not a host address. See core/config.py's SMTP_HOST for the
+    # host-side equivalent this app's own process uses.
+    N8N_SMTP_HOST = os.environ.get('N8N_SMTP_HOST', 'mailhog')
+
+    # NOT the same meaning as SMTP_SECURE above, despite sharing a name.
+    # n8n's node uses nodemailer, where secure=true means "TLS from the
+    # first byte" (port 465 style) and secure=false means "plain/STARTTLS"
+    # (port 587 style, auto-upgraded) — the opposite framing from
+    # smtplib's starttls()-if-True flag SMTP_SECURE drives. Gmail/most
+    # providers on port 587 want SMTP_SECURE=True (so smtp_mailer.py calls
+    # starttls()) *and* N8N_SMTP_SECURE=False (so nodemailer takes its own
+    # STARTTLS path) at the same time — reusing one flag for both broke this.
+    N8N_SMTP_SECURE = os.environ.get('N8N_SMTP_SECURE', 'False').lower() == 'true'
+
     # Sản xuất — a separate Flask app/API/DB (see ANSER_san-xuat), not part
     # of this codebase.
     SANXUAT_ORIGIN = os.environ.get('SANXUAT_ORIGIN', 'http://127.0.0.1:5003')

@@ -14,16 +14,35 @@ logger = get_logger(__name__)
 inventory_bp = Blueprint("inventory", __name__)
 
 
-def _notify_n8n_order(order_type, data, user_email):
-    """Fire-and-forget: notify n8n when import/export is created."""
-    import os
+def _notify_n8n_order(order_type, data, user_email, warehouse_id=None):
+    """Fire-and-forget: notify n8n when import/export is created.
+
+    Recipient is the warehouse's own notification_email (admin_warehouses.html
+    — the same field low_stock_alert/daily_sales_report already use), not a
+    Discord webhook — order_discord_notify.json's n8n side moved to email,
+    but this caller still built the old discord_url payload shape and was
+    gated behind an unset DISCORD_WEBHOOK_URL, so it silently never fired.
+    Skips entirely (no call at all) if the active warehouse has no email
+    configured, same as the n8n template's own "Có email?" guard.
+    """
     import threading
     import requests
 
     from core.config import Config
+    from flask import current_app as _app
 
-    discord_url = os.environ.get('DISCORD_WEBHOOK_URL', '')
-    if not discord_url:
+    email = ''
+    if warehouse_id:
+        db = _app.extensions['database']
+        conn = db.get_business_connection()
+        try:
+            c = conn.cursor()
+            c.execute('SELECT notification_email FROM warehouses WHERE id = ?', (warehouse_id,))
+            row = c.fetchone()
+            email = (row['notification_email'] if row else '') or ''
+        finally:
+            conn.close()
+    if not email:
         return
 
     def _send():
@@ -33,7 +52,7 @@ def _notify_n8n_order(order_type, data, user_email):
                 'items': data.get('items', []),
                 'notes': data.get('notes', ''),
                 'user': user_email,
-                'discord_url': discord_url,
+                'email': email,
             }
             requests.post(f'{Config.N8N_ORIGIN}/webhook/new-order',
                           json=payload, timeout=10)
@@ -88,7 +107,7 @@ def api_create_import():
             result = inventory_tx_service.create_import_transaction(conn, current_user.id, data, warehouse_id)
         else:
             result = inventory_tx_service.create_import_transaction(conn, current_user.id, data)
-        _notify_n8n_order('import', data, getattr(current_user, 'email', ''))
+        _notify_n8n_order('import', data, getattr(current_user, 'email', ''), warehouse_id)
         return jsonify({
             'success': True,
             'message': result['message'],
@@ -250,7 +269,7 @@ def api_create_export():
                 data,
                 current_app.extensions['automation_engine'],
             )
-        _notify_n8n_order('export', data, getattr(current_user, 'email', ''))
+        _notify_n8n_order('export', data, getattr(current_user, 'email', ''), warehouse_id)
         return jsonify({'success': True, 'message': result['message'], 'id': result['id']})
     except ServiceValidationError as e:
         return jsonify({'success': False, 'message': str(e)}), 400

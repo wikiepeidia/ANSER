@@ -99,7 +99,7 @@ def test_save_workflow_for_user_create_branch_commits_once():
     )
 
     assert result["id"] == 88
-    assert result["message"] == "Workflow saved successfully"
+    assert result["message"] == "Đã lưu workflow thành công"
     assert any("INSERT INTO workflows" in entry[0] for entry in cursor.executed)
     assert conn.commits == 1
 

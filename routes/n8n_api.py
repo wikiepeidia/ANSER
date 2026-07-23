@@ -4,6 +4,7 @@ import os
 import secrets
 import json
 import glob
+from datetime import datetime
 
 import requests as _req
 from flask import Blueprint, jsonify, request
@@ -175,6 +176,40 @@ def _n8n_delete(path):
     return _n8n_request('DELETE', path)
 
 
+# ── Credential auto-provisioning ────────────────────────────────────────────
+
+_SMTP_CRED_NAME = 'ANSER SMTP'
+
+
+def _ensure_smtp_credential():
+    """Return the id of the shared SMTP credential, creating it from
+    Config.SMTP_* on first use. Mirrors _auto_setup()'s "no manual n8n UI
+    clicking required" approach — deploy_template() calls this whenever a
+    template needs an emailSend node wired up."""
+    r = _n8n_get('credentials')
+    if r and r.status_code == 200:
+        for c in r.json().get('data', []):
+            if c.get('name') == _SMTP_CRED_NAME and c.get('type') == 'smtp':
+                return c['id']
+    payload = {
+        'name': _SMTP_CRED_NAME,
+        'type': 'smtp',
+        'data': {
+            'user': Config.SMTP_USER,
+            'password': Config.SMTP_PASS,
+            'host': Config.N8N_SMTP_HOST,
+            'port': Config.SMTP_PORT,
+            'secure': Config.N8N_SMTP_SECURE,
+        },
+    }
+    r = _n8n_post('credentials', data=payload)
+    if r and r.status_code in (200, 201):
+        return r.json().get('data', {}).get('id')
+    logger.error('[n8n] Failed to create SMTP credential: %s',
+                 r.text[:200] if r else 'no response')
+    return None
+
+
 # ── API Routes ────────────────────────────────────────────────────────────────
 
 @n8n_api_bp.route('/api/n8n/status', methods=['GET'])
@@ -337,12 +372,89 @@ def internal_iot_events():
         return jsonify({'success': False, 'error': str(exc), 'events': []})
 
 
+@n8n_api_bp.route('/api/n8n/internal/iot-events', methods=['POST'])
+def internal_iot_events_insert():
+    """Internal endpoint for n8n workflows — no auth required.
+
+    Replaces the old rag-service call (that service no longer exists —
+    lived in a separate demo project, was never part of this app's own
+    docker-compose). Used by iot_pos_demo.json's webhook to persist the
+    event it just received before formatting a notification from it.
+    """
+    from flask import current_app
+    db = current_app.extensions.get('database')
+    if not db:
+        return jsonify({'success': False, 'error': 'DB not available'}), 503
+    data = request.get_json(silent=True) or {}
+    device_id = (data.get('device_id') or '').strip()
+    event_type = (data.get('event_type') or '').strip()
+    payload = data.get('payload') or {}
+    if not device_id or not event_type:
+        return jsonify({'success': False, 'error': 'device_id and event_type are required'}), 400
+    try:
+        conn = db.get_business_connection()
+        cursor = conn.cursor()
+        if db.use_postgres:
+            cursor.execute(
+                'INSERT INTO iot_events (device_id, event_type, payload) VALUES (%s, %s, %s) '
+                'RETURNING id, created_at',
+                (device_id, event_type, json.dumps(payload)),
+            )
+        else:
+            cursor.execute(
+                'INSERT INTO iot_events (device_id, event_type, payload) VALUES (?, ?, ?)',
+                (device_id, event_type, json.dumps(payload)),
+            )
+        row = cursor.fetchone() if db.use_postgres else None
+        conn.commit()
+        result_id = row['id'] if row else cursor.lastrowid
+        created_at = row['created_at'].isoformat() if row and hasattr(row['created_at'], 'isoformat') else None
+        conn.close()
+        return jsonify({'success': True, 'id': result_id, 'created_at': created_at}), 201
+    except Exception as exc:
+        return jsonify({'success': False, 'error': str(exc)}), 500
+
+
+@n8n_api_bp.route('/api/n8n/internal/customers', methods=['POST'])
+def internal_customers_insert():
+    """Internal endpoint for n8n workflows — no auth required.
+
+    Replaces the old rag-service call for new_customer_welcome.json.
+    Delegates to the same create_customer() the authenticated /api/customers
+    route uses, generating a code if the caller didn't supply one.
+    """
+    from flask import current_app
+    from core.services.customer_service import create_customer
+    db = current_app.extensions.get('database')
+    if not db:
+        return jsonify({'success': False, 'error': 'DB not available'}), 503
+    data = request.get_json(silent=True) or {}
+    name = (data.get('name') or '').strip()
+    if not name:
+        return jsonify({'success': False, 'error': 'name is required'}), 400
+    code = (data.get('code') or '').strip() or f'C-{secrets.token_hex(4).upper()}'
+    conn = db.get_business_connection()
+    try:
+        ok, error = create_customer(
+            conn, code, name,
+            data.get('phone'), data.get('email'), data.get('address'), data.get('notes'),
+            created_by=None,
+        )
+        if not ok:
+            return jsonify({'success': False, 'error': error}), 409
+        return jsonify({'success': True, 'code': code, 'name': name}), 201
+    except Exception as exc:
+        return jsonify({'success': False, 'error': str(exc)}), 500
+    finally:
+        conn.close()
+
+
 @n8n_api_bp.route('/api/n8n/internal/warehouses', methods=['GET'])
 def internal_warehouses():
     """Internal endpoint for n8n workflows — no auth required.
 
-    Returns active warehouse alert profiles (threshold + Discord webhook)
-    for the low_stock_alert workflow to loop over.
+    Returns active warehouse alert profiles (threshold + Discord webhook +
+    notification email) for the low_stock_alert workflow to loop over.
     """
     from flask import current_app
     db = current_app.extensions.get('database')
@@ -352,7 +464,7 @@ def internal_warehouses():
         conn = db.get_business_connection()
         cursor = conn.cursor()
         cursor.execute(
-            'SELECT id, name, low_stock_threshold, discord_webhook_url '
+            'SELECT id, name, low_stock_threshold, discord_webhook_url, notification_email '
             'FROM warehouses WHERE is_active = 1 ORDER BY name'
         )
         rows = cursor.fetchall()
@@ -399,6 +511,189 @@ def internal_low_stock():
         return jsonify({'success': True, 'threshold': threshold, 'count': len(items), 'items': items})
     except Exception as exc:
         return jsonify({'success': False, 'error': str(exc), 'items': []})
+
+
+@n8n_api_bp.route('/api/n8n/internal/daily-sales', methods=['GET'])
+def internal_daily_sales():
+    """Internal endpoint for n8n workflows — no auth required.
+
+    Replaces the old rag-service call (that service no longer exists — it
+    lived in a separate demo project, was never part of this app's own
+    docker-compose, so daily_sales_report.json 404'd on every real run).
+    Computes the same summary directly from this app's own `sales` table.
+
+    Default is a single day (?date=YYYY-MM-DD, defaults to today) — pass
+    ?days=N instead for an N-day lookback window ending today (used by
+    weekly_sales_report.json/monthly_sales_report.json with days=7/30) so
+    those reuse this same aggregation instead of forking a near-duplicate.
+    """
+    from flask import current_app
+    db = current_app.extensions.get('database')
+    if not db:
+        return jsonify({'success': False, 'error': 'DB not available'})
+    days = request.args.get('days', type=int)
+    date_str = request.args.get('date') or datetime.now().strftime('%Y-%m-%d')
+    try:
+        conn = db.get_business_connection()
+        cursor = conn.cursor()
+        if days:
+            if db.use_postgres:
+                where_clause = "created_at::date BETWEEN (CURRENT_DATE - %s * INTERVAL '1 day') AND CURRENT_DATE"
+                where_params = (days,)
+            else:
+                where_clause = "date(created_at) BETWEEN date('now', ?) AND date('now')"
+                where_params = (f'-{days} days',)
+        else:
+            if db.use_postgres:
+                where_clause = 'created_at::date = %s::date'
+            else:
+                where_clause = 'date(created_at) = date(?)'
+            where_params = (date_str,)
+
+        cursor.execute(
+            'SELECT COUNT(*) AS total_orders, COALESCE(SUM(total_amount), 0) AS total_revenue,'
+            f' COUNT(DISTINCT user_id) AS unique_staff FROM sales WHERE {where_clause}', where_params
+        )
+        row = cursor.fetchone()
+        summary = dict(row) if hasattr(row, 'keys') else dict(zip([d[0] for d in cursor.description], row))
+        summary['total_revenue'] = float(summary['total_revenue'] or 0)
+
+        cursor.execute(
+            f'SELECT items FROM sales WHERE {where_clause} AND items IS NOT NULL', where_params
+        )
+        totals = {}
+        for r in cursor.fetchall():
+            raw = r['items'] if hasattr(r, 'keys') else r[0]
+            try:
+                items = json.loads(raw) if isinstance(raw, str) else (raw or [])
+            except Exception:
+                items = []
+            for item in items:
+                if not isinstance(item, dict):
+                    continue
+                name = item.get('name', 'N/A')
+                qty = int(item.get('qty', 0) or 0)
+                price = float(item.get('price', 0) or 0)
+                agg = totals.setdefault(name, {'product_name': name, 'qty_sold': 0, 'revenue': 0.0})
+                agg['qty_sold'] += qty
+                agg['revenue'] += qty * price
+        top_products = sorted(totals.values(), key=lambda x: x['revenue'], reverse=True)[:5]
+
+        conn.close()
+        period = f'{days} ngày qua' if days else date_str
+        return jsonify({'success': True, 'date': date_str, 'period': period, 'days': days, 'summary': summary, 'top_products': top_products})
+    except Exception as exc:
+        return jsonify({'success': False, 'error': str(exc)})
+
+
+@n8n_api_bp.route('/api/n8n/internal/expiring-products', methods=['GET'])
+def internal_expiring_products():
+    """Internal endpoint for n8n workflows — no auth required.
+
+    Products with expiry_date set (nullable — most won't have one) that
+    falls within the next N days. Backs product_expiry_alert.json.
+    """
+    from flask import current_app
+    db = current_app.extensions.get('database')
+    if not db:
+        return jsonify({'success': False, 'error': 'DB not available', 'items': []})
+    days = request.args.get('days', 7, type=int)
+    try:
+        conn = db.get_business_connection()
+        cursor = conn.cursor()
+        if db.use_postgres:
+            cursor.execute(
+                "SELECT name, code, stock_quantity, expiry_date FROM products "
+                "WHERE expiry_date IS NOT NULL AND expiry_date != '' "
+                "AND expiry_date::date BETWEEN CURRENT_DATE AND (CURRENT_DATE + %s * INTERVAL '1 day') "
+                "ORDER BY expiry_date ASC",
+                (days,),
+            )
+        else:
+            cursor.execute(
+                "SELECT name, code, stock_quantity, expiry_date FROM products "
+                "WHERE expiry_date IS NOT NULL AND expiry_date != '' "
+                "AND date(expiry_date) BETWEEN date('now') AND date('now', ?) "
+                "ORDER BY expiry_date ASC",
+                (f'+{days} days',),
+            )
+        rows = cursor.fetchall()
+        items = [
+            dict(r) if hasattr(r, 'keys') else dict(zip([d[0] for d in cursor.description], r))
+            for r in rows
+        ]
+        conn.close()
+        return jsonify({'success': True, 'threshold_days': days, 'count': len(items), 'items': items})
+    except Exception as exc:
+        return jsonify({'success': False, 'error': str(exc), 'items': []})
+
+
+@n8n_api_bp.route('/api/n8n/internal/expiring-subscriptions', methods=['GET'])
+def internal_expiring_subscriptions():
+    """Internal endpoint for n8n workflows — no auth required.
+
+    manager_subscriptions (business DB) has no email column — users (auth
+    DB) does. Postgres doesn't support cross-database JOINs even within the
+    same Neon project, so this does two queries and merges in Python,
+    matching core/services/subscription_service.py's established pattern
+    for the exact same DB split.
+    """
+    from flask import current_app
+    db = current_app.extensions.get('database')
+    if not db:
+        return jsonify({'success': False, 'error': 'DB not available', 'subscriptions': []})
+    days = request.args.get('days', 7, type=int)
+    try:
+        conn = db.get_business_connection()
+        cursor = conn.cursor()
+        if db.use_postgres:
+            cursor.execute(
+                "SELECT user_id, subscription_type, end_date FROM manager_subscriptions "
+                "WHERE status = 'active' AND end_date::date BETWEEN CURRENT_DATE AND (CURRENT_DATE + %s * INTERVAL '1 day')",
+                (days,),
+            )
+        else:
+            cursor.execute(
+                "SELECT user_id, subscription_type, end_date FROM manager_subscriptions "
+                "WHERE status = 'active' AND date(end_date) BETWEEN date('now') AND date('now', ?)",
+                (f'+{days} days',),
+            )
+        rows = [dict(r) if hasattr(r, 'keys') else dict(zip([d[0] for d in cursor.description], r))
+                for r in cursor.fetchall()]
+        conn.close()
+
+        user_ids = [r['user_id'] for r in rows]
+        emails = {}
+        if user_ids:
+            auth_conn = db.get_connection()
+            ac = auth_conn.cursor()
+            ph = ', '.join(['%s'] * len(user_ids)) if db.use_postgres else ', '.join(['?'] * len(user_ids))
+            ac.execute(f'SELECT id, name, email FROM users WHERE id IN ({ph})', user_ids)
+            for u in ac.fetchall():
+                u = dict(u) if hasattr(u, 'keys') else dict(zip([d[0] for d in ac.description], u))
+                # manager_subscriptions.user_id is TEXT in production (predates
+                # Alembic, same drift as scheduled_reports.id/iot_events —
+                # see migration 006's docstring) while users.id is a real
+                # INTEGER; str() both sides so the lookup below actually matches
+                # instead of silently finding nothing.
+                emails[str(u['id'])] = u
+            auth_conn.close()
+
+        subs = []
+        for r in rows:
+            u = emails.get(str(r['user_id']))
+            if not u or not u.get('email'):
+                continue
+            end_date = r['end_date']
+            subs.append({
+                'user_email': u['email'],
+                'user_name': u.get('name') or u['email'],
+                'subscription_type': r['subscription_type'],
+                'end_date': end_date.isoformat() if hasattr(end_date, 'isoformat') else end_date,
+            })
+        return jsonify({'success': True, 'subscriptions': subs, 'count': len(subs)})
+    except Exception as exc:
+        return jsonify({'success': False, 'error': str(exc), 'subscriptions': []})
 
 
 def _detect_trigger(nodes):
@@ -459,17 +754,16 @@ def list_executions(wf_id):
 # ── Template API ─────────────────────────────────────────────────────────────
 
 _TEMPLATE_META = {
-    'iot_pos_demo':         {'icon': 'fa-cash-register',  'color': '#FF6B35', 'label': 'POS → NeonDB → Discord',     'desc': 'Nhận sự kiện POS, lưu DB, thông báo Discord'},
-    'daily_sales_report':   {'icon': 'fa-chart-bar',      'color': '#306699', 'label': 'Báo cáo doanh số hàng ngày', 'desc': 'Mỗi 20h tổng hợp sales → Discord embed'},
-    'low_stock_alert':      {'icon': 'fa-boxes',          'color': '#FF9800', 'label': 'Cảnh báo tồn kho thấp',      'desc': 'Mỗi 6h check stock < 10 → Discord cảnh báo'},
-    'new_customer_welcome': {'icon': 'fa-user-plus',      'color': '#34A700', 'label': 'Khách hàng mới → Welcome',   'desc': 'Webhook nhận KH mới → NeonDB → Discord'},
-    'ai_security_analyzer': {'icon': 'fa-shield-alt',     'color': '#E91E63', 'label': 'AI Security Log Analyzer',   'desc': 'Phân tích log bảo mật bằng LLM + RAG'},
-    'iot_events_ingest':    {'icon': 'fa-satellite-dish',  'color': '#009688', 'label': 'IoT Events Ingest',          'desc': 'Webhook nhận IoT event → NeonDB'},
-    'sample_schedule_http': {'icon': 'fa-clock',           'color': '#607D8B', 'label': 'Schedule + HTTP Request',   'desc': 'Chạy định kỳ, gọi API bên ngoài'},
-    'sample_webhook_echo':  {'icon': 'fa-bolt',            'color': '#795548', 'label': 'Webhook Echo',              'desc': 'Nhận webhook và trả response'},
-    'query_neondb':         {'icon': 'fa-database',        'color': '#00BCD4', 'label': 'Query NeonDB',              'desc': 'Truy vấn IoT events từ NeonDB → trả kết quả ngay'},
-    'notify_discord':       {'icon': 'fa-comment-dots',    'color': '#5865F2', 'label': 'Notify Discord',            'desc': 'Lấy data NeonDB → gửi embed đẹp lên Discord'},
-    'order_discord_notify': {'icon': 'fa-shopping-cart',   'color': '#4CAF50', 'label': 'Đơn hàng → Discord',       'desc': 'Nhập/xuất kho → tự động thông báo Discord'},
+    'iot_pos_demo':                 {'icon': 'fa-cash-register', 'color': '#FF6B35', 'label': 'POS → NeonDB → Email',       'desc': 'Nhận sự kiện POS, lưu DB, thông báo Email'},
+    'daily_sales_report':           {'icon': 'fa-chart-bar',     'color': '#306699', 'label': 'Báo cáo doanh số hàng ngày', 'desc': 'Mỗi ngày tổng hợp sales → Email cho các kho'},
+    'weekly_sales_report':          {'icon': 'fa-chart-line',    'color': '#2E7D32', 'label': 'Báo cáo doanh số hàng tuần', 'desc': 'Mỗi 7 ngày tổng hợp sales → Email cho các kho'},
+    'monthly_sales_report':         {'icon': 'fa-calendar-alt',  'color': '#6A1B9A', 'label': 'Báo cáo doanh số hàng tháng','desc': 'Mỗi 30 ngày tổng hợp sales → Email cho các kho'},
+    'low_stock_alert':              {'icon': 'fa-boxes',         'color': '#FF9800', 'label': 'Cảnh báo tồn kho thấp',      'desc': 'Mỗi 6h check stock thấp → Email cảnh báo'},
+    'product_expiry_alert':         {'icon': 'fa-hourglass-half','color': '#D32F2F', 'label': 'Cảnh báo hết hạn sử dụng',   'desc': 'Mỗi ngày check sản phẩm sắp hết hạn → Email'},
+    'unusual_transaction_alert':    {'icon': 'fa-exclamation-triangle', 'color': '#C62828', 'label': 'Cảnh báo giao dịch bất thường', 'desc': 'Giao dịch bất thường (đối chiếu trung bình) → Email'},
+    'subscription_renewal_reminder':{'icon': 'fa-bell',          'color': '#F57F17', 'label': 'Nhắc gia hạn gói dịch vụ',   'desc': 'Mỗi ngày check gói sắp hết hạn → Email cho chủ tài khoản'},
+    'new_customer_welcome':         {'icon': 'fa-user-plus',     'color': '#34A700', 'label': 'Khách hàng mới → Welcome',   'desc': 'Tự động khi thêm khách hàng mới → Email'},
+    'order_discord_notify':         {'icon': 'fa-shopping-cart', 'color': '#4CAF50', 'label': 'Đơn hàng → Email',          'desc': 'Nhập/xuất kho → tự động gửi email'},
 }
 
 
@@ -497,6 +791,62 @@ def list_templates():
     return jsonify({'success': True, 'templates': templates})
 
 
+_DAILY_REPORT_WF_NAME = 'Báo cáo doanh số hàng ngày'
+_DAILY_REPORT_TRIGGER_NODE = 'Mỗi ngày 20h'
+
+
+def _get_daily_report_hour():
+    """Read the 'daily_report_hour' system_settings value (see /settings'
+    system section) — falls back to the template's own default (20) if
+    unset or unparseable."""
+    from flask import current_app
+    db = current_app.extensions.get('database')
+    if not db:
+        return 20
+    try:
+        conn = db.get_business_connection()
+        c = conn.cursor()
+        c.execute("SELECT value FROM system_settings WHERE key = 'daily_report_hour'")
+        row = c.fetchone()
+        conn.close()
+        return int(row['value']) if row and row['value'] not in (None, '') else 20
+    except Exception:
+        return 20
+
+
+def sync_daily_report_hour(hour):
+    """Push a new send-hour to the already-deployed daily_sales_report
+    workflow's schedule trigger, if one exists — called both at deploy
+    time and whenever /settings' daily_report_hour value is saved, so
+    changing it takes effect immediately without redeploying."""
+    try:
+        hour = max(0, min(23, int(hour)))
+    except (TypeError, ValueError):
+        return False
+    _ensure_auth()
+    r = _n8n_get('workflows')
+    if not r or r.status_code != 200:
+        return False
+    for w in r.json().get('data', []):
+        if w.get('name') == _DAILY_REPORT_WF_NAME:
+            wf = _n8n_get(f"workflows/{w['id']}").json().get('data', {})
+            nodes = wf.get('nodes', [])
+            changed = False
+            for n in nodes:
+                if n.get('name') == _DAILY_REPORT_TRIGGER_NODE:
+                    n['parameters'] = {
+                        'rule': {'interval': [{'field': 'hours', 'hoursInterval': 24, 'triggerAtHour': hour}]},
+                    }
+                    changed = True
+            if changed:
+                _n8n_patch(f"workflows/{w['id']}", data={
+                    'nodes': nodes, 'connections': wf.get('connections', {}),
+                    'settings': wf.get('settings', {}), 'name': wf.get('name'),
+                })
+            return changed
+    return False
+
+
 @n8n_api_bp.route('/api/n8n/templates/deploy', methods=['POST'])
 @login_required
 def deploy_template():
@@ -512,6 +862,26 @@ def deploy_template():
 
     _ensure_auth()
     wf_name = wf.get('name', slug)
+
+    # Wire up SMTP credentials for any Send Email node — created on first
+    # use so the template JSON never has to hardcode a credential id.
+    cred_id = None
+    for node in wf.get('nodes', []):
+        if node.get('type') == 'n8n-nodes-base.emailSend':
+            if cred_id is None:
+                cred_id = _ensure_smtp_credential()
+            if cred_id:
+                node['credentials'] = {'smtp': {'id': cred_id, 'name': _SMTP_CRED_NAME}}
+
+    # daily_sales_report's send hour is configurable (/settings, system
+    # section) rather than fixed at the template's default of 20h.
+    if slug == 'daily_sales_report':
+        hour = _get_daily_report_hour()
+        for node in wf.get('nodes', []):
+            if node.get('name') == _DAILY_REPORT_TRIGGER_NODE:
+                node['parameters'] = {
+                    'rule': {'interval': [{'field': 'hours', 'hoursInterval': 24, 'triggerAtHour': hour}]},
+                }
 
     # Check existing — unarchive if needed
     r = _n8n_get('workflows')

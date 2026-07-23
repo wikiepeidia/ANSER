@@ -3,12 +3,50 @@ import ipaddress
 import os
 import socket
 import uuid
+from functools import wraps
 from urllib.parse import urlparse
 
-from flask import current_app, jsonify
+from flask import current_app, flash, jsonify, redirect, url_for
+from flask_login import current_user
 
 
 LOCAL_ENVIRONMENTS = {"dev", "development", "test", "testing"}
+
+# admin > manager > user. require_role(min_role) allows that role and any
+# role ranked above it — e.g. require_role('manager') lets manager and admin
+# through, blocks user.
+ROLE_RANK = {"user": 1, "manager": 2, "admin": 3}
+
+
+def require_role(min_role, redirect_to=None):
+    """Route decorator enforcing the admin > manager > user hierarchy.
+
+    Self-contained — checks login too, so it's safe to use without also
+    stacking @login_required.
+
+    JSON API routes (the default): 401 if not logged in, 403 JSON if logged
+    in but below min_role.
+
+    HTML page routes: pass redirect_to='pages.workspace' (an endpoint name)
+    to flash an error and redirect there instead of returning raw JSON.
+    """
+    def decorator(view_func):
+        @wraps(view_func)
+        def wrapped(*args, **kwargs):
+            if not current_user.is_authenticated:
+                if redirect_to:
+                    flash('Vui lòng đăng nhập', 'error')
+                    return redirect(url_for(redirect_to))
+                return jsonify({"success": False, "message": "Vui lòng đăng nhập"}), 401
+            role = getattr(current_user, "role", None)
+            if ROLE_RANK.get(role, 0) < ROLE_RANK.get(min_role, 99):
+                if redirect_to:
+                    flash('Bạn không có quyền truy cập trang này', 'error')
+                    return redirect(url_for(redirect_to))
+                return jsonify({"success": False, "message": "Không có quyền truy cập"}), 403
+            return view_func(*args, **kwargs)
+        return wrapped
+    return decorator
 
 
 def env_flag(name, default=False):

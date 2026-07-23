@@ -1,0 +1,66 @@
+{
+  "name": "Cảnh báo giao dịch bất thường",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "unusual-transaction",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "id": "ut-webhook",
+      "name": "Nhận cảnh báo",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [180, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $input.first().json.body || {};\nconst fmt = n => new Intl.NumberFormat('vi-VN').format(n) + ' đ';\nconst html = `<h2>⚠️ Giao dịch bất thường</h2><p>Vừa ghi nhận 1 giao dịch trị giá <b>${fmt(body.amount)}</b>, cao gấp <b>${body.multiplier}x</b> mức trung bình gần đây (${fmt(body.average)}).</p><p>Người thực hiện: ${body.user || 'Không rõ'}</p><p>Nên kiểm tra lại giao dịch này nếu có nghi vấn nhầm lẫn hoặc gian lận.</p>`;\nreturn [{ json: { notify_email: body.notify_email || '', email_html: html } }];"
+      },
+      "id": "ut-format",
+      "name": "Tạo cảnh báo",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [420, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [{ "value1": "={{ $json.notify_email }}", "operation": "isNotEmpty" }]
+        }
+      },
+      "id": "ut-if-email",
+      "name": "Có email báo?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [660, 300]
+    },
+    {
+      "parameters": {
+        "fromEmail": "alerts@anser.local",
+        "toEmail": "={{ $json.notify_email }}",
+        "subject": "⚠️ Cảnh báo giao dịch bất thường",
+        "html": "={{ $json.email_html }}",
+        "options": {}
+      },
+      "id": "ut-email",
+      "name": "Gửi Email",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [900, 200]
+    }
+  ],
+  "connections": {
+    "Nhận cảnh báo": { "main": [[{ "node": "Tạo cảnh báo", "type": "main", "index": 0 }]] },
+    "Tạo cảnh báo":  { "main": [[{ "node": "Có email báo?", "type": "main", "index": 0 }]] },
+    "Có email báo?": {
+      "main": [
+        [{ "node": "Gửi Email", "type": "main", "index": 0 }],
+        []
+      ]
+    }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" }
+}

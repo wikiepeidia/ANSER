@@ -15,5 +15,13 @@ services:
     volumes:
       - n8n_data:/home/node/.n8n
 
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: anser-mailhog
+    restart: unless-stopped
+    ports:
+      - "${MAILHOG_SMTP_PORT:-1025}:1025"  # SMTP — n8n's Send Email node connects here
+      - "${MAILHOG_WEB_PORT:-8025}:8025"   # Web UI — view "sent" emails at localhost:8025
+
 volumes:
   n8n_data:

@@ -293,6 +293,13 @@ def create_app(config_object=None):
     flask_app.register_blueprint(admin_warehouse_bp)
     csrf.exempt(n8n_api_bp)
 
+    # conftest.py sets config['TESTING'] only *after* create_app() returns,
+    # too late for a config-only check here — 'pytest' in sys.modules is set
+    # as soon as pytest itself is imported, before any test file loads.
+    if not flask_app.config.get('TESTING') and 'pytest' not in sys.modules:
+        from core.report_scheduler import start_report_scheduler
+        start_report_scheduler(flask_app)
+
     return flask_app
 
 

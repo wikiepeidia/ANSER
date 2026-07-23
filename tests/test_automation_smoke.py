@@ -26,6 +26,7 @@ def make_db():
     db._pg_pool = None
     db._pg_pool_lock = None
     db.get_connection = lambda: _NoCloseConnection(conn)
+    db.get_business_connection = lambda: _NoCloseConnection(conn)
     db.init_database()
     db._memory_conn = conn
     return db

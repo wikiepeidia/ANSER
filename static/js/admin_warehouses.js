@@ -31,7 +31,7 @@ function renderWarehousesTable() {
             <td>${w.id}</td>
             <td>${w.name}</td>
             <td>${w.low_stock_threshold}</td>
-            <td>${w.discord_webhook_url ? '<i class="fas fa-check-circle text-success"></i> Đã cấu hình' : '<span class="text-muted">Chưa cấu hình</span>'}</td>
+            <td>${w.notification_email ? w.notification_email : '<span class="text-muted">Chưa cấu hình</span>'}</td>
             <td><span class="badge bg-${w.is_active ? 'success' : 'secondary'}">${w.is_active ? 'Đang bật' : 'Đã tắt'}</span></td>
             <td>
                 <button class="btn btn-sm btn-secondary" onclick="openEditWarehouseModal(${w.id})">
@@ -52,6 +52,7 @@ function openAddWarehouseModal() {
     document.getElementById('warehouseId').value = '';
     document.getElementById('warehouseName').value = '';
     document.getElementById('warehouseThreshold').value = '10';
+    document.getElementById('warehouseNotificationEmail').value = '';
     document.getElementById('warehouseDiscordUrl').value = '';
     document.getElementById('warehouseActive').checked = true;
     new bootstrap.Modal(document.getElementById('warehouseModal')).show();
@@ -64,6 +65,7 @@ function openEditWarehouseModal(id) {
     document.getElementById('warehouseId').value = w.id;
     document.getElementById('warehouseName').value = w.name;
     document.getElementById('warehouseThreshold').value = w.low_stock_threshold;
+    document.getElementById('warehouseNotificationEmail').value = w.notification_email || '';
     document.getElementById('warehouseDiscordUrl').value = w.discord_webhook_url || '';
     document.getElementById('warehouseActive').checked = w.is_active;
     new bootstrap.Modal(document.getElementById('warehouseModal')).show();
@@ -73,6 +75,7 @@ async function saveWarehouse() {
     const id = document.getElementById('warehouseId').value;
     const name = document.getElementById('warehouseName').value.trim();
     const low_stock_threshold = parseInt(document.getElementById('warehouseThreshold').value, 10) || 0;
+    const notification_email = document.getElementById('warehouseNotificationEmail').value.trim();
     const discord_webhook_url = document.getElementById('warehouseDiscordUrl').value.trim();
     const is_active = document.getElementById('warehouseActive').checked;
 
@@ -87,7 +90,7 @@ async function saveWarehouse() {
         const response = await fetch(url, {
             method: 'POST',
             headers: _csrfHeaders(),
-            body: JSON.stringify({ name, low_stock_threshold, discord_webhook_url, is_active }),
+            body: JSON.stringify({ name, low_stock_threshold, notification_email, discord_webhook_url, is_active }),
         });
         const data = await response.json();
 
