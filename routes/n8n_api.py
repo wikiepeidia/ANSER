@@ -906,6 +906,11 @@ def deploy_template():
         # ever reaches n8n, so a production n8n instance calls back into
         # this app correctly instead of a Docker-Desktop-only hostname.
         raw = raw.replace('http://host.docker.internal:5002', Config.ANSER_APP_ORIGIN)
+        # Templates hardcode a placeholder From address ("alerts@anser.local",
+        # a domain nobody owns — no SPF/DKIM possible, real providers may
+        # spam-filter it) instead of reading Config.SMTP_FROM, so switching
+        # SMTP_FROM in .env silently had no effect on what recipients saw.
+        raw = raw.replace('alerts@anser.local', Config.SMTP_FROM)
         wf = json.loads(raw)
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
