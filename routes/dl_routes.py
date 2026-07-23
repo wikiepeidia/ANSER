@@ -4,6 +4,7 @@ from flask import Blueprint, jsonify, request, current_app
 from flask_login import current_user, login_required
 
 from core.services.dl_client import DLClient
+from core.services.brain_client import BrainClient
 from core.logger import get_logger
 from core.security import safe_api_error, validate_upload
 
@@ -14,6 +15,18 @@ dl_bp = Blueprint("dl", __name__)
 
 DL_UPLOAD_EXTENSIONS = {'png', 'jpg', 'jpeg', 'webp', 'pdf'}
 DL_UPLOAD_MIMETYPES = {'image/png', 'image/jpeg', 'image/webp', 'application/pdf'}
+
+
+def _wrap_brain_result(result):
+    """Mirror /api/dl/detect's {success,data} / {success:false,error} envelope.
+
+    A top-level 'error' key covers both Brain's own business-logic-failure
+    response shape and BrainClient-level connection failures — both collapse
+    to the same error branch, matching CONTRACT.md's shapes (b) and (c).
+    """
+    if 'error' in result:
+        return {'success': False, 'error': result['error']}, 500
+    return {'success': True, 'data': result}, 200
 
 
 @dl_bp.route('/api/dl/detect', methods=['POST'])
@@ -60,6 +73,31 @@ def api_dl_forecast():
             return jsonify({'success': False, 'error': result['error']}), 500
 
         return jsonify({'success': True, 'data': result})
+    except Exception as e:
+        return safe_api_error(logger, exc=e)
+
+
+@dl_bp.route('/api/brain/ocr', methods=['POST'])
+@login_required
+def api_brain_ocr():
+    """Proxy tới Brain's real /ocr endpoint để nhận diện hóa đơn."""
+    if 'file' not in request.files:
+        return jsonify({'success': False, 'error': 'Chưa tải tệp lên'}), 400
+
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'success': False, 'error': 'Chưa chọn tệp'}), 400
+    try:
+        validate_upload(file, DL_UPLOAD_EXTENSIONS, DL_UPLOAD_MIMETYPES)
+    except ValueError as e:
+        return jsonify({'success': False, 'error': str(e)}), 400
+
+    try:
+        client = BrainClient()
+        file_bytes = file.read()
+        result = client.run_ocr(file_bytes=file_bytes, filename=file.filename)
+        payload, status = _wrap_brain_result(result)
+        return jsonify(payload), status
     except Exception as e:
         return safe_api_error(logger, exc=e)
 
