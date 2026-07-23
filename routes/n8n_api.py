@@ -838,30 +838,58 @@ def list_templates():
 _DAILY_REPORT_WF_NAME = 'Báo cáo doanh số hàng ngày'
 _DAILY_REPORT_TRIGGER_NODE = 'Mỗi ngày 20h'
 
-# Same "configurable send hour" pattern for weekly/monthly — settings key ->
-# (workflow name, schedule trigger node name, days between runs). daily's
-# entry has days_interval=None since its trigger is hours-based (every 24h)
-# rather than days-based.
+# Configurable send time for each report, from /settings' system section.
+# 'field' matches n8n scheduleTrigger's own interval.field values (confirmed
+# against the installed node's actual param schema — ScheduleTrigger.node.js
+# in the n8n image — rather than guessed): 'hours' has no day-of-*, 'weeks'
+# takes triggerAtDay (0=Sunday..6=Saturday, n8n's own numbering), 'months'
+# takes triggerAtDayOfMonth (1-31). day_key is None for daily since "day"
+# has no meaning for an every-24h trigger.
 _REPORT_SCHEDULES = {
-    'daily_report_hour':   (_DAILY_REPORT_WF_NAME, _DAILY_REPORT_TRIGGER_NODE, None),
-    'weekly_report_hour':  ('Báo cáo doanh số hàng tuần', 'Mỗi 7 ngày', 7),
-    'monthly_report_hour': ('Báo cáo doanh số hàng tháng', 'Mỗi 30 ngày', 30),
+    'daily': {
+        'hour_key': 'daily_report_hour', 'day_key': None,
+        'wf_name': _DAILY_REPORT_WF_NAME, 'trigger_node': _DAILY_REPORT_TRIGGER_NODE,
+        'field': 'hours', 'day_default': None,
+    },
+    'weekly': {
+        'hour_key': 'weekly_report_hour', 'day_key': 'weekly_report_day',
+        'wf_name': 'Báo cáo doanh số hàng tuần', 'trigger_node': 'Mỗi 7 ngày',
+        'field': 'weeks', 'day_default': 1,  # Monday
+    },
+    'monthly': {
+        'hour_key': 'monthly_report_hour', 'day_key': 'monthly_report_day',
+        'wf_name': 'Báo cáo doanh số hàng tháng', 'trigger_node': 'Mỗi 30 ngày',
+        'field': 'months', 'day_default': 1,  # 1st of the month
+    },
+}
+_SETTING_KEY_TO_REPORT_TYPE = {
+    key: rtype
+    for rtype, cfg in _REPORT_SCHEDULES.items()
+    for key in (cfg['hour_key'], cfg['day_key'])
+    if key
 }
 
 
-def _build_schedule_params(days_interval, hour):
-    if days_interval:
-        return {'rule': {'interval': [{'field': 'days', 'daysInterval': days_interval, 'triggerAtHour': hour}]}}
+def _build_schedule_params(field, hour, day=None):
+    if field == 'weeks':
+        return {'rule': {'interval': [{
+            'field': 'weeks', 'weeksInterval': 1,
+            'triggerAtDay': [day], 'triggerAtHour': hour,
+        }]}}
+    if field == 'months':
+        return {'rule': {'interval': [{
+            'field': 'months', 'monthsInterval': 1,
+            'triggerAtDayOfMonth': day, 'triggerAtHour': hour,
+        }]}}
     return {'rule': {'interval': [{'field': 'hours', 'hoursInterval': 24, 'triggerAtHour': hour}]}}
 
 
-def _get_report_hour(setting_key, default=20):
-    """Read a `*_report_hour` system_settings value (see /settings' system
-    section) — falls back to the template's own default (20) if unset or
-    unparseable."""
+def _get_setting_int(setting_key, default):
+    """Read an integer system_settings value (see /settings' system
+    section) — falls back to `default` if unset or unparseable."""
     from flask import current_app
     db = current_app.extensions.get('database')
-    if not db:
+    if not db or not setting_key:
         return default
     try:
         conn = db.get_business_connection()
@@ -875,14 +903,28 @@ def _get_report_hour(setting_key, default=20):
 
 
 def _get_daily_report_hour():
-    return _get_report_hour('daily_report_hour')
+    return _get_setting_int('daily_report_hour', 20)
 
 
-def sync_report_hour(setting_key, hour):
-    """Push a new send-hour to an already-deployed report workflow's
-    schedule trigger, if one exists — called both at deploy time and
-    whenever /settings' daily/weekly/monthly_report_hour value is saved, so
-    changing it takes effect immediately without redeploying.
+def _get_report_schedule(report_type):
+    """Resolve a report type's current (field, hour, day) from
+    system_settings, applying each field's own default."""
+    cfg = _REPORT_SCHEDULES[report_type]
+    hour = _get_setting_int(cfg['hour_key'], 20)
+    day = _get_setting_int(cfg['day_key'], cfg['day_default']) if cfg['day_key'] else None
+    return cfg['field'], hour, day
+
+
+def sync_report_hour(setting_key, _value=None):
+    """Push the current hour+day settings to an already-deployed report
+    workflow's schedule trigger, if one exists — called both at deploy time
+    and whenever /settings' daily/weekly/monthly_report_hour or
+    weekly/monthly_report_day value is saved, so changing either takes
+    effect immediately without redeploying. `_value` is accepted (and
+    ignored) so call sites can pass the just-saved value without a branch —
+    the current value is always re-read fresh from system_settings instead,
+    since applying the schedule requires both hour AND day together and
+    only one of them changed on this call.
 
     Deactivates before patching and reactivates after: n8n only re-registers
     a schedule trigger's timer on activation, not on a live PATCH while the
@@ -890,28 +932,30 @@ def sync_report_hour(setting_key, hour):
     the old schedule until the next manual toggle (found by force-testing
     weekly/monthly's schedule this same way and watching it keep firing on
     the old interval after a plain PATCH)."""
-    cfg = _REPORT_SCHEDULES.get(setting_key)
-    if not cfg:
+    report_type = _SETTING_KEY_TO_REPORT_TYPE.get(setting_key)
+    if not report_type:
         return False
-    wf_name, trigger_node, days_interval = cfg
-    try:
-        hour = max(0, min(23, int(hour)))
-    except (TypeError, ValueError):
-        return False
+    cfg = _REPORT_SCHEDULES[report_type]
+    field, hour, day = _get_report_schedule(report_type)
+    hour = max(0, min(23, hour))
+    if field == 'weeks':
+        day = max(0, min(6, day))
+    elif field == 'months':
+        day = max(1, min(31, day))
     _ensure_auth()
     r = _n8n_get('workflows')
     if not r or r.status_code != 200:
         return False
     for w in r.json().get('data', []):
-        if w.get('name') != wf_name:
+        if w.get('name') != cfg['wf_name']:
             continue
         wid = w['id']
         wf = _n8n_get(f'workflows/{wid}').json().get('data', {})
         nodes = wf.get('nodes', [])
         changed = False
         for n in nodes:
-            if n.get('name') == trigger_node:
-                n['parameters'] = _build_schedule_params(days_interval, hour)
+            if n.get('name') == cfg['trigger_node']:
+                n['parameters'] = _build_schedule_params(field, hour, day)
                 changed = True
         if not changed:
             return False
@@ -970,21 +1014,21 @@ def deploy_template():
             if cred_id:
                 node['credentials'] = {'smtp': {'id': cred_id, 'name': _SMTP_CRED_NAME}}
 
-    # daily/weekly/monthly_sales_report's send hour is configurable
-    # (/settings, system section) rather than fixed at the template's own
-    # default (20h).
-    _SLUG_TO_SETTING = {
-        'daily_sales_report': 'daily_report_hour',
-        'weekly_sales_report': 'weekly_report_hour',
-        'monthly_sales_report': 'monthly_report_hour',
+    # daily/weekly/monthly_sales_report's send hour (and, for weekly/
+    # monthly, day-of-week / day-of-month) is configurable (/settings,
+    # system section) rather than fixed at the template's own default.
+    _SLUG_TO_REPORT_TYPE = {
+        'daily_sales_report': 'daily',
+        'weekly_sales_report': 'weekly',
+        'monthly_sales_report': 'monthly',
     }
-    if slug in _SLUG_TO_SETTING:
-        setting_key = _SLUG_TO_SETTING[slug]
-        _, trigger_node, days_interval = _REPORT_SCHEDULES[setting_key]
-        hour = _get_report_hour(setting_key)
+    if slug in _SLUG_TO_REPORT_TYPE:
+        report_type = _SLUG_TO_REPORT_TYPE[slug]
+        trigger_node = _REPORT_SCHEDULES[report_type]['trigger_node']
+        field, hour, day = _get_report_schedule(report_type)
         for node in wf.get('nodes', []):
             if node.get('name') == trigger_node:
-                node['parameters'] = _build_schedule_params(days_interval, hour)
+                node['parameters'] = _build_schedule_params(field, hour, day)
 
     # Check existing — unarchive if needed
     r = _n8n_get('workflows')

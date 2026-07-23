@@ -83,7 +83,8 @@ def api_update_settings():
                 (setting_key, data.get('value'), data.get('group')),
             )
             conn.commit()
-        if setting_key in ('daily_report_hour', 'weekly_report_hour', 'monthly_report_hour'):
+        if setting_key in ('daily_report_hour', 'weekly_report_hour', 'monthly_report_hour',
+                           'weekly_report_day', 'monthly_report_day'):
             try:
                 from routes.n8n_api import sync_report_hour
                 sync_report_hour(setting_key, data.get('value'))
