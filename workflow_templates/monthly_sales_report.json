@@ -17,13 +17,13 @@
         "url": "http://host.docker.internal:5002/api/n8n/internal/daily-sales",
         "sendQuery": true,
         "queryParameters": {
-          "parameters": [{ "name": "days", "value": "30" }]
+          "parameters": [{ "name": "period", "value": "month" }]
         },
         "authentication": "none",
         "options": {}
       },
       "id": "msr-fetch",
-      "name": "Lấy doanh số 30 ngày",
+      "name": "Lấy doanh số tháng trước",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [420, 300]
@@ -43,7 +43,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const data = $('Lấy doanh số 30 ngày').first().json;\nconst s = data.summary || {};\nconst tops = data.top_products || [];\nconst warehouses = $input.first().json.warehouses || [];\nconst emails = [...new Set(warehouses.map(w => w.notification_email).filter(Boolean))];\nconst fmt = n => new Intl.NumberFormat('vi-VN').format(n);\nconst rows = tops.map((p,i) => `<tr><td>${i+1}</td><td>${p.product_name}</td><td>${p.qty_sold}</td><td>${fmt(p.revenue)} đ</td></tr>`).join('') || '<tr><td colspan=\"4\">Chưa có dữ liệu</td></tr>';\nconst html = `<h2>📊 Báo cáo doanh số tháng qua (${data.period})</h2><p>Tổng đơn hàng: <b>${s.total_orders || 0}</b> — Doanh thu: <b>${fmt(s.total_revenue || 0)} đ</b> — Nhân viên bán: <b>${s.unique_staff || 0}</b></p><h3>Top sản phẩm</h3><table border=\"1\" cellpadding=\"6\" cellspacing=\"0\"><tr><th>#</th><th>Sản phẩm</th><th>SL bán</th><th>Doanh thu</th></tr>${rows}</table><p style=\"color:#888\">ANSER Auto Report — ${new Date().toISOString()}</p>`;\nreturn [{ json: {\n  email_to: emails.join(','),\n  email_subject: `📊 Báo cáo doanh số hàng tháng — ${data.date}`,\n  email_html: html,\n} }];"
+        "jsCode": "const data = $('Lấy doanh số tháng trước').first().json;\nconst s = data.summary || {};\nconst tops = data.top_products || [];\nconst warehouses = $input.first().json.warehouses || [];\nconst emails = [...new Set(warehouses.map(w => w.notification_email).filter(Boolean))];\nconst fmt = n => new Intl.NumberFormat('vi-VN').format(n);\nconst rows = tops.map((p,i) => `<tr><td>${i+1}</td><td>${p.product_name}</td><td>${p.qty_sold}</td><td>${fmt(p.revenue)} đ</td></tr>`).join('') || '<tr><td colspan=\"4\">Chưa có dữ liệu</td></tr>';\nconst html = `<h2>📊 Báo cáo doanh số — ${data.period}</h2><p>Tổng đơn hàng: <b>${s.total_orders || 0}</b> — Doanh thu: <b>${fmt(s.total_revenue || 0)} đ</b> — Nhân viên bán: <b>${s.unique_staff || 0}</b></p><h3>Top sản phẩm</h3><table border=\"1\" cellpadding=\"6\" cellspacing=\"0\"><tr><th>#</th><th>Sản phẩm</th><th>SL bán</th><th>Doanh thu</th></tr>${rows}</table><p style=\"color:#888\">ANSER Auto Report — ${new Date().toISOString()}</p>`;\nreturn [{ json: {\n  email_to: emails.join(','),\n  email_subject: `📊 Báo cáo doanh số hàng tháng — ${data.period}`,\n  email_html: html,\n} }];"
       },
       "id": "msr-format",
       "name": "Tạo báo cáo",
@@ -79,8 +79,8 @@
     }
   ],
   "connections": {
-    "Mỗi 30 ngày":          { "main": [[{ "node": "Lấy doanh số 30 ngày", "type": "main", "index": 0 }]] },
-    "Lấy doanh số 30 ngày": { "main": [[{ "node": "Lấy email người nhận", "type": "main", "index": 0 }]] },
+    "Mỗi 30 ngày":          { "main": [[{ "node": "Lấy doanh số tháng trước", "type": "main", "index": 0 }]] },
+    "Lấy doanh số tháng trước": { "main": [[{ "node": "Lấy email người nhận", "type": "main", "index": 0 }]] },
     "Lấy email người nhận": { "main": [[{ "node": "Tạo báo cáo",          "type": "main", "index": 0 }]] },
     "Tạo báo cáo":          { "main": [[{ "node": "Có người nhận?",      "type": "main", "index": 0 }]] },
     "Có người nhận?": {

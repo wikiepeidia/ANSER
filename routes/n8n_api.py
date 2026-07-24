@@ -4,7 +4,7 @@ import os
 import secrets
 import json
 import glob
-from datetime import datetime
+from datetime import datetime, timedelta
 import hmac
 
 import requests as _req
@@ -516,6 +516,24 @@ def internal_low_stock():
         return jsonify({'success': False, 'error': str(exc), 'items': []})
 
 
+def _calendar_period_bounds(period):
+    """Start (inclusive) / end (exclusive) datetimes for the most recently
+    *completed* calendar week or month — e.g. on any day this week, 'week'
+    resolves to last Monday 00:00 .. this Monday 00:00, never the
+    in-progress current week. This way a report always covers a closed,
+    final period no matter which day of the week/month it's configured to
+    send on (see /settings' weekly_report_day / monthly_report_day)."""
+    today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+    if period == 'week':
+        this_monday = today - timedelta(days=today.weekday())
+        return this_monday - timedelta(days=7), this_monday
+    if period == 'month':
+        this_month_start = today.replace(day=1)
+        last_month_start = (this_month_start - timedelta(days=1)).replace(day=1)
+        return last_month_start, this_month_start
+    return None, None
+
+
 @n8n_api_bp.route('/api/n8n/internal/daily-sales', methods=['GET'])
 def internal_daily_sales():
     """Internal endpoint for n8n workflows — no auth required.
@@ -525,27 +543,29 @@ def internal_daily_sales():
     docker-compose, so daily_sales_report.json 404'd on every real run).
     Computes the same summary directly from this app's own `sales` table.
 
-    Default is a single day (?date=YYYY-MM-DD, defaults to today) — pass
-    ?days=N instead for an N-day lookback window ending today (used by
-    weekly_sales_report.json/monthly_sales_report.json with days=7/30) so
-    those reuse this same aggregation instead of forking a near-duplicate.
+    Default is a single day (?date=YYYY-MM-DD, defaults to today). Pass
+    ?period=week or ?period=month instead (used by weekly_sales_report.json/
+    monthly_sales_report.json) for the most recently *completed* calendar
+    week/month — not a rolling 7/30-day lookback, which would silently
+    drift out of alignment with the actual weekday/day-of-month the report
+    is configured to send on.
     """
     from flask import current_app
     db = current_app.extensions.get('database')
     if not db:
         return jsonify({'success': False, 'error': 'DB not available'})
-    days = request.args.get('days', type=int)
+    period_arg = request.args.get('period')
     date_str = request.args.get('date') or datetime.now().strftime('%Y-%m-%d')
     try:
         conn = db.get_business_connection()
         cursor = conn.cursor()
-        if days:
+        start_dt, end_dt = _calendar_period_bounds(period_arg)
+        if start_dt is not None:
             if db.use_postgres:
-                where_clause = "created_at::date BETWEEN (CURRENT_DATE - %s * INTERVAL '1 day') AND CURRENT_DATE"
-                where_params = (days,)
+                where_clause = 'created_at >= %s AND created_at < %s'
             else:
-                where_clause = "date(created_at) BETWEEN date('now', ?) AND date('now')"
-                where_params = (f'-{days} days',)
+                where_clause = 'created_at >= ? AND created_at < ?'
+            where_params = (start_dt.strftime('%Y-%m-%d %H:%M:%S'), end_dt.strftime('%Y-%m-%d %H:%M:%S'))
         else:
             if db.use_postgres:
                 where_clause = 'created_at::date = %s::date'
@@ -583,8 +603,15 @@ def internal_daily_sales():
         top_products = sorted(totals.values(), key=lambda x: x['revenue'], reverse=True)[:5]
 
         conn.close()
-        period = f'{days} ngày qua' if days else date_str
-        return jsonify({'success': True, 'date': date_str, 'period': period, 'days': days, 'summary': summary, 'top_products': top_products})
+        if start_dt is not None:
+            last_day_inclusive = end_dt - timedelta(days=1)
+            if period_arg == 'week':
+                period = f"Tuần {start_dt.strftime('%d/%m')} - {last_day_inclusive.strftime('%d/%m/%Y')}"
+            else:
+                period = f"Tháng {start_dt.strftime('%m/%Y')}"
+        else:
+            period = date_str
+        return jsonify({'success': True, 'date': date_str, 'period': period, 'summary': summary, 'top_products': top_products})
     except Exception as exc:
         return jsonify({'success': False, 'error': str(exc)})
 
