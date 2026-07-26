@@ -171,10 +171,65 @@ def resolve_identity(
 # ---------------------------------------------------------------------------
 
 def clean_output(text: str) -> str:
-    text = re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL)
+    """
+    Làm sạch output của model trước khi trả về Body.
+
+    Bản Ngày 7 — sửa 3 lỗi của bản cũ:
+      1. Regex <think>.*?</think> cần THẺ ĐÓNG. Khi model lặp tới hết token
+         budget nó không kịp viết </think> -> regex không khớp -> toàn bộ nội
+         suy lọt ra màn hình. Nay cắt cả trường hợp thẻ không đóng.
+      2. Không chống lặp. Model lặp nguyên câu 12 lần vẫn đi thẳng ra ngoài.
+      3. Trả chuỗi rỗng khi output toàn <think> -> Body hiện bong bóng trống.
+    """
+    if not text:
+        return _EMPTY_FALLBACK
+
+    # 1) Cắt khối <think> có đóng thẻ đầy đủ
+    text = re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL | re.IGNORECASE)
+    # 2) Cắt <think> KHÔNG đóng thẻ (bị cắt giữa chừng vì hết token budget)
+    text = re.sub(r"<think>.*$", "", text, flags=re.DOTALL | re.IGNORECASE)
+    # 3) Cắt </think> mồ côi (model quên mở thẻ)
+    text = re.sub(r"^.*?</think>", "", text, flags=re.DOTALL | re.IGNORECASE)
+
     text = re.sub(r"```json\s*", "", text)
     text = re.sub(r"```", "", text)
-    return text.strip()
+    text = text.strip()
+
+    text = _dedupe_lines(text)
+
+    return text.strip() or _EMPTY_FALLBACK
+
+
+_EMPTY_FALLBACK = (
+    "Xin lỗi, tôi chưa tạo được câu trả lời cho câu này. "
+    "Bạn thử hỏi lại ngắn gọn hơn giúp tôi nhé."
+)
+
+# Câu ngắn hơn ngưỡng này được phép lặp (ví dụ "Cảm ơn bạn.", dấu phân cách)
+_DEDUPE_MIN_LEN = 40
+
+
+def _dedupe_lines(text: str) -> str:
+    """
+    Bỏ dòng dài bị lặp. Giữ nguyên thứ tự, chỉ giữ lần xuất hiện đầu tiên.
+
+    Không đụng tới output JSON (nhánh TECHNICAL) vì JSON có thể có dòng giống
+    nhau hợp lệ.
+    """
+    stripped = text.lstrip()
+    if stripped.startswith("{") or stripped.startswith("["):
+        return text
+
+    seen = set()
+    out = []
+    for line in text.split("\n"):
+        key = line.strip()
+        if len(key) >= _DEDUPE_MIN_LEN:
+            if key in seen:
+                continue
+            seen.add(key)
+        out.append(line)
+    return "\n".join(out)
 
 
 def extract_user_content(full_text: str) -> str:
