@@ -134,7 +134,6 @@ class ModelEngine:
             temperature=temperature,
             max_tokens=max_tokens,
             repetition_penalty=1.25,     # Ngày 7: 1.15 chưa đủ, model vẫn lặp nguyên câu
-            no_repeat_ngram_size=6,      # chặn cứng lặp cụm 6 token — fix lỗi lặp 12 lần
         )
 
         def _blocking_generate():
@@ -161,7 +160,6 @@ class ModelEngine:
             temperature=temperature,
             max_tokens=max_tokens,
             repetition_penalty=1.25,     # Ngày 7: 1.15 chưa đủ, model vẫn lặp nguyên câu
-            no_repeat_ngram_size=6,      # chặn cứng lặp cụm 6 token — fix lỗi lặp 12 lần
         )
         messages = [
             {"role": "system", "content": system},
