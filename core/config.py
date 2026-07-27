@@ -39,3 +39,10 @@ class Config:
 
     # Own n8n instance (docker-compose.yml), separate from ANSER's (port 5680)
     N8N_ORIGIN = os.environ.get('N8N_ORIGIN', 'http://127.0.0.1:5681')
+
+    # Shared secret for GET /api/internal/platform-stats — read by Gateway's
+    # team-only cross-app admin page. Same value must be set on Gateway (as
+    # PLATFORM_STATS_TOKEN) and on Retail's own copy of this same var. Empty
+    # by default so this endpoint fails closed instead of leaking
+    # aggregate production data to an unauthenticated caller.
+    PLATFORM_STATS_TOKEN = os.environ.get('PLATFORM_STATS_TOKEN', '')

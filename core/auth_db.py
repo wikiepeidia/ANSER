@@ -20,6 +20,19 @@ def _get_conn():
     return conn, '?'
 
 
+def count_managers():
+    """Count of role='manager' accounts in the shared users table — same
+    "how many shop owners signed up" proxy metric Retail's own
+    /api/internal/platform-stats uses, for Gateway's cross-app admin page."""
+    conn, ph = _get_conn()
+    try:
+        cur = conn.cursor()
+        cur.execute("SELECT COUNT(*) FROM users WHERE role = 'manager'")
+        return cur.fetchone()[0] or 0
+    finally:
+        conn.close()
+
+
 def get_user_by_id(user_id):
     conn, ph = _get_conn()
     try:
