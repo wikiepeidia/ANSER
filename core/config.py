@@ -94,6 +94,14 @@ class Config:
     # closed rather than silently accepting unauthenticated writes.
     ANSER_N8N_INTERNAL_TOKEN = os.environ.get('ANSER_N8N_INTERNAL_TOKEN', '')
 
+    # Shared secret for GET /api/internal/platform-stats — read by
+    # Gateway's internal team-only admin page (aggregates Retail + Sản
+    # xuất into one view). Same value must be set on Gateway (as
+    # PLATFORM_STATS_TOKEN) and here. Empty by default so this endpoint
+    # fails closed rather than leaking aggregate revenue/account counts to
+    # an unauthenticated caller.
+    PLATFORM_STATS_TOKEN = os.environ.get('PLATFORM_STATS_TOKEN', '')
+
     # Brain (external VLM invoice-digitization service, ngrok-tunneled) —
     # this app's own Flask process reads these from its own .env
     # independently. Separate from the n8n-runtime BRAIN_URL/BRAIN_TOKEN

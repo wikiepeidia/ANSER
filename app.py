@@ -275,6 +275,7 @@ def create_app(config_object=None):
     from routes.dl_routes import dl_bp
     from routes.n8n_api import n8n_api_bp
     from routes.admin_warehouse_routes import admin_warehouse_bp
+    from routes.internal_admin_routes import internal_admin_bp
 
     flask_app.register_blueprint(page_bp)
     flask_app.register_blueprint(main_bp)
@@ -291,6 +292,7 @@ def create_app(config_object=None):
     flask_app.register_blueprint(dl_bp)
     flask_app.register_blueprint(n8n_api_bp)
     flask_app.register_blueprint(admin_warehouse_bp)
+    flask_app.register_blueprint(internal_admin_bp)
     csrf.exempt(n8n_api_bp)
 
     # conftest.py sets config['TESTING'] only *after* create_app() returns,
