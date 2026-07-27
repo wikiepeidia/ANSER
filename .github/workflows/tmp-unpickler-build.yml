@@ -1,0 +1,50 @@
+name: tmp-unpickler-build
+
+on:
+  push:
+    branches:
+      - chatgpt/tmp-unpickler-build
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    container:
+      image: ubuntu@noble@sha256:c35e29c9450151419d9448b0fd75374fec4fff364a27f176fb458d472dfc9e54
+    steps:
+      - name: Install exact build dependencies
+        run: |
+          apt-get update --yes
+          DEBIAN_FRONTEND=noninteractive apt-get install --yes \
+            git=1:2.43.0-1ubuntu7.3 \
+            make=4.3-4.1build2 \
+            gcc=4:13.2.0-7ubuntu1 \
+            binutils ca-certificates xz-utils tar
+      - name: Build exact challenge interpreter
+        run: |
+          set -eux
+          git clone https://github.com/python/cpython /tmp/cpython
+          cd /tmp/cpython
+          git checkout b0689ae7f9d904bc2126994aedbc552f03479e40
+          printf '*static*\n_pickle _pickle.c\n_struct _struct.c\n' >> Modules/Setup.local
+          ./configure LDFLAGS='-static' --disable-shared
+          make -j2 LDFLAGS='-static' LINKFORSHARED=' '
+          mkdir -p /tmp/out
+          cp python /tmp/out/python
+          nm -an python > /tmp/out/nm.txt
+          readelf -hW python > /tmp/out/elf-header.txt
+          {
+            grep -E '(^| )PyBytes_Type$' /tmp/out/nm.txt || true
+            grep -E '(^| )os_system(_impl)?$' /tmp/out/nm.txt || true
+            grep -E '(^| )posix_system(_impl)?$' /tmp/out/nm.txt || true
+          } > /tmp/out/targets.txt
+          ./python -VV > /tmp/out/version.txt
+      - name: Upload exact binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: unpickler-cpython-exact
+          path: /tmp/out
+          retention-days: 1
