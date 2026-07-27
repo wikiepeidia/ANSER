@@ -32,8 +32,11 @@ jobs:
           printf '*static*\n_pickle _pickle.c\n_struct _struct.c\n' >> Modules/Setup.local
           ./configure LDFLAGS='-static' --disable-shared
           make -j2 LDFLAGS='-static' LINKFORSHARED=' '
-          mkdir -p /tmp/out
+          mkdir -p /tmp/out /tmp/runtime
           cp python /tmp/out/python
+          cp python /tmp/runtime/python
+          cp -a Lib /tmp/runtime/Lib
+          tar -C /tmp/runtime -cJf /tmp/out/cpython-runtime.tar.xz python Lib
           nm -an python > /tmp/out/nm.txt
           readelf -hW python > /tmp/out/elf-header.txt
           {
