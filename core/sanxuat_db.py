@@ -349,6 +349,253 @@ CREATE TABLE IF NOT EXISTS material_batch_events (
 CREATE INDEX IF NOT EXISTS idx_material_batch_events_batch_id ON material_batch_events(batch_id);
 """
 
+# SQLite mirror of SCHEMA_PG (local dev/test default — Config.SANXUAT_USE_POSTGRES
+# is off unless SANXUAT_POSTGRES_URL is set). Kept manually in sync with
+# SCHEMA_PG: SERIAL -> INTEGER PRIMARY KEY AUTOINCREMENT, no DO $$ migration
+# blocks (those only patch pre-existing Postgres tables; a fresh SQLite
+# CREATE TABLE already has the new columns), and the Postgres
+# CREATE FUNCTION + TRIGGER pair (qc_results 'fail' -> material_batches
+# 'failed') has an SQLite CREATE TRIGGER equivalent below — this one is
+# exercised directly by tests/test_schema.py::test_qc_results_fail_trigger_blocks_batch,
+# which inserts into qc_results via raw SQL specifically to prove the DB
+# trigger (not routes/inventory_routes.py's own dual-write) enforces it.
+SCHEMA_SQLITE = """
+CREATE TABLE IF NOT EXISTS products (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    code TEXT UNIQUE NOT NULL,
+    name TEXT NOT NULL,
+    category TEXT,
+    unit TEXT DEFAULT 'cái',
+    price REAL DEFAULT 0,
+    stock_quantity INTEGER DEFAULT 0,
+    description TEXT,
+    image_url TEXT,
+    created_by INTEGER,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS customers (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    code TEXT UNIQUE,
+    name TEXT NOT NULL,
+    phone TEXT,
+    email TEXT,
+    address TEXT,
+    notes TEXT,
+    created_by INTEGER,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS import_transactions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    code TEXT,
+    supplier_name TEXT,
+    total_amount REAL DEFAULT 0,
+    notes TEXT,
+    status TEXT DEFAULT 'completed',
+    created_by INTEGER,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS import_details (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    import_id INTEGER NOT NULL,
+    product_id INTEGER,
+    quantity REAL DEFAULT 0,
+    unit_price REAL DEFAULT 0,
+    total_price REAL DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS export_transactions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    code TEXT,
+    customer_id INTEGER,
+    total_amount REAL DEFAULT 0,
+    notes TEXT,
+    status TEXT DEFAULT 'completed',
+    created_by INTEGER,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS export_details (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    export_id INTEGER NOT NULL,
+    product_id INTEGER,
+    quantity REAL DEFAULT 0,
+    unit_price REAL DEFAULT 0,
+    total_price REAL DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS automation_events (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    action TEXT NOT NULL,
+    payload TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS production_orders (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    code TEXT UNIQUE,
+    product_code TEXT NOT NULL,
+    product_name TEXT NOT NULL,
+    quantity REAL NOT NULL,
+    unit TEXT DEFAULT 'cái',
+    customer_name TEXT,
+    notes TEXT,
+    status TEXT NOT NULL DEFAULT 'draft',
+    created_by INTEGER,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    approved_at TIMESTAMP,
+    approved_by INTEGER,
+    is_deleted INTEGER DEFAULT 0,
+    deleted_at TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS production_order_events (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    order_id INTEGER NOT NULL,
+    event TEXT NOT NULL,
+    note TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS bom_lines (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    product_code TEXT NOT NULL,
+    code TEXT NOT NULL,
+    name TEXT NOT NULL,
+    unit TEXT DEFAULT 'cái',
+    unit_cost REAL DEFAULT 0,
+    qty_per_unit REAL NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_bom_lines_product_code ON bom_lines(product_code);
+
+CREATE TABLE IF NOT EXISTS suppliers (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    code TEXT UNIQUE,
+    name TEXT NOT NULL,
+    contact TEXT,
+    phone TEXT,
+    email TEXT,
+    address TEXT,
+    notes TEXT,
+    created_by INTEGER,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    is_deleted INTEGER DEFAULT 0,
+    deleted_at TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS material_batches (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    batch_code TEXT UNIQUE,
+    material_code TEXT NOT NULL,
+    material_name TEXT NOT NULL,
+    material_product_id INTEGER,
+    unit TEXT DEFAULT 'cái',
+    supplier_id INTEGER,
+    quantity REAL NOT NULL,
+    import_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    expiry_date TEXT,
+    qc_status TEXT NOT NULL DEFAULT 'pending',
+    qc_note TEXT DEFAULT '',
+    location_id INTEGER,
+    notes TEXT DEFAULT '',
+    created_by INTEGER,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    is_deleted INTEGER DEFAULT 0,
+    deleted_at TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_material_batches_material_code ON material_batches(material_code);
+CREATE INDEX IF NOT EXISTS idx_material_batches_supplier_id ON material_batches(supplier_id);
+
+CREATE TABLE IF NOT EXISTS batch_usage (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    batch_id INTEGER NOT NULL,
+    order_id INTEGER NOT NULL,
+    quantity_used REAL NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_batch_usage_batch_id ON batch_usage(batch_id);
+CREATE INDEX IF NOT EXISTS idx_batch_usage_order_id ON batch_usage(order_id);
+
+CREATE TABLE IF NOT EXISTS warehouses (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    code TEXT UNIQUE NOT NULL,
+    name TEXT NOT NULL,
+    address TEXT,
+    created_by INTEGER,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    is_deleted INTEGER DEFAULT 0,
+    deleted_at TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS warehouse_locations (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    warehouse_id INTEGER NOT NULL,
+    code TEXT NOT NULL,
+    name TEXT NOT NULL,
+    is_deleted INTEGER DEFAULT 0,
+    deleted_at TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_warehouse_locations_warehouse_id ON warehouse_locations(warehouse_id);
+
+CREATE TABLE IF NOT EXISTS stock_ledger (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    entry_type TEXT NOT NULL,
+    warehouse_id INTEGER NOT NULL,
+    location_id INTEGER NOT NULL,
+    product_code TEXT NOT NULL,
+    product_name TEXT NOT NULL,
+    unit TEXT DEFAULT 'cái',
+    quantity_delta REAL NOT NULL,
+    transfer_group TEXT,
+    counterparty_warehouse_id INTEGER,
+    counterparty_location_id INTEGER,
+    system_qty_snapshot REAL,
+    counted_qty REAL,
+    note TEXT DEFAULT '',
+    created_by INTEGER,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_stock_ledger_wlp ON stock_ledger(warehouse_id, location_id, product_code);
+CREATE INDEX IF NOT EXISTS idx_stock_ledger_transfer_group ON stock_ledger(transfer_group);
+
+CREATE TABLE IF NOT EXISTS qc_results (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    batch_id INTEGER NOT NULL,
+    tested_by TEXT,
+    test_type TEXT,
+    result TEXT NOT NULL,
+    detail TEXT DEFAULT '',
+    tested_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_qc_results_batch_id ON qc_results(batch_id);
+
+CREATE TRIGGER IF NOT EXISTS trg_qc_results_fail_blocks_batch
+AFTER INSERT ON qc_results
+WHEN NEW.result = 'fail'
+BEGIN
+    UPDATE material_batches SET qc_status = 'failed' WHERE id = NEW.batch_id;
+END;
+
+CREATE TABLE IF NOT EXISTS material_batch_events (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    batch_id INTEGER NOT NULL,
+    event TEXT NOT NULL,
+    note TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_material_batch_events_batch_id ON material_batch_events(batch_id);
+"""
+
 
 # ---------------------------------------------------------------------------
 # PGShim — lets Postgres be used through the exact same sqlite3-style API
