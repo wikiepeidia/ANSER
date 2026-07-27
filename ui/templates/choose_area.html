@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+
+{% block title %}Chọn mảng làm việc - {{ project_name }}{% endblock %}
+
+{% block styles %}
+{{ super() }}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/choose_area.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/responsive.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="area-picker">
+  <!-- Header -->
+  <header class="area-header">
+    <a href="/" class="header-logo">
+      <div class="header-logo-icon">
+        <i class="fas fa-layer-group"></i>
+      </div>
+      <span class="header-logo-text">ANSER</span>
+    </a>
+    <div class="header-user">
+      <div class="header-user-info">
+        <div class="header-user-name">{{ user.name or 'User' }}</div>
+        <div class="header-user-email">{{ user.email }}</div>
+      </div>
+      <div class="header-avatar">
+        {{ (user.name or user.email)|first|upper }}
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="area-content">
+    <!-- Intro -->
+    <div class="area-intro">
+      <h1>Chào {{ user.name or user.email }} 👋</h1>
+      <p>Chọn mảng làm việc để bắt đầu. Mỗi mảng sẽ mở trong tab riêng biệt.</p>
+    </div>
+
+    <!-- Cards Grid -->
+    <div class="area-grid">
+      <!-- Retail Card -->
+      <a href="{{ retail_origin }}" target="_blank" rel="noopener" class="area-card area-card--retail">
+        <div class="area-card__icon-wrap">
+          <i class="fas fa-store area-card__icon"></i>
+        </div>
+        <h3>Bán lẻ</h3>
+        <p>Hệ thống quản lý toàn diện cho chuỗi cửa hàng bán lẻ của bạn.</p>
+        
+        <!-- Mini Chart Preview -->
+        <div class="retail-chart">
+          <div class="retail-chart__bar"></div>
+          <div class="retail-chart__bar"></div>
+          <div class="retail-chart__bar"></div>
+          <div class="retail-chart__bar"></div>
+          <div class="retail-chart__bar"></div>
+        </div>
+
+        <!-- Features -->
+        <div class="area-card__features">
+          <div class="area-card__feature">
+            <i class="fas fa-check-circle"></i>
+            <span>Nhận dạng hóa đơn OCR</span>
+          </div>
+          <div class="area-card__feature">
+            <i class="fas fa-check-circle"></i>
+            <span>Dự đoán tồn kho LSTM</span>
+          </div>
+          <div class="area-card__feature">
+            <i class="fas fa-check-circle"></i>
+            <span>AI Agent tự động hóa</span>
+          </div>
+        </div>
+
+        <div class="area-card__cta">
+          Mở Bán lẻ <i class="fas fa-arrow-right"></i>
+        </div>
+      </a>
+
+      <!-- Sản xuất Card -->
+      <a href="{{ sanxuat_origin }}" target="_blank" rel="noopener" class="area-card area-card--sanxuat">
+        <div class="area-card__icon-wrap">
+          <i class="fas fa-industry area-card__icon"></i>
+        </div>
+        <h3>Sản xuất</h3>
+        <p>Hệ thống quản lý sản xuất với API và database độc lập.</p>
+        
+        <!-- Mini Workflow Preview -->
+        <div class="sanxuat-workflow">
+          <div class="sanxuat-workflow__node">
+            <i class="fas fa-upload"></i>
+          </div>
+          <div class="sanxuat-workflow__line"></div>
+          <div class="sanxuat-workflow__node sanxuat-workflow__node--active">
+            <i class="fas fa-cogs"></i>
+          </div>
+          <div class="sanxuat-workflow__line"></div>
+          <div class="sanxuat-workflow__node">
+            <i class="fas fa-chart-bar"></i>
+          </div>
+        </div>
+
+        <!-- Features -->
+        <div class="area-card__features">
+          <div class="area-card__feature">
+            <i class="fas fa-check-circle"></i>
+            <span>Quản lý quy trình sản xuất</span>
+          </div>
+          <div class="area-card__feature">
+            <i class="fas fa-check-circle"></i>
+            <span>Theo dõi tài nguyên & vật tư</span>
+          </div>
+          <div class="area-card__feature">
+            <i class="fas fa-check-circle"></i>
+            <span>Báo cáo & phân tích chi tiết</span>
+          </div>
+        </div>
+
+        <div class="area-card__cta">
+          Mở Sản xuất <i class="fas fa-arrow-right"></i>
+        </div>
+      </a>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="area-footer">
+    <a href="{{ url_for('auth.logout') }}">Đăng xuất</a> · © 2026 ANSER
+  </footer>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+    window.addEventListener('load', () => {
+        /* Dynamic Cursor Spotlight Effect */
+        document.querySelectorAll(".area-card").forEach(card => {
+            card.addEventListener("mousemove", e => {
+                const rect = card.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                
+                card.style.setProperty("--mouse-x", `${x}px`);
+                card.style.setProperty("--mouse-y", `${y}px`);
+            });
+        });
+    });
+</script>
+{% endblock %}
