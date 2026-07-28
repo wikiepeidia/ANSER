@@ -39,7 +39,8 @@
 
     <!-- Cards Grid -->
     <div class="area-grid">
-      <!-- Internal Admin Card -->
+      <!-- Internal Admin Card — team-only, hidden from shop-owner customers -->
+      {% if is_internal_admin %}
       <a href="{{ url_for('pages.internal_admin_dashboard') }}" class="area-card area-card--internal">
         <div class="area-card__icon-wrap">
           <i class="fas fa-shield-alt area-card__icon"></i>
@@ -76,6 +77,7 @@
           Mở Internal Admin <i class="fas fa-arrow-right"></i>
         </div>
       </a>
+      {% endif %}
 
       <!-- Retail Card -->
       <a href="{{ retail_origin }}" target="_blank" rel="noopener" class="area-card area-card--retail">

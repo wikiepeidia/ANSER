@@ -6,28 +6,44 @@ import uuid
 from functools import wraps
 from urllib.parse import urlparse
 
-from flask import current_app, jsonify
+from flask import current_app, flash, jsonify, redirect, url_for
 from flask_login import current_user
 
 
 LOCAL_ENVIRONMENTS = {"dev", "development", "test", "testing"}
 
 
-def require_internal_admin(view_func):
+def require_internal_admin(view_func=None, *, redirect_to=None):
     """Gate a route to only the team's own accounts (core.config.Config.
     INTERNAL_ADMIN_EMAILS) — separate from any customer-facing role system;
     this is for the ANSER team's own cross-app platform overview, never
-    shown to shop-owner customers. Self-contained — checks login too."""
-    @wraps(view_func)
-    def wrapped(*args, **kwargs):
-        from core.config import Config
-        if not current_user.is_authenticated:
-            return jsonify({"success": False, "message": "Vui lòng đăng nhập"}), 401
-        email = (getattr(current_user, "email", "") or "").strip().lower()
-        if email not in Config.INTERNAL_ADMIN_EMAILS:
-            return jsonify({"success": False, "message": "Không có quyền truy cập"}), 403
-        return view_func(*args, **kwargs)
-    return wrapped
+    shown to shop-owner customers. Self-contained — checks login too.
+
+    JSON API routes (the default): 401/403 JSON. HTML page routes: pass
+    redirect_to='pages.choose_area' (an endpoint name) to flash an error
+    and redirect there instead of showing a raw JSON body in the browser.
+    """
+    def decorator(func):
+        @wraps(func)
+        def wrapped(*args, **kwargs):
+            from core.config import Config
+            if not current_user.is_authenticated:
+                if redirect_to:
+                    flash('Vui lòng đăng nhập', 'error')
+                    return redirect(url_for(redirect_to))
+                return jsonify({"success": False, "message": "Vui lòng đăng nhập"}), 401
+            email = (getattr(current_user, "email", "") or "").strip().lower()
+            if email not in Config.INTERNAL_ADMIN_EMAILS:
+                if redirect_to:
+                    flash('Bạn không có quyền truy cập trang này', 'error')
+                    return redirect(url_for(redirect_to))
+                return jsonify({"success": False, "message": "Không có quyền truy cập"}), 403
+            return func(*args, **kwargs)
+        return wrapped
+    # Support both @require_internal_admin and @require_internal_admin(redirect_to=...)
+    if view_func is not None:
+        return decorator(view_func)
+    return decorator
 
 
 def env_flag(name, default=False):

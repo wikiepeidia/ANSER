@@ -4,6 +4,7 @@ from flask import Blueprint, flash, redirect, render_template, session, url_for
 from flask_login import current_user, login_required
 
 from core.config import Config
+from core.security import require_internal_admin
 
 page_bp = Blueprint('pages', __name__)
 
@@ -28,9 +29,11 @@ def landing():
 @page_bp.route('/choose-area')
 @login_required
 def choose_area():
+    email = (getattr(current_user, 'email', '') or '').strip().lower()
     return render_template(
         'choose_area.html', user=current_user,
         retail_origin=Config.RETAIL_ORIGIN, sanxuat_origin=Config.SANXUAT_ORIGIN,
+        is_internal_admin=email in Config.INTERNAL_ADMIN_EMAILS,
     )
 
 
@@ -45,6 +48,6 @@ def set_active_area(area):
 
 
 @page_bp.route('/internal-admin-dashboard')
-@login_required
+@require_internal_admin(redirect_to='pages.choose_area')
 def internal_admin_dashboard():
     return render_template('internal_admin_dashboard.html', user=current_user)
