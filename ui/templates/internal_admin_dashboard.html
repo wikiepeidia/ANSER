@@ -1,0 +1,256 @@
+{% extends "base.html" %}
+
+{% block title %}Internal Admin Dashboard - {{ project_name }}{% endblock %}
+
+{% block styles %}
+{{ super() }}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/internal_admin_dashboard.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="app-layout">
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="dashboard-header">
+            <div class="header-title">
+                <h1><i class="fas fa-crown"></i> Internal Admin Dashboard</h1>
+                <p>Theo dõi toàn bộ nền tảng ANSER - Bán lẻ & Sản xuất</p>
+            </div>
+            <div class="header-actions">
+                <button class="btn-refresh" id="refreshBtn">
+                    <i class="fas fa-sync-alt"></i> Làm mới
+                </button>
+                <a href="{{ url_for('pages.choose_area') }}" class="btn-action">
+                    <i class="fas fa-exchange-alt"></i> Chuyển mảng
+                </a>
+                <a href="{{ url_for('auth.logout') }}" class="btn-action btn-logout">
+                    <i class="fas fa-sign-out-alt"></i> Đăng xuất
+                </a>
+                <span class="last-update" id="lastUpdate">Cập nhật: --</span>
+            </div>
+        </div>
+
+        <!-- Platform Health -->
+        <div class="section-header">
+            <h2><i class="fas fa-heartbeat"></i> Platform Health</h2>
+        </div>
+        <div class="row mb-4">
+            <div class="col-md-2-4">
+                <div class="health-card" id="health-banle">
+                    <div class="health-icon"><i class="fas fa-store"></i></div>
+                    <div class="health-content">
+                        <div class="health-name">Bán lẻ</div>
+                        <div class="health-status"><span class="status-dot status-online"></span> Online</div>
+                        <div class="health-time">2 phút trước</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-2-4">
+                <div class="health-card" id="health-sanxuat">
+                    <div class="health-icon"><i class="fas fa-industry"></i></div>
+                    <div class="health-content">
+                        <div class="health-name">Sản xuất</div>
+                        <div class="health-status"><span class="status-dot status-online"></span> Online</div>
+                        <div class="health-time">2 phút trước</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-2-4">
+                <div class="health-card" id="health-gateway">
+                    <div class="health-icon"><i class="fas fa-server"></i></div>
+                    <div class="health-content">
+                        <div class="health-name">Gateway</div>
+                        <div class="health-status"><span class="status-dot status-online"></span> Online</div>
+                        <div class="health-time">1 phút trước</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-2-4">
+                <div class="health-card" id="health-n8n">
+                    <div class="health-icon"><i class="fas fa-project-diagram"></i></div>
+                    <div class="health-content">
+                        <div class="health-name">n8n</div>
+                        <div class="health-status"><span class="status-dot status-online"></span> Online</div>
+                        <div class="health-time">5 phút trước</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-2-4">
+                <div class="health-card" id="health-dl">
+                    <div class="health-icon"><i class="fas fa-brain"></i></div>
+                    <div class="health-content">
+                        <div class="health-name">DL Service</div>
+                        <div class="health-status"><span class="status-dot status-offline"></span> Offline</div>
+                        <div class="health-time">1 giờ trước</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Platform Overview -->
+        <div class="section-header">
+            <h2><i class="fas fa-chart-pie"></i> Platform Overview</h2>
+        </div>
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="stat-card bg-gradient-primary">
+                    <div class="stat-icon"><i class="fas fa-store"></i></div>
+                    <div class="stat-content">
+                        <div class="stat-number" id="totalShops">--</div>
+                        <div class="stat-label">Tổng Shops</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card bg-gradient-success">
+                    <div class="stat-icon"><i class="fas fa-coins"></i></div>
+                    <div class="stat-content">
+                        <div class="stat-number" id="totalRevenue">--</div>
+                        <div class="stat-label">Tổng Doanh thu</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card bg-gradient-warning">
+                    <div class="stat-icon"><i class="fas fa-users"></i></div>
+                    <div class="stat-content">
+                        <div class="stat-number" id="totalUsers">--</div>
+                        <div class="stat-label">Tổng Users</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card bg-gradient-danger">
+                    <div class="stat-icon"><i class="fas fa-shopping-cart"></i></div>
+                    <div class="stat-content">
+                        <div class="stat-number" id="totalOrders">--</div>
+                        <div class="stat-label">Đơn hàng (24h)</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Per-App Stats -->
+        <div class="section-header">
+            <h2><i class="fas fa-layer-group"></i> Chi tiết theo App</h2>
+        </div>
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="app-detail-card">
+                    <div class="app-detail-header">
+                        <div class="app-icon retail"><i class="fas fa-store"></i></div>
+                        <div class="app-info">
+                            <h3>Bán lẻ</h3>
+                            <span class="app-status online"><span class="status-dot status-online"></span> Hoạt động</span>
+                        </div>
+                    </div>
+                    <div class="app-detail-stats">
+                        <div class="app-stat">
+                            <div class="app-stat-value" id="retail-shops">--</div>
+                            <div class="app-stat-label">Shops</div>
+                        </div>
+                        <div class="app-stat">
+                            <div class="app-stat-value" id="retail-revenue">--</div>
+                            <div class="app-stat-label">Doanh thu tháng</div>
+                        </div>
+                        <div class="app-stat">
+                            <div class="app-stat-value" id="retail-orders">--</div>
+                            <div class="app-stat-label">Đơn hàng (24h)</div>
+                        </div>
+                        <div class="app-stat">
+                            <div class="app-stat-value" id="retail-topshop">--</div>
+                            <div class="app-stat-label">Top Shop</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="app-detail-card">
+                    <div class="app-detail-header">
+                        <div class="app-icon sanxuat"><i class="fas fa-industry"></i></div>
+                        <div class="app-info">
+                            <h3>Sản xuất</h3>
+                            <span class="app-status online"><span class="status-dot status-online"></span> Hoạt động</span>
+                        </div>
+                    </div>
+                    <div class="app-detail-stats">
+                        <div class="app-stat">
+                            <div class="app-stat-value" id="sanxuat-productions">--</div>
+                            <div class="app-stat-label">Productions</div>
+                        </div>
+                        <div class="app-stat">
+                            <div class="app-stat-value" id="sanxuat-revenue">--</div>
+                            <div class="app-stat-label">Doanh thu tháng</div>
+                        </div>
+                        <div class="app-stat">
+                            <div class="app-stat-value" id="sanxuat-orders">--</div>
+                            <div class="app-stat-label">Đơn hàng (24h)</div>
+                        </div>
+                        <div class="app-stat">
+                            <div class="app-stat-value" id="sanxuat-pendingqc">--</div>
+                            <div class="app-stat-label">Pending QC</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- n8n Workflows -->
+        <div class="section-header">
+            <h2><i class="fas fa-project-diagram"></i> n8n Workflows</h2>
+        </div>
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="workflows-card">
+                    <div class="workflows-list" id="workflowsList">
+                        <!-- Rendered by JS -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- System Info -->
+        <div class="row">
+            <div class="col-md-6">
+                <div class="info-card">
+                    <h4><i class="fas fa-info-circle"></i> Thông tin hệ thống</h4>
+                    <div class="info-item">
+                        <span class="info-label">Platform:</span>
+                        <span class="info-value">ANSER v1.0.0</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Environment:</span>
+                        <span class="info-value">Development</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Data Mode:</span>
+                        <span class="info-value"><span class="badge-mock">Mock Data</span></span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="info-card">
+                    <h4><i class="fas fa-clock"></i> Thời gian thực</h4>
+                    <div class="info-item">
+                        <span class="info-label">Server Time:</span>
+                        <span class="info-value" id="serverTime">--:--:--</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Auto Refresh:</span>
+                        <span class="info-value">30s</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Last Refresh:</span>
+                        <span class="info-value" id="lastRefreshTime">--</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script src="{{ url_for('static', filename='js/internal_admin_dashboard.js') }}" defer></script>
+{% endblock %}

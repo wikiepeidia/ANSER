@@ -231,6 +231,16 @@
   --card-gradient: linear-gradient(135deg, rgba(118, 75, 162, 0.15) 0%, rgba(102, 126, 234, 0.08) 100%);
 }
 
+.area-card--internal {
+  --card-accent: #f093fb;
+  --card-gradient: linear-gradient(135deg, rgba(240, 147, 251, 0.15) 0%, rgba(245, 87, 108, 0.08) 100%);
+}
+
+.area-card--internal .area-card__icon-wrap {
+  background: linear-gradient(135deg, rgba(240, 147, 251, 0.2) 0%, rgba(245, 87, 108, 0.1) 100%);
+  border: 1px solid rgba(240, 147, 251, 0.3);
+}
+
 /* Card Icon */
 .area-card__icon-wrap {
   width: 64px;

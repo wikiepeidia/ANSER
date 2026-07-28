@@ -39,6 +39,44 @@
 
     <!-- Cards Grid -->
     <div class="area-grid">
+      <!-- Internal Admin Card -->
+      <a href="{{ url_for('pages.internal_admin_dashboard') }}" class="area-card area-card--internal">
+        <div class="area-card__icon-wrap">
+          <i class="fas fa-shield-alt area-card__icon"></i>
+        </div>
+        <h3>Internal Admin</h3>
+        <p>Dashboard quản trị nội bộ - Theo dõi toàn bộ nền tảng ANSER.</p>
+        
+        <!-- Mini Platform Preview -->
+        <div class="retail-chart">
+          <div class="retail-chart__bar"></div>
+          <div class="retail-chart__bar"></div>
+          <div class="retail-chart__bar"></div>
+          <div class="retail-chart__bar"></div>
+          <div class="retail-chart__bar"></div>
+        </div>
+
+        <!-- Features -->
+        <div class="area-card__features">
+          <div class="area-card__feature">
+            <i class="fas fa-check-circle"></i>
+            <span>Theo dõi Platform Health</span>
+          </div>
+          <div class="area-card__feature">
+            <i class="fas fa-check-circle"></i>
+            <span>Tổng quan doanh thu</span>
+          </div>
+          <div class="area-card__feature">
+            <i class="fas fa-check-circle"></i>
+            <span>n8n Workflows Status</span>
+          </div>
+        </div>
+
+        <div class="area-card__cta">
+          Mở Internal Admin <i class="fas fa-arrow-right"></i>
+        </div>
+      </a>
+
       <!-- Retail Card -->
       <a href="{{ retail_origin }}" target="_blank" rel="noopener" class="area-card area-card--retail">
         <div class="area-card__icon-wrap">

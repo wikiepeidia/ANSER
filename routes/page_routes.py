@@ -42,3 +42,9 @@ def set_active_area(area):
         return redirect(url_for('pages.choose_area'))
     session['active_area'] = area
     return redirect(_ORIGINS[area])
+
+
+@page_bp.route('/internal-admin-dashboard')
+@login_required
+def internal_admin_dashboard():
+    return render_template('internal_admin_dashboard.html', user=current_user)
