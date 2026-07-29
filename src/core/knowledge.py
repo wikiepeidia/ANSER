@@ -1,13 +1,14 @@
 import chromadb
 from sentence_transformers import SentenceTransformer, CrossEncoder
 import os
+import re
 import glob
 import logging
 import uuid
 import torch
 from pypdf import PdfReader
 import docx
-from underthesea import word_tokenize
+from underthesea import word_tokenize, sent_tokenize
 from rank_bm25 import BM25Okapi
 
 logger = logging.getLogger("projecta.knowledge")
@@ -85,16 +86,67 @@ class KnowledgeBase:
                 logger.error("Failed to read document '%s': %s", filename, e, exc_info=True)
 
     def smart_chunk(self, text, chunk_size=150, overlap=30):
-        """3. Vietnamese Word-Boundary Aware Chunking (chunk_size in words)."""
-        words = word_tokenize(text)
+        """3. Sentence/structure-aware chunking (chunk_size in words).
+
+        Packs whole sentences into chunks so a chunk boundary never falls
+        inside a sentence, except the oversized-single-sentence fallback
+        (a single sentence longer than chunk_size still gets word-sliced,
+        the same math the previous word-count sliding window used, to
+        guarantee bounded output instead of one giant unbounded chunk).
+        """
+        paragraphs = [p.strip() for p in re.split(r"\n\s*\n", text) if p.strip()]
+        sentences = []
+        for paragraph in paragraphs:
+            sentences.extend(sent_tokenize(paragraph))
+
+        if not sentences:
+            return []
+
         chunks = []
-        start = 0
-        while start < len(words):
-            end = start + chunk_size
-            chunk = " ".join(words[start:end])
-            chunks.append(chunk)
-            start = end - overlap
-            if start >= len(words): break
+        current = []
+        current_count = 0
+
+        for sentence in sentences:
+            sentence_word_count = len(word_tokenize(sentence))
+
+            if sentence_word_count > chunk_size:
+                # Flush whatever's buffered before word-slicing the run-on sentence.
+                if current:
+                    chunks.append(" ".join(current))
+                    current = []
+                    current_count = 0
+
+                words = word_tokenize(sentence)
+                start = 0
+                while start < len(words):
+                    end = start + chunk_size
+                    chunks.append(" ".join(words[start:end]))
+                    start = end - overlap
+                    if start >= len(words):
+                        break
+                continue
+
+            if current and current_count + sentence_word_count > chunk_size:
+                chunks.append(" ".join(current))
+
+                # Reseed the buffer with an overlap of whole trailing sentences.
+                overlap_count = 0
+                carried = []
+                for prev_sentence in reversed(current):
+                    prev_count = len(word_tokenize(prev_sentence))
+                    if overlap_count + prev_count > overlap:
+                        break
+                    carried.insert(0, prev_sentence)
+                    overlap_count += prev_count
+                current = carried
+                current_count = overlap_count
+
+            current.append(sentence)
+            current_count += sentence_word_count
+
+        if current:
+            chunks.append(" ".join(current))
+
         return chunks
 
     def add_document(self, text: str, source: str = "manual_entry"):
