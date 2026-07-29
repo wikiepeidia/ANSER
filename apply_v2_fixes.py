@@ -338,6 +338,12 @@ def patch_engine_lock():
     if "_GEN_LOCK" in s:
         report.append("engine: da co _GEN_LOCK, bo qua")
         return
+    if "_generate_lock" in s:
+        # Body-side Phase 5 (ENGINE-03) da fix bug nay bang instance-level
+        # self._generate_lock, scope hep quanh chi self.llm.generate() —
+        # tuong duong _GEN_LOCK ve muc dich, khong can vá lai.
+        report.append("engine: da co self._generate_lock (fix tuong duong), bo qua")
+        return
     anchor = "TASK_REGISTRY = TaskRegistry(max_size=1000)"
     if anchor not in s:
         report.append("engine: KHONG thay TASK_REGISTRY - kiem tra tay")
