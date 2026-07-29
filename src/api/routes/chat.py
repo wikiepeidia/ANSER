@@ -16,6 +16,7 @@ Bản Ngày 7. Thay đổi so với bản cũ:
 Ghi chú: nhánh FINANCIAL đã gỡ — validate hoá đơn đi qua /ocr (documents.py).
 """
 
+import asyncio
 import json
 import logging
 import os
@@ -37,6 +38,7 @@ router = APIRouter()
 
 # SaasAPI singleton nhẹ (tạo engine 1 lần) — dùng cho route DATA_INTERNAL
 _saas = None
+_saas_lock = asyncio.Lock()
 
 # Thông báo khi không sinh nổi workflow hợp lệ
 _WORKFLOW_FAILED_MSG = (
@@ -46,11 +48,18 @@ _WORKFLOW_FAILED_MSG = (
 )
 
 
-def _get_saas():
+async def _get_saas():
     global _saas
-    if _saas is None:
-        from src.core.saas_api import SaasAPI
-        _saas = SaasAPI()
+    # Fast path: already constructed — no lock needed
+    if _saas is not None:
+        return _saas
+
+    async with _saas_lock:
+        # Double-check after acquiring lock (another coroutine may have
+        # finished construction while we were waiting)
+        if _saas is None:
+            from src.core.saas_api import SaasAPI
+            _saas = SaasAPI()
     return _saas
 
 
@@ -253,7 +262,7 @@ async def chat_endpoint(
         # DATA_INTERNAL — dữ liệu thật từ DB cửa hàng
         # ------------------------------------------------------------------
         elif cat == "DATA_INTERNAL":
-            saas = _get_saas()
+            saas = await _get_saas()
             try:
                 products = saas.lookup_product(user_msg, workspace_id=store_id)
                 sales = saas.get_sales_report(workspace_id=store_id, period="today")
@@ -332,7 +341,7 @@ async def chat_endpoint(
                     "X-Task-ID": task_id,
                 }
 
-                client = HttpClientPool.get_client()
+                client = await HttpClientPool.get_client()
                 await client.post(callback_url, json=payload, headers=headers)
                 logger.info("Webhook dispatched for task %s", task_id)
             except Exception as exc:
