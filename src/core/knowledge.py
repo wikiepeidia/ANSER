@@ -85,6 +85,53 @@ class KnowledgeBase:
             except Exception as e:
                 logger.error("Failed to read document '%s': %s", filename, e, exc_info=True)
 
+    def rebuild_collection(self):
+        """Delete and recreate the persisted collection, then fully re-ingest.
+
+        ingest_folder() skips any file whose `source` metadata already has
+        entries in the collection (idempotent-by-filename ingest). That
+        means a smart_chunk() change alone has zero live effect until the
+        collection is explicitly emptied first -- otherwise every file gets
+        skipped and stale (old-boundary) chunks stay live forever
+        (PITFALLS.md Pitfall 4). This method always does a FULL delete +
+        reingest (never a partial per-file rebuild), so the resulting chunk
+        set is never a mix of old- and new-boundary chunks.
+        """
+        before_count = self.collection.count()
+        logger.info(
+            "rebuild_collection: starting rebuild of 'project_a_docs' (currently %d chunks)",
+            before_count,
+        )
+
+        try:
+            self.client.delete_collection(name="project_a_docs")
+        except Exception as e:
+            logger.warning(
+                "rebuild_collection: delete_collection('project_a_docs') failed "
+                "(collection may not exist yet) — continuing: %s",
+                e,
+            )
+
+        self.collection = self.client.get_or_create_collection(name="project_a_docs")
+
+        # Collection is now empty, so ingest_folder()'s per-file dedupe check
+        # (collection.get(where={"source": filename})) finds no existing ids
+        # for any file and re-reads/re-chunks every file in self.doc_dir with
+        # the current smart_chunk() logic.
+        self.ingest_folder()
+
+        # Force the next search() call's _ensure_bm25() to rebuild the
+        # lexical index from the fresh, single-generation chunk set — never
+        # a mix of old- and new-boundary chunks (Pitfall 4).
+        self._bm25_dirty = True
+
+        after_count = self.collection.count()
+        logger.info(
+            "rebuild_collection: done — %d chunks before, %d chunks after",
+            before_count,
+            after_count,
+        )
+
     def smart_chunk(self, text, chunk_size=150, overlap=30):
         """3. Sentence/structure-aware chunking (chunk_size in words).
 
