@@ -66,7 +66,9 @@ MANIFEST
 evaluate_models/*
 evaluate_models/
 evaluation/*
+ANSER_AI_FIX/
 notebooks/
+NUL
 # PyInstaller
 #  Usually these files are written by a python script from a template
 #  before PyInstaller builds the exe, so as to inject date/other infos into it.
