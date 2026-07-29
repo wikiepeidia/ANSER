@@ -69,6 +69,16 @@ class ModelEngine:
     def _initialize(self):
         self.env = os.getenv("ENV", "LOCAL").upper()
         self.config = Config()
+        # Narrow lock around self.llm.generate() call sites only (generate_text's
+        # and generate_chat's _blocking_generate closures) — vLLM's LLM.generate()
+        # is synchronous and not thread-safe, and both methods dispatch it via
+        # loop.run_in_executor()'s default multi-threaded ThreadPoolExecutor.
+        # Without this, two concurrent chat requests can interleave inside vLLM's
+        # scheduler state (ENGINE-03, "AI replies to itself"). Scoped tightly to
+        # just the .generate() call — NOT the outer async method — so unrelated
+        # request-path work (tokenization/templating, routing, RAG, webhooks)
+        # stays fully concurrent.
+        self._generate_lock = threading.Lock()
 
         if self.env == "LOCAL":
             logger.info("Booting LOCAL mock engine (không load model thật)")
@@ -137,8 +147,9 @@ class ModelEngine:
         )
 
         def _blocking_generate():
-            outputs = self.llm.generate([prompt], params)
-            return outputs[0].outputs[0].text.strip()
+            with self._generate_lock:
+                outputs = self.llm.generate([prompt], params)
+                return outputs[0].outputs[0].text.strip()
 
         # vLLM generate là blocking -> đẩy ra thread pool để không nghẽn event loop
         return await loop.run_in_executor(None, _blocking_generate)
@@ -171,8 +182,9 @@ class ModelEngine:
             prompt = tokenizer.apply_chat_template(
                 messages, tokenize=False, add_generation_prompt=True
             )
-            outputs = self.llm.generate([prompt], params)
-            return outputs[0].outputs[0].text.strip()
+            with self._generate_lock:
+                outputs = self.llm.generate([prompt], params)
+                return outputs[0].outputs[0].text.strip()
 
         return await loop.run_in_executor(None, _blocking_generate)
 
