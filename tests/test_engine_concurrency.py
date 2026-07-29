@@ -24,6 +24,7 @@ import os
 import sys
 import time
 import asyncio
+import threading
 import types
 from pathlib import Path
 
@@ -101,6 +102,14 @@ def test_concurrent_generate_calls_do_not_overlap():
     engine = object.__new__(ModelEngine)
     engine.env = "COLAB"  # non-"LOCAL" so the real (non-mock) code path executes
     engine.llm = FakeLLM()
+    # _initialize() is bypassed by construction (see module docstring), so
+    # replicate the one other instance attribute generate_text/generate_chat's
+    # _blocking_generate closures depend on: the shared _generate_lock. Before
+    # the ENGINE-03 fix lands, _blocking_generate() never references this
+    # attribute at all, so its presence here does not mask the race — the
+    # overlap assertion below still fails against unfixed code exactly as it
+    # did before this attribute existed.
+    engine._generate_lock = threading.Lock()
 
     async def _run_concurrent():
         return await asyncio.gather(
