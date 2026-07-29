@@ -28,7 +28,7 @@ class KnowledgeBase:
 
         # 2. Upgraded Models (Multilingual + Fast)
         self.embedder = SentenceTransformer('sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2', device=self.device)
-        self.reranker = CrossEncoder('cross-encoder/ms-marco-MiniLM-L-6-v2', device=self.device)
+        self.reranker = CrossEncoder('BAAI/bge-reranker-v2-m3', device=self.device)
 
         # DB Setup
         os.makedirs(persist_dir, exist_ok=True)
@@ -212,25 +212,53 @@ class KnowledgeBase:
         )
         self._bm25_dirty = True
 
+    def reciprocal_rank_fusion(self, ranked_lists, k=60):
+        """Merge multiple ranked candidate lists (e.g. dense + BM25) into a
+        single deterministic, cross-list-aware order.
+
+        For each document, its fused score is the sum, over every ranked
+        list it appears in, of `1 / (k + rank)`, where `rank` is the
+        document's 1-indexed position within that specific list. A document
+        appearing near the top of two lists outranks one that only barely
+        made a single list -- signal the previous set()-based dedupe merge
+        could never express, and whose iteration order was non-deterministic
+        run-to-run due to Python's per-process string-hash randomization.
+
+        Returns a list of (doc, score) tuples ordered by descending fused
+        score, each unique document appearing exactly once regardless of how
+        many source lists it appeared in.
+        """
+        scores = {}
+        for ranked_list in ranked_lists:
+            for rank, doc in enumerate(ranked_list, start=1):
+                scores[doc] = scores.get(doc, 0.0) + 1.0 / (k + rank)
+        return sorted(scores.items(), key=lambda pair: pair[1], reverse=True)
+
     def search(self, query: str, top_k=3):
         self._ensure_bm25()
-        candidates = []
-        
+
         # Stage 1A: Dense Retrieval
         query_vec = self.embedder.encode([query], show_progress_bar=False).tolist()
         results = self.collection.query(query_embeddings=query_vec, n_results=10)
-        
-        if results['documents'] and results['documents'][0]:
-            candidates.extend(results['documents'][0])
-            
+
+        dense_results = (
+            results['documents'][0]
+            if results['documents'] and results['documents'][0]
+            else []
+        )
+
         # Stage 1B: Lexical (BM25) Retrieval
         if self.bm25:
             tokenized_query = word_tokenize(query.lower())
             bm25_results = self.bm25.get_top_n(tokenized_query, self.bm25_docs, n=5)
-            candidates.extend(bm25_results)
-            
-        # Deduplicate
-        candidates = list(set(candidates))
+        else:
+            bm25_results = []
+
+        # Merge: Reciprocal Rank Fusion (RAG-02) -- replaces the previous
+        # set()-based dedupe with a real, inspectable, deterministic fused
+        # rank order that rewards cross-list agreement.
+        fused = self.reciprocal_rank_fusion([dense_results, bm25_results])
+        candidates = [doc for doc, score in fused]
         if not candidates:
             return ""
 

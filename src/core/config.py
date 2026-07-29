@@ -41,10 +41,17 @@ class Config:
         #  KV-cache+activ.   —                          —            ~6.5GB  ┘ (~12.0GB)
         #  Vision/VLM        Qwen2-VL-2B-Instruct       FP16(bf16)   ~4.5GB  ┐
         #  Embedding         paraphrase-MiniLM-L12-v2   FP16         ~0.5GB  │ ngoài vLLM
-        #  Reranker          ms-marco-MiniLM-L-6-v2     FP16         ~0.3GB  │ (~6.3GB)
+        #  Reranker          bge-reranker-v2-m3         FP16         ~1.6GB  │ (~7.6GB)
         #  ChromaDB (hot)    —                          —            ~1.0GB  ┘
         # -----------------------------------------------------------------
-        #  TỔNG ~18.3GB < 19.5GB ✓
+        #  TỔNG ~19.6GB > 19.5GB ✗ (Phase 6 RAG-01: multilingual reranker
+        #  swap raised the reranker's footprint from ~0.3GB to ~1.6GB fp16 to
+        #  fix an English-only-reranker correctness bug on Vietnamese
+        #  queries.) This estimate now sits ABOVE the previously-documented
+        #  ~19.5GB safety margin -- it is unverified against a real L4 and
+        #  MUST be re-measured live (nvidia-smi / torch.cuda.memory_allocated)
+        #  before Phase 8's gpu_memory_utilization/max_model_len tuning work,
+        #  which is sequenced after this phase for exactly this reason.
         # =================================================================
 
         # --- Brain: Text reasoning (chạy qua vLLM) ---
@@ -62,7 +69,7 @@ class Config:
 
         # --- RAG: Embedding + Reranker ---
         self.embedding_model_id = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
-        self.reranker_model_id  = "cross-encoder/ms-marco-MiniLM-L-6-v2"
+        self.reranker_model_id  = "BAAI/bge-reranker-v2-m3"
 
         # =================================================================
         #  vLLM CONFIG
