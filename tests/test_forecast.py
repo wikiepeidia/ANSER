@@ -50,3 +50,36 @@ def test_forecast_single_product_trailing_average(logged_in_client):
     product = next(p for p in body['products'] if p['productCode'] == 'SP-FORECAST-1')
     assert product['projectedQty'] == 15.0
     assert product['lines'][0]['forecastQty'] == 45.0
+
+
+def test_forecast_zero_orders_in_window_no_fabrication(logged_in_client):
+    client = logged_in_client
+
+    resp = client.get('/api/forecast/materials?productCode=SP-FORECAST-NONE&windowDays=30')
+    assert resp.status_code == 200
+    body = resp.get_json()
+    assert body['products'] == []
+    assert body['materials'] == []
+
+
+def test_forecast_invalid_window_params(logged_in_client):
+    client = logged_in_client
+
+    resp = client.get('/api/forecast/materials?windowDays=0')
+    assert resp.status_code == 400
+
+    resp = client.get('/api/forecast/materials?windowDays=abc')
+    assert resp.status_code == 400
+
+    resp = client.get('/api/forecast/materials?windowDays=30&horizonDays=0')
+    assert resp.status_code == 400
+
+
+def test_forecast_product_code_filter_scoped(logged_in_client):
+    client = logged_in_client
+
+    resp = client.get('/api/forecast/materials?productCode=SP-FORECAST-1&windowDays=30')
+    assert resp.status_code == 200
+    body = resp.get_json()
+    assert len(body['products']) == 1
+    assert body['products'][0]['productCode'] == 'SP-FORECAST-1'
