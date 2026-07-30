@@ -16,6 +16,7 @@ from flask import Blueprint, jsonify, request
 from flask_login import current_user, login_required
 
 from core.sanxuat_db import get_connection, now
+from routes.inventory_routes import _serialize_batch
 
 supplier_bp = Blueprint('supplier', __name__)
 
@@ -125,5 +126,29 @@ def delete_supplier(supplier_id):
         )
         conn.commit()
         return jsonify({'success': True, 'message': 'Xóa nhà cung cấp thành công'})
+    finally:
+        conn.close()
+
+
+# ── Supplier -> batches FK lookup (SUPPLIER-02) ──────────────────────────
+
+@supplier_bp.route('/api/suppliers/<int:supplier_id>/batches', methods=['GET'])
+@login_required
+def get_supplier_batches(supplier_id):
+    conn = get_connection()
+    try:
+        # No is_deleted filter here (Pitfall 2/3) -- a soft-deleted
+        # supplier's batch history is still a legitimate historical lookup.
+        row = conn.execute('SELECT id FROM suppliers WHERE id = ?', (supplier_id,)).fetchone()
+        if not row:
+            return jsonify({'success': False, 'message': 'Không tìm thấy nhà cung cấp'}), 404
+
+        rows = conn.execute(
+            'SELECT b.*, s.name AS supplier_name FROM material_batches b '
+            'LEFT JOIN suppliers s ON s.id = b.supplier_id '
+            'WHERE b.supplier_id = ? AND b.is_deleted = FALSE ORDER BY b.import_date DESC',
+            (supplier_id,),
+        ).fetchall()
+        return jsonify({'success': True, 'batches': [_serialize_batch(r) for r in rows]})
     finally:
         conn.close()
