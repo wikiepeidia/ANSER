@@ -17,6 +17,7 @@ import logging
 import secrets
 import json
 import glob
+import random
 
 import requests as _req
 from flask import Blueprint, jsonify, request
@@ -25,7 +26,9 @@ from flask_login import login_required
 from core.config import Config
 from core.extensions import csrf
 from core.sanxuat_db import get_connection, now
-from routes.inventory_routes import _find_material, _resolve_supplier, _resolve_material_product
+from routes.inventory_routes import (
+    _find_material, _resolve_supplier, _resolve_material_product, MATERIALS_CATALOG,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -398,6 +401,12 @@ def _detect_trigger(nodes):
 # via RAG_BASE_URL / NOTIFY_URL / BRAIN_BASE_URL, set in docker-compose.yml.
 # No @login_required — n8n has no ANSER session cookie.
 
+# Scenario substrings that simulate a real OCR failure (blurry/illegible
+# scan etc.) — matched case-insensitively against internal_brain_upload's
+# `scenario` query param. See N8N-02 / 05-CONTEXT.md.
+_OCR_LOW_QUALITY_KEYWORDS = ('blur', 'unclear', 'illegible', 'corrupt', 'fail')
+
+
 def _log_event(action, payload):
     conn = get_connection()
     try:
@@ -667,11 +676,68 @@ def internal_brain_chat():
     return jsonify(result)
 
 
+def _mock_ocr_extract(scenario):
+    """Deterministic-per-scenario mock OCR extraction, N8N-02. Seeded by
+    `scenario` itself (never Python's built-in hash()) so the same scenario
+    string always reproduces byte-identical output across process restarts,
+    while different scenario strings produce genuinely different content —
+    sampled from the real MATERIALS_CATALOG so every returned `sku` is
+    always a resolvable material code. Covers both manuf_material_batch_
+    intake.json's and manuf_ocr_customer_order.json's field expectations
+    (farmer/region_grown/part/form/gacp_cert and doc_no/customer_code/
+    region/deadline respectively) since one endpoint serves both callers.
+    """
+    rng = random.Random(scenario)
+    low_quality = any(k in scenario.lower() for k in _OCR_LOW_QUALITY_KEYWORDS)
+    if low_quality:
+        return {
+            'items': [], 'total': 0, 'confidence': round(rng.uniform(0.05, 0.25), 2),
+            'farmer': None, 'region_grown': None, 'part': None, 'form': None,
+            'gacp_cert': None, 'doc_no': None, 'customer_code': None,
+            'region': None, 'deadline': None,
+        }
+
+    n_items = rng.randint(1, 3)
+    items = []
+    for _ in range(n_items):
+        material = rng.choice(MATERIALS_CATALOG)
+        qty = round(rng.uniform(5, 50), 1)
+        items.append({
+            'sku': material['code'], 'name': material['name'],
+            'qty': qty, 'unit_price': material['unitCost'],
+        })
+    total = round(sum(i['qty'] * i['unit_price'] for i in items))
+    return {
+        'items': items, 'total': total, 'confidence': round(rng.uniform(0.6, 0.95), 2),
+        'farmer': rng.choice(['HTX Nông sản Sạch Đà Lạt', 'Nông trại Xanh Tây Nguyên',
+                              'HTX Dược liệu Cao Bằng']),
+        'region_grown': rng.choice(['Đà Lạt', 'Tây Nguyên', 'Cao Bằng']),
+        'part': rng.choice(['lá', 'rễ', 'hoa']),
+        'form': rng.choice(['tuoi', 'kho']),
+        'gacp_cert': f'GACP-{rng.randint(1000, 9999)}',
+        'doc_no': f'DH-MOCK-{rng.randint(1000, 9999)}',
+        'customer_code': rng.choice(['KH-001', 'KH-002', 'KH-003']),
+        'region': rng.choice(['HN', 'HCM', 'DN']),
+        'deadline': None,
+    }
+
+
 @n8n_api_bp.route('/api/n8n/internal/brain/upload', methods=['POST'])
 def internal_brain_upload():
-    """Mock stub for {{ $env.BRAIN_BASE_URL }}/upload (OCR)."""
+    """Realistic mock for {{ $env.BRAIN_BASE_URL }}/upload (OCR), N8N-02.
+    Requires a `scenario` query param (400 without one — no plausible
+    file/image reference to process); otherwise returns deterministic-per-
+    scenario extracted line items via _mock_ocr_extract, top-level on the
+    response (matching how every workflow template reads `ocr.items`/
+    `ocr.farmer`/`ocr.doc_no` etc. directly off the HTTP node's `.json`,
+    not nested under an `extracted` key like the old stub)."""
+    scenario = (request.args.get('scenario') or '').strip()
     _log_event('brain:upload', dict(request.args))
-    return jsonify({'success': True, 'mock': True, 'extracted': {}, 'confidence': 0})
+    if not scenario:
+        return jsonify({'success': False, 'mock': True,
+                        'message': 'Thiếu tham số scenario (không có ảnh/tệp để xử lý)'}), 400
+    extracted = _mock_ocr_extract(scenario)
+    return jsonify({'success': True, 'mock': True, **extracted})
 
 
 @n8n_api_bp.route('/api/n8n/internal/brain/mcp/validate-invoice', methods=['POST'])
