@@ -60,7 +60,7 @@ def logged_in_client(client):
         'email': 'test@example.com',
         'first_name': 'Test',
         'last_name': 'User',
-        'role': 'admin',
+        'role': 'manager',
         'avatar': None,
     }
 
@@ -78,5 +78,48 @@ def logged_in_client(client):
         sess["_fresh"] = True
 
     yield client
+
+    auth_db.get_user_by_id = original_get_user_by_id
+
+
+@pytest.fixture()
+def regular_user_client(app):
+    """Same monkeypatch-of-auth_db pattern as `logged_in_client`, but for a
+    second fake user (id=2, role='user') -- used to prove SEC-01's role
+    gates actually block non-manager sessions.
+
+    Uses its own `app.test_client()` (not the shared `client` fixture)
+    because Flask test clients carry their own cookie jar/session -- reusing
+    `logged_in_client`'s client here would mean `session_transaction()`
+    overwrites the *same* session's `_user_id`, silently logging the manager
+    session out instead of creating an independent regular-user session.
+    """
+    import core.auth_db as auth_db
+
+    own_client = app.test_client()
+
+    fake_user = {
+        'id': 2,
+        'email': 'regular@example.com',
+        'first_name': 'Regular',
+        'last_name': 'User',
+        'role': 'user',
+        'avatar': None,
+    }
+
+    original_get_user_by_id = auth_db.get_user_by_id
+
+    def _fake_get_user_by_id(user_id):
+        if int(user_id) == 2:
+            return fake_user
+        return original_get_user_by_id(user_id)
+
+    auth_db.get_user_by_id = _fake_get_user_by_id
+
+    with own_client.session_transaction() as sess:
+        sess["_user_id"] = "2"
+        sess["_fresh"] = True
+
+    yield own_client
 
     auth_db.get_user_by_id = original_get_user_by_id

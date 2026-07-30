@@ -30,6 +30,7 @@ tests/
 !/tests/
 /tests/*
 !/tests/test_security_hardening.py
+!/tests/test_security.py
 !/tests/conftest.py
 !/tests/test_production_orders.py
 !/tests/test_bom.py

@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 from flask import Blueprint, jsonify, request
 from flask_login import current_user, login_required
 
+from core.auth import require_role
 from core.sanxuat_db import get_connection, now
 
 api_bp = Blueprint('api', __name__)
@@ -75,6 +76,7 @@ def update_product(product_id):
 
 @api_bp.route('/api/products/<int:product_id>', methods=['DELETE'])
 @login_required
+@require_role('manager')
 def delete_product(product_id):
     conn = get_connection()
     try:
