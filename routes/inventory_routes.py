@@ -14,6 +14,7 @@ from datetime import datetime
 from flask import Blueprint, jsonify, request
 from flask_login import current_user, login_required
 
+from core.auth import require_role
 from core.sanxuat_db import get_connection, now
 from routes.production_routes import _serialize_order
 
@@ -301,6 +302,7 @@ _QC_RESULT_BY_STATUS = {'passed': 'pass', 'failed': 'fail'}
 
 @inventory_bp.route('/api/material-batches/<int:batch_id>/qc-result', methods=['POST'])
 @login_required
+@require_role('manager')
 def record_qc_result(batch_id):
     data = request.get_json(silent=True) or {}
     qc_status = data.get('qcStatus')

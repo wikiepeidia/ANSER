@@ -8,6 +8,7 @@ implements as the single server-side source of truth.
 from flask import Blueprint, jsonify, request
 from flask_login import current_user, login_required
 
+from core.auth import user_has_role
 from core.sanxuat_db import get_connection, now
 
 production_bp = Blueprint('production', __name__)
@@ -220,6 +221,15 @@ def transition_order(order_id):
                 'success': False,
                 'message': f'Không thể chuyển từ "{old_label}" sang "{new_label}"',
             }), 409
+
+        # SEC-01: only the approval edge is gated -- every other transition
+        # in ORDER_STATUS_FLOW stays open to any authenticated user. Checked
+        # before any DB write for this transition (no partial write on 403).
+        if new_status == 'approved' and not user_has_role('manager'):
+            return jsonify({
+                'success': False,
+                'message': 'Không đủ quyền duyệt đơn hàng',
+            }), 403
 
         if new_status == 'approved':
             conn.execute(

@@ -23,6 +23,7 @@ import requests as _req
 from flask import Blueprint, jsonify, request
 from flask_login import login_required
 
+from core.auth import require_role
 from core.config import Config
 from core.extensions import csrf
 from core.sanxuat_db import get_connection, now
@@ -299,6 +300,7 @@ def _do_run_workflow(wf_id):
 
 @n8n_api_bp.route('/api/n8n/workflows/<wf_id>', methods=['DELETE'])
 @login_required
+@require_role('manager')
 def delete_workflow(wf_id):
     _n8n_patch(f'workflows/{wf_id}', data={'active': False})
     _n8n_post(f'workflows/{wf_id}/archive')
@@ -880,6 +882,7 @@ def list_templates():
 
 @n8n_api_bp.route('/api/n8n/templates/deploy', methods=['POST'])
 @login_required
+@require_role('manager')
 def deploy_template():
     slug = (request.get_json(silent=True) or {}).get('slug', '')
     fp = os.path.join(_TEMPLATES, f'{slug}.json')

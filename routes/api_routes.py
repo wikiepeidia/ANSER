@@ -77,6 +77,10 @@ def update_product(product_id):
 @api_bp.route('/api/products/<int:product_id>', methods=['DELETE'])
 @login_required
 @require_role('manager')
+# Note (SEC-01): this codebase has no DELETE /api/customers/<id> route today
+# (git grep confirmed zero matches) -- 06-CONTEXT.md's "product/customer
+# delete" wording only maps to a real route for products. Not adding one;
+# that would be scope invention beyond "gate existing sensitive actions".
 def delete_product(product_id):
     conn = get_connection()
     try:
