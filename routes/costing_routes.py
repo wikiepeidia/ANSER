@@ -11,7 +11,7 @@ column, so waste_cost is valued at BOM standard cost, not real money spent
 on that specific batch — see .planning/phases/04-costing-invoice-data/
 04-CONTEXT.md's Costing Model section for the locked rationale.
 """
-from flask import Blueprint, jsonify
+from flask import Blueprint, jsonify, request
 from flask_login import login_required
 
 from core.sanxuat_db import get_connection
@@ -23,9 +23,8 @@ def _compute_order_costing(conn, order_row):
     """Shared cost/waste/profit computation for a single production order.
 
     Called by both GET .../costing (this file) and GET /api/costing/reports
-    (added in Task 2 -- batch and shift grouping) so the material_cost/
-    waste_cost formula is computed identically everywhere, never
-    duplicated/diverging.
+    (batch and shift grouping) so the material_cost/waste_cost formula is
+    computed identically everywhere, never duplicated/diverging.
     """
     bom_rows = conn.execute(
         'SELECT code, name, unit, unit_cost, qty_per_unit FROM bom_lines WHERE product_code = ?',
@@ -116,5 +115,79 @@ def get_order_costing(order_id):
                 'hiện chưa lưu giá mua.'
             ),
         })
+    finally:
+        conn.close()
+
+
+# ── Cost/waste reports grouped by batch or shift (COST-02) ──────────────
+# "shift" = calendar date of the order's completion ("Hoàn thành" event) or,
+# absent that, its created_at date — a reporting-period grouping, not real
+# shift scheduling (04-CONTEXT.md).
+
+@costing_bp.route('/api/costing/reports', methods=['GET'])
+@login_required
+def get_costing_reports():
+    group_by = request.args.get('groupBy', 'shift')
+    if group_by not in ('batch', 'shift'):
+        return jsonify({
+            'success': False,
+            'message': "Tham số groupBy không hợp lệ (chỉ nhận 'batch' hoặc 'shift')",
+        }), 400
+
+    conn = get_connection()
+    try:
+        orders = conn.execute(
+            'SELECT * FROM production_orders WHERE is_deleted = FALSE'
+        ).fetchall()
+
+        if group_by == 'batch':
+            batch_agg = {}
+            for order in orders:
+                costing = _compute_order_costing(conn, order)
+                for line in costing['lines']:
+                    actual_used = line['actualUsed']
+                    for b in line['batchBreakdown']:
+                        share = (b['quantityUsed'] / actual_used) if actual_used > 0 else 0
+                        entry = batch_agg.setdefault(b['batchId'], {
+                            'batchId': b['batchId'],
+                            'batchCode': b['batchCode'],
+                            'materialCode': line['materialCode'],
+                            'materialName': line['materialName'],
+                            'totalUsed': 0,
+                            'materialCost': 0,
+                            'wasteCost': 0,
+                        })
+                        entry['totalUsed'] = round(entry['totalUsed'] + b['quantityUsed'], 2)
+                        entry['materialCost'] += round(b['quantityUsed'] * line['unitCost'])
+                        entry['wasteCost'] += round(line['wasteCostLine'] * share)
+            for entry in batch_agg.values():
+                entry['totalCost'] = entry['materialCost'] + entry['wasteCost']
+            report = sorted(batch_agg.values(), key=lambda e: e['batchId'])
+        else:
+            completion_rows = conn.execute(
+                "SELECT order_id, MIN(created_at) AS completed_at FROM production_order_events "
+                "WHERE event = 'Hoàn thành' GROUP BY order_id"
+            ).fetchall()
+            completion_map = {r['order_id']: r['completed_at'] for r in completion_rows}
+            shift_agg = {}
+            for order in orders:
+                costing = _compute_order_costing(conn, order)
+                shift_date = str(completion_map.get(order['id']) or order['created_at'])[:10]
+                entry = shift_agg.setdefault(shift_date, {
+                    'date': shift_date,
+                    'orderCount': 0,
+                    'materialCost': 0,
+                    'wasteCost': 0,
+                    'totalCost': 0,
+                    'orderCodes': [],
+                })
+                entry['orderCount'] += 1
+                entry['materialCost'] += costing['materialCost']
+                entry['wasteCost'] += costing['wasteCost']
+                entry['totalCost'] += costing['totalCost']
+                entry['orderCodes'].append(order['code'])
+            report = sorted(shift_agg.values(), key=lambda e: e['date'])
+
+        return jsonify({'success': True, 'groupBy': group_by, 'report': report})
     finally:
         conn.close()
