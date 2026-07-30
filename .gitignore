@@ -41,6 +41,7 @@ tests/
 !/tests/test_qc.py
 !/tests/test_n8n_internal.py
 !/tests/test_costing.py
+!/tests/test_invoices.py
 evaluate/
 jobs/
 # C extensions
