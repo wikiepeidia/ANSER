@@ -38,6 +38,12 @@ _HEADER_ALIASES = {
     'notes': {'ghi chú', 'ghi chu', 'notes', 'note'},
 }
 
+# Invoice attachments (INVOICE-02): hard format allowlist + size limit,
+# enforced BEFORE any disk write or DB insert (T-04-05/T-04-04).
+ALLOWED_ATTACHMENT_EXTENSIONS = {'pdf', 'jpg', 'png', 'xlsx'}
+MAX_ATTACHMENT_SIZE_BYTES = 10 * 1024 * 1024
+UPLOAD_DIR = os.path.join('uploads', 'invoices')
+
 
 # ── Excel invoice/material import (INVOICE-01) ──────────────────────────
 
@@ -128,3 +134,113 @@ def import_invoice_excel():
         })
     finally:
         conn.close()
+
+
+# ── Invoice file attachments (INVOICE-02) ────────────────────────────────
+
+@invoice_bp.route('/api/invoices/attachments', methods=['POST'])
+@login_required
+def upload_invoice_attachment():
+    file = request.files.get('file')
+    if not file or not file.filename:
+        return jsonify({'success': False, 'message': 'Thiếu file đính kèm'}), 400
+
+    ext = file.filename.rsplit('.', 1)[-1].lower() if '.' in file.filename else ''
+    if ext not in ALLOWED_ATTACHMENT_EXTENSIONS:
+        return jsonify({
+            'success': False,
+            'message': 'Định dạng file không được hỗ trợ (chỉ nhận pdf/jpg/png/xlsx)',
+        }), 400
+
+    file.stream.seek(0, os.SEEK_END)
+    size_bytes = file.stream.tell()
+    file.stream.seek(0)
+    if size_bytes > MAX_ATTACHMENT_SIZE_BYTES:
+        return jsonify({
+            'success': False,
+            'message': 'File vượt quá dung lượng tối đa 10MB',
+        }), 400
+
+    ref_type = request.form.get('refType') or 'material_batch'
+    ref_id = request.form.get('refId', type=int)
+
+    os.makedirs(UPLOAD_DIR, exist_ok=True)
+    stored_name = f'{secrets.token_hex(8)}_{secure_filename(file.filename)}'
+    stored_path = os.path.join(UPLOAD_DIR, stored_name)
+    file.save(stored_path)
+
+    conn = get_connection()
+    try:
+        cur = conn.execute(
+            'INSERT INTO invoice_attachments (ref_type, ref_id, file_name, file_path, '
+            'content_type, size_bytes, uploaded_at, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+            (ref_type, ref_id, file.filename, stored_path, file.content_type, size_bytes,
+             now(), current_user.id),
+        )
+        attachment_id = cur.lastrowid
+        conn.commit()
+        return jsonify({
+            'success': True,
+            'id': attachment_id,
+            'fileName': file.filename,
+            'filePath': stored_path,
+        })
+    except Exception as e:
+        conn.rollback()
+        return jsonify({'success': False, 'message': str(e)}), 400
+    finally:
+        conn.close()
+
+
+@invoice_bp.route('/api/invoices/attachments/<int:attachment_id>', methods=['GET'])
+@login_required
+def download_invoice_attachment(attachment_id):
+    conn = get_connection()
+    try:
+        row = conn.execute(
+            'SELECT * FROM invoice_attachments WHERE id = ?', (attachment_id,)
+        ).fetchone()
+    finally:
+        conn.close()
+    if not row:
+        return jsonify({'success': False, 'message': 'Không tìm thấy file đính kèm'}), 404
+    directory, filename = os.path.split(row['file_path'])
+    return send_from_directory(directory, filename, as_attachment=True, download_name=row['file_name'])
+
+
+@invoice_bp.route('/api/invoices/attachments', methods=['GET'])
+@login_required
+def list_invoice_attachments():
+    ref_type = request.args.get('refType')
+    ref_id = request.args.get('refId', type=int)
+
+    conn = get_connection()
+    try:
+        if ref_type and ref_id is not None:
+            rows = conn.execute(
+                'SELECT * FROM invoice_attachments WHERE ref_type = ? AND ref_id = ? '
+                'ORDER BY uploaded_at DESC',
+                (ref_type, ref_id),
+            ).fetchall()
+        else:
+            rows = conn.execute(
+                'SELECT * FROM invoice_attachments ORDER BY uploaded_at DESC'
+            ).fetchall()
+    finally:
+        conn.close()
+
+    return jsonify({
+        'success': True,
+        'attachments': [
+            {
+                'id': r['id'],
+                'refType': r['ref_type'],
+                'refId': r['ref_id'],
+                'fileName': r['file_name'],
+                'contentType': r['content_type'],
+                'sizeBytes': r['size_bytes'],
+                'uploadedAt': r['uploaded_at'],
+            }
+            for r in rows
+        ],
+    })
