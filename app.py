@@ -66,6 +66,7 @@ def create_app():
     from routes.supplier_routes import supplier_bp
     from routes.costing_routes import costing_bp
     from routes.invoice_routes import invoice_bp
+    from routes.forecast_routes import forecast_bp
     app.register_blueprint(page_bp)
     app.register_blueprint(api_bp)
     app.register_blueprint(n8n_api_bp)
@@ -76,6 +77,7 @@ def create_app():
     app.register_blueprint(supplier_bp)
     app.register_blueprint(costing_bp)
     app.register_blueprint(invoice_bp)
+    app.register_blueprint(forecast_bp)
 
     init_db()
 

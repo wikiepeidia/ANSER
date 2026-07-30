@@ -43,6 +43,7 @@ tests/
 !/tests/test_costing.py
 !/tests/test_invoices.py
 !/tests/test_brain_mock.py
+!/tests/test_forecast.py
 evaluate/
 jobs/
 # C extensions
