@@ -347,6 +347,25 @@ CREATE TABLE IF NOT EXISTS material_batch_events (
 );
 
 CREATE INDEX IF NOT EXISTS idx_material_batch_events_batch_id ON material_batch_events(batch_id);
+
+-- invoice_attachments: file-attachment metadata for INVOICE-02 (Phase 4).
+-- ref_type/ref_id are a loose polymorphic reference (e.g. 'material_batch',
+-- an order, etc.), no FK constraint, matching this codebase's existing
+-- FK-less convention for nullable references. content_type/size_bytes are
+-- optional metadata captured at upload time when available.
+CREATE TABLE IF NOT EXISTS invoice_attachments (
+    id SERIAL PRIMARY KEY,
+    ref_type TEXT NOT NULL,
+    ref_id INTEGER,
+    file_name TEXT NOT NULL,
+    file_path TEXT NOT NULL,
+    content_type TEXT,
+    size_bytes INTEGER,
+    uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_by INTEGER
+);
+
+CREATE INDEX IF NOT EXISTS idx_invoice_attachments_ref ON invoice_attachments(ref_type, ref_id);
 """
 
 # SQLite mirror of SCHEMA_PG (local dev/test default — Config.SANXUAT_USE_POSTGRES
@@ -594,6 +613,20 @@ CREATE TABLE IF NOT EXISTS material_batch_events (
 );
 
 CREATE INDEX IF NOT EXISTS idx_material_batch_events_batch_id ON material_batch_events(batch_id);
+
+CREATE TABLE IF NOT EXISTS invoice_attachments (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    ref_type TEXT NOT NULL,
+    ref_id INTEGER,
+    file_name TEXT NOT NULL,
+    file_path TEXT NOT NULL,
+    content_type TEXT,
+    size_bytes INTEGER,
+    uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_by INTEGER
+);
+
+CREATE INDEX IF NOT EXISTS idx_invoice_attachments_ref ON invoice_attachments(ref_type, ref_id);
 """
 
 

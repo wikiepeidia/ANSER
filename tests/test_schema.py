@@ -170,3 +170,28 @@ def test_material_batch_events_schema(app):
         assert rows[1]['event'] == 'Kiểm tra đột xuất'
     finally:
         conn.close()
+
+
+def test_invoice_attachments_schema(app):
+    conn = get_connection()
+    try:
+        conn.execute(
+            """
+            INSERT INTO invoice_attachments
+                (ref_type, ref_id, file_name, file_path, uploaded_at)
+            VALUES (?, ?, ?, ?, ?)
+            """,
+            ('material_batch', 1, 'hoadon.pdf', 'uploads/invoices/abc123_hoadon.pdf', now()),
+        )
+        conn.commit()
+
+        row = conn.execute(
+            "SELECT ref_type, ref_id, content_type, size_bytes FROM invoice_attachments WHERE file_name = ?",
+            ('hoadon.pdf',),
+        ).fetchone()
+        assert row['ref_type'] == 'material_batch'
+        assert row['ref_id'] == 1
+        assert row['content_type'] is None
+        assert row['size_bytes'] is None
+    finally:
+        conn.close()
