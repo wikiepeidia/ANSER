@@ -44,6 +44,7 @@ tests/
 !/tests/test_invoices.py
 !/tests/test_brain_mock.py
 !/tests/test_forecast.py
+!/tests/test_expiry_alert.py
 evaluate/
 jobs/
 # C extensions

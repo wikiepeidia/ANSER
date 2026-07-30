@@ -28,6 +28,7 @@ from core.extensions import csrf
 from core.sanxuat_db import get_connection, now
 from routes.inventory_routes import (
     _find_material, _resolve_supplier, _resolve_material_product, MATERIALS_CATALOG,
+    query_expiring_batches,
 )
 
 logger = logging.getLogger(__name__)
@@ -602,6 +603,28 @@ def _internal_process_event(payload):
         conn.close()
 
 
+def _internal_expiring_alert(payload):
+    """Read-only dispatch action for {{ $env.RAG_BASE_URL }}/expiring-alert
+    (TRACE-07). Unlike every other `_REAL_TABLE_ACTIONS` entry (which
+    inserts into a domain table), this one never writes anything -- it
+    wraps TRACE-06's exact `query_expiring_batches` query
+    (routes/inventory_routes.py) so the schedule-triggered
+    manuf_expiry_alert.json workflow can decide whether a real Discord
+    alert is warranted, per TRACE-07/05-CONTEXT.md. It never duplicates or
+    forks the expiring-batch selection logic.
+    """
+    try:
+        days = int(payload.get('days') or 7)
+    except (TypeError, ValueError):
+        days = 7
+    conn = get_connection()
+    try:
+        batches = query_expiring_batches(conn, days)
+    finally:
+        conn.close()
+    return {'success': True, 'days': days, 'count': len(batches), 'batches': batches}, 200
+
+
 # Per-action dispatch for the actions that now have real backing tables
 # (02.2-CONTEXT.md Action Routing decision). Every action NOT in this dict
 # falls through unchanged to the existing _log_event/automation_events
@@ -611,6 +634,7 @@ _REAL_TABLE_ACTIONS = {
     'production-order-insert': _internal_production_order_insert,
     'lab-result-insert': _internal_lab_result_insert,
     'process-event': _internal_process_event,
+    'expiring-alert': _internal_expiring_alert,
 }
 
 
