@@ -64,6 +64,7 @@ def create_app():
     from routes.warehouse_routes import warehouse_bp
     from routes.internal_admin_routes import internal_admin_bp
     from routes.supplier_routes import supplier_bp
+    from routes.costing_routes import costing_bp
     app.register_blueprint(page_bp)
     app.register_blueprint(api_bp)
     app.register_blueprint(n8n_api_bp)
@@ -72,6 +73,7 @@ def create_app():
     app.register_blueprint(warehouse_bp)
     app.register_blueprint(internal_admin_bp)
     app.register_blueprint(supplier_bp)
+    app.register_blueprint(costing_bp)
 
     init_db()
 

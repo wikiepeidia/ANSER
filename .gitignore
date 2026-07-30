@@ -40,6 +40,7 @@ tests/
 !/tests/test_suppliers.py
 !/tests/test_qc.py
 !/tests/test_n8n_internal.py
+!/tests/test_costing.py
 evaluate/
 jobs/
 # C extensions
@@ -71,6 +72,11 @@ parts/
 sdist/
 var/
 wheels/
+
+.planning-banle-backup-20260729/
+
+.environment/
+notebooks/
 share/python-wheels/
 *.egg-info/
 .installed.cfg
