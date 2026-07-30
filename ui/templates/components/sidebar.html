@@ -33,7 +33,7 @@
         </div>
         <div class="sidebar-user__info">
             <span class="sidebar-user__name">{{ user.name or 'User' }}</span>
-            <span class="role-badge role-{{ user.role }}">{{ user.role|upper }}</span>
+            <span class="role-badge role-{{ user.role }}" style="text-transform: uppercase;">{{ user.role }}</span>
         </div>
     </a>
 

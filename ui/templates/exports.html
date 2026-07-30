@@ -6,31 +6,7 @@
 {{ super() }}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/admin_exports.css') }}">
 <style>
-    /* =========================================================
-       ANSER RETAIL: LINEAR / STRIPE LIGHT AESTHETIC
-       ========================================================= */
-    :root {
-        --app-bg: #F7F9FC;
-        --card-bg: #FFFFFF;
-        --text-main: #111827;
-        --text-muted: #6B7280;
-        --border-light: #E5E7EB;
-        --accent-primary: #6366F1;
-        --accent-hover: #4F46E5;
-        --accent-success: #10B981;
-        --accent-info: #3B82F6;
-        --accent-warning: #F59E0B;
-        --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-        --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.08), 0 2px 4px -1px rgba(0, 0, 0, 0.04);
-        --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-    }
-
-    html, body, .app-layout, .app-content, .main-content {
-        background-color: var(--app-bg) !important;
-        color: var(--text-main) !important;
-        font-family: 'Inter', -apple-system, sans-serif;
-    }
-    .dark-mode { background-color: var(--app-bg) !important; }
+    /* ── Page-specific styles (shared tokens now in saas-tokens.css) ── */
 
     /* Headers */
     .border-bottom {
@@ -149,13 +125,7 @@
 {% block scripts %}
 {{ super() }}
 <script src="{{ url_for('static', filename='js/admin_exports.js') }}" defer></script>
-<script>
-    // Force Light Theme for SaaS Look
-    document.documentElement.setAttribute('data-theme', 'light');
-    document.documentElement.classList.remove('theme-dark');
-    document.body.classList.remove('dark-mode');
-    localStorage.setItem('theme-preference', 'light');
-</script>
+
 {% endblock %}
 
 {% block content %}

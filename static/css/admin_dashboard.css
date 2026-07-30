@@ -76,7 +76,7 @@
     letter-spacing: 1px;
 }
 
-.section-title {
+.main-content .section-title {
     font-size: 20px;
     font-weight: 700;
     color: var(--gray-900);

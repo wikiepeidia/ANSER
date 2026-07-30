@@ -149,6 +149,15 @@ html[data-theme='dark'] .main-content, body.dark-mode .main-content {
 .metric-card--engagement { background: linear-gradient(135deg, #ffb347 0%, #ff9a4a 100%); color: #fff; }
 .metric-card--newusers { background: linear-gradient(135deg, #9b59b6 0%, #b06cbf 100%); color: #fff; }
 
+/* Dark mode: adjust metric cards for visibility */
+html[data-theme='dark'] .metric-card--users { background: linear-gradient(135deg, #3d4fc4 0%, #5a6fd6 100%); }
+html[data-theme='dark'] .metric-card--pageviews { background: linear-gradient(135deg, #228b44 0%, #3ca55c 100%); }
+html[data-theme='dark'] .metric-card--engagement { background: linear-gradient(135deg, #cc8b2e 0%, #e09b2e 100%); }
+html[data-theme='dark'] .metric-card--newusers { background: linear-gradient(135deg, #7b3d9a 0%, #9b4db0 100%); }
+
+/* Dark mode: realtime card with bg-primary (white text needs visibility) */
+html[data-theme='dark'] .bg-primary.text-white { background: linear-gradient(135deg, #1e3a6e 0%, #2d4a7a 100%) !important; }
+
 .metric-card .text-muted.small, .metric-card .h3 { color: #fff !important; }
 
 /* metric card layout */

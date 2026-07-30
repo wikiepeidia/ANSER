@@ -8,16 +8,7 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='css/workspace_scenario.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/iot_monitor.css') }}">
 <style>
-    /* =========================================================
-       ANSER RETAIL: LINEAR / STRIPE LIGHT AESTHETIC
-       ========================================================= */
-    :root {
-        --app-bg: #F7F9FC; --card-bg: #FFFFFF; --text-main: #111827; --text-muted: #6B7280;
-        --border-light: #E5E7EB; --accent-primary: #6366F1;
-        --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05); --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.08);
-    }
-    html, body, .scenario-wrapper, .scenario-main { background-color: var(--app-bg) !important; color: var(--text-main) !important; font-family: 'Inter', sans-serif; }
-    .dark-mode { background-color: var(--app-bg) !important; }
+    /* ── Page-specific styles (shared tokens now in saas-tokens.css) ── */
 
     .workspace-launchpad { border-bottom: 1px solid var(--border-light) !important; margin-bottom: 32px !important; padding-bottom: 24px !important; display: flex; justify-content: space-between; align-items: flex-end;}
     .workspace-launchpad h2 { font-size: 1.8rem; font-weight: 700; letter-spacing: -0.02em; color: var(--text-main); margin:0;}
@@ -57,10 +48,10 @@
     @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); } 70% { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); } 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); } }
 
     /* Table */
-    .iot-table-wrap { background: var(--card-bg) !important; border: 1px solid var(--border-light) !important; border-radius: 12px; overflow: hidden; box-shadow: var(--shadow-sm); }
-    .iot-table { width: 100%; border-collapse: collapse; margin: 0; }
-    .iot-table th { background: #F9FAFB; padding: 16px 24px; border-bottom: 1px solid var(--border-light); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); font-weight: 600; text-align: left; }
-    .iot-table td { padding: 16px 24px; border-bottom: 1px solid var(--border-light); font-size: 0.875rem; color: var(--text-main); }
+    .iot-table-wrap { background: var(--card-bg) !important; border: 1px solid var(--border-light) !important; border-radius: 12px; overflow-x: auto !important; -webkit-overflow-scrolling: touch; display: block; box-shadow: var(--shadow-sm); }
+    .iot-table { width: max-content !important; min-width: 100%; border-collapse: collapse; margin: 0; display: table; }
+    .iot-table th { background: #F9FAFB; padding: 16px 24px; border-bottom: 1px solid var(--border-light); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); font-weight: 600; text-align: left; white-space: nowrap; }
+    .iot-table td { padding: 16px 24px; border-bottom: 1px solid var(--border-light); font-size: 0.875rem; color: var(--text-main); white-space: nowrap; }
     .iot-table tr:hover td { background-color: #F9FAFB; }
     .iot-table tr:last-child td { border-bottom: none; }
     
@@ -71,12 +62,7 @@
 {% block scripts %}
 {{ super() }}
 <script src="{{ url_for('static', filename='js/iot_monitor.js') }}"></script>
-<script>
-    document.documentElement.setAttribute('data-theme', 'light');
-    document.documentElement.classList.remove('theme-dark');
-    document.body.classList.remove('dark-mode');
-    localStorage.setItem('theme-preference', 'light');
-</script>
+
 {% endblock %}
 
 {% block content %}

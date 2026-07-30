@@ -5,16 +5,7 @@
 {{ super() }}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/settings.css') }}">
 <style>
-    /* =========================================================
-       ANSER RETAIL: LINEAR / STRIPE LIGHT AESTHETIC
-       ========================================================= */
-    :root {
-        --app-bg: #F7F9FC; --card-bg: #FFFFFF; --text-main: #111827; --text-muted: #6B7280;
-        --border-light: #E5E7EB; --accent-primary: #6366F1;
-        --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05); --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.08);
-    }
-    html, body, .app-layout, .app-content, .main-content { background-color: var(--app-bg) !important; color: var(--text-main) !important; font-family: 'Inter', sans-serif; }
-    .dark-mode { background-color: var(--app-bg) !important; }
+    /* ── Page-specific styles (shared tokens now in saas-tokens.css) ── */
 
     .btn { border-radius: 8px; font-weight: 500; font-size: 0.875rem; padding: 8px 16px; border: 1px solid transparent; box-shadow: var(--shadow-sm); transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 8px; }
     .btn-outline-secondary { background-color: #fff !important; color: var(--text-main) !important; border-color: var(--border-light) !important; }
@@ -37,12 +28,7 @@
 
 {% block scripts %}
 {{ super() }}
-<script>
-    document.documentElement.setAttribute('data-theme', 'light');
-    document.documentElement.classList.remove('theme-dark');
-    document.body.classList.remove('dark-mode');
-    localStorage.setItem('theme-preference', 'light');
-</script>
+
 {% endblock %}
 
 {% block content %}
@@ -52,7 +38,7 @@
     <main class="app-content">
         <div class="container-fluid py-4" style="max-width: 1000px; margin: 0 auto;">
             <div class="d-flex align-items-center mb-5 gap-3">
-                <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('pages.settings') }}">
+                <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('pages.settings') }}" aria-label="Quay lại cài đặt">
                     <i class="fas fa-arrow-left"></i> <span data-i18n="sale.back">Quay lại</span>
                 </a>
                 <div class="d-flex align-items-center ms-2">

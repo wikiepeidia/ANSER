@@ -6,15 +6,7 @@
 {{ super() }}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/admin_manager_permissions.css') }}">
 <style>
-    /* =========================================================
-       ANSER RETAIL: LINEAR / STRIPE LIGHT AESTHETIC
-       ========================================================= */
-    :root {
-        --app-bg: #F7F9FC; --card-bg: #FFFFFF; --text-main: #111827; --text-muted: #6B7280;
-        --border-light: #E5E7EB; --accent-primary: #6366F1;
-        --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05); --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.08);
-    }
-    html, body, .app-layout, .app-content, .permissions-main { background-color: var(--app-bg) !important; color: var(--text-main) !important; font-family: 'Inter', sans-serif; }
+    /* ── Page-specific styles (shared tokens now in saas-tokens.css) ── */
     
     /* Header Override */
     .permissions-header { border-bottom: 1px solid var(--border-light) !important; margin-bottom: 32px !important; padding-bottom: 24px !important; display: flex; justify-content: space-between; align-items: flex-end;}
@@ -86,11 +78,11 @@
                 <p data-i18n="mgrPerm.headerSubtitle">Quản lý và kiểm soát chặt chẽ quyền truy cập trong hệ thống {{ project_name }}.</p>
             </div>
             <div class="header-actions">
-                <button class="btn btn-outline-light" onclick="loadUsers()">
+                <button class="btn btn-outline-light" onclick="loadUsers()" aria-label="Làm mới danh sách">
                     <i class="fas fa-sync-alt"></i>
                     <span data-i18n="mgrPerm.reload">Làm mới</span>
                 </button>
-                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#grantPermissionModal">
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#grantPermissionModal" aria-label="Cấp quyền mới">
                     <i class="fas fa-plus"></i>
                     <span data-i18n="mgrPerm.grantPermission">Cấp quyền mới</span>
                 </button>
@@ -139,7 +131,7 @@
                 <div class="table-tools d-flex gap-2">
                     <div class="input-wrapper position-relative">
                         <i class="fas fa-search position-absolute top-50 translate-middle-y"></i>
-                        <input id="userSearch" type="search" placeholder="Tìm theo tên hoặc email" data-i18n-placeholder="mgrPerm.searchByNameEmail" oninput="filterUsers()">
+                        <input id="userSearch" type="search" placeholder="Tìm theo tên hoặc email" data-i18n-placeholder="mgrPerm.searchByNameEmail" oninput="filterUsers()" aria-label="Tìm người dùng">
                     </div>
                     <select id="roleFilter" class="form-select" onchange="filterUsers()" style="width: auto;">
                         <option value="all" data-i18n="adminRoles.all">Tất cả vai trò</option>

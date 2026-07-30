@@ -9,7 +9,7 @@
 
 {% block scripts %}
 {{ super() }}
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" defer integrity="sha512-RAM9fG1j6cG1V8q9+GeZN7H4UEC4oZL3Snd0RgxF6p5yK9kTcLeQR/L9ZXj3C4o/BkQEEDhf+1aF0QPf6DqXg==" crossorigin="anonymous"></script>
 <script src="{{ url_for('static', filename='js/admin_analytics.js') }}" defer></script>
 
 {% if analytics_data %}
@@ -37,7 +37,7 @@
             class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
             <h1 class="h2"><i class="fas fa-chart-line"></i> <span data-i18n="nav.analyticsReports">Phân tích &amp; Báo cáo</span></h1>
             <div class="btn-toolbar mb-2 mb-md-0">
-                <select class="form-select" id="timeRangeFilter">
+                <select class="form-select" id="timeRangeFilter" aria-label="Chọn khoảng thời gian">
                     <option value="today" data-i18n="analytics.today">Hôm nay</option>
                     <option value="week" selected data-i18n="analytics.last7Days">7 ngày qua</option>
                     <option value="month" data-i18n="analytics.last30Days">30 ngày qua</option>

@@ -1,0 +1,78 @@
+/**
+ * ANSER RETAIL: SaaS Design Tokens
+ * Centralized CSS variables and global base styles
+ * Trích xuất từ inline <style> của các template
+ */
+
+/* ── 1. CSS Design Tokens ───────────────────────────────────────── */
+:root {
+    --app-bg: #F7F9FC;
+    --card-bg: #FFFFFF;
+    --text-main: #111827;
+    --text-muted: #6B7280;
+    --border-light: #E5E7EB;
+    --accent-primary: #6366F1;
+    --accent-hover: #4F46E5;
+    --accent-success: #10B981;
+    --accent-warning: #F59E0B;
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.08), 0 2px 4px -1px rgba(0, 0, 0, 0.04);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    --shadow-base: 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.03);
+    --shadow-hover: 0 10px 15px -3px rgba(0, 0, 0, 0.04), 0 4px 6px -2px rgba(0, 0, 0, 0.02);
+}
+
+/* ── 2. Global Base Styles ───────────────────────────────────────── */
+html, body {
+    background-color: var(--app-bg);
+    color: var(--text-main);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+/* Disable dark mode / ambient effects */
+.dark-mode { background-color: var(--app-bg) !important; }
+.retail-ambient { display: none !important; }
+
+/* ── 3. Shared Button Styles ────────────────────────────────────── */
+.btn {
+    border-radius: 8px;
+    font-weight: 500;
+    font-size: 0.875rem;
+    padding: 8px 16px;
+    border: 1px solid transparent;
+    box-shadow: var(--shadow-sm);
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-primary {
+    background-color: var(--accent-primary) !important;
+    color: #fff !important;
+    border: none;
+    box-shadow: var(--shadow-sm);
+}
+
+.btn-primary:hover {
+    background-color: var(--accent-hover) !important;
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+}
+
+/* ── 4. Shared Form Styles ───────────────────────────────────────── */
+.form-control:focus,
+.form-select:focus {
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+    outline: none;
+}
+
+/* ── 5. Sidebar-aware Layout Helpers ─────────────────────────────── */
+.app-layout,
+.scenario-wrapper,
+.scenario-main {
+    background-color: var(--app-bg) !important;
+    color: var(--text-main) !important;
+    font-family: 'Inter', -apple-system, sans-serif;
+}

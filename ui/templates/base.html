@@ -14,19 +14,30 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="color-scheme" content="light">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <!-- Content Security Policy -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://www.googletagmanager.com https://region1.google-analytics.com;">
     <title>{% block title %}{{ project_name }} - Smart Management{% endblock %}</title>
     
-    <!-- FORCED LIGHT THEME (SaaS AESTHETIC) -->
+    <!-- Theme: respect system preference -->
     <script>
-        document.documentElement.setAttribute('data-theme', 'light');
-        localStorage.setItem('theme-preference', 'light');
+        // Respect system preference, but allow saved preference
+        const saved = localStorage.getItem('theme-preference');
+        if (saved) {
+            document.documentElement.setAttribute('data-theme', saved);
+        } else {
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            document.documentElement.setAttribute('data-theme', prefersDark ? 'dark' : 'light');
+        }
     </script>
 
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" integrity="sha512-Fw7uLSfY7YTLi+AXV4Mva4LMPe3d6lPeEMOcnH8eHHdHs9ZxtJ/UaQTV5Us6U4VItni2xLfwXDwT5L1JMJfZ7vQ==" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha512-4oDZLFKQ0V5evadBrNoP3ePiGpPsdCXOT0r77y1nDL9rNzTjfXU3LZ/E5PB0KQNjNx4zX+E2S3s2wL5Jv0tF0g==" crossorigin="anonymous">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/base_theme.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/saas-tokens.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/chat.css') }}">
 
     <!-- Favicons & theme -->
@@ -53,8 +64,8 @@
 
     {% include 'components/chat_widget.html' %}
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" integrity="sha512-4oDZLFKQ0V5evadBrNoP3ePiGpPsdCXOT0r77y1nDL9rNzTjfXU3LZ/E5PB0KQNjNx4zX+E2S3s2wL5Jv0tF0g==" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js" integrity="sha512-N9dVBMrBVSdE9yD5TqM0xV2aA3W3WQZXgA04T9X8C9Jrlx1vFuNJmM4cNnLH5XzVLE6wZ/sD1pEN0H1f7N+8vA==" crossorigin="anonymous"></script>
     <script>
         // Global runtime config exposed to all static scripts
         window.APP_CONFIG = window.APP_CONFIG || {
@@ -63,7 +74,7 @@
             currency: "VND"
         };
     </script>
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js" integrity="sha512-g8z5xHlBjiqm7LYuN0A4V8xC0aJj7mDr7Az/KBYQCbDyV12A5P4c2K1xJ7L/kGUNJv+NxKBhF2QN9X3bZVKE3N3A==" crossorigin="anonymous"></script>
     <script defer src="{{ url_for('static', filename='js/i18n.js') }}"></script>
     <script defer src="{{ url_for('static', filename='js/base_theme.js') }}"></script>
     <script defer src="{{ url_for('static', filename='js/chat.js') }}"></script>

@@ -6,32 +6,9 @@
 {{ super() }}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/workspace_scenario.css') }}">
 <style>
-    /* =========================================================
-       ANSER RETAIL: LINEAR / STRIPE LIGHT AESTHETIC
-       ========================================================= */
-    :root {
-        --app-bg: #F7F9FC;          /* Subtle cool off-white */
-        --card-bg: #FFFFFF;         /* Pure white */
-        --text-main: #111827;       /* Near black for high contrast */
-        --text-muted: #6B7280;      /* Cool gray for secondary text */
-        --border-light: #E5E7EB;    /* Crisp, faint border */
-        --accent-primary: #6366F1;  /* Stripe Indigo */
-        --accent-hover: #4F46E5;
-        --shadow-base: 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.03);
-        --shadow-hover: 0 10px 15px -3px rgba(0, 0, 0, 0.04), 0 4px 6px -2px rgba(0, 0, 0, 0.02);
-    }
+    /* ── Page-specific styles (shared tokens now in saas-tokens.css) ── */
 
-    /* 1. Force Light Theme for the App Base */
-    html, body, .scenario-wrapper, .scenario-main {
-        background-color: var(--app-bg) !important;
-        color: var(--text-main) !important;
-    }
-
-    /* Disable any lingering dark mode or ambient orbs */
-    .dark-mode { background-color: var(--app-bg) !important; }
-    .retail-ambient { display: none !important; }
-
-    /* 2. Layout Structure */
+    /* 1. Layout Structure */
     .scenario-main {
         padding: 48px 5%; 
         max-width: 1400px; 
@@ -171,13 +148,6 @@
 {% block scripts %}
 {{ super() }}
 <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
-<script>
-    // Failsafe: Ensure local storage and HTML attributes are forced to Light Mode
-    document.documentElement.setAttribute('data-theme', 'light');
-    document.documentElement.classList.remove('theme-dark');
-    document.body.classList.remove('dark-mode');
-    localStorage.setItem('theme-preference', 'light');
-</script>
 {% endblock %}
 
 {% block content %}
@@ -205,22 +175,22 @@
             </div>
             <div class="saas-stats-grid">
                 <div class="saas-stat-card">
-                    <p><span data-i18n="dashboard.todayRevenue">Doanh thu hôm nay</span> <i class="fas fa-ellipsis-h" style="color: #D1D5DB; cursor: pointer;"></i></p>
+                    <p><span data-i18n="dashboard.todayRevenue">Doanh thu hôm nay</span> <i class="fas fa-ellipsis-h" style="color: #D1D5DB; cursor: pointer;" role="button" aria-label="Tùy chọn"></i></p>
                     <h3 data-stat="today_revenue">—</h3>
                     <span class="saas-stat-pill" data-stat="today_sales_count">Hôm nay</span>
                 </div>
                 <div class="saas-stat-card">
-                    <p><span data-i18n="dashboard.totalRevenue">Tổng doanh thu</span> <i class="fas fa-ellipsis-h" style="color: #D1D5DB; cursor: pointer;"></i></p>
+                    <p><span data-i18n="dashboard.totalRevenue">Tổng doanh thu</span> <i class="fas fa-ellipsis-h" style="color: #D1D5DB; cursor: pointer;" role="button" aria-label="Tùy chọn"></i></p>
                     <h3 data-stat="revenue">—</h3>
                     <span class="saas-stat-pill">Tháng này</span>
                 </div>
                 <div class="saas-stat-card">
-                    <p><span data-i18n="dashboard.newOrders">Đơn hàng mới</span> <i class="fas fa-ellipsis-h" style="color: #D1D5DB; cursor: pointer;"></i></p>
+                    <p><span data-i18n="dashboard.newOrders">Đơn hàng mới</span> <i class="fas fa-ellipsis-h" style="color: #D1D5DB; cursor: pointer;" role="button" aria-label="Tùy chọn"></i></p>
                     <h3 data-stat="new_orders">0</h3>
                     <span class="saas-stat-pill">Hôm nay</span>
                 </div>
                 <div class="saas-stat-card">
-                    <p><span data-i18n="dashboard.returnOrders">Đơn hoàn trả</span> <i class="fas fa-ellipsis-h" style="color: #D1D5DB; cursor: pointer;"></i></p>
+                    <p><span data-i18n="dashboard.returnOrders">Đơn hoàn trả</span> <i class="fas fa-ellipsis-h" style="color: #D1D5DB; cursor: pointer;" role="button" aria-label="Tùy chọn"></i></p>
                     <h3 data-stat="pending_returns">0</h3>
                     <span class="saas-stat-pill">Đang chờ</span>
                 </div>

@@ -6,23 +6,9 @@
 {{ super() }}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/workspace_scenario.css') }}">
 <style>
-    /* =========================================================
-       ANSER RETAIL: LINEAR / STRIPE LIGHT AESTHETIC
-       ========================================================= */
-    :root {
-        --app-bg: #F7F9FC; --card-bg: #FFFFFF; --text-main: #111827; --text-muted: #6B7280;
-        --border-light: #E5E7EB; --accent-primary: #6366F1; --accent-success: #10B981; --accent-warning: #F59E0B;
-        --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05); --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.08), 0 2px 4px -1px rgba(0, 0, 0, 0.04);
-    }
+    /* ── Page-specific styles (shared tokens now in saas-tokens.css) ── */
 
-    html, body, .scenario-wrapper, .scenario-main {
-        background-color: var(--app-bg) !important;
-        color: var(--text-main) !important;
-        font-family: 'Inter', -apple-system, sans-serif;
-    }
-    .dark-mode { background-color: var(--app-bg) !important; }
-    
-    .scenario-main { padding: 40px 5%; max-width: 1400px; margin: 0 auto; margin-left: 260px; }
+    .scenario-main { padding: 40px 5%; max-width: 1400px; margin: 0 auto; margin-left: 280px; }
 
     /* Remove the ugly white box wrapper from the old CSS */
     .collection-block {
@@ -82,11 +68,6 @@
         if (hash) url += hash;
         window.location.href = url;
     }
-    // Force Light Theme
-    document.documentElement.setAttribute('data-theme', 'light');
-    document.documentElement.classList.remove('theme-dark');
-    document.body.classList.remove('dark-mode');
-    localStorage.setItem('theme-preference', 'light');
 </script>
 {% if current_user.role in ['manager', 'admin'] %}
 <script src="{{ url_for('static', filename='js/wallet.js') }}" defer></script>

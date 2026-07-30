@@ -4,17 +4,7 @@
 {% block styles %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/sale.css') }}">
 <style>
-    /* =========================================================
-       ANSER RETAIL: LINEAR / STRIPE LIGHT AESTHETIC (POS)
-       ========================================================= */
-    :root {
-        --app-bg: #F7F9FC; --card-bg: #FFFFFF; --text-main: #111827; --text-muted: #6B7280;
-        --border-light: #E5E7EB; --accent-primary: #6366F1; --accent-success: #10B981;
-        --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05); --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.08);
-        --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-    }
-    html, body, .sale-container, .app-layout { background-color: var(--app-bg) !important; color: var(--text-main) !important; font-family: 'Inter', sans-serif; }
-    .dark-mode { background-color: var(--app-bg) !important; }
+    /* ── Page-specific styles (shared tokens now in saas-tokens.css) ── */
 
     /* Left Panel (Products) */
     .left-panel { background-color: var(--app-bg) !important; }
@@ -61,11 +51,11 @@
         <!-- Bên trái: Tìm kiếm & lưới sản phẩm -->
         <div class="col-md-7 col-lg-8 d-flex flex-column p-4 left-panel">
             <div class="d-flex align-items-center mb-4">
-                <a href="{{ url_for('pages.workspace') }}" class="btn btn-outline-secondary me-3" style="border-radius: 8px; font-weight: 500; border: 1px solid #E5E7EB; background: #fff; color: #111827;">
+                <a href="{{ url_for('pages.workspace') }}" class="btn btn-outline-secondary me-3" style="border-radius: 8px; font-weight: 500; border: 1px solid #E5E7EB; background: #fff; color: #111827;" aria-label="Quay lại">
                     <i class="fas fa-arrow-left"></i> <span data-i18n="sale.back">Quay lại</span>
                 </a>
                 <h4 class="mb-0 me-auto" style="font-weight: 800; letter-spacing: -0.02em;" data-i18n="sale.title">Điểm bán hàng</h4>
-                <button class="btn btn-primary" onclick="showHistory()" style="border-radius: 8px;">
+                <button class="btn btn-primary" onclick="showHistory()" style="border-radius: 8px;" aria-label="Lịch sử bán hàng">
                     <i class="fas fa-history"></i> <span data-i18n="sale.history">Lịch sử</span>
                 </button>
             </div>
@@ -73,7 +63,7 @@
                 <div class="input-group input-group-lg" style="border-radius: 12px; overflow: hidden;">
                     <span class="input-group-text search-icon border-end-0"><i class="fas fa-search" style="color: #9CA3AF;"></i></span>
                     <input type="text" id="productSearch" class="form-control border-start-0 ps-0"
-                        placeholder="Tìm sản phẩm (quét mã vạch hoặc gõ tên)..." autocomplete="off" data-i18n-placeholder="sale.searchPlaceholder">
+                        placeholder="Tìm sản phẩm (quét mã vạch hoặc gõ tên)..." autocomplete="off" data-i18n-placeholder="sale.searchPlaceholder" aria-label="Tìm sản phẩm">
                 </div>
                 <div id="searchResults" class="search-results-dropdown shadow-lg" style="display: none; border-radius: 12px; border: 1px solid #E5E7EB; margin-top: 8px;"></div>
             </div>
@@ -194,9 +184,9 @@
                     <div class="input-group">
                         <span class="input-group-text bg-white"><i class="fas fa-search text-muted"></i></span>
                         <input type="text" id="historySearchInput" class="form-control border-start-0 ps-0"
-                            placeholder="Tìm theo mã hoặc phương thức thanh toán..." data-i18n-placeholder="sale.searchHistoryPlaceholder">
+                            placeholder="Tìm theo mã hoặc phương thức thanh toán..." data-i18n-placeholder="sale.searchHistoryPlaceholder" aria-label="Tìm lịch sử bán hàng">
                     </div>
-                    <button class="btn btn-outline-secondary" onclick="refreshHistory()" style="background: white !important;">
+                    <button class="btn btn-outline-secondary" onclick="refreshHistory()" style="background: white !important;" aria-label="Làm mới lịch sử">
                         <i class="fas fa-sync-alt"></i>
                     </button>
                 </div>
@@ -264,10 +254,5 @@
 
 {% block scripts %}
 <script src="{{ url_for('static', filename='js/sale.js') }}"></script>
-<script>
-    document.documentElement.setAttribute('data-theme', 'light');
-    document.documentElement.classList.remove('theme-dark');
-    document.body.classList.remove('dark-mode');
-    localStorage.setItem('theme-preference', 'light');
-</script>
+
 {% endblock %}

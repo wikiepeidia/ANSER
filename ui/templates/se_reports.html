@@ -6,16 +6,7 @@
 {{ super() }}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/admin_reports.css') }}">
 <style>
-    /* =========================================================
-       ANSER RETAIL: LINEAR / STRIPE LIGHT AESTHETIC
-       ========================================================= */
-    :root {
-        --app-bg: #F7F9FC; --card-bg: #FFFFFF; --text-main: #111827; --text-muted: #6B7280;
-        --border-light: #E5E7EB; --accent-primary: #6366F1;
-        --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05); --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.08);
-    }
-    html, body, .app-layout, .app-content, .main-content { background-color: var(--app-bg) !important; color: var(--text-main) !important; font-family: 'Inter', sans-serif; }
-    .dark-mode { background-color: var(--app-bg) !important; }
+    /* ── Page-specific styles (shared tokens now in saas-tokens.css) ── */
 
     .border-bottom { border-bottom: 1px solid var(--border-light) !important; margin-bottom: 32px !important; padding-bottom: 16px !important; }
     h1.h2 { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.02em; color: var(--text-main); display: flex; align-items: center; gap: 12px; margin:0;}
@@ -60,12 +51,7 @@
 {% block scripts %}
 {{ super() }}
 <script src="{{ url_for('static', filename='js/admin_reports.js') }}" defer></script>
-<script>
-    document.documentElement.setAttribute('data-theme', 'light');
-    document.documentElement.classList.remove('theme-dark');
-    document.body.classList.remove('dark-mode');
-    localStorage.setItem('theme-preference', 'light');
-</script>
+
 {% endblock %}
 
 {% block content %}
@@ -75,7 +61,7 @@
     <main class="app-content main-content reports-page">
         <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
             <h1 class="h2"><i class="fas fa-file-invoice-dollar"></i> <span data-i18n="seReports.title">SE - Báo cáo doanh thu &amp; chi phí</span></h1>
-            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#scheduleReportModal">
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#scheduleReportModal" aria-label="Lên lịch báo cáo">
                 <i class="fas fa-calendar-plus"></i> <span data-i18n="seReports.scheduleReport">Lên lịch báo cáo</span>
             </button>
         </div>

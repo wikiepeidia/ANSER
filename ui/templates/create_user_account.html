@@ -6,16 +6,7 @@
 {{ super() }}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/create_user.css') }}">
 <style>
-    /* =========================================================
-       ANSER RETAIL: LINEAR / STRIPE LIGHT AESTHETIC
-       ========================================================= */
-    :root {
-        --app-bg: #F7F9FC; --card-bg: #FFFFFF; --text-main: #111827; --text-muted: #6B7280;
-        --border-light: #E5E7EB; --accent-primary: #6366F1;
-        --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05); --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.08);
-    }
-    html, body, .app-layout, .app-content, .main-content { background-color: var(--app-bg) !important; color: var(--text-main) !important; font-family: 'Inter', sans-serif; }
-    .dark-mode { background-color: var(--app-bg) !important; }
+    /* ── Page-specific styles (shared tokens now in saas-tokens.css) ── */
 
     .create-user-header { border-bottom: 1px solid var(--border-light) !important; margin-bottom: 32px !important; padding-bottom: 16px !important; }
     .create-user-header h1 { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.02em; color: var(--text-main); margin:0 0 8px 0;}
@@ -64,12 +55,7 @@
 {% block scripts %}
 {{ super() }}
 <script src="{{ url_for('static', filename='js/create_user.js') }}" defer></script>
-<script>
-    document.documentElement.setAttribute('data-theme', 'light');
-    document.documentElement.classList.remove('theme-dark');
-    document.body.classList.remove('dark-mode');
-    localStorage.setItem('theme-preference', 'light');
-</script>
+
 {% endblock %}
 
 {% block content %}
@@ -137,7 +123,7 @@
                 <div class="create-user-card h-100 mb-0">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; border-bottom: 1px solid var(--border-light); padding-bottom: 16px;">
                         <h2 style="margin: 0; font-size: 1.1rem; font-weight: 700; color: var(--text-main);"><i class="fas fa-users text-muted me-2"></i> <span data-i18n="createUser.employeeList">Danh sách nhân viên</span></h2>
-                        <button class="btn btn-secondary btn-sm" onclick="loadUserList()">
+                        <button class="btn btn-secondary btn-sm" onclick="loadUserList()" aria-label="Tải lại danh sách">
                             <i class="fas fa-sync-alt"></i> <span data-i18n="mgrPerm.reload">Tải lại</span>
                         </button>
                     </div>
@@ -145,7 +131,7 @@
                     <div style="margin-bottom: 20px; max-width: 400px;">
                         <div class="input-group">
                             <span class="input-group-text bg-white border-end-0" style="border-color: #D1D5DB;"><i class="fas fa-search text-muted"></i></span>
-                            <input type="text" id="searchUser" class="search-input border-start-0 ps-0" placeholder="Tìm theo email hoặc tên..." data-i18n-placeholder="createUser.searchPlaceholder" style="box-shadow: none;">
+                            <input type="text" id="searchUser" class="search-input border-start-0 ps-0" placeholder="Tìm theo email hoặc tên..." data-i18n-placeholder="createUser.searchPlaceholder" style="box-shadow: none;" aria-label="Tìm nhân viên">
                         </div>
                     </div>
 

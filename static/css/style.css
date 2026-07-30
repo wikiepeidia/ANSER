@@ -640,18 +640,20 @@ body.dark-mode .social-btn {
 }
 
 .role-admin {
-    background: #ADDFF1;
-    color: #003152;
+    background: rgba(99, 102, 241, 0.15);
+    color: #4F46E5;
+    border: 1px solid rgba(99, 102, 241, 0.3);
 }
 
 .role-manager {
-    background: #0077b6;
-    color: #fff;
+    background: rgba(16, 185, 129, 0.15);
+    color: #059669;
+    border: 1px solid rgba(16, 185, 129, 0.3);
 }
 
 .role-user {
-    background: rgba(255, 255, 255, 0.15);
-    color: #fff;
+    background: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.8);
 }
 
 .menu-container {

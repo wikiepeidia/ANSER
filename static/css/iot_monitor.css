@@ -83,13 +83,16 @@
     background: var(--card-bg, #fff);
     border-radius: 14px;
     box-shadow: 0 2px 12px rgba(0,0,0,.07);
-    overflow-x: auto;
+    overflow-x: auto !important;
     -webkit-overflow-scrolling: touch;
+    display: block;
 }
 
 .iot-table {
-    width: 100%;
+    width: max-content !important;
+    min-width: 100%;
     border-collapse: collapse;
+    display: table;
 }
 
 .iot-table thead tr {
