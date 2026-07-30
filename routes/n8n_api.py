@@ -850,6 +850,7 @@ _TEMPLATE_META = {
     'manuf_batch_process_log':     {'icon': 'fa-industry',       'color': '#FB8C00', 'label': 'Nhật ký quy trình lô',    'desc': 'Webhook ghi nhận sự kiện trong quá trình sản xuất theo lô'},
     'manuf_waste_profit_report':   {'icon': 'fa-chart-pie',      'color': '#EF5350', 'label': 'Báo cáo hao hụt & lợi nhuận', 'desc': 'Webhook báo cáo cuối ca → tính hao hụt/lợi nhuận → lưu + thông báo'},
     'manuf_dr_report_periodic':    {'icon': 'fa-file-lines',     'color': '#42A5F5', 'label': 'Báo cáo định kỳ (DR)',    'desc': 'Lịch chạy hàng tháng → tổng hợp báo cáo bằng AI → gửi thông báo'},
+    'manuf_expiry_alert':          {'icon': 'fa-triangle-exclamation', 'color': '#E53935', 'label': 'Cảnh báo hết hạn NVL', 'desc': 'Lịch chạy hàng ngày → kiểm tra lô sắp hết hạn → thông báo'},
 }
 
 

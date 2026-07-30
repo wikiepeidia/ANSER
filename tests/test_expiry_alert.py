@@ -4,6 +4,8 @@ and the new `workflow_templates/manuf_expiry_alert.json` schedule-triggered
 template that consumes it. See .planning/phases/05-ai-services-automation-
 completion/05-03-PLAN.md and 05-CONTEXT.md.
 """
+import json
+import os
 from datetime import date, timedelta
 
 
@@ -69,3 +71,38 @@ def test_expiring_alert_defaults_to_7_days(client):
     assert res.status_code == 200
     body = res.get_json()
     assert body['days'] == 7
+
+
+def test_workflow_template_expiry_alert_structure():
+    fp = os.path.join(
+        os.path.dirname(__file__), '..', 'workflow_templates', 'manuf_expiry_alert.json'
+    )
+    with open(fp, encoding='utf-8') as f:
+        data = json.load(f)
+
+    assert data['name'] == 'manuf_expiry_alert'
+    assert data['active'] is False
+
+    node_names = {n['name'] for n in data['nodes']}
+    assert any(n['type'] == 'n8n-nodes-base.scheduleTrigger' for n in data['nodes'])
+    assert any(
+        '$env.RAG_BASE_URL' in n.get('parameters', {}).get('url', '')
+        and '/expiring-alert' in n.get('parameters', {}).get('url', '')
+        for n in data['nodes']
+    )
+    assert any(
+        n.get('parameters', {}).get('url') == '={{ $env.NOTIFY_URL }}' for n in data['nodes']
+    )
+
+    for source, spec in data['connections'].items():
+        assert source in node_names
+        for branch in spec.get('main', []):
+            for conn in branch:
+                assert conn['node'] in node_names
+
+
+def test_expiry_alert_template_appears_in_templates_list(logged_in_client):
+    res = logged_in_client.get('/api/n8n/templates')
+    assert res.status_code == 200
+    slugs = [t['slug'] for t in res.get_json()['templates']]
+    assert 'manuf_expiry_alert' in slugs
