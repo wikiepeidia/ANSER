@@ -633,13 +633,38 @@ def internal_notify():
 
 @n8n_api_bp.route('/api/n8n/internal/brain/chat', methods=['POST'])
 def internal_brain_chat():
-    """Mock stub for {{ $env.BRAIN_BASE_URL }}/chat — no real LLM is wired
-    up for San Xuat. Clearly flagged as mock so it's obvious in any output."""
-    _log_event('brain:chat', request.get_json(silent=True) or {})
-    return jsonify({
-        'success': True, 'mock': True,
-        'message': '[MOCK] Dịch vụ AI/Brain chưa được triển khai cho Sản xuất — đây là phản hồi giả lập.',
-    })
+    """Realistic mock for {{ $env.BRAIN_BASE_URL }}/chat — no real LLM is
+    wired up for San Xuat (N8N-02, 05-CONTEXT.md locked decision). Unlike
+    the old always-succeeds stub, this validates that a real `prompt` was
+    sent (400 on missing/blank) and echoes back input-derived, varied text
+    instead of one static canned string. When the caller's `context`
+    carries `infer_production.items`, also returns a naive 1:1
+    `inference.items[].qty_to_produce` pass-through (documented placeholder
+    heuristic, not a real inference model) — this is what
+    manuf_ocr_customer_order.json's co-build-order code node reads.
+    """
+    data = request.get_json(silent=True) or {}
+    _log_event('brain:chat', data)
+    prompt = (data.get('prompt') or '').strip()
+    if not prompt:
+        return jsonify({'success': False, 'mock': True,
+                        'message': 'Thiếu nội dung prompt để xử lý'}), 400
+
+    route = data.get('route', 'GENERAL')
+    result = {
+        'success': True, 'mock': True, 'route': route,
+        'text': f'[MOCK] Đã xử lý yêu cầu ({route}): {prompt[:120]}',
+    }
+
+    context = data.get('context') or {}
+    infer = context.get('infer_production') or {}
+    items = infer.get('items')
+    if isinstance(items, list):
+        result['inference'] = {
+            'items': [{'sku': it.get('sku'), 'qty_to_produce': it.get('qty') or 0}
+                      for it in items if isinstance(it, dict)],
+        }
+    return jsonify(result)
 
 
 @n8n_api_bp.route('/api/n8n/internal/brain/upload', methods=['POST'])
@@ -651,9 +676,44 @@ def internal_brain_upload():
 
 @n8n_api_bp.route('/api/n8n/internal/brain/mcp/validate-invoice', methods=['POST'])
 def internal_brain_validate_invoice():
-    """Mock stub for {{ $env.BRAIN_BASE_URL }}/mcp/validate-invoice."""
-    _log_event('brain:validate-invoice', request.get_json(silent=True) or {})
-    return jsonify({'success': True, 'mock': True, 'valid': True})
+    """Realistic mock for {{ $env.BRAIN_BASE_URL }}/mcp/validate-invoice,
+    N8N-02. Fixes a pre-existing field-name bug: the old stub returned a
+    flat `valid` boolean that no workflow template node ever actually read
+    (manuf_material_batch_intake.json's in-merge code node reads
+    `is_valid`/`difference`/`ocr_total`/`calculated_total`). No body at all
+    is a hard 400; empty/mismatched line items is a 200 low-confidence
+    `is_valid: false` result, not an automatic success."""
+    data = request.get_json(silent=True)
+    _log_event('brain:validate-invoice', data or {})
+    if data is None:
+        return jsonify({'success': False, 'mock': True,
+                        'message': 'Thiếu dữ liệu để đối chiếu hoá đơn'}), 400
+
+    items = data.get('items')
+    total = data.get('total')
+    if not isinstance(items, list) or not items or total is None:
+        return jsonify({
+            'success': True, 'mock': True, 'is_valid': False,
+            'ocr_total': 0, 'calculated_total': 0, 'difference': 0,
+            'reason': 'Không có đủ dữ liệu dòng hàng/tổng tiền để đối chiếu',
+        })
+
+    calculated_total = round(sum(
+        (i.get('qty') or 0) * (i.get('unit_price') or 0)
+        for i in items if isinstance(i, dict)
+    ))
+    try:
+        ocr_total = float(total)
+    except (TypeError, ValueError):
+        ocr_total = 0
+    difference = round(abs(ocr_total - calculated_total))
+    tolerance = max(1, round(calculated_total * 0.01))
+    is_valid = difference <= tolerance
+    return jsonify({
+        'success': True, 'mock': True, 'is_valid': is_valid,
+        'ocr_total': ocr_total, 'calculated_total': calculated_total,
+        'difference': difference,
+    })
 
 
 # n8n's HTTP Request nodes call these with no session/CSRF token — exempt

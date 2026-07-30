@@ -42,6 +42,7 @@ tests/
 !/tests/test_n8n_internal.py
 !/tests/test_costing.py
 !/tests/test_invoices.py
+!/tests/test_brain_mock.py
 evaluate/
 jobs/
 # C extensions
