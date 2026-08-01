@@ -27,8 +27,11 @@ class KnowledgeBase:
         logger.info("Compute device: %s", self.device.upper())
 
         # 2. Upgraded Models (Multilingual + Fast)
+        # Embedder always stays on self.device -- only the reranker gets an
+        # independent RERANKER_DEVICE override (AI-OPS-02's VRAM-freeing
+        # lever), so embedder behavior for any existing caller never changes.
         self.embedder = SentenceTransformer('sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2', device=self.device)
-        self.reranker = CrossEncoder('BAAI/bge-reranker-v2-m3', device=self.device)
+        self.reranker = CrossEncoder('BAAI/bge-reranker-v2-m3', device=self._resolve_reranker_device())
 
         # DB Setup
         os.makedirs(persist_dir, exist_ok=True)
@@ -43,6 +46,20 @@ class KnowledgeBase:
 
         self.ingest_folder()
         self._ensure_bm25()
+
+    def _resolve_reranker_device(self):
+        """Independent device-placement override for the reranker only.
+
+        `RERANKER_DEVICE` unset (or blank) -> falls back to `self.device`
+        unchanged (no behavior change for any existing caller). Set (e.g.
+        `RERANKER_DEVICE=cpu`) -> moves only the reranker off-GPU, freeing
+        VRAM without touching vLLM's own slice or the embedder's device
+        selection (09-RESEARCH.md's Architectural Responsibility Map: the
+        reranker is the one candidate for CPU demotion). Whitespace/case
+        noise (e.g. `" CPU "`) is normalized via strip().lower().
+        """
+        override = os.getenv("RERANKER_DEVICE", "").strip().lower()
+        return override if override else self.device
 
     def _ensure_bm25(self):
         if not self._bm25_dirty:
