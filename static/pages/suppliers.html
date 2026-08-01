@@ -1,4 +1,4 @@
-<!-- suppliers.html — Quản lý nhà cung cấp (mock, localStorage) -->
+<!-- suppliers.html — Quản lý nhà cung cấp (real API: /api/suppliers*) -->
 <div class="content__header">
   <h1 class="content__title">Nhà cung cấp</h1>
   <p class="content__subtitle">Quản lý NCC nguyên vật liệu · Tổng: <strong id="supplierTotal">0</strong> NCC</p>
@@ -12,9 +12,6 @@
     </div>
   </div>
   <div style="display:flex;gap:8px;flex-wrap:wrap">
-    <button class="btn btn--outline" id="btnResetSupplierSeed" title="Dùng khi trình duyệt đang lưu bộ dữ liệu mẫu cũ">
-      <i class="fa-solid fa-arrows-rotate"></i> Nạp lại dữ liệu mẫu
-    </button>
     <button class="btn btn--primary" id="btnAddSupplier">
       <i class="fa-solid fa-plus"></i> Thêm nhà cung cấp
     </button>
@@ -36,17 +33,17 @@
 </div>
 
 <script>
-(function () {
-  function filtered() {
+(async function () {
+  async function filtered() {
     const q = document.getElementById("supplierSearch").value.toLowerCase();
-    return Store.getSupplierSummary().filter(({ supplier: s }) => {
+    return (await Store.getSupplierSummary()).filter(({ supplier: s }) => {
       if (!q) return true;
       return `${s.name} ${s.contact} ${s.phone} ${s.email}`.toLowerCase().includes(q);
     });
   }
 
-  function renderTable() {
-    const rows = filtered();
+  async function renderTable() {
+    const rows = await filtered();
     document.getElementById("supplierTotal").textContent = Store.suppliers.length;
     const body = document.getElementById("supplierTableBody");
     body.innerHTML = rows.length
@@ -70,13 +67,7 @@
 
   document.getElementById("supplierSearch").addEventListener("input", renderTable);
   document.getElementById("btnAddSupplier").addEventListener("click", () => Router.editSupplier(null));
-  document.getElementById("btnResetSupplierSeed").addEventListener("click", () => {
-    if (!window.confirm("Nạp lại dữ liệu mẫu nhà cung cấp? NCC bạn tự thêm/sửa sẽ bị thay bằng bộ mẫu mới.")) return;
-    Store.resetSuppliersSeed();
-    showToast("Đã nạp lại dữ liệu mẫu nhà cung cấp!");
-    renderTable();
-  });
 
-  renderTable();
+  await renderTable();
 })();
 </script>

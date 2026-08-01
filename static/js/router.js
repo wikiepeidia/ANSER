@@ -34,8 +34,7 @@ const Router = {
     await Store.loadProductionOrders();
     Store.loadMaterialBatches();
     Store.loadWarehouseStock();
-    Store.loadSuppliers();
-    Store.loadInvoices();
+    await Store.loadSuppliers();
     Store.loadChatMessages();
 
     // Bind nav events
@@ -313,7 +312,7 @@ const Router = {
         Store.deleteBatch(id);
         showToast("Đã xoá lô nguyên liệu!");
       } else if (type === "supplier") {
-        Store.deleteSupplier(id);
+        await Store.deleteSupplier(id);
         showToast("Đã xoá nhà cung cấp!");
       } else {
         await Store.deleteProduct(id);
@@ -682,7 +681,7 @@ const Router = {
     modal.classList.add("open");
   },
 
-  saveSupplierForm(e) {
+  async saveSupplierForm(e) {
     e.preventDefault();
     const modal = document.getElementById("supplierModal");
     const form = e.target;
@@ -696,10 +695,10 @@ const Router = {
     };
     try {
       if (modal.dataset.editId) {
-        Store.updateSupplier(parseInt(modal.dataset.editId), data);
+        await Store.updateSupplier(parseInt(modal.dataset.editId), data);
         showToast("Đã cập nhật nhà cung cấp!");
       } else {
-        Store.createSupplier(data);
+        await Store.createSupplier(data);
         showToast("Đã thêm nhà cung cấp mới!");
       }
       modal.classList.remove("open");
