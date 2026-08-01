@@ -32,6 +32,8 @@
         "method": "POST",
         "url": "={{ $env.BRAIN_BASE_URL }}/upload?scenario={{ $json.scenario }}",
         "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": { "parameters": [{ "name": "x-anser-token", "value": "={{ $env.ANSER_WEBHOOK_TOKEN }}" }] },
         "options": { "timeout": 45000 }
       },
       "id": "co-ocr",
@@ -45,6 +47,8 @@
         "method": "POST",
         "url": "={{ $env.BRAIN_BASE_URL }}/mcp/validate-invoice",
         "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": { "parameters": [{ "name": "x-anser-token", "value": "={{ $env.ANSER_WEBHOOK_TOKEN }}" }] },
         "sendBody": true, "contentType": "raw", "rawContentType": "application/json",
         "body": "={{ JSON.stringify({ items: $json.items, total: $json.total }) }}",
         "options": {}
@@ -68,6 +72,8 @@
         "method": "POST",
         "url": "={{ $env.BRAIN_BASE_URL }}/chat",
         "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": { "parameters": [{ "name": "x-anser-token", "value": "={{ $env.ANSER_WEBHOOK_TOKEN }}" }] },
         "sendBody": true, "contentType": "raw", "rawContentType": "application/json",
         "body": "={{ JSON.stringify({ route: 'TECHNICAL', prompt: 'Tu don hang nay tinh SL SP can san xuat theo ma SKU', context: { infer_production: { items: $('Call Brain OCR Order').first().json.items } } }) }}",
         "options": {}
@@ -94,6 +100,8 @@
         "method": "POST",
         "url": "={{ $env.RAG_BASE_URL }}/production-order-insert",
         "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": { "parameters": [{ "name": "x-anser-token", "value": "={{ $env.ANSER_WEBHOOK_TOKEN }}" }] },
         "sendBody": true, "contentType": "raw", "rawContentType": "application/json",
         "body": "={{ $json.request_body }}",
         "options": {}
@@ -149,6 +157,8 @@
         "method": "POST",
         "url": "={{ $env.RAG_BASE_URL }}/pending-review",
         "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": { "parameters": [{ "name": "x-anser-token", "value": "={{ $env.ANSER_WEBHOOK_TOKEN }}" }] },
         "sendBody": true, "contentType": "raw", "rawContentType": "application/json",
         "body": "={{ JSON.stringify({ kind: 'customer_order', reason: 'Lech tong ' + $json.difference + ' VND', ocr_total: $json.ocr_total, calculated_total: $json.calculated_total, raw_payload: $('Call Brain OCR Order').first().json }) }}",
         "options": {}

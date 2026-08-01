@@ -14,6 +14,8 @@
         "method": "GET",
         "url": "={{ $env.RAG_BASE_URL }}/dr-report?period=month",
         "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": { "parameters": [{ "name": "x-anser-token", "value": "={{ $env.ANSER_WEBHOOK_TOKEN }}" }] },
         "options": {}
       },
       "id": "dr-fetch",
@@ -28,6 +30,8 @@
         "method": "POST",
         "url": "={{ $env.BRAIN_BASE_URL }}/chat",
         "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": { "parameters": [{ "name": "x-anser-token", "value": "={{ $env.ANSER_WEBHOOK_TOKEN }}" }] },
         "sendBody": true, "contentType": "raw", "rawContentType": "application/json",
         "body": "={{ JSON.stringify({ route: 'GENERAL', prompt: 'Viết tóm tắt báo cáo ĐR kỳ này: chi phí B ' + $json.chi_phi_B + ', doanh thu ' + $json.doanh_thu + ', lợi nhuận ' + $json.loi_nhuan + ' (' + $json.loi_nhuan_pct + '%). KHÔNG thay đổi số.' }) }}",
         "options": {}
@@ -54,6 +58,8 @@
         "method": "POST",
         "url": "={{ $env.DOCS_URL }}",
         "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": { "parameters": [{ "name": "x-anser-token", "value": "={{ $env.ANSER_WEBHOOK_TOKEN }}" }] },
         "sendBody": true, "contentType": "raw", "rawContentType": "application/json",
         "body": "={{ $json.docs_body }}",
         "options": {}

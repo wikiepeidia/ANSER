@@ -32,6 +32,8 @@
         "method": "POST",
         "url": "={{ $env.RAG_BASE_URL }}/material-requirements-generate",
         "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": { "parameters": [{ "name": "x-anser-token", "value": "={{ $env.ANSER_WEBHOOK_TOKEN }}" }] },
         "sendBody": true, "contentType": "raw", "rawContentType": "application/json",
         "body": "={{ $json.request_body }}",
         "options": {}
@@ -58,6 +60,8 @@
         "method": "POST",
         "url": "={{ $env.BRAIN_BASE_URL }}/chat",
         "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": { "parameters": [{ "name": "x-anser-token", "value": "={{ $env.ANSER_WEBHOOK_TOKEN }}" }] },
         "sendBody": true, "contentType": "raw", "rawContentType": "application/json",
         "body": "={{ JSON.stringify({ route: 'TECHNICAL', prompt: 'Uoc luong nguyen lieu can cho SP ' + $json.product_code + ' so luong ' + $json.qty, context: { estimate_bom: { product_code: $json.product_code, qty: $json.qty } } }) }}",
         "options": {}
@@ -84,6 +88,8 @@
         "method": "POST",
         "url": "={{ $env.RAG_BASE_URL }}/material-requirements-insert",
         "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": { "parameters": [{ "name": "x-anser-token", "value": "={{ $env.ANSER_WEBHOOK_TOKEN }}" }] },
         "sendBody": true, "contentType": "raw", "rawContentType": "application/json",
         "body": "={{ $json.fallback_body }}",
         "options": {}

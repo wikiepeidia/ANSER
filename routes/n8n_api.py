@@ -660,6 +660,8 @@ def internal_rag(action):
     directly to that table. Every other action keeps falling through to
     the generic automation_events sink, unchanged from before this phase.
     """
+    if not _check_webhook_token():
+        return jsonify({'success': False, 'error': 'unauthorized'}), 401
     payload = request.get_json(silent=True) or dict(request.args)
     handler = _REAL_TABLE_ACTIONS.get(action)
     if handler:
@@ -692,6 +694,8 @@ def internal_brain_chat():
     heuristic, not a real inference model) — this is what
     manuf_ocr_customer_order.json's co-build-order code node reads.
     """
+    if not _check_webhook_token():
+        return jsonify({'success': False, 'error': 'unauthorized'}), 401
     data = request.get_json(silent=True) or {}
     _log_event('brain:chat', data)
     prompt = (data.get('prompt') or '').strip()
@@ -771,6 +775,8 @@ def internal_brain_upload():
     response (matching how every workflow template reads `ocr.items`/
     `ocr.farmer`/`ocr.doc_no` etc. directly off the HTTP node's `.json`,
     not nested under an `extracted` key like the old stub)."""
+    if not _check_webhook_token():
+        return jsonify({'success': False, 'error': 'unauthorized'}), 401
     scenario = (request.args.get('scenario') or '').strip()
     _log_event('brain:upload', dict(request.args))
     if not scenario:
@@ -789,6 +795,8 @@ def internal_brain_validate_invoice():
     `is_valid`/`difference`/`ocr_total`/`calculated_total`). No body at all
     is a hard 400; empty/mismatched line items is a 200 low-confidence
     `is_valid: false` result, not an automatic success."""
+    if not _check_webhook_token():
+        return jsonify({'success': False, 'error': 'unauthorized'}), 401
     data = request.get_json(silent=True)
     _log_event('brain:validate-invoice', data or {})
     if data is None:

@@ -14,6 +14,8 @@
         "method": "GET",
         "url": "={{ $env.RAG_BASE_URL }}/expiring-alert?days=7",
         "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": { "parameters": [{ "name": "x-anser-token", "value": "={{ $env.ANSER_WEBHOOK_TOKEN }}" }] },
         "options": {}
       },
       "id": "ea-fetch",
