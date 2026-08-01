@@ -18,6 +18,7 @@ import secrets
 import json
 import glob
 import random
+import hmac
 
 import requests as _req
 from flask import Blueprint, jsonify, request
@@ -410,6 +411,17 @@ def _detect_trigger(nodes):
 _OCR_LOW_QUALITY_KEYWORDS = ('blur', 'unclear', 'illegible', 'corrupt', 'fail')
 
 
+def _check_webhook_token():
+    """Shared-secret guard for every /api/n8n/internal/* route (SEC-02).
+    Constant-time compare, fail-closed when Config.ANSER_WEBHOOK_TOKEN is
+    unset — same established pattern as
+    routes/internal_admin_routes.py::_authorized.
+    """
+    expected = Config.ANSER_WEBHOOK_TOKEN
+    provided = request.headers.get('X-Anser-Token', '')
+    return bool(expected) and hmac.compare_digest(provided, expected)
+
+
 def _log_event(action, payload):
     conn = get_connection()
     try:
@@ -660,6 +672,8 @@ def internal_rag(action):
 @n8n_api_bp.route('/api/n8n/internal/notify', methods=['GET', 'POST'])
 def internal_notify():
     """Sink for {{ $env.NOTIFY_URL }} / {{ $env.DOCS_URL }} calls."""
+    if not _check_webhook_token():
+        return jsonify({'success': False, 'error': 'unauthorized'}), 401
     payload = request.get_json(silent=True) or dict(request.args)
     event_id = _log_event('notify', payload)
     logger.info('[n8n-sx] notify: %s', payload)

@@ -30,6 +30,10 @@ def app():
     # a teammate hitting the identical landmine — see merge commit.)
     Config.SANXUAT_DATABASE_PATH = temp_path
     Config.SANXUAT_USE_POSTGRES = False
+    # SEC-02: give every internal-endpoint test a valid webhook token via
+    # the `client` fixture below, instead of hand-editing ~20 existing
+    # client.post(...) call sites across the suite.
+    Config.ANSER_WEBHOOK_TOKEN = 'test-webhook-token'
 
     from core.sanxuat_db import init_db
     init_db()
@@ -48,7 +52,14 @@ def app():
 
 @pytest.fixture(scope="module")
 def client(app):
-    return app.test_client()
+    test_client = app.test_client()
+    # Werkzeug's test Client merges environ_base into every request made
+    # through this client -- this one line makes every existing internal-
+    # endpoint call site (tests/test_n8n_internal.py, test_brain_mock.py,
+    # test_expiry_alert.py) automatically carry a valid SEC-02 token with
+    # zero edits to those files.
+    test_client.environ_base['HTTP_X_ANSER_TOKEN'] = 'test-webhook-token'
+    return test_client
 
 
 @pytest.fixture(scope="module")

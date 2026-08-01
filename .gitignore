@@ -46,6 +46,8 @@ tests/
 !/tests/test_brain_mock.py
 !/tests/test_forecast.py
 !/tests/test_expiry_alert.py
+!/tests/test_webhook_auth.py
+!/tests/test_config_failfast.py
 evaluate/
 jobs/
 # C extensions

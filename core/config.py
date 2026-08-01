@@ -46,3 +46,12 @@ class Config:
     # by default so this endpoint fails closed instead of leaking
     # aggregate production data to an unauthenticated caller.
     PLATFORM_STATS_TOKEN = os.environ.get('PLATFORM_STATS_TOKEN', '')
+
+    # Shared secret for every /api/n8n/internal/* route (rag/<action>,
+    # notify, brain/chat, brain/upload, brain/mcp/validate-invoice) — called
+    # by n8n's HTTP Request nodes (workflow_templates/*.json), which send it
+    # as the x-anser-token header. Must byte-match docker-compose.yml's n8n
+    # service ANSER_WEBHOOK_TOKEN env var. Empty by default so these
+    # endpoints fail closed instead of accepting unauthenticated writes from
+    # anyone on the network, matching PLATFORM_STATS_TOKEN's own pattern.
+    ANSER_WEBHOOK_TOKEN = os.environ.get('ANSER_WEBHOOK_TOKEN', '')
