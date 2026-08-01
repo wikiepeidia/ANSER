@@ -45,6 +45,17 @@ _login_fail_until = 0
 
 
 # ── Credentials ───────────────────────────────────────────────────────────────
+# SEC-04: this own-n8n-instance admin login has exactly two storage paths,
+# both confirmed dev-only and .gitignore-covered (re-verified via a fresh
+# `git grep` across ALL tracked files, not just .py/docker-compose.yml, as
+# part of Phase 6 06-02 -- zero literal credential values found tracked):
+#   1. N8N_SX_ADMIN_EMAIL / N8N_SX_ADMIN_PASSWORD env vars, sourced from this
+#      app's own .env (.gitignore: `.env`, `.environment/`) -- never committed.
+#   2. The auto-generated `.n8n_sx_creds.json` fallback file (_CREDS_FILE
+#      below), written by _auto_setup() on first run when no env vars are
+#      set (.gitignore: `.n8n_sx_creds.json`) -- never committed.
+# Only the env-var NAMES appear in this file's source, which is expected and
+# fine; no literal email/password value is ever hardcoded or tracked.
 
 def _load_creds():
     try:

@@ -19,7 +19,14 @@ class Config:
 
     PROJECT_NAME = "ANSER — Sản xuất"
 
-    SECRET_KEY = os.environ.get('SECRET_KEY', 'change_me_to_a_secure_random_value')
+    SECRET_KEY = os.environ.get('SECRET_KEY')
+    if not SECRET_KEY:
+        raise RuntimeError(
+            "SECRET_KEY environment variable is not set -- San Xuat's session "
+            "cookie must be signed with the same SECRET_KEY as Gateway's own "
+            ".env, or cross-app login silently breaks; set it before starting "
+            "the app."
+        )
 
     # Shared auth DB (same physical DB as Gateway — read-only from here)
     AUTH_DATABASE_PATH = os.environ.get('DATABASE_PATH', 'group_project_ai_ml.db')
