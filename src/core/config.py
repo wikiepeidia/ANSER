@@ -2,6 +2,26 @@ import os
 
 from src.core.prompts import Prompts
 
+# GPU_PROFILE selects which vllm_config sizing tier to use (l4/a100), so a
+# future GPU tier can be added by extending the _VLLM_PROFILES table below --
+# never by adding another if/elif branch. Unset -> "l4" (today's
+# real-hardware-proven default). An unrecognized value falls back to "l4"
+# rather than raising, since a live Colab session's env var typo should never
+# crash boot.
+GPU_PROFILE = os.getenv("GPU_PROFILE", "l4").strip().lower()
+
+# Per-tier vLLM sizing. The "l4" entry is unchanged from the values this
+# repo's own prior real-L4 execution log proved safe (vLLM's own startup log:
+# total_gpu_memory 22.03GiB x gpu_memory_utilization 0.55 = 12.12GiB, model
+# weights ~5.20GiB + KV-cache ~5.45GiB -- comfortably fits). The "a100" entry
+# is a provisional starting point (more headroom for dev/test-speed
+# iteration per AI-OPS-02) pending Plan 02's live confirmation/tuning --
+# not a final tuned number.
+_VLLM_PROFILES = {
+    "l4":   {"gpu_memory_utilization": 0.55, "max_model_len": 4096},
+    "a100": {"gpu_memory_utilization": 0.85, "max_model_len": 4096},
+}
+
 
 class Config:
     """
@@ -52,6 +72,14 @@ class Config:
         #  MUST be re-measured live (nvidia-smi / torch.cuda.memory_allocated)
         #  before Phase 8's gpu_memory_utilization/max_model_len tuning work,
         #  which is sequenced after this phase for exactly this reason.
+        #
+        #  Phase 9 (AI-OPS-02): `GPU_PROFILE` (module-level, above) now
+        #  selects between L4 (steady-state, default) and A100 (dev/test
+        #  speed) sizing tiers via the `_VLLM_PROFILES` table lookup below --
+        #  the l4 numbers are unchanged/real-hardware-proven; the a100
+        #  numbers are a provisional starting point pending live
+        #  confirmation. `RERANKER_DEVICE` (see knowledge.py) is the other,
+        #  independent lever for trimming the non-vLLM VRAM total above.
         # =================================================================
 
         # --- Brain: Text reasoning (chạy qua vLLM) ---
@@ -81,10 +109,16 @@ class Config:
         #
         #  enforce_eager=True: tắt CUDA graphs — fix lỗi
         #  "Forward context is not set" của vLLM + Qwen trên Colab.
+        #
+        #  gpu_memory_utilization/max_model_len are selected from
+        #  _VLLM_PROFILES via GPU_PROFILE (l4 default, a100 opt-in) --
+        #  the remaining keys (dtype/quantization/enforce_eager) are fixed,
+        #  not profile-dependent.
         # =================================================================
+        self.gpu_profile = GPU_PROFILE if GPU_PROFILE in _VLLM_PROFILES else "l4"
+        _profile = _VLLM_PROFILES[self.gpu_profile]
         self.vllm_config = {
-            "gpu_memory_utilization": 0.55,
-            "max_model_len":          4096,
+            **_profile,
             "dtype":                  "half",
             "quantization":           "awq",
             "enforce_eager":          True,   # fix vLLM + Qwen CUDA graph bug
