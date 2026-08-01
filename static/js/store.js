@@ -1,12 +1,14 @@
 /**
  * store.js — Data store, wired to the real ANSER backend for products,
- * imports, exports, customers, dashboard stats, production orders and BOM.
+ * imports, exports, customers, dashboard stats, production orders, BOM,
+ * suppliers, costing, and invoices.
  *
  * Automation (rules/logs) is not stored here — automation-rules.html and
  * automation-logs.html read directly from the real n8n API (/api/n8n/*).
  *
- * Material batches/warehouses/suppliers/invoices below this point are still
- * MOCK (localStorage) — real backends for those land in later phases.
+ * Material batches/warehouses below this point are still MOCK (localStorage)
+ * — real backends for those are the already-accepted Gap 1 from
+ * v1.0-MILESTONE-AUDIT.md, not covered by this phase.
  */
 
 const Store = {
@@ -17,7 +19,8 @@ const Store = {
   async _api(url, options = {}) {
     const opts = { headers: {}, ...options };
     opts.headers = { ...opts.headers };
-    if (options.body) {
+    const isFormData = typeof FormData !== "undefined" && options.body instanceof FormData;
+    if (options.body && !isFormData) {
       opts.headers["Content-Type"] = "application/json";
     }
     if (options.method && options.method !== "GET") {
@@ -844,95 +847,39 @@ const Store = {
     );
   },
 
-  // --- Invoices (MOCK — localStorage. Không có backend OCR/Excel-parser
-  // thật (xem mock brain/upload endpoints trong routes/n8n_api.py) — thay
-  // vì đọc file .xlsx thật, parseExcelMock() sinh dữ liệu dòng hàng giả lập
-  // ổn định theo tên+kích thước file, kèm 1 vài dòng lỗi có chủ đích để demo
-  // luồng validate trước khi nhập. fileUrl (blob: URL) chỉ sống trong phiên
-  // trình duyệt hiện tại — không có backend để lưu file thật.) ---
-  invoices: [],
+  // --- Invoices (real API: /api/invoices/import + /api/invoices/attachments*,
+  // backed by routes/invoice_routes.py). There is no "invoice" entity server
+  // side -- import creates material_batches rows directly, and attachments
+  // are stored/listed independently. No client-side reshaping of responses. ---
 
-  parseExcelMock(file) {
-    const h = this._hashStr((file?.name || "invoice") + "_" + (file?.size || 0));
-    const rowCount = 5 + (h % 4); // 5-8 dòng
-    const rows = [];
-    for (let i = 0; i < rowCount; i++) {
-      const seed = h + i * 37;
-      const useKnownProduct = this.products.length && seed % 3 !== 0;
-      const product = useKnownProduct ? this.products[seed % this.products.length] : null;
-      let quantity = 5 + (seed % 95);
-      let unitPrice = 10000 + (seed % 40) * 5000;
-      const productCode = product ? product.code : `SP-${100 + (seed % 900)}`;
-      let productName = product ? product.name : "";
-      let error = null;
+  // POST /api/invoices/import — multipart .xlsx upload; import happens
+  // immediately/partially on valid rows (no preview/dry-run mode).
+  async importInvoiceExcel(file) {
+    const formData = new FormData();
+    formData.append("file", file);
+    return this._api("/api/invoices/import", { method: "POST", body: formData });
+  },
 
-      const errType = seed % 6;
-      if (errType === 0) { quantity = 0; error = "Số lượng phải lớn hơn 0"; }
-      else if (errType === 1) { unitPrice = 0; error = "Thiếu đơn giá"; }
-      else if (errType === 2 && !product) { error = "Thiếu tên sản phẩm"; }
-      else if (errType === 3 && !product) { error = `Mã sản phẩm "${productCode}" không tồn tại trong hệ thống`; }
+  // POST /api/invoices/attachments — multipart file + refType/refId.
+  async uploadInvoiceAttachment(file, refType = "invoice_import", refId = null) {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("refType", refType);
+    if (refId != null) formData.append("refId", refId);
+    return this._api("/api/invoices/attachments", { method: "POST", body: formData });
+  },
 
-      rows.push({ row: i + 2, productCode, productName, quantity, unitPrice, error });
+  // GET /api/invoices/attachments?refType=&refId=
+  async loadInvoiceAttachments(refType, refId = null) {
+    try {
+      let qs = `?refType=${encodeURIComponent(refType)}`;
+      if (refId != null) qs += `&refId=${encodeURIComponent(refId)}`;
+      const data = await this._api(`/api/invoices/attachments${qs}`);
+      return data.attachments || [];
+    } catch (e) {
+      console.error("loadInvoiceAttachments failed:", e);
+      return [];
     }
-    return rows;
-  },
-
-  _seedInvoices() {
-    return [
-      {
-        id: 1, code: "HD-9001", fileName: "hoa_don_NVL_thang6.xlsx", fileSize: 24500,
-        uploadedAt: new Date(Date.now() - 6 * 86400000).toISOString(), status: "imported", fileUrl: null,
-        lineItems: [
-          { row: 2, productCode: "NVL-001", productName: "Vải cotton", quantity: 200, unitPrice: 45000, error: null },
-          { row: 3, productCode: "NVL-002", productName: "Chỉ may", quantity: 80, unitPrice: 8000, error: null },
-        ],
-      },
-      {
-        id: 2, code: "HD-9002", fileName: "don_hang_bao_bi.xlsx", fileSize: 18200,
-        uploadedAt: new Date(Date.now() - 2 * 86400000).toISOString(), status: "imported", fileUrl: null,
-        lineItems: [
-          { row: 2, productCode: "NVL-005", productName: "Bao bì đóng gói", quantity: 500, unitPrice: 2500, error: null },
-        ],
-      },
-    ];
-  },
-
-  loadInvoices() {
-    let invoices = Helpers.load("invoices", null);
-    if (!invoices || !Array.isArray(invoices) || !invoices.length) {
-      invoices = this._seedInvoices();
-      Helpers.save("invoices", invoices);
-    }
-    this.invoices = invoices;
-    return this.invoices;
-  },
-
-  _saveInvoices() {
-    // fileUrl (blob: URL) không serialize bền qua reload — chỉ lưu phần còn lại.
-    const persistable = this.invoices.map(({ fileUrl, ...rest }) => rest);
-    Helpers.save("invoices", persistable);
-  },
-
-  _nextInvoiceId() {
-    return this.invoices.reduce((max, i) => Math.max(max, i.id), 0) + 1;
-  },
-
-  createInvoice({ fileName, fileSize, lineItems, fileUrl }) {
-    if (!lineItems || !lineItems.length) throw new Error("Không có dòng hàng hợp lệ để nhập");
-    const id = this._nextInvoiceId();
-    const invoice = {
-      id, code: `HD-${9000 + id}`, fileName, fileSize,
-      uploadedAt: new Date().toISOString(), status: "imported",
-      lineItems, fileUrl: fileUrl || null,
-    };
-    this.invoices.unshift(invoice);
-    this._saveInvoices();
-    return invoice;
-  },
-
-  deleteInvoice(id) {
-    this.invoices = this.invoices.filter((i) => i.id !== Number(id));
-    this._saveInvoices();
   },
 
   // --- AI Chat messages (persisted in localStorage — the widget itself is
