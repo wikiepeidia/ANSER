@@ -655,7 +655,7 @@ const Router = {
     this.loadPage(this.currentPage);
   },
 
-  // ============ SUPPLIERS (mock, wired to Store.suppliers) ============
+  // ============ SUPPLIERS (real API, wired via Store._api()) ============
   editSupplier(id) {
     const modal = document.getElementById("supplierModal");
     const title = document.getElementById("supplierModalTitle");
