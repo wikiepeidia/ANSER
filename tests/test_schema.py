@@ -60,7 +60,7 @@ def test_warehouses_locations_and_ledger_schema(app):
         conn.execute(
             """
             INSERT INTO stock_ledger
-                (entry_type, warehouse_id, location_id, product_code, product_name, unit, quantity_delta, created_at)
+                (change_type, warehouse_id, location_id, product_code, product_name, unit, quantity_delta, created_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """,
             ('adjustment', warehouse_id, location_id, 'SP-TEST', 'Test Product', 'cái', 5, now()),

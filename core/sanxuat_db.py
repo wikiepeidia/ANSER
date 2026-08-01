@@ -205,6 +205,94 @@ END $$;
 ALTER TABLE material_batches ADD COLUMN IF NOT EXISTS material_product_id INTEGER;
 ALTER TABLE material_batches ADD COLUMN IF NOT EXISTS location_id INTEGER;
 
+-- suppliers table already had every column this task's spec asks for
+-- (id/name/contact/phone/email/address/notes) -- only the FK constraint
+-- itself was missing. No orphaned supplier_id values existed at the time
+-- this was added (confirmed against the real sanxuat_business data before
+-- writing this), so a straight ADD CONSTRAINT is safe; guarded so re-running
+-- init_db() doesn't error on "constraint already exists".
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint WHERE conname = 'fk_material_batches_supplier_id'
+    ) THEN
+        ALTER TABLE material_batches
+            ADD CONSTRAINT fk_material_batches_supplier_id
+            FOREIGN KEY (supplier_id) REFERENCES suppliers(id);
+    END IF;
+END $$;
+
+-- production_costs: giá thành + hao hụt theo lô/ca sản xuất. Đích lưu trữ
+-- dự kiến cho báo cáo mà quy trình n8n manuf_waste_profit_report tạo ra
+-- (webhook POST .../production-report-insert) -- action đó hiện chưa có
+-- trong _REAL_TABLE_ACTIONS (routes/n8n_api.py) nên vẫn rơi vào
+-- automation_events sink chung; nối route vào bảng này nằm ngoài phạm vi
+-- việc tạo bảng.
+CREATE TABLE IF NOT EXISTS production_costs (
+    id SERIAL PRIMARY KEY,
+    production_order_id INTEGER NOT NULL,
+    material_cost REAL NOT NULL DEFAULT 0,
+    labor_cost REAL NOT NULL DEFAULT 0,
+    waste_quantity REAL NOT NULL DEFAULT 0,
+    waste_cost REAL NOT NULL DEFAULT 0,
+    total_cost REAL NOT NULL DEFAULT 0,
+    profit_estimate REAL,
+    calculated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_production_costs_production_order_id ON production_costs(production_order_id);
+
+-- invoice_attachments: file metadata only -- actual files live on disk
+-- under uploads/, never as a DB blob (decision per this table's own spec:
+-- Postgres stores file_path, not file bytes). ref_type is 'import' /
+-- 'export' / 'material_batch', ref_id points to that record's id (no
+-- REFERENCES since it targets 3 different tables depending on ref_type).
+-- This table already existed on the real sanxuat_business Neon DB before
+-- being added here (created outside init_db()'s tracked schema) -- the
+-- migration below aligns it (created_by -> uploaded_by) without touching
+-- content_type/size_bytes, which are harmless extras no code depends on.
+CREATE TABLE IF NOT EXISTS invoice_attachments (
+    id SERIAL PRIMARY KEY,
+    ref_type TEXT NOT NULL,
+    ref_id INTEGER,
+    file_name TEXT NOT NULL,
+    file_path TEXT NOT NULL,
+    content_type TEXT,
+    size_bytes INTEGER,
+    uploaded_by INTEGER,
+    uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_invoice_attachments_ref ON invoice_attachments(ref_type, ref_id);
+
+-- user_permissions: San Xuat's own role/scope layer on top of Gateway's
+-- shared `users` table (read-only via core/auth_db.py, a physically
+-- separate database -- see AUTH_POSTGRES_URL in core/config.py). user_id
+-- is a plain INTEGER, deliberately NOT a real FOREIGN KEY: Gateway's users
+-- table lives in a different Postgres database entirely, cross-database
+-- FKs aren't possible. role is San-Xuat-specific (qc/kho/quan_ly_san_xuat/
+-- admin), distinct from Gateway's own generic users.role column. scope is
+-- a JSON-encoded permission list stored as TEXT (app layer does
+-- json.dumps/json.loads), matching this schema's existing convention for
+-- JSON-shaped columns (e.g. automation_events.payload) -- no JSONB type
+-- used anywhere else in this app.
+CREATE TABLE IF NOT EXISTS user_permissions (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL,
+    role TEXT NOT NULL,
+    scope TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_user_permissions_user_id ON user_permissions(user_id);
+
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'invoice_attachments' AND column_name = 'created_by')
+       AND NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'invoice_attachments' AND column_name = 'uploaded_by') THEN
+        ALTER TABLE invoice_attachments RENAME COLUMN created_by TO uploaded_by;
+    END IF;
+END $$;
+
 -- batch_usage: links a material_batches row to the production_orders row
 -- that consumed it, with quantity -- 2-way traceability (lo NVL -> cac don
 -- da dung no, va don san xuat -> cac lo NVL da dung), independent of
@@ -246,19 +334,29 @@ CREATE INDEX IF NOT EXISTS idx_warehouse_locations_warehouse_id ON warehouse_loc
 
 -- stock_ledger: append-only / event-sourced. Every write is an INSERT;
 -- current stock is always derived via SUM(quantity_delta), never a
--- mutated column. entry_type in ('transfer_out', 'transfer_in',
--- 'adjustment'). transfer_group is shared by a transfer's 2 rows, NULL
--- for adjustment rows. counterparty_warehouse_id/counterparty_location_id
+-- mutated column. change_type in ('transfer_out', 'transfer_in',
+-- 'adjustment', ...) -- import/export/transfer/adjustment per the table's
+-- spec is this column's intended vocabulary going forward; transfer_stock()
+-- still writes the existing 'transfer_out'/'transfer_in' pair (kept as-is,
+-- not remapped, to avoid changing that route's working logic). product_id/
+-- batch_id/ref_type/ref_id are optional attribution (which product/batch/
+-- source-document this line traces back to), nullable since not every
+-- caller has one to give. transfer_group is shared by a transfer's 2 rows,
+-- NULL for adjustment rows. counterparty_warehouse_id/counterparty_location_id
 -- are transfer-only; system_qty_snapshot/counted_qty are adjustment-only.
 CREATE TABLE IF NOT EXISTS stock_ledger (
     id SERIAL PRIMARY KEY,
-    entry_type TEXT NOT NULL,
+    change_type TEXT NOT NULL,
+    product_id INTEGER,
+    batch_id INTEGER,
     warehouse_id INTEGER NOT NULL,
     location_id INTEGER NOT NULL,
     product_code TEXT NOT NULL,
     product_name TEXT NOT NULL,
     unit TEXT DEFAULT 'cái',
     quantity_delta REAL NOT NULL,
+    ref_type TEXT,
+    ref_id INTEGER,
     transfer_group TEXT,
     counterparty_warehouse_id INTEGER,
     counterparty_location_id INTEGER,
@@ -271,6 +369,22 @@ CREATE TABLE IF NOT EXISTS stock_ledger (
 
 CREATE INDEX IF NOT EXISTS idx_stock_ledger_wlp ON stock_ledger(warehouse_id, location_id, product_code);
 CREATE INDEX IF NOT EXISTS idx_stock_ledger_transfer_group ON stock_ledger(transfer_group);
+
+-- Migration for a stock_ledger table that already exists from before
+-- change_type/product_id/batch_id/ref_type/ref_id existed (same guarded-
+-- rename idempotency pattern as material_batches'/qc_results' migrations).
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'stock_ledger' AND column_name = 'entry_type')
+       AND NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'stock_ledger' AND column_name = 'change_type') THEN
+        ALTER TABLE stock_ledger RENAME COLUMN entry_type TO change_type;
+    END IF;
+END $$;
+
+ALTER TABLE stock_ledger ADD COLUMN IF NOT EXISTS product_id INTEGER;
+ALTER TABLE stock_ledger ADD COLUMN IF NOT EXISTS batch_id INTEGER;
+ALTER TABLE stock_ledger ADD COLUMN IF NOT EXISTS ref_type TEXT;
+ALTER TABLE stock_ledger ADD COLUMN IF NOT EXISTS ref_id INTEGER;
 
 -- qc_results: immutable audit log for QC-01 (Phase 2.1). Never UPDATEd or
 -- DELETEd -- the "current" QC status lives on material_batches.qc_status/
@@ -347,6 +461,55 @@ CREATE TABLE IF NOT EXISTS material_batch_events (
 );
 
 CREATE INDEX IF NOT EXISTS idx_material_batch_events_batch_id ON material_batch_events(batch_id);
+
+-- batch_process_logs: standardized process-event log per production order
+-- (fixed event_type enum + logged_by attribution) -- deliberately separate
+-- from production_order_events (free-text Vietnamese UI timeline, no
+-- logged_by); not wired to any route yet, same as batch_usage.
+CREATE TABLE IF NOT EXISTS batch_process_logs (
+    id SERIAL PRIMARY KEY,
+    production_order_id INTEGER NOT NULL,
+    event_type TEXT NOT NULL,
+    note TEXT,
+    logged_by INTEGER,
+    logged_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_batch_process_logs_production_order_id ON batch_process_logs(production_order_id);
+
+-- retail_warehouses / retail_storage_locations: a separate, simpler
+-- single-location-per-record warehouse model "theo mẫu ANSER Bán lẻ" (low-
+-- stock Discord alerting via discord_webhook_url) -- deliberately named
+-- apart from warehouses/warehouse_locations/stock_ledger's existing
+-- multi-location, event-sourced system (TRACE-03/04/05) so it doesn't
+-- collide with it; that system intentionally never reconciles with a
+-- single warehouse/location per product (see routes/warehouse_routes.py's
+-- Pitfall 4 docstring).
+CREATE TABLE IF NOT EXISTS retail_warehouses (
+    id SERIAL PRIMARY KEY,
+    name TEXT NOT NULL,
+    address TEXT,
+    is_active BOOLEAN DEFAULT TRUE,
+    low_stock_threshold REAL DEFAULT 0,
+    discord_webhook_url TEXT
+);
+
+CREATE TABLE IF NOT EXISTS retail_storage_locations (
+    id SERIAL PRIMARY KEY,
+    warehouse_id INTEGER NOT NULL,
+    zone TEXT,
+    shelf_code TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_retail_storage_locations_warehouse_id ON retail_storage_locations(warehouse_id);
+
+-- material_batches already has an unrelated `location_id` column (loosely
+-- tied to warehouse_locations from an earlier task) -- these use distinct
+-- names (retail_warehouse_id/retail_location_id) to avoid colliding with it.
+ALTER TABLE material_batches ADD COLUMN IF NOT EXISTS retail_warehouse_id INTEGER;
+ALTER TABLE material_batches ADD COLUMN IF NOT EXISTS retail_location_id INTEGER;
+ALTER TABLE products ADD COLUMN IF NOT EXISTS retail_warehouse_id INTEGER;
+ALTER TABLE products ADD COLUMN IF NOT EXISTS retail_location_id INTEGER;
 """
 
 
