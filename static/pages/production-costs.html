@@ -1,4 +1,4 @@
-<!-- production-costs.html — Báo cáo giá thành thực tế & hao hụt so với định mức (mock, localStorage) -->
+<!-- production-costs.html — Báo cáo giá thành thực tế & hao hụt so với định mức (real API: /api/production-orders/&lt;id&gt;/costing, /api/costing/reports) -->
 <div class="content__header">
   <h1 class="content__title">Giá thành &amp; hao hụt</h1>
   <p class="content__subtitle">So sánh giá thành thực tế với định mức (BOM) theo từng đơn sản xuất</p>
@@ -78,20 +78,20 @@
 <script>
 (async function () {
   const filteredOrders = Store.productionOrders.filter((o) => ["in_progress", "completed"].includes(o.status));
-  // /api/bom/calculate (via getOrderCost -> getBOMForOrder) can now reject
-  // with 409 (QC-02: insufficient QC-passed stock) for an individual order's
-  // product — isolate per-order so one blocked order doesn't sink the whole
-  // Promise.all and blank out this entire report page.
+  // GET /api/production-orders/<id>/costing (via Store.getOrderCosting) never
+  // rejects -- it catches internally and resolves null on failure -- so a
+  // simple null-check (no try/catch) is enough to isolate one blocked order
+  // from sinking the whole Promise.all and blanking out this entire report page.
   const rows = (await Promise.all(filteredOrders.map(async (o) => {
-    try {
-      const standard = await Store.getOrderCost(o);
-      const actual = await Store.getActualCost(o);
-      const wasteAmt = (standard !== null && actual !== null) ? actual - standard : null;
-      const wastePct = (standard && wasteAmt !== null) ? (wasteAmt / standard) * 100 : null;
-      return { order: o, standard, actual, wasteAmt, wastePct };
-    } catch (err) {
-      return { order: o, standard: null, actual: null, wasteAmt: null, wastePct: null, error: err.message };
+    const costing = await Store.getOrderCosting(o.id);
+    if (!costing) {
+      return { order: o, standard: null, actual: null, wasteAmt: null, wastePct: null, error: "Không tải được giá thành" };
     }
+    const standard = costing.materialCost;
+    const actual = costing.totalCost;
+    const wasteAmt = costing.wasteCost;
+    const wastePct = standard > 0 ? (wasteAmt / standard) * 100 : null;
+    return { order: o, standard, actual, wasteAmt, wastePct };
   }))).sort((a, b) => new Date(b.order.createdAt) - new Date(a.order.createdAt));
 
   window.pcReportData = rows;
