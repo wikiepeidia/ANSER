@@ -759,106 +759,79 @@ const Store = {
     return entry;
   },
 
-  // --- Suppliers (MOCK — localStorage, đứng thay /api/suppliers*. NCC
-  // trước đây chỉ là 1 chuỗi tự do trên lô NVL (materialBatches.supplierName)
-  // — seed dưới đây tạo thực thể NCC có liên hệ đầy đủ, khớp đúng các tên
-  // NCC đã xuất hiện trong _seedMaterialBatches() để getSupplierBatches()
-  // ra dữ liệu thật ngay từ đầu.) ---
+  // --- Suppliers (real API: /api/suppliers*, backed by
+  // routes/supplier_routes.py). Function bodies below call Store._api();
+  // signatures are unchanged so callers/HTML need no changes. ---
   suppliers: [],
 
-  _seedSuppliers() {
-    return [
-      { id: 1, code: "NCC-001", name: "Dệt May Thành Công", contact: "Nguyễn Văn An", phone: "0901234567", email: "contact@detmaythanhcong.vn", address: "123 Lê Trọng Tấn, Q. Bình Tân, TP.HCM", notes: "" },
-      { id: 2, code: "NCC-002", name: "Chỉ May Phú Cường", contact: "Trần Thị Bích", phone: "0912345678", email: "sales@phucuong.vn", address: "45 Tô Ký, Q. 12, TP.HCM", notes: "" },
-      { id: 3, code: "NCC-003", name: "Nhựa Việt Thắng", contact: "Lê Văn Cường", phone: "0923456789", email: "info@nhuavietthang.vn", address: "KCN Tân Tạo, Q. Bình Tân, TP.HCM", notes: "" },
-      { id: 4, code: "NCC-004", name: "Bao Bì Sài Gòn", contact: "Phạm Thị Dung", phone: "0934567890", email: "cskh@baobisaigon.vn", address: "78 Quang Trung, Gò Vấp, TP.HCM", notes: "" },
-      { id: 5, code: "NCC-005", name: "Hoá Chất An Phát", contact: "Hoàng Văn Em", phone: "0945678901", email: "lienhe@anphat.vn", address: "KCN Nhơn Trạch, Đồng Nai", notes: "" },
-      { id: 6, code: "NCC-006", name: "In Ấn Hồng Hà", contact: "Vũ Thị Hoa", phone: "0956789012", email: "support@honghaprint.vn", address: "12 Trường Chinh, Đống Đa, Hà Nội", notes: "" },
-      { id: 7, code: "NCC-007", name: "Khoá Kéo Nam Tiến", contact: "Đỗ Văn Giang", phone: "0967890123", email: "info@namtienzip.vn", address: "56 Nguyễn Văn Linh, Đà Nẵng", notes: "" },
-    ];
-  },
-
-  loadSuppliers() {
-    let suppliers = Helpers.load("suppliers", null);
-    if (!suppliers || !Array.isArray(suppliers) || !suppliers.length) {
-      suppliers = this._seedSuppliers();
-      Helpers.save("suppliers", suppliers);
+  async loadSuppliers() {
+    try {
+      const data = await this._api("/api/suppliers");
+      this.suppliers = data.suppliers || [];
+    } catch (e) {
+      console.error("loadSuppliers failed:", e);
+      this.suppliers = [];
     }
-    this.suppliers = suppliers;
     return this.suppliers;
   },
 
-  _saveSuppliers() {
-    Helpers.save("suppliers", this.suppliers);
+  async createSupplier(data) {
+    await this._api("/api/suppliers", {
+      method: "POST",
+      body: JSON.stringify({
+        name: data.name,
+        contact: data.contact || "",
+        phone: data.phone || "",
+        email: data.email || "",
+        address: data.address || "",
+        notes: data.notes || "",
+      }),
+    });
+    await this.loadSuppliers();
   },
 
-  resetSuppliersSeed() {
-    this.suppliers = this._seedSuppliers();
-    this._saveSuppliers();
-    return this.suppliers;
+  async updateSupplier(id, patch) {
+    await this._api(`/api/suppliers/${id}`, {
+      method: "PUT",
+      body: JSON.stringify({
+        name: patch.name,
+        contact: patch.contact || "",
+        phone: patch.phone || "",
+        email: patch.email || "",
+        address: patch.address || "",
+        notes: patch.notes || "",
+      }),
+    });
+    await this.loadSuppliers();
+  },
+
+  async deleteSupplier(id) {
+    await this._api(`/api/suppliers/${id}`, { method: "DELETE" });
+    this.suppliers = this.suppliers.filter((s) => s.id !== Number(id));
   },
 
   getSupplierById(id) {
     return this.suppliers.find((s) => s.id === Number(id));
   },
 
-  _nextSupplierId() {
-    return this.suppliers.reduce((max, s) => Math.max(max, s.id), 0) + 1;
+  // GET /api/suppliers/<id>/batches — lịch sử lô NVL thật đã nhập từ 1 NCC,
+  // qua FK material_batches.supplier_id (không còn khớp theo tên chuỗi tự do).
+  async getSupplierBatches(supplierId) {
+    const res = await this._api(`/api/suppliers/${supplierId}/batches`);
+    return res.batches || [];
   },
 
-  createSupplier(data) {
-    if (!data.name) throw new Error("Thiếu tên nhà cung cấp");
-    const id = this._nextSupplierId();
-    const supplier = {
-      id, code: data.code || `NCC-${String(id).padStart(3, "0")}`,
-      name: data.name.trim(), contact: (data.contact || "").trim(),
-      phone: (data.phone || "").trim(), email: (data.email || "").trim(),
-      address: (data.address || "").trim(), notes: (data.notes || "").trim(),
-    };
-    this.suppliers.push(supplier);
-    this._saveSuppliers();
-    return supplier;
-  },
-
-  updateSupplier(id, patch) {
-    const supplier = this.getSupplierById(id);
-    if (!supplier) throw new Error("Không tìm thấy nhà cung cấp");
-    if (!patch.name) throw new Error("Thiếu tên nhà cung cấp");
-    Object.assign(supplier, {
-      name: patch.name.trim(), contact: (patch.contact || "").trim(),
-      phone: (patch.phone || "").trim(), email: (patch.email || "").trim(),
-      address: (patch.address || "").trim(), notes: (patch.notes || "").trim(),
-    });
-    this._saveSuppliers();
-    return supplier;
-  },
-
-  deleteSupplier(id) {
-    this.suppliers = this.suppliers.filter((s) => s.id !== Number(id));
-    this._saveSuppliers();
-  },
-
-  // Mock cho GET /api/suppliers/<id>/batches — lịch sử lô NVL đã nhập từ 1
-  // NCC (khớp theo tên, vì materialBatches.supplierName vẫn là chuỗi tự do —
-  // NCC tạo sau không tự động gắn lại các lô cũ nếu tên không khớp y hệt).
-  getSupplierBatches(supplierId) {
-    const supplier = this.getSupplierById(supplierId);
-    if (!supplier) return [];
-    const name = supplier.name.trim().toLowerCase();
-    return this.materialBatches
-      .filter((b) => (b.supplierName || "").trim().toLowerCase() === name)
-      .sort((a, b) => new Date(b.receivedAt) - new Date(a.receivedAt));
-  },
-
-  getSupplierSummary() {
-    return this.suppliers.map((s) => {
-      const batches = this.getSupplierBatches(s.id);
-      return {
-        supplier: s,
-        batchCount: batches.length,
-        lastReceivedAt: batches[0]?.receivedAt || null,
-      };
-    });
+  async getSupplierSummary() {
+    return Promise.all(
+      this.suppliers.map(async (s) => {
+        const batches = await this.getSupplierBatches(s.id);
+        return {
+          supplier: s,
+          batchCount: batches.length,
+          lastReceivedAt: batches[0]?.receivedAt || null,
+        };
+      })
+    );
   },
 
   // --- Invoices (MOCK — localStorage. Không có backend OCR/Excel-parser
