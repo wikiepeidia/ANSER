@@ -1,12 +1,11 @@
 """San Xuat's own business database — fully separate from ANSER's.
 
 Only the `users` table (read via core/auth_db.py) is shared; everything
-below is private to this app. Supports SQLite (local dev, default) or its
-own Postgres/Neon database (Config.SANXUAT_USE_POSTGRES) — a *different*
-Neon database than the shared auth one, never the same as Retail's.
+below is private to this app. Postgres-only (Neon sanxuat_business) — a
+*different* Neon database than the shared auth one, never the same as
+Retail's. No SQLite fallback; SANXUAT_POSTGRES_URL is required.
 """
 import re
-import sqlite3
 from datetime import datetime
 
 from core.config import Config
@@ -205,6 +204,97 @@ END $$;
 ALTER TABLE material_batches ADD COLUMN IF NOT EXISTS material_product_id INTEGER;
 ALTER TABLE material_batches ADD COLUMN IF NOT EXISTS location_id INTEGER;
 
+-- suppliers table already had every column this task's spec asks for
+-- (id/name/contact/phone/email/address/notes) -- only the FK constraint
+-- itself was missing. No orphaned supplier_id values existed at the time
+-- this was added (confirmed against the real sanxuat_business data before
+-- writing this), so a straight ADD CONSTRAINT is safe; guarded so re-running
+-- init_db() doesn't error on "constraint already exists".
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint WHERE conname = 'fk_material_batches_supplier_id'
+    ) THEN
+        ALTER TABLE material_batches
+            ADD CONSTRAINT fk_material_batches_supplier_id
+            FOREIGN KEY (supplier_id) REFERENCES suppliers(id);
+    END IF;
+END $$;
+
+-- production_costs: giá thành + hao hụt theo lô/ca sản xuất. Đích lưu trữ
+-- dự kiến cho báo cáo mà quy trình n8n manuf_waste_profit_report tạo ra
+-- (webhook POST .../production-report-insert) -- action đó hiện chưa có
+-- trong _REAL_TABLE_ACTIONS (routes/n8n_api.py) nên vẫn rơi vào
+-- automation_events sink chung; nối route vào bảng này nằm ngoài phạm vi
+-- việc tạo bảng.
+CREATE TABLE IF NOT EXISTS production_costs (
+    id SERIAL PRIMARY KEY,
+    production_order_id INTEGER NOT NULL,
+    material_cost REAL NOT NULL DEFAULT 0,
+    labor_cost REAL NOT NULL DEFAULT 0,
+    waste_quantity REAL NOT NULL DEFAULT 0,
+    waste_cost REAL NOT NULL DEFAULT 0,
+    total_cost REAL NOT NULL DEFAULT 0,
+    profit_estimate REAL,
+    calculated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_production_costs_production_order_id ON production_costs(production_order_id);
+
+-- invoice_attachments: file metadata only -- actual files live on disk
+-- under uploads/, never as a DB blob (decision per this table's own spec:
+-- Postgres stores file_path, not file bytes). ref_type is 'import' /
+-- 'export' / 'material_batch', ref_id points to that record's id (no
+-- REFERENCES since it targets 3 different tables depending on ref_type).
+-- Column is created_by (not uploaded_by) to match routes/invoice_routes.py
+-- (INVOICE-02), the real feature that writes to this table.
+CREATE TABLE IF NOT EXISTS invoice_attachments (
+    id SERIAL PRIMARY KEY,
+    ref_type TEXT NOT NULL,
+    ref_id INTEGER,
+    file_name TEXT NOT NULL,
+    file_path TEXT NOT NULL,
+    content_type TEXT,
+    size_bytes INTEGER,
+    uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_by INTEGER
+);
+
+CREATE INDEX IF NOT EXISTS idx_invoice_attachments_ref ON invoice_attachments(ref_type, ref_id);
+
+-- user_permissions: San Xuat's own role/scope layer on top of Gateway's
+-- shared `users` table (read-only via core/auth_db.py, a physically
+-- separate database -- see AUTH_POSTGRES_URL in core/config.py). user_id
+-- is a plain INTEGER, deliberately NOT a real FOREIGN KEY: Gateway's users
+-- table lives in a different Postgres database entirely, cross-database
+-- FKs aren't possible. role is San-Xuat-specific (qc/kho/quan_ly_san_xuat/
+-- admin), distinct from Gateway's own generic users.role column. scope is
+-- a JSON-encoded permission list stored as TEXT (app layer does
+-- json.dumps/json.loads), matching this schema's existing convention for
+-- JSON-shaped columns (e.g. automation_events.payload) -- no JSONB type
+-- used anywhere else in this app.
+CREATE TABLE IF NOT EXISTS user_permissions (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL,
+    role TEXT NOT NULL,
+    scope TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_user_permissions_user_id ON user_permissions(user_id);
+
+-- Undo: an earlier iteration of this schema renamed invoice_attachments'
+-- created_by -> uploaded_by before routes/invoice_routes.py (INVOICE-02,
+-- the real feature writing to this table) was known to depend on
+-- created_by. Rename it back on any DB where that earlier rename already
+-- ran (guarded, so this is a no-op everywhere else, including fresh DBs).
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'invoice_attachments' AND column_name = 'uploaded_by')
+       AND NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'invoice_attachments' AND column_name = 'created_by') THEN
+        ALTER TABLE invoice_attachments RENAME COLUMN uploaded_by TO created_by;
+    END IF;
+END $$;
+
 -- batch_usage: links a material_batches row to the production_orders row
 -- that consumed it, with quantity -- 2-way traceability (lo NVL -> cac don
 -- da dung no, va don san xuat -> cac lo NVL da dung), independent of
@@ -246,19 +336,29 @@ CREATE INDEX IF NOT EXISTS idx_warehouse_locations_warehouse_id ON warehouse_loc
 
 -- stock_ledger: append-only / event-sourced. Every write is an INSERT;
 -- current stock is always derived via SUM(quantity_delta), never a
--- mutated column. entry_type in ('transfer_out', 'transfer_in',
--- 'adjustment'). transfer_group is shared by a transfer's 2 rows, NULL
--- for adjustment rows. counterparty_warehouse_id/counterparty_location_id
+-- mutated column. change_type in ('transfer_out', 'transfer_in',
+-- 'adjustment', ...) -- import/export/transfer/adjustment per the table's
+-- spec is this column's intended vocabulary going forward; transfer_stock()
+-- still writes the existing 'transfer_out'/'transfer_in' pair (kept as-is,
+-- not remapped, to avoid changing that route's working logic). product_id/
+-- batch_id/ref_type/ref_id are optional attribution (which product/batch/
+-- source-document this line traces back to), nullable since not every
+-- caller has one to give. transfer_group is shared by a transfer's 2 rows,
+-- NULL for adjustment rows. counterparty_warehouse_id/counterparty_location_id
 -- are transfer-only; system_qty_snapshot/counted_qty are adjustment-only.
 CREATE TABLE IF NOT EXISTS stock_ledger (
     id SERIAL PRIMARY KEY,
-    entry_type TEXT NOT NULL,
+    change_type TEXT NOT NULL,
+    product_id INTEGER,
+    batch_id INTEGER,
     warehouse_id INTEGER NOT NULL,
     location_id INTEGER NOT NULL,
     product_code TEXT NOT NULL,
     product_name TEXT NOT NULL,
     unit TEXT DEFAULT 'cái',
     quantity_delta REAL NOT NULL,
+    ref_type TEXT,
+    ref_id INTEGER,
     transfer_group TEXT,
     counterparty_warehouse_id INTEGER,
     counterparty_location_id INTEGER,
@@ -271,6 +371,22 @@ CREATE TABLE IF NOT EXISTS stock_ledger (
 
 CREATE INDEX IF NOT EXISTS idx_stock_ledger_wlp ON stock_ledger(warehouse_id, location_id, product_code);
 CREATE INDEX IF NOT EXISTS idx_stock_ledger_transfer_group ON stock_ledger(transfer_group);
+
+-- Migration for a stock_ledger table that already exists from before
+-- change_type/product_id/batch_id/ref_type/ref_id existed (same guarded-
+-- rename idempotency pattern as material_batches'/qc_results' migrations).
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'stock_ledger' AND column_name = 'entry_type')
+       AND NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'stock_ledger' AND column_name = 'change_type') THEN
+        ALTER TABLE stock_ledger RENAME COLUMN entry_type TO change_type;
+    END IF;
+END $$;
+
+ALTER TABLE stock_ledger ADD COLUMN IF NOT EXISTS product_id INTEGER;
+ALTER TABLE stock_ledger ADD COLUMN IF NOT EXISTS batch_id INTEGER;
+ALTER TABLE stock_ledger ADD COLUMN IF NOT EXISTS ref_type TEXT;
+ALTER TABLE stock_ledger ADD COLUMN IF NOT EXISTS ref_id INTEGER;
 
 -- qc_results: immutable audit log for QC-01 (Phase 2.1). Never UPDATEd or
 -- DELETEd -- the "current" QC status lives on material_batches.qc_status/
@@ -348,285 +464,54 @@ CREATE TABLE IF NOT EXISTS material_batch_events (
 
 CREATE INDEX IF NOT EXISTS idx_material_batch_events_batch_id ON material_batch_events(batch_id);
 
--- invoice_attachments: file-attachment metadata for INVOICE-02 (Phase 4).
--- ref_type/ref_id are a loose polymorphic reference (e.g. 'material_batch',
--- an order, etc.), no FK constraint, matching this codebase's existing
--- FK-less convention for nullable references. content_type/size_bytes are
--- optional metadata captured at upload time when available.
-CREATE TABLE IF NOT EXISTS invoice_attachments (
+-- batch_process_logs: standardized process-event log per production order
+-- (fixed event_type enum + logged_by attribution) -- deliberately separate
+-- from production_order_events (free-text Vietnamese UI timeline, no
+-- logged_by); not wired to any route yet, same as batch_usage.
+CREATE TABLE IF NOT EXISTS batch_process_logs (
     id SERIAL PRIMARY KEY,
-    ref_type TEXT NOT NULL,
-    ref_id INTEGER,
-    file_name TEXT NOT NULL,
-    file_path TEXT NOT NULL,
-    content_type TEXT,
-    size_bytes INTEGER,
-    uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    created_by INTEGER
-);
-
-CREATE INDEX IF NOT EXISTS idx_invoice_attachments_ref ON invoice_attachments(ref_type, ref_id);
-"""
-
-# SQLite mirror of SCHEMA_PG (local dev/test default — Config.SANXUAT_USE_POSTGRES
-# is off unless SANXUAT_POSTGRES_URL is set). Kept manually in sync with
-# SCHEMA_PG: SERIAL -> INTEGER PRIMARY KEY AUTOINCREMENT, no DO $$ migration
-# blocks (those only patch pre-existing Postgres tables; a fresh SQLite
-# CREATE TABLE already has the new columns), and the Postgres
-# CREATE FUNCTION + TRIGGER pair (qc_results 'fail' -> material_batches
-# 'failed') has an SQLite CREATE TRIGGER equivalent below — this one is
-# exercised directly by tests/test_schema.py::test_qc_results_fail_trigger_blocks_batch,
-# which inserts into qc_results via raw SQL specifically to prove the DB
-# trigger (not routes/inventory_routes.py's own dual-write) enforces it.
-SCHEMA_SQLITE = """
-CREATE TABLE IF NOT EXISTS products (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    code TEXT UNIQUE NOT NULL,
-    name TEXT NOT NULL,
-    category TEXT,
-    unit TEXT DEFAULT 'cái',
-    price REAL DEFAULT 0,
-    stock_quantity INTEGER DEFAULT 0,
-    description TEXT,
-    image_url TEXT,
-    created_by INTEGER,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE IF NOT EXISTS customers (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    code TEXT UNIQUE,
-    name TEXT NOT NULL,
-    phone TEXT,
-    email TEXT,
-    address TEXT,
-    notes TEXT,
-    created_by INTEGER,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE IF NOT EXISTS import_transactions (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    code TEXT,
-    supplier_name TEXT,
-    total_amount REAL DEFAULT 0,
-    notes TEXT,
-    status TEXT DEFAULT 'completed',
-    created_by INTEGER,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE IF NOT EXISTS import_details (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    import_id INTEGER NOT NULL,
-    product_id INTEGER,
-    quantity REAL DEFAULT 0,
-    unit_price REAL DEFAULT 0,
-    total_price REAL DEFAULT 0
-);
-
-CREATE TABLE IF NOT EXISTS export_transactions (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    code TEXT,
-    customer_id INTEGER,
-    total_amount REAL DEFAULT 0,
-    notes TEXT,
-    status TEXT DEFAULT 'completed',
-    created_by INTEGER,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE IF NOT EXISTS export_details (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    export_id INTEGER NOT NULL,
-    product_id INTEGER,
-    quantity REAL DEFAULT 0,
-    unit_price REAL DEFAULT 0,
-    total_price REAL DEFAULT 0
-);
-
-CREATE TABLE IF NOT EXISTS automation_events (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    action TEXT NOT NULL,
-    payload TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE IF NOT EXISTS production_orders (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    code TEXT UNIQUE,
-    product_code TEXT NOT NULL,
-    product_name TEXT NOT NULL,
-    quantity REAL NOT NULL,
-    unit TEXT DEFAULT 'cái',
-    customer_name TEXT,
-    notes TEXT,
-    status TEXT NOT NULL DEFAULT 'draft',
-    created_by INTEGER,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    approved_at TIMESTAMP,
-    approved_by INTEGER,
-    is_deleted INTEGER DEFAULT 0,
-    deleted_at TIMESTAMP
-);
-
-CREATE TABLE IF NOT EXISTS production_order_events (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    order_id INTEGER NOT NULL,
-    event TEXT NOT NULL,
+    production_order_id INTEGER NOT NULL,
+    event_type TEXT NOT NULL,
     note TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    logged_by INTEGER,
+    logged_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE IF NOT EXISTS bom_lines (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    product_code TEXT NOT NULL,
-    code TEXT NOT NULL,
-    name TEXT NOT NULL,
-    unit TEXT DEFAULT 'cái',
-    unit_cost REAL DEFAULT 0,
-    qty_per_unit REAL NOT NULL
-);
+CREATE INDEX IF NOT EXISTS idx_batch_process_logs_production_order_id ON batch_process_logs(production_order_id);
 
-CREATE INDEX IF NOT EXISTS idx_bom_lines_product_code ON bom_lines(product_code);
-
-CREATE TABLE IF NOT EXISTS suppliers (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    code TEXT UNIQUE,
-    name TEXT NOT NULL,
-    contact TEXT,
-    phone TEXT,
-    email TEXT,
-    address TEXT,
-    notes TEXT,
-    created_by INTEGER,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    is_deleted INTEGER DEFAULT 0,
-    deleted_at TIMESTAMP
-);
-
-CREATE TABLE IF NOT EXISTS material_batches (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    batch_code TEXT UNIQUE,
-    material_code TEXT NOT NULL,
-    material_name TEXT NOT NULL,
-    material_product_id INTEGER,
-    unit TEXT DEFAULT 'cái',
-    supplier_id INTEGER,
-    quantity REAL NOT NULL,
-    import_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    expiry_date TEXT,
-    qc_status TEXT NOT NULL DEFAULT 'pending',
-    qc_note TEXT DEFAULT '',
-    location_id INTEGER,
-    notes TEXT DEFAULT '',
-    created_by INTEGER,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    is_deleted INTEGER DEFAULT 0,
-    deleted_at TIMESTAMP
-);
-
-CREATE INDEX IF NOT EXISTS idx_material_batches_material_code ON material_batches(material_code);
-CREATE INDEX IF NOT EXISTS idx_material_batches_supplier_id ON material_batches(supplier_id);
-
-CREATE TABLE IF NOT EXISTS batch_usage (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    batch_id INTEGER NOT NULL,
-    order_id INTEGER NOT NULL,
-    quantity_used REAL NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE INDEX IF NOT EXISTS idx_batch_usage_batch_id ON batch_usage(batch_id);
-CREATE INDEX IF NOT EXISTS idx_batch_usage_order_id ON batch_usage(order_id);
-
-CREATE TABLE IF NOT EXISTS warehouses (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    code TEXT UNIQUE NOT NULL,
+-- retail_warehouses / retail_storage_locations: a separate, simpler
+-- single-location-per-record warehouse model "theo mẫu ANSER Bán lẻ" (low-
+-- stock Discord alerting via discord_webhook_url) -- deliberately named
+-- apart from warehouses/warehouse_locations/stock_ledger's existing
+-- multi-location, event-sourced system (TRACE-03/04/05) so it doesn't
+-- collide with it; that system intentionally never reconciles with a
+-- single warehouse/location per product (see routes/warehouse_routes.py's
+-- Pitfall 4 docstring).
+CREATE TABLE IF NOT EXISTS retail_warehouses (
+    id SERIAL PRIMARY KEY,
     name TEXT NOT NULL,
     address TEXT,
-    created_by INTEGER,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    is_deleted INTEGER DEFAULT 0,
-    deleted_at TIMESTAMP
+    is_active BOOLEAN DEFAULT TRUE,
+    low_stock_threshold REAL DEFAULT 0,
+    discord_webhook_url TEXT
 );
 
-CREATE TABLE IF NOT EXISTS warehouse_locations (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+CREATE TABLE IF NOT EXISTS retail_storage_locations (
+    id SERIAL PRIMARY KEY,
     warehouse_id INTEGER NOT NULL,
-    code TEXT NOT NULL,
-    name TEXT NOT NULL,
-    is_deleted INTEGER DEFAULT 0,
-    deleted_at TIMESTAMP
+    zone TEXT,
+    shelf_code TEXT
 );
 
-CREATE INDEX IF NOT EXISTS idx_warehouse_locations_warehouse_id ON warehouse_locations(warehouse_id);
+CREATE INDEX IF NOT EXISTS idx_retail_storage_locations_warehouse_id ON retail_storage_locations(warehouse_id);
 
-CREATE TABLE IF NOT EXISTS stock_ledger (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    entry_type TEXT NOT NULL,
-    warehouse_id INTEGER NOT NULL,
-    location_id INTEGER NOT NULL,
-    product_code TEXT NOT NULL,
-    product_name TEXT NOT NULL,
-    unit TEXT DEFAULT 'cái',
-    quantity_delta REAL NOT NULL,
-    transfer_group TEXT,
-    counterparty_warehouse_id INTEGER,
-    counterparty_location_id INTEGER,
-    system_qty_snapshot REAL,
-    counted_qty REAL,
-    note TEXT DEFAULT '',
-    created_by INTEGER,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE INDEX IF NOT EXISTS idx_stock_ledger_wlp ON stock_ledger(warehouse_id, location_id, product_code);
-CREATE INDEX IF NOT EXISTS idx_stock_ledger_transfer_group ON stock_ledger(transfer_group);
-
-CREATE TABLE IF NOT EXISTS qc_results (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    batch_id INTEGER NOT NULL,
-    tested_by TEXT,
-    test_type TEXT,
-    result TEXT NOT NULL,
-    detail TEXT DEFAULT '',
-    tested_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE INDEX IF NOT EXISTS idx_qc_results_batch_id ON qc_results(batch_id);
-
-CREATE TRIGGER IF NOT EXISTS trg_qc_results_fail_blocks_batch
-AFTER INSERT ON qc_results
-WHEN NEW.result = 'fail'
-BEGIN
-    UPDATE material_batches SET qc_status = 'failed' WHERE id = NEW.batch_id;
-END;
-
-CREATE TABLE IF NOT EXISTS material_batch_events (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    batch_id INTEGER NOT NULL,
-    event TEXT NOT NULL,
-    note TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE INDEX IF NOT EXISTS idx_material_batch_events_batch_id ON material_batch_events(batch_id);
-
-CREATE TABLE IF NOT EXISTS invoice_attachments (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    ref_type TEXT NOT NULL,
-    ref_id INTEGER,
-    file_name TEXT NOT NULL,
-    file_path TEXT NOT NULL,
-    content_type TEXT,
-    size_bytes INTEGER,
-    uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    created_by INTEGER
-);
-
-CREATE INDEX IF NOT EXISTS idx_invoice_attachments_ref ON invoice_attachments(ref_type, ref_id);
+-- material_batches already has an unrelated `location_id` column (loosely
+-- tied to warehouse_locations from an earlier task) -- these use distinct
+-- names (retail_warehouse_id/retail_location_id) to avoid colliding with it.
+ALTER TABLE material_batches ADD COLUMN IF NOT EXISTS retail_warehouse_id INTEGER;
+ALTER TABLE material_batches ADD COLUMN IF NOT EXISTS retail_location_id INTEGER;
+ALTER TABLE products ADD COLUMN IF NOT EXISTS retail_warehouse_id INTEGER;
+ALTER TABLE products ADD COLUMN IF NOT EXISTS retail_location_id INTEGER;
 """
 
 
@@ -727,20 +612,19 @@ class _PGShimConnection:
 
 
 def get_connection():
-    if Config.SANXUAT_USE_POSTGRES:
-        import psycopg2
-        conn = psycopg2.connect(Config.SANXUAT_POSTGRES_URL)
-        return _PGShimConnection(conn)
-    conn = sqlite3.connect(Config.SANXUAT_DATABASE_PATH, timeout=30.0)
-    conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA foreign_keys = ON")
-    return conn
+    assert Config.SANXUAT_POSTGRES_URL, (
+        "SANXUAT_POSTGRES_URL is not set — this app is Postgres-only (Neon "
+        "sanxuat_business), there is no SQLite fallback."
+    )
+    import psycopg2
+    conn = psycopg2.connect(Config.SANXUAT_POSTGRES_URL)
+    return _PGShimConnection(conn)
 
 
 def init_db():
     conn = get_connection()
     try:
-        conn.executescript(SCHEMA_PG if Config.SANXUAT_USE_POSTGRES else SCHEMA_SQLITE)
+        conn.executescript(SCHEMA_PG)
         conn.commit()
     finally:
         conn.close()

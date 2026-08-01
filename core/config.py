@@ -14,7 +14,8 @@ class Config:
     its own.
 
     Business data (products/imports/exports/customers) is fully separate —
-    see SANXUAT_DATABASE_PATH below, never mixed into the auth database.
+    see SANXUAT_POSTGRES_URL below, never mixed into the auth database.
+    Postgres-only (Neon sanxuat_business); no SQLite fallback.
     """
 
     PROJECT_NAME = "ANSER — Sản xuất"
@@ -33,13 +34,19 @@ class Config:
     AUTH_POSTGRES_URL = os.environ.get('POSTGRES_URL')
     AUTH_USE_POSTGRES = bool(AUTH_POSTGRES_URL)
 
-    # San Xuat's own business database — fully separate from Gateway/Retail's.
-    # SQLite by default; set SANXUAT_POSTGRES_URL to use its own Neon database
-    # instead (a DIFFERENT database than AUTH_POSTGRES_URL/POSTGRES_URL above —
-    # never the same one, that would defeat the point of keeping it separate).
-    SANXUAT_DATABASE_PATH = os.environ.get('SANXUAT_DATABASE_PATH', 'san_xuat.db')
+    # San Xuat's own business database — fully separate from Gateway/Retail's
+    # (a DIFFERENT Neon database than AUTH_POSTGRES_URL/POSTGRES_URL above —
+    # never the same one, that would defeat the point of keeping it
+    # separate). Postgres-only, no SQLite fallback -- fail fast, same
+    # pattern as SECRET_KEY above, rather than silently defaulting to a
+    # SQLite file nothing in this app still supports.
     SANXUAT_POSTGRES_URL = os.environ.get('SANXUAT_POSTGRES_URL')
-    SANXUAT_USE_POSTGRES = bool(SANXUAT_POSTGRES_URL)
+    if not SANXUAT_POSTGRES_URL:
+        raise RuntimeError(
+            "SANXUAT_POSTGRES_URL environment variable is not set -- this app "
+            "is Postgres-only (Neon sanxuat_business), there is no SQLite "
+            "fallback; set it before starting the app."
+        )
 
     PORT = int(os.environ.get('PORT', 5003))
     GATEWAY_ORIGIN = os.environ.get('GATEWAY_ORIGIN', 'http://127.0.0.1:5000')

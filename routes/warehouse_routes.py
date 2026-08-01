@@ -295,6 +295,14 @@ def _resolve_product_display(conn, product_code):
     return product_code, 'cái'
 
 
+def _resolve_product_id(conn, product_code):
+    """Read-only lookup of products.id for stock_ledger.product_id
+    attribution -- None if the code doesn't match a real product (never
+    auto-creates, unlike _resolve_supplier/_resolve_material_product)."""
+    row = conn.execute('SELECT id FROM products WHERE code = ?', (product_code,)).fetchone()
+    return row['id'] if row else None
+
+
 # ── Stock transfer + stocktake adjustment (TRACE-04, TRACE-05) ──────────
 
 @warehouse_bp.route('/api/warehouse-stock/transfer', methods=['POST'])
@@ -330,15 +338,17 @@ def transfer_stock():
             }), 409
 
         product_name, unit = _resolve_product_display(conn, product_code)
+        product_id = _resolve_product_id(conn, product_code)
+        batch_id = data.get('batchId')
         note = data.get('note', '')
 
         cur = conn.execute(
-            'INSERT INTO stock_ledger (entry_type, warehouse_id, location_id, product_code, '
-            'product_name, unit, quantity_delta, counterparty_warehouse_id, '
+            'INSERT INTO stock_ledger (change_type, product_id, batch_id, warehouse_id, location_id, '
+            'product_code, product_name, unit, quantity_delta, counterparty_warehouse_id, '
             'counterparty_location_id, note, created_by, created_at) '
-            "VALUES ('transfer_out', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            (from_warehouse_id, from_location_id, product_code, product_name, unit, -quantity,
-             to_warehouse_id, to_location_id, note, current_user.id, now()),
+            "VALUES ('transfer_out', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (product_id, batch_id, from_warehouse_id, from_location_id, product_code, product_name,
+             unit, -quantity, to_warehouse_id, to_location_id, note, current_user.id, now()),
         )
         transfer_group = str(cur.lastrowid)
         conn.execute(
@@ -346,12 +356,12 @@ def transfer_stock():
             (transfer_group, cur.lastrowid),
         )
         conn.execute(
-            'INSERT INTO stock_ledger (entry_type, warehouse_id, location_id, product_code, '
-            'product_name, unit, quantity_delta, transfer_group, counterparty_warehouse_id, '
+            'INSERT INTO stock_ledger (change_type, product_id, batch_id, warehouse_id, location_id, '
+            'product_code, product_name, unit, quantity_delta, transfer_group, counterparty_warehouse_id, '
             'counterparty_location_id, note, created_by, created_at) '
-            "VALUES ('transfer_in', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            (to_warehouse_id, to_location_id, product_code, product_name, unit, quantity,
-             transfer_group, from_warehouse_id, from_location_id, note, current_user.id, now()),
+            "VALUES ('transfer_in', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (product_id, batch_id, to_warehouse_id, to_location_id, product_code, product_name, unit,
+             quantity, transfer_group, from_warehouse_id, from_location_id, note, current_user.id, now()),
         )
         conn.commit()
         return jsonify({'success': True, 'message': 'Chuyển kho thành công'})
@@ -382,15 +392,17 @@ def stocktake_adjustment():
     try:
         system_qty = _current_stock(conn, warehouse_id, location_id, product_code)
         product_name, unit = _resolve_product_display(conn, product_code)
+        product_id = _resolve_product_id(conn, product_code)
+        batch_id = data.get('batchId')
         quantity_delta = counted_qty - system_qty
 
         conn.execute(
-            'INSERT INTO stock_ledger (entry_type, warehouse_id, location_id, product_code, '
-            'product_name, unit, quantity_delta, system_qty_snapshot, counted_qty, note, '
+            'INSERT INTO stock_ledger (change_type, product_id, batch_id, warehouse_id, location_id, '
+            'product_code, product_name, unit, quantity_delta, system_qty_snapshot, counted_qty, note, '
             'created_by, created_at) '
-            "VALUES ('adjustment', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            (warehouse_id, location_id, product_code, product_name, unit, quantity_delta,
-             system_qty, counted_qty, data.get('note', ''), current_user.id, now()),
+            "VALUES ('adjustment', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (product_id, batch_id, warehouse_id, location_id, product_code, product_name, unit,
+             quantity_delta, system_qty, counted_qty, data.get('note', ''), current_user.id, now()),
         )
         conn.commit()
         return jsonify({'success': True, 'message': 'Ghi nhận kiểm kê thành công'})
@@ -407,7 +419,7 @@ def get_stock_ledger():
     warehouse_id = request.args.get('warehouseId', type=int)
     location_id = request.args.get('locationId', type=int)
     product_code = request.args.get('productCode')
-    entry_type = request.args.get('entryType')
+    change_type = request.args.get('changeType')
 
     conditions = []
     params = []
@@ -420,9 +432,9 @@ def get_stock_ledger():
     if product_code:
         conditions.append('product_code = ?')
         params.append(product_code)
-    if entry_type:
-        conditions.append('entry_type = ?')
-        params.append(entry_type)
+    if change_type:
+        conditions.append('change_type = ?')
+        params.append(change_type)
 
     query = 'SELECT * FROM stock_ledger'
     if conditions:
@@ -435,13 +447,17 @@ def get_stock_ledger():
         entries = [
             {
                 'id': r['id'],
-                'entryType': r['entry_type'],
+                'changeType': r['change_type'],
+                'productId': r['product_id'],
+                'batchId': r['batch_id'],
                 'warehouseId': r['warehouse_id'],
                 'locationId': r['location_id'],
                 'productCode': r['product_code'],
                 'productName': r['product_name'],
                 'unit': r['unit'],
                 'quantityDelta': r['quantity_delta'],
+                'refType': r['ref_type'],
+                'refId': r['ref_id'],
                 'transferGroup': r['transfer_group'],
                 'counterpartyWarehouseId': r['counterparty_warehouse_id'],
                 'counterpartyLocationId': r['counterparty_location_id'],

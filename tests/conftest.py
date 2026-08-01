@@ -1,14 +1,13 @@
 """Shared pytest fixtures for San Xuat's test suite.
 
-`app`/`client` stand up the Flask app against an isolated temp SQLite DB
-(never the real dev `san_xuat.db`) so tests never corrupt or depend on
-local dev data. `logged_in_client` fakes an authenticated session by
+Postgres-only (Neon sanxuat_business, same DB as the running app — no
+SQLite fallback and no isolated temp DB). Every test in this suite runs
+against real data; nothing here rolls back or auto-cleans, so tests that
+insert rows should use throwaway-tagged values and are expected to leave
+some data behind. `logged_in_client` fakes an authenticated session by
 monkeypatching `core.auth_db.get_user_by_id` and pre-seeding the Flask
 session, since sign-in itself happens on the separate Gateway app.
 """
-import os
-import tempfile
-
 import pytest
 
 from core.config import Config
@@ -16,20 +15,6 @@ from core.config import Config
 
 @pytest.fixture(scope="module")
 def app():
-    fd, temp_path = tempfile.mkstemp(suffix=".db")
-    os.close(fd)
-
-    # Must be patched before app.py's module-level `app = create_app()`
-    # (imported below) runs init_db() against it. Force SQLite even if this
-    # shared multi-branch working tree's .env defines SANXUAT_POSTGRES_URL
-    # (Config.SANXUAT_USE_POSTGRES is computed from that env var at class-
-    # definition time) — otherwise get_connection() would silently connect
-    # to a real Neon Postgres database instead of this isolated temp file,
-    # which is exactly the "never corrupt or depend on local dev data"
-    # guarantee this fixture exists to provide. (Independently confirmed by
-    # a teammate hitting the identical landmine — see merge commit.)
-    Config.SANXUAT_DATABASE_PATH = temp_path
-    Config.SANXUAT_USE_POSTGRES = False
     # SEC-02: give every internal-endpoint test a valid webhook token via
     # the `client` fixture below, instead of hand-editing ~20 existing
     # client.post(...) call sites across the suite.
@@ -43,11 +28,6 @@ def app():
     flask_app.config.update(TESTING=True, WTF_CSRF_ENABLED=False)
 
     yield flask_app
-
-    try:
-        os.remove(temp_path)
-    except OSError:
-        pass
 
 
 @pytest.fixture(scope="module")
