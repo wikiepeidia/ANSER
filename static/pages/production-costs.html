@@ -38,7 +38,7 @@
     <div class="chart-card__header">
       <div class="chart-card__title-group">
         <h3>Giá thành thực tế so với định mức theo đơn</h3>
-        <span class="chart-card__subtitle">Đơn vị: ₫ · <em>dữ liệu mẫu, minh hoạ giao diện</em></span>
+        <span class="chart-card__subtitle">Đơn vị: ₫</span>
       </div>
       <div class="bar-chart__legend bar-chart__legend--inline">
         <span class="legend-item"><span class="legend-dot legend-dot--revenue"></span> Định mức</span>
@@ -106,11 +106,17 @@
     return;
   }
 
-  // Stats
-  const totalStandard = rows.reduce((s, r) => s + (r.standard || 0), 0);
-  const totalActual = rows.reduce((s, r) => s + (r.actual || 0), 0);
-  const totalWaste = totalActual - totalStandard;
-  const avgWastePct = rows.filter((r) => r.wastePct !== null).reduce((s, r, _, arr) => s + r.wastePct / arr.length, 0);
+  // Stats — nguồn: GET /api/costing/reports (không phải tổng client-side trên `rows`)
+  const reportRows = await Store.getCostingReports("shift");
+
+  // Lưu ý: 4 thẻ tổng hợp trên tính từ TẤT CẢ đơn (kể cả "Chờ xử lý"/"Đã huỷ") vì
+  // /api/costing/reports không lọc theo trạng thái, trong khi bảng chi tiết bên dưới
+  // chỉ hiển thị đơn đang/đã sản xuất -- có thể lệch nhẹ nếu có đơn chưa bắt đầu sản
+  // xuất, đây là giới hạn đã biết của endpoint, không phải lỗi.
+  const totalStandard = reportRows.reduce((s, r) => s + (r.materialCost || 0), 0);
+  const totalActual = reportRows.reduce((s, r) => s + (r.totalCost || 0), 0);
+  const totalWaste = reportRows.reduce((s, r) => s + (r.wasteCost || 0), 0);
+  const avgWastePct = totalStandard > 0 ? (totalWaste / totalStandard) * 100 : 0;
 
   document.getElementById("pcStatStandard").textContent = Helpers.formatVNDShort(totalStandard);
   document.getElementById("pcStatActual").textContent = Helpers.formatVNDShort(totalActual);
