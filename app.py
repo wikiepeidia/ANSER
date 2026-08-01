@@ -7,8 +7,6 @@ ANSER, so the cookie set on :5000 is recognized here too — cookies are
 scoped by host, not port). If there's no valid session, we bounce back to
 ANSER's signin page.
 """
-import os
-
 from core.env_loader import load_project_env
 
 load_project_env()
@@ -25,9 +23,8 @@ from core.sanxuat_db import init_db  # noqa: E402
 def create_app():
     app = Flask(__name__)
 
-    secret = os.environ.get('SECRET_KEY', Config.SECRET_KEY)
-    app.config['SECRET_KEY'] = secret
-    app.secret_key = secret
+    app.config['SECRET_KEY'] = Config.SECRET_KEY
+    app.secret_key = Config.SECRET_KEY
     # Same cookie policy as ANSER so the session cookie set on :5000 is
     # accepted here too (host-scoped, not port-scoped).
     app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
@@ -62,12 +59,22 @@ def create_app():
     from routes.production_routes import production_bp
     from routes.inventory_routes import inventory_bp
     from routes.warehouse_routes import warehouse_bp
+    from routes.internal_admin_routes import internal_admin_bp
+    from routes.supplier_routes import supplier_bp
+    from routes.costing_routes import costing_bp
+    from routes.invoice_routes import invoice_bp
+    from routes.forecast_routes import forecast_bp
     app.register_blueprint(page_bp)
     app.register_blueprint(api_bp)
     app.register_blueprint(n8n_api_bp)
     app.register_blueprint(production_bp)
     app.register_blueprint(inventory_bp)
     app.register_blueprint(warehouse_bp)
+    app.register_blueprint(internal_admin_bp)
+    app.register_blueprint(supplier_bp)
+    app.register_blueprint(costing_bp)
+    app.register_blueprint(invoice_bp)
+    app.register_blueprint(forecast_bp)
 
     init_db()
 

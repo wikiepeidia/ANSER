@@ -30,6 +30,7 @@ tests/
 !/tests/
 /tests/*
 !/tests/test_security_hardening.py
+!/tests/test_security.py
 !/tests/conftest.py
 !/tests/test_production_orders.py
 !/tests/test_bom.py
@@ -40,6 +41,13 @@ tests/
 !/tests/test_suppliers.py
 !/tests/test_qc.py
 !/tests/test_n8n_internal.py
+!/tests/test_costing.py
+!/tests/test_invoices.py
+!/tests/test_brain_mock.py
+!/tests/test_forecast.py
+!/tests/test_expiry_alert.py
+!/tests/test_webhook_auth.py
+!/tests/test_config_failfast.py
 evaluate/
 jobs/
 # C extensions
@@ -71,6 +79,11 @@ parts/
 sdist/
 var/
 wheels/
+
+.planning-banle-backup-20260729/
+
+.environment/
+notebooks/
 share/python-wheels/
 *.egg-info/
 .installed.cfg

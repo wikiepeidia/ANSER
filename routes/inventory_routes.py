@@ -14,6 +14,7 @@ from datetime import datetime
 from flask import Blueprint, jsonify, request
 from flask_login import current_user, login_required
 
+from core.auth import require_role
 from core.sanxuat_db import get_connection, now
 from routes.production_routes import _serialize_order
 
@@ -301,6 +302,7 @@ _QC_RESULT_BY_STATUS = {'passed': 'pass', 'failed': 'fail'}
 
 @inventory_bp.route('/api/material-batches/<int:batch_id>/qc-result', methods=['POST'])
 @login_required
+@require_role('manager')
 def record_qc_result(batch_id):
     data = request.get_json(silent=True) or {}
     qc_status = data.get('qcStatus')
@@ -397,33 +399,38 @@ def get_batch_events(batch_id):
 
 # ── Expiring batches (TRACE-06) ──────────────────────────────────────────
 
+def query_expiring_batches(conn, days):
+    """Shared query for batches expiring within `days` days (or already
+    expired), most-urgent-first. Used by this module's own GET route
+    (TRACE-06) and by routes/n8n_api.py's `expiring-alert` internal
+    dispatch action (TRACE-07) -- single source of truth, never forked."""
+    rows = conn.execute(
+        f"{_BATCH_SELECT} WHERE b.is_deleted = FALSE AND b.expiry_date IS NOT NULL "
+        "AND b.expiry_date != '' ORDER BY b.expiry_date ASC"
+    ).fetchall()
+    today = datetime.now().date()
+    results = []
+    for r in rows:
+        try:
+            expiry = datetime.strptime(r['expiry_date'], '%Y-%m-%d').date()
+        except (TypeError, ValueError):
+            continue
+        day_count = (expiry - today).days
+        if day_count <= days:
+            results.append((r, day_count))
+    results.sort(key=lambda pair: pair[1])
+    return [
+        {**_serialize_batch(r), 'daysUntilExpiry': day_count}
+        for r, day_count in results
+    ]
+
+
 @inventory_bp.route('/api/material-batches/expiring', methods=['GET'])
 @login_required
 def get_expiring_material_batches():
     days = request.args.get('days', default=7, type=int)
     conn = get_connection()
     try:
-        rows = conn.execute(
-            f"{_BATCH_SELECT} WHERE b.is_deleted = FALSE AND b.expiry_date IS NOT NULL "
-            "AND b.expiry_date != '' ORDER BY b.expiry_date ASC"
-        ).fetchall()
-        today = datetime.now().date()
-        results = []
-        for r in rows:
-            try:
-                expiry = datetime.strptime(r['expiry_date'], '%Y-%m-%d').date()
-            except (TypeError, ValueError):
-                continue
-            day_count = (expiry - today).days
-            if day_count <= days:
-                results.append((r, day_count))
-        results.sort(key=lambda pair: pair[1])
-        return jsonify({
-            'success': True,
-            'batches': [
-                {**_serialize_batch(r), 'daysUntilExpiry': day_count}
-                for r, day_count in results
-            ],
-        })
+        return jsonify({'success': True, 'batches': query_expiring_batches(conn, days)})
     finally:
         conn.close()

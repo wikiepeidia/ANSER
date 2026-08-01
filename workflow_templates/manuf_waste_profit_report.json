@@ -32,6 +32,8 @@
         "method": "GET",
         "url": "={{ $env.RAG_BASE_URL }}/batch-report?order_code={{ $json.order_code }}",
         "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": { "parameters": [{ "name": "x-anser-token", "value": "={{ $env.ANSER_WEBHOOK_TOKEN }}" }] },
         "options": {}
       },
       "id": "wp-report",
@@ -46,6 +48,8 @@
         "method": "POST",
         "url": "={{ $env.BRAIN_BASE_URL }}/chat",
         "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": { "parameters": [{ "name": "x-anser-token", "value": "={{ $env.ANSER_WEBHOOK_TOKEN }}" }] },
         "sendBody": true, "contentType": "raw", "rawContentType": "application/json",
         "body": "={{ JSON.stringify({ route: 'TECHNICAL', prompt: 'Trà/cao atiso: hao hụt sấy tươi→khô là BÌNH THƯỜNG. Yield thực ' + $json.yield_actual_pct + '% so định mức ' + $json.yield_std_pct + '% (lệch ' + $json.yield_deviation_pct + '%), NG ' + $json.ng_pct + '%. Giải thích ngắn nguyên nhân phần LỆCH ĐỊNH MỨC cho đơn ' + $json.ref }) }}",
         "options": {}
@@ -72,6 +76,8 @@
         "method": "POST",
         "url": "={{ $env.RAG_BASE_URL }}/production-report-insert",
         "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": { "parameters": [{ "name": "x-anser-token", "value": "={{ $env.ANSER_WEBHOOK_TOKEN }}" }] },
         "sendBody": true, "contentType": "raw", "rawContentType": "application/json",
         "body": "={{ $json.report_body }}",
         "options": {}

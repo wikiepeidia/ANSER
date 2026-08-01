@@ -1,12 +1,11 @@
 """San Xuat's own business database — fully separate from ANSER's.
 
 Only the `users` table (read via core/auth_db.py) is shared; everything
-below is private to this app. Supports SQLite (local dev, default) or its
-own Postgres/Neon database (Config.SANXUAT_USE_POSTGRES) — a *different*
-Neon database than the shared auth one, never the same as Retail's.
+below is private to this app. Postgres-only (Neon sanxuat_business) — a
+*different* Neon database than the shared auth one, never the same as
+Retail's. No SQLite fallback; SANXUAT_POSTGRES_URL is required.
 """
 import re
-import sqlite3
 from datetime import datetime
 
 from core.config import Config
@@ -247,10 +246,8 @@ CREATE INDEX IF NOT EXISTS idx_production_costs_production_order_id ON productio
 -- Postgres stores file_path, not file bytes). ref_type is 'import' /
 -- 'export' / 'material_batch', ref_id points to that record's id (no
 -- REFERENCES since it targets 3 different tables depending on ref_type).
--- This table already existed on the real sanxuat_business Neon DB before
--- being added here (created outside init_db()'s tracked schema) -- the
--- migration below aligns it (created_by -> uploaded_by) without touching
--- content_type/size_bytes, which are harmless extras no code depends on.
+-- Column is created_by (not uploaded_by) to match routes/invoice_routes.py
+-- (INVOICE-02), the real feature that writes to this table.
 CREATE TABLE IF NOT EXISTS invoice_attachments (
     id SERIAL PRIMARY KEY,
     ref_type TEXT NOT NULL,
@@ -259,8 +256,8 @@ CREATE TABLE IF NOT EXISTS invoice_attachments (
     file_path TEXT NOT NULL,
     content_type TEXT,
     size_bytes INTEGER,
-    uploaded_by INTEGER,
-    uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_by INTEGER
 );
 
 CREATE INDEX IF NOT EXISTS idx_invoice_attachments_ref ON invoice_attachments(ref_type, ref_id);
@@ -285,11 +282,16 @@ CREATE TABLE IF NOT EXISTS user_permissions (
 
 CREATE INDEX IF NOT EXISTS idx_user_permissions_user_id ON user_permissions(user_id);
 
+-- Undo: an earlier iteration of this schema renamed invoice_attachments'
+-- created_by -> uploaded_by before routes/invoice_routes.py (INVOICE-02,
+-- the real feature writing to this table) was known to depend on
+-- created_by. Rename it back on any DB where that earlier rename already
+-- ran (guarded, so this is a no-op everywhere else, including fresh DBs).
 DO $$
 BEGIN
-    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'invoice_attachments' AND column_name = 'created_by')
-       AND NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'invoice_attachments' AND column_name = 'uploaded_by') THEN
-        ALTER TABLE invoice_attachments RENAME COLUMN created_by TO uploaded_by;
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'invoice_attachments' AND column_name = 'uploaded_by')
+       AND NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'invoice_attachments' AND column_name = 'created_by') THEN
+        ALTER TABLE invoice_attachments RENAME COLUMN uploaded_by TO created_by;
     END IF;
 END $$;
 
@@ -610,20 +612,19 @@ class _PGShimConnection:
 
 
 def get_connection():
-    if Config.SANXUAT_USE_POSTGRES:
-        import psycopg2
-        conn = psycopg2.connect(Config.SANXUAT_POSTGRES_URL)
-        return _PGShimConnection(conn)
-    conn = sqlite3.connect(Config.SANXUAT_DATABASE_PATH, timeout=30.0)
-    conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA foreign_keys = ON")
-    return conn
+    assert Config.SANXUAT_POSTGRES_URL, (
+        "SANXUAT_POSTGRES_URL is not set — this app is Postgres-only (Neon "
+        "sanxuat_business), there is no SQLite fallback."
+    )
+    import psycopg2
+    conn = psycopg2.connect(Config.SANXUAT_POSTGRES_URL)
+    return _PGShimConnection(conn)
 
 
 def init_db():
     conn = get_connection()
     try:
-        conn.executescript(SCHEMA_PG if Config.SANXUAT_USE_POSTGRES else SCHEMA_SQLITE)
+        conn.executescript(SCHEMA_PG)
         conn.commit()
     finally:
         conn.close()

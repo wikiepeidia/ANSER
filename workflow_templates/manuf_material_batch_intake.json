@@ -40,6 +40,8 @@
         "method": "POST",
         "url": "={{ $env.BRAIN_BASE_URL }}/upload?scenario={{ $json.scenario }}",
         "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": { "parameters": [{ "name": "x-anser-token", "value": "={{ $env.ANSER_WEBHOOK_TOKEN }}" }] },
         "options": { "timeout": 30000 }
       },
       "id": "in-ocr",
@@ -53,6 +55,8 @@
         "method": "POST",
         "url": "={{ $env.BRAIN_BASE_URL }}/mcp/validate-invoice",
         "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": { "parameters": [{ "name": "x-anser-token", "value": "={{ $env.ANSER_WEBHOOK_TOKEN }}" }] },
         "sendBody": true, "contentType": "raw", "rawContentType": "application/json",
         "body": "={{ JSON.stringify({ items: $json.items, total: $json.total }) }}",
         "options": {}
@@ -96,6 +100,8 @@
         "method": "POST",
         "url": "={{ $env.RAG_BASE_URL }}/material-batch-insert",
         "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": { "parameters": [{ "name": "x-anser-token", "value": "={{ $env.ANSER_WEBHOOK_TOKEN }}" }] },
         "sendBody": true, "contentType": "raw", "rawContentType": "application/json",
         "body": "={{ $json.intake_body }}",
         "options": {}
@@ -151,6 +157,8 @@
         "method": "POST",
         "url": "={{ $env.RAG_BASE_URL }}/pending-review",
         "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": { "parameters": [{ "name": "x-anser-token", "value": "={{ $env.ANSER_WEBHOOK_TOKEN }}" }] },
         "sendBody": true, "contentType": "raw", "rawContentType": "application/json",
         "body": "={{ $json.pending_body }}",
         "options": {}

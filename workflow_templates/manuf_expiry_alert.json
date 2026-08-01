@@ -1,0 +1,73 @@
+{
+  "name": "manuf_expiry_alert",
+  "nodes": [
+    {
+      "parameters": { "rule": { "interval": [{ "field": "days", "daysInterval": 1, "triggerAtHour": 7 }] } },
+      "id": "ea-trigger",
+      "name": "Daily 7h",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [180, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $env.RAG_BASE_URL }}/expiring-alert?days=7",
+        "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": { "parameters": [{ "name": "x-anser-token", "value": "={{ $env.ANSER_WEBHOOK_TOKEN }}" }] },
+        "options": {}
+      },
+      "id": "ea-fetch",
+      "name": "Get Expiring Batches",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [420, 300],
+      "retryOnFail": true, "maxTries": 3, "waitBetweenTries": 1000
+    },
+    {
+      "parameters": { "conditions": { "boolean": [{ "value1": "={{ $json.count > 0 }}", "value2": true }] } },
+      "id": "ea-haswork",
+      "name": "Has Expiring Batches?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [660, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const d = $input.first().json;\nconst batches = d.batches || [];\nconst urgent = batches.filter(b => b.daysUntilExpiry <= 1);\nconst soon = batches.filter(b => b.daysUntilExpiry > 1 && b.daysUntilExpiry <= 3);\nconst color = urgent.length > 0 ? 15158332 : (soon.length > 0 ? 15105570 : 3066993);\nconst title = urgent.length > 0\n  ? ('🔴 CẢNH BÁO: ' + urgent.length + ' lô NVL sắp/đã hết hạn (≤1 ngày)')\n  : ('🟡 ' + batches.length + ' lô NVL sắp hết hạn (≤' + d.days + ' ngày)');\nconst lines = batches.map(b => '• ' + b.code + ' — ' + b.materialName + ' — còn ' + b.daysUntilExpiry + ' ngày (SL: ' + b.quantity + ' ' + b.unit + ')').join('\\n');\nreturn [{ json: { notify_body: JSON.stringify({ channel: 'discord', title, color, description: lines || 'Không có lô nào sắp hết hạn.', fields: [{ name: 'Tổng số lô', value: String(batches.length), inline: true }, { name: 'Khẩn cấp (≤1 ngày)', value: String(urgent.length), inline: true }] }) } }];"
+      },
+      "id": "ea-build",
+      "name": "Build Alert Notice",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [900, 200]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.NOTIFY_URL }}",
+        "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": { "parameters": [{ "name": "x-anser-token", "value": "={{ $env.ANSER_WEBHOOK_TOKEN }}" }] },
+        "sendBody": true, "contentType": "raw", "rawContentType": "application/json",
+        "body": "={{ $json.notify_body }}",
+        "options": {}
+      },
+      "id": "ea-notify",
+      "name": "Notify Warehouse",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [1140, 200],
+      "retryOnFail": true, "maxTries": 3, "waitBetweenTries": 1000
+    }
+  ],
+  "connections": {
+    "Daily 7h": { "main": [[{ "node": "Get Expiring Batches", "type": "main", "index": 0 }]] },
+    "Get Expiring Batches": { "main": [[{ "node": "Has Expiring Batches?", "type": "main", "index": 0 }]] },
+    "Has Expiring Batches?": { "main": [[{ "node": "Build Alert Notice", "type": "main", "index": 0 }], []] },
+    "Build Alert Notice": { "main": [[{ "node": "Notify Warehouse", "type": "main", "index": 0 }]] }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" }
+}

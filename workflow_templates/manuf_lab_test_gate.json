@@ -32,6 +32,8 @@
         "method": "POST",
         "url": "={{ $env.RAG_BASE_URL }}/lab-result-insert",
         "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": { "parameters": [{ "name": "x-anser-token", "value": "={{ $env.ANSER_WEBHOOK_TOKEN }}" }] },
         "sendBody": true, "contentType": "raw", "rawContentType": "application/json",
         "body": "={{ $json.request_body }}",
         "options": {}

@@ -18,15 +18,21 @@ import logging
 import secrets
 import json
 import glob
+import random
+import hmac
 
 import requests as _req
 from flask import Blueprint, jsonify, request
 from flask_login import login_required
 
+from core.auth import require_role
 from core.config import Config
 from core.extensions import csrf
 from core.sanxuat_db import get_connection, now
-from routes.inventory_routes import _find_material, _resolve_supplier, _resolve_material_product
+from routes.inventory_routes import (
+    _find_material, _resolve_supplier, _resolve_material_product, MATERIALS_CATALOG,
+    query_expiring_batches,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -40,6 +46,17 @@ _login_fail_until = 0
 
 
 # ── Credentials ───────────────────────────────────────────────────────────────
+# SEC-04: this own-n8n-instance admin login has exactly two storage paths,
+# both confirmed dev-only and .gitignore-covered (re-verified via a fresh
+# `git grep` across ALL tracked files, not just .py/docker-compose.yml, as
+# part of Phase 6 06-02 -- zero literal credential values found tracked):
+#   1. N8N_SX_ADMIN_EMAIL / N8N_SX_ADMIN_PASSWORD env vars, sourced from this
+#      app's own .env (.gitignore: `.env`, `.environment/`) -- never committed.
+#   2. The auto-generated `.n8n_sx_creds.json` fallback file (_CREDS_FILE
+#      below), written by _auto_setup() on first run when no env vars are
+#      set (.gitignore: `.n8n_sx_creds.json`) -- never committed.
+# Only the env-var NAMES appear in this file's source, which is expected and
+# fine; no literal email/password value is ever hardcoded or tracked.
 
 def _load_creds():
     try:
@@ -296,6 +313,7 @@ def _do_run_workflow(wf_id):
 
 @n8n_api_bp.route('/api/n8n/workflows/<wf_id>', methods=['DELETE'])
 @login_required
+@require_role('manager')
 def delete_workflow(wf_id):
     _n8n_patch(f'workflows/{wf_id}', data={'active': False})
     _n8n_post(f'workflows/{wf_id}/archive')
@@ -398,6 +416,23 @@ def _detect_trigger(nodes):
 # Called by the manuf_*.json workflows running inside n8n (not by the browser)
 # via RAG_BASE_URL / NOTIFY_URL / BRAIN_BASE_URL, set in docker-compose.yml.
 # No @login_required — n8n has no ANSER session cookie.
+
+# Scenario substrings that simulate a real OCR failure (blurry/illegible
+# scan etc.) — matched case-insensitively against internal_brain_upload's
+# `scenario` query param. See N8N-02 / 05-CONTEXT.md.
+_OCR_LOW_QUALITY_KEYWORDS = ('blur', 'unclear', 'illegible', 'corrupt', 'fail')
+
+
+def _check_webhook_token():
+    """Shared-secret guard for every /api/n8n/internal/* route (SEC-02).
+    Constant-time compare, fail-closed when Config.ANSER_WEBHOOK_TOKEN is
+    unset — same established pattern as
+    routes/internal_admin_routes.py::_authorized.
+    """
+    expected = Config.ANSER_WEBHOOK_TOKEN
+    provided = request.headers.get('X-Anser-Token', '')
+    return bool(expected) and hmac.compare_digest(provided, expected)
+
 
 def _log_event(action, payload):
     conn = get_connection()
@@ -594,6 +629,28 @@ def _internal_process_event(payload):
         conn.close()
 
 
+def _internal_expiring_alert(payload):
+    """Read-only dispatch action for {{ $env.RAG_BASE_URL }}/expiring-alert
+    (TRACE-07). Unlike every other `_REAL_TABLE_ACTIONS` entry (which
+    inserts into a domain table), this one never writes anything -- it
+    wraps TRACE-06's exact `query_expiring_batches` query
+    (routes/inventory_routes.py) so the schedule-triggered
+    manuf_expiry_alert.json workflow can decide whether a real Discord
+    alert is warranted, per TRACE-07/05-CONTEXT.md. It never duplicates or
+    forks the expiring-batch selection logic.
+    """
+    try:
+        days = int(payload.get('days') or 7)
+    except (TypeError, ValueError):
+        days = 7
+    conn = get_connection()
+    try:
+        batches = query_expiring_batches(conn, days)
+    finally:
+        conn.close()
+    return {'success': True, 'days': days, 'count': len(batches), 'batches': batches}, 200
+
+
 # Per-action dispatch for the actions that now have real backing tables
 # (02.2-CONTEXT.md Action Routing decision). Every action NOT in this dict
 # falls through unchanged to the existing _log_event/automation_events
@@ -603,6 +660,7 @@ _REAL_TABLE_ACTIONS = {
     'production-order-insert': _internal_production_order_insert,
     'lab-result-insert': _internal_lab_result_insert,
     'process-event': _internal_process_event,
+    'expiring-alert': _internal_expiring_alert,
 }
 
 
@@ -614,6 +672,8 @@ def internal_rag(action):
     directly to that table. Every other action keeps falling through to
     the generic automation_events sink, unchanged from before this phase.
     """
+    if not _check_webhook_token():
+        return jsonify({'success': False, 'error': 'unauthorized'}), 401
     payload = request.get_json(silent=True) or dict(request.args)
     handler = _REAL_TABLE_ACTIONS.get(action)
     if handler:
@@ -626,6 +686,8 @@ def internal_rag(action):
 @n8n_api_bp.route('/api/n8n/internal/notify', methods=['GET', 'POST'])
 def internal_notify():
     """Sink for {{ $env.NOTIFY_URL }} / {{ $env.DOCS_URL }} calls."""
+    if not _check_webhook_token():
+        return jsonify({'success': False, 'error': 'unauthorized'}), 401
     payload = request.get_json(silent=True) or dict(request.args)
     event_id = _log_event('notify', payload)
     logger.info('[n8n-sx] notify: %s', payload)
@@ -634,27 +696,150 @@ def internal_notify():
 
 @n8n_api_bp.route('/api/n8n/internal/brain/chat', methods=['POST'])
 def internal_brain_chat():
-    """Mock stub for {{ $env.BRAIN_BASE_URL }}/chat — no real LLM is wired
-    up for San Xuat. Clearly flagged as mock so it's obvious in any output."""
-    _log_event('brain:chat', request.get_json(silent=True) or {})
-    return jsonify({
-        'success': True, 'mock': True,
-        'message': '[MOCK] Dịch vụ AI/Brain chưa được triển khai cho Sản xuất — đây là phản hồi giả lập.',
-    })
+    """Realistic mock for {{ $env.BRAIN_BASE_URL }}/chat — no real LLM is
+    wired up for San Xuat (N8N-02, 05-CONTEXT.md locked decision). Unlike
+    the old always-succeeds stub, this validates that a real `prompt` was
+    sent (400 on missing/blank) and echoes back input-derived, varied text
+    instead of one static canned string. When the caller's `context`
+    carries `infer_production.items`, also returns a naive 1:1
+    `inference.items[].qty_to_produce` pass-through (documented placeholder
+    heuristic, not a real inference model) — this is what
+    manuf_ocr_customer_order.json's co-build-order code node reads.
+    """
+    if not _check_webhook_token():
+        return jsonify({'success': False, 'error': 'unauthorized'}), 401
+    data = request.get_json(silent=True) or {}
+    _log_event('brain:chat', data)
+    prompt = (data.get('prompt') or '').strip()
+    if not prompt:
+        return jsonify({'success': False, 'mock': True,
+                        'message': 'Thiếu nội dung prompt để xử lý'}), 400
+
+    route = data.get('route', 'GENERAL')
+    result = {
+        'success': True, 'mock': True, 'route': route,
+        'text': f'[MOCK] Đã xử lý yêu cầu ({route}): {prompt[:120]}',
+    }
+
+    context = data.get('context') or {}
+    infer = context.get('infer_production') or {}
+    items = infer.get('items')
+    if isinstance(items, list):
+        result['inference'] = {
+            'items': [{'sku': it.get('sku'), 'qty_to_produce': it.get('qty') or 0}
+                      for it in items if isinstance(it, dict)],
+        }
+    return jsonify(result)
+
+
+def _mock_ocr_extract(scenario):
+    """Deterministic-per-scenario mock OCR extraction, N8N-02. Seeded by
+    `scenario` itself (never Python's built-in hash()) so the same scenario
+    string always reproduces byte-identical output across process restarts,
+    while different scenario strings produce genuinely different content —
+    sampled from the real MATERIALS_CATALOG so every returned `sku` is
+    always a resolvable material code. Covers both manuf_material_batch_
+    intake.json's and manuf_ocr_customer_order.json's field expectations
+    (farmer/region_grown/part/form/gacp_cert and doc_no/customer_code/
+    region/deadline respectively) since one endpoint serves both callers.
+    """
+    rng = random.Random(scenario)
+    low_quality = any(k in scenario.lower() for k in _OCR_LOW_QUALITY_KEYWORDS)
+    if low_quality:
+        return {
+            'items': [], 'total': 0, 'confidence': round(rng.uniform(0.05, 0.25), 2),
+            'farmer': None, 'region_grown': None, 'part': None, 'form': None,
+            'gacp_cert': None, 'doc_no': None, 'customer_code': None,
+            'region': None, 'deadline': None,
+        }
+
+    n_items = rng.randint(1, 3)
+    items = []
+    for _ in range(n_items):
+        material = rng.choice(MATERIALS_CATALOG)
+        qty = round(rng.uniform(5, 50), 1)
+        items.append({
+            'sku': material['code'], 'name': material['name'],
+            'qty': qty, 'unit_price': material['unitCost'],
+        })
+    total = round(sum(i['qty'] * i['unit_price'] for i in items))
+    return {
+        'items': items, 'total': total, 'confidence': round(rng.uniform(0.6, 0.95), 2),
+        'farmer': rng.choice(['HTX Nông sản Sạch Đà Lạt', 'Nông trại Xanh Tây Nguyên',
+                              'HTX Dược liệu Cao Bằng']),
+        'region_grown': rng.choice(['Đà Lạt', 'Tây Nguyên', 'Cao Bằng']),
+        'part': rng.choice(['lá', 'rễ', 'hoa']),
+        'form': rng.choice(['tuoi', 'kho']),
+        'gacp_cert': f'GACP-{rng.randint(1000, 9999)}',
+        'doc_no': f'DH-MOCK-{rng.randint(1000, 9999)}',
+        'customer_code': rng.choice(['KH-001', 'KH-002', 'KH-003']),
+        'region': rng.choice(['HN', 'HCM', 'DN']),
+        'deadline': None,
+    }
 
 
 @n8n_api_bp.route('/api/n8n/internal/brain/upload', methods=['POST'])
 def internal_brain_upload():
-    """Mock stub for {{ $env.BRAIN_BASE_URL }}/upload (OCR)."""
+    """Realistic mock for {{ $env.BRAIN_BASE_URL }}/upload (OCR), N8N-02.
+    Requires a `scenario` query param (400 without one — no plausible
+    file/image reference to process); otherwise returns deterministic-per-
+    scenario extracted line items via _mock_ocr_extract, top-level on the
+    response (matching how every workflow template reads `ocr.items`/
+    `ocr.farmer`/`ocr.doc_no` etc. directly off the HTTP node's `.json`,
+    not nested under an `extracted` key like the old stub)."""
+    if not _check_webhook_token():
+        return jsonify({'success': False, 'error': 'unauthorized'}), 401
+    scenario = (request.args.get('scenario') or '').strip()
     _log_event('brain:upload', dict(request.args))
-    return jsonify({'success': True, 'mock': True, 'extracted': {}, 'confidence': 0})
+    if not scenario:
+        return jsonify({'success': False, 'mock': True,
+                        'message': 'Thiếu tham số scenario (không có ảnh/tệp để xử lý)'}), 400
+    extracted = _mock_ocr_extract(scenario)
+    return jsonify({'success': True, 'mock': True, **extracted})
 
 
 @n8n_api_bp.route('/api/n8n/internal/brain/mcp/validate-invoice', methods=['POST'])
 def internal_brain_validate_invoice():
-    """Mock stub for {{ $env.BRAIN_BASE_URL }}/mcp/validate-invoice."""
-    _log_event('brain:validate-invoice', request.get_json(silent=True) or {})
-    return jsonify({'success': True, 'mock': True, 'valid': True})
+    """Realistic mock for {{ $env.BRAIN_BASE_URL }}/mcp/validate-invoice,
+    N8N-02. Fixes a pre-existing field-name bug: the old stub returned a
+    flat `valid` boolean that no workflow template node ever actually read
+    (manuf_material_batch_intake.json's in-merge code node reads
+    `is_valid`/`difference`/`ocr_total`/`calculated_total`). No body at all
+    is a hard 400; empty/mismatched line items is a 200 low-confidence
+    `is_valid: false` result, not an automatic success."""
+    if not _check_webhook_token():
+        return jsonify({'success': False, 'error': 'unauthorized'}), 401
+    data = request.get_json(silent=True)
+    _log_event('brain:validate-invoice', data or {})
+    if data is None:
+        return jsonify({'success': False, 'mock': True,
+                        'message': 'Thiếu dữ liệu để đối chiếu hoá đơn'}), 400
+
+    items = data.get('items')
+    total = data.get('total')
+    if not isinstance(items, list) or not items or total is None:
+        return jsonify({
+            'success': True, 'mock': True, 'is_valid': False,
+            'ocr_total': 0, 'calculated_total': 0, 'difference': 0,
+            'reason': 'Không có đủ dữ liệu dòng hàng/tổng tiền để đối chiếu',
+        })
+
+    calculated_total = round(sum(
+        (i.get('qty') or 0) * (i.get('unit_price') or 0)
+        for i in items if isinstance(i, dict)
+    ))
+    try:
+        ocr_total = float(total)
+    except (TypeError, ValueError):
+        ocr_total = 0
+    difference = round(abs(ocr_total - calculated_total))
+    tolerance = max(1, round(calculated_total * 0.01))
+    is_valid = difference <= tolerance
+    return jsonify({
+        'success': True, 'mock': True, 'is_valid': is_valid,
+        'ocr_total': ocr_total, 'calculated_total': calculated_total,
+        'difference': difference,
+    })
 
 
 # n8n's HTTP Request nodes call these with no session/CSRF token — exempt
@@ -701,6 +886,7 @@ _TEMPLATE_META = {
     'manuf_batch_process_log':     {'icon': 'fa-industry',       'color': '#FB8C00', 'label': 'Nhật ký quy trình lô',    'desc': 'Webhook ghi nhận sự kiện trong quá trình sản xuất theo lô'},
     'manuf_waste_profit_report':   {'icon': 'fa-chart-pie',      'color': '#EF5350', 'label': 'Báo cáo hao hụt & lợi nhuận', 'desc': 'Webhook báo cáo cuối ca → tính hao hụt/lợi nhuận → lưu + thông báo'},
     'manuf_dr_report_periodic':    {'icon': 'fa-file-lines',     'color': '#42A5F5', 'label': 'Báo cáo định kỳ (DR)',    'desc': 'Lịch chạy hàng tháng → tổng hợp báo cáo bằng AI → gửi thông báo'},
+    'manuf_expiry_alert':          {'icon': 'fa-triangle-exclamation', 'color': '#E53935', 'label': 'Cảnh báo hết hạn NVL', 'desc': 'Lịch chạy hàng ngày → kiểm tra lô sắp hết hạn → thông báo'},
 }
 
 
@@ -730,6 +916,7 @@ def list_templates():
 
 @n8n_api_bp.route('/api/n8n/templates/deploy', methods=['POST'])
 @login_required
+@require_role('manager')
 def deploy_template():
     slug = (request.get_json(silent=True) or {}).get('slug', '')
     fp = os.path.join(_TEMPLATES, f'{slug}.json')

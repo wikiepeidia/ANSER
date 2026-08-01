@@ -192,3 +192,400 @@ def test_status_transitions(logged_in_client):
     # transitioning a terminal (completed) order is rejected
     resp = client.post(f'/api/production-orders/{order_id}/transition', json={'status': 'cancelled'})
     assert resp.status_code == 409
+
+
+def _drive_to_completed(client, order_id):
+    """Shared helper: drives an order through the full valid transition
+    sequence (draft -> pending_approval -> approved -> in_progress ->
+    completed), asserting 200 at every step, and returns the final
+    'completed' transition's response JSON."""
+    for status in ('pending_approval', 'approved', 'in_progress', 'completed'):
+        resp = client.post(f'/api/production-orders/{order_id}/transition', json={'status': status})
+        assert resp.status_code == 200, f'transition to {status} failed: {resp.get_json()}'
+    return resp.get_json()
+
+
+def test_completion_fifo_oldest_batch_first(logged_in_client):
+    client = logged_in_client
+
+    resp = client.post('/api/products', json={'code': 'SP-FIFO-1', 'name': 'SP FIFO 1'})
+    assert resp.status_code == 200
+
+    resp = client.put('/api/bom/SP-FIFO-1', json={
+        'lines': [
+            {'code': 'NVL-001', 'name': 'Vai FIFO', 'unit': 'm', 'unitCost': 1000, 'qtyPerUnit': 3},
+        ],
+    })
+    assert resp.status_code == 200
+
+    resp = client.post('/api/production-orders', json={
+        'productCode': 'SP-FIFO-1', 'productName': 'SP FIFO 1', 'quantity': 4,
+    })
+    assert resp.status_code == 200
+    order_id = resp.get_json()['id']  # plannedQty = round(3*4, 2) = 12
+
+    resp = client.post('/api/material-batches', json={'materialCode': 'NVL-001', 'quantity': 5})
+    assert resp.status_code == 200
+    older_batch_id = resp.get_json()['id']
+
+    resp = client.post('/api/material-batches', json={'materialCode': 'NVL-001', 'quantity': 20})
+    assert resp.status_code == 200
+    newer_batch_id = resp.get_json()['id']
+
+    # Control FIFO order deterministically (POST doesn't accept a
+    # client-supplied import_date).
+    conn = get_connection()
+    try:
+        conn.execute(
+            "UPDATE material_batches SET import_date = '2026-01-01 00:00:00' WHERE id = ?",
+            (older_batch_id,),
+        )
+        conn.execute(
+            "UPDATE material_batches SET import_date = '2026-06-01 00:00:00' WHERE id = ?",
+            (newer_batch_id,),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+    resp = client.post(f'/api/material-batches/{older_batch_id}/qc-result', json={'qcStatus': 'passed'})
+    assert resp.status_code == 200
+    resp = client.post(f'/api/material-batches/{newer_batch_id}/qc-result', json={'qcStatus': 'passed'})
+    assert resp.status_code == 200
+
+    final = _drive_to_completed(client, order_id)
+    assert final['materialShortfalls'] == []
+
+    conn = get_connection()
+    try:
+        rows = conn.execute(
+            'SELECT batch_id, quantity_used FROM batch_usage WHERE order_id = ? ORDER BY batch_id',
+            (order_id,),
+        ).fetchall()
+    finally:
+        conn.close()
+    assert len(rows) == 2
+    usage_by_batch = {r['batch_id']: r['quantity_used'] for r in rows}
+    assert usage_by_batch[older_batch_id] == 5
+    assert usage_by_batch[newer_batch_id] == 7
+
+    resp = client.get(f'/api/production-orders/{order_id}/costing')
+    assert resp.status_code == 200
+    data = resp.get_json()
+    line = next(l for l in data['lines'] if l['materialCode'] == 'NVL-001')
+    assert line['actualUsed'] == 12
+    assert line['wasteCostLine'] == 0
+    assert data['wasteCost'] == 0
+
+    # Zero-BOM product completes cleanly, inserts zero batch_usage rows.
+    resp = client.post('/api/production-orders', json={
+        'productCode': 'SP-FIFO-NOBOM', 'productName': 'SP FIFO NoBOM', 'quantity': 2,
+    })
+    assert resp.status_code == 200
+    nobom_order_id = resp.get_json()['id']
+
+    final_nobom = _drive_to_completed(client, nobom_order_id)
+    assert final_nobom['materialShortfalls'] == []
+
+    conn = get_connection()
+    try:
+        rows = conn.execute(
+            'SELECT id FROM batch_usage WHERE order_id = ?', (nobom_order_id,)
+        ).fetchall()
+    finally:
+        conn.close()
+    assert rows == []
+
+
+def test_completion_fifo_shortfall_not_blocking(logged_in_client):
+    client = logged_in_client
+
+    resp = client.post('/api/products', json={'code': 'SP-FIFO-2', 'name': 'SP FIFO 2'})
+    assert resp.status_code == 200
+
+    resp = client.put('/api/bom/SP-FIFO-2', json={
+        'lines': [
+            {'code': 'NVL-002', 'name': 'Chi FIFO', 'unit': 'cuộn', 'unitCost': 500, 'qtyPerUnit': 5},
+        ],
+    })
+    assert resp.status_code == 200
+
+    resp = client.post('/api/production-orders', json={
+        'productCode': 'SP-FIFO-2', 'productName': 'SP FIFO 2', 'quantity': 2,
+    })
+    assert resp.status_code == 200
+    order_id = resp.get_json()['id']  # plannedQty = round(5*2, 2) = 10
+
+    resp = client.post('/api/material-batches', json={'materialCode': 'NVL-002', 'quantity': 6})
+    assert resp.status_code == 200
+    batch_id = resp.get_json()['id']
+    resp = client.post(f'/api/material-batches/{batch_id}/qc-result', json={'qcStatus': 'passed'})
+    assert resp.status_code == 200
+
+    final = _drive_to_completed(client, order_id)
+    assert final['materialShortfalls'] == [
+        {'materialCode': 'NVL-002', 'plannedQty': 10, 'allocatedQty': 6, 'shortfallQty': 4},
+    ]
+
+    conn = get_connection()
+    try:
+        rows = conn.execute(
+            'SELECT batch_id, quantity_used FROM batch_usage WHERE order_id = ?', (order_id,)
+        ).fetchall()
+    finally:
+        conn.close()
+    assert len(rows) == 1
+    assert rows[0]['batch_id'] == batch_id
+    assert rows[0]['quantity_used'] == 6
+
+
+def test_completion_fifo_filters_qc_expiry_deleted(logged_in_client):
+    client = logged_in_client
+
+    resp = client.post('/api/products', json={'code': 'SP-FIFO-3', 'name': 'SP FIFO 3'})
+    assert resp.status_code == 200
+
+    resp = client.put('/api/bom/SP-FIFO-3', json={
+        'lines': [
+            {'code': 'NVL-003', 'name': 'Khuy FIFO', 'unit': 'cái', 'unitCost': 100, 'qtyPerUnit': 1},
+        ],
+    })
+    assert resp.status_code == 200
+
+    resp = client.post('/api/production-orders', json={
+        'productCode': 'SP-FIFO-3', 'productName': 'SP FIFO 3', 'quantity': 10,
+    })
+    assert resp.status_code == 200
+    order_id = resp.get_json()['id']  # plannedQty = 10
+
+    # batch_pending: default qc_status='pending', never QC'd.
+    resp = client.post('/api/material-batches', json={'materialCode': 'NVL-003', 'quantity': 50})
+    assert resp.status_code == 200
+    batch_pending = resp.get_json()['id']
+
+    # batch_failed: qc_status='failed'.
+    resp = client.post('/api/material-batches', json={'materialCode': 'NVL-003', 'quantity': 50})
+    assert resp.status_code == 200
+    batch_failed = resp.get_json()['id']
+    resp = client.post(f'/api/material-batches/{batch_failed}/qc-result', json={'qcStatus': 'failed'})
+    assert resp.status_code == 200
+
+    # batch_expired: qc_status='passed' but expiry_date in the past.
+    resp = client.post('/api/material-batches', json={'materialCode': 'NVL-003', 'quantity': 50})
+    assert resp.status_code == 200
+    batch_expired = resp.get_json()['id']
+    resp = client.post(f'/api/material-batches/{batch_expired}/qc-result', json={'qcStatus': 'passed'})
+    assert resp.status_code == 200
+    conn = get_connection()
+    try:
+        conn.execute(
+            "UPDATE material_batches SET expiry_date = '2020-01-01' WHERE id = ?", (batch_expired,)
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+    # batch_deleted: qc_status='passed' but soft-deleted.
+    resp = client.post('/api/material-batches', json={'materialCode': 'NVL-003', 'quantity': 50})
+    assert resp.status_code == 200
+    batch_deleted = resp.get_json()['id']
+    resp = client.post(f'/api/material-batches/{batch_deleted}/qc-result', json={'qcStatus': 'passed'})
+    assert resp.status_code == 200
+    resp = client.delete(f'/api/material-batches/{batch_deleted}')
+    assert resp.status_code == 200
+
+    # batch_good: the only eligible batch, covers plannedQty exactly.
+    resp = client.post('/api/material-batches', json={'materialCode': 'NVL-003', 'quantity': 10})
+    assert resp.status_code == 200
+    batch_good = resp.get_json()['id']
+    resp = client.post(f'/api/material-batches/{batch_good}/qc-result', json={'qcStatus': 'passed'})
+    assert resp.status_code == 200
+
+    final = _drive_to_completed(client, order_id)
+    assert final['materialShortfalls'] == []
+
+    conn = get_connection()
+    try:
+        rows = conn.execute(
+            'SELECT batch_id, quantity_used FROM batch_usage WHERE order_id = ?', (order_id,)
+        ).fetchall()
+    finally:
+        conn.close()
+    assert len(rows) == 1
+    assert rows[0]['batch_id'] == batch_good
+    assert rows[0]['quantity_used'] == 10
+    excluded_ids = {batch_pending, batch_failed, batch_expired, batch_deleted}
+    assert all(r['batch_id'] not in excluded_ids for r in rows)
+
+
+def test_completion_fifo_all_batches_excluded_full_shortfall(logged_in_client):
+    client = logged_in_client
+
+    resp = client.post('/api/products', json={'code': 'SP-FIFO-4', 'name': 'SP FIFO 4'})
+    assert resp.status_code == 200
+
+    resp = client.put('/api/bom/SP-FIFO-4', json={
+        'lines': [
+            {'code': 'NVL-004', 'name': 'Nhan FIFO', 'unit': 'cái', 'unitCost': 200, 'qtyPerUnit': 2},
+        ],
+    })
+    assert resp.status_code == 200
+
+    resp = client.post('/api/production-orders', json={
+        'productCode': 'SP-FIFO-4', 'productName': 'SP FIFO 4', 'quantity': 3,
+    })
+    assert resp.status_code == 200
+    order_id = resp.get_json()['id']  # plannedQty = round(2*3, 2) = 6
+
+    # Single batch, never QC'd (stays at default qc_status='pending') --
+    # zero eligible batches at all.
+    resp = client.post('/api/material-batches', json={'materialCode': 'NVL-004', 'quantity': 100})
+    assert resp.status_code == 200
+
+    final = _drive_to_completed(client, order_id)
+    assert final['materialShortfalls'] == [
+        {'materialCode': 'NVL-004', 'plannedQty': 6, 'allocatedQty': 0, 'shortfallQty': 6},
+    ]
+
+    conn = get_connection()
+    try:
+        rows = conn.execute(
+            'SELECT id FROM batch_usage WHERE order_id = ?', (order_id,)
+        ).fetchall()
+    finally:
+        conn.close()
+    assert rows == []
+
+
+def test_completion_fifo_cross_order_double_spend_guard(logged_in_client):
+    client = logged_in_client
+
+    resp = client.post('/api/products', json={'code': 'SP-FIFO-5A', 'name': 'SP FIFO 5A'})
+    assert resp.status_code == 200
+    resp = client.post('/api/products', json={'code': 'SP-FIFO-5B', 'name': 'SP FIFO 5B'})
+    assert resp.status_code == 200
+
+    for product_code in ('SP-FIFO-5A', 'SP-FIFO-5B'):
+        resp = client.put(f'/api/bom/{product_code}', json={
+            'lines': [
+                {'code': 'NVL-005', 'name': 'Bao bi FIFO', 'unit': 'cái',
+                 'unitCost': 200, 'qtyPerUnit': 1},
+            ],
+        })
+        assert resp.status_code == 200
+
+    resp = client.post('/api/production-orders', json={
+        'productCode': 'SP-FIFO-5A', 'productName': 'SP FIFO 5A', 'quantity': 6,
+    })
+    assert resp.status_code == 200
+    orderA_id = resp.get_json()['id']  # plannedQty = 6
+
+    resp = client.post('/api/production-orders', json={
+        'productCode': 'SP-FIFO-5B', 'productName': 'SP FIFO 5B', 'quantity': 6,
+    })
+    assert resp.status_code == 200
+    orderB_id = resp.get_json()['id']  # plannedQty = 6
+
+    # Single shared batch (10 total, less than the combined 12 both orders need).
+    resp = client.post('/api/material-batches', json={'materialCode': 'NVL-005', 'quantity': 10})
+    assert resp.status_code == 200
+    batch_id = resp.get_json()['id']
+    resp = client.post(f'/api/material-batches/{batch_id}/qc-result', json={'qcStatus': 'passed'})
+    assert resp.status_code == 200
+
+    finalA = _drive_to_completed(client, orderA_id)
+    assert finalA['materialShortfalls'] == []
+
+    conn = get_connection()
+    try:
+        rowsA = conn.execute(
+            'SELECT batch_id, quantity_used FROM batch_usage WHERE order_id = ?', (orderA_id,)
+        ).fetchall()
+    finally:
+        conn.close()
+    assert len(rowsA) == 1
+    assert rowsA[0]['batch_id'] == batch_id
+    assert rowsA[0]['quantity_used'] == 6
+
+    finalB = _drive_to_completed(client, orderB_id)
+    assert finalB['materialShortfalls'] == [
+        {'materialCode': 'NVL-005', 'plannedQty': 6, 'allocatedQty': 4, 'shortfallQty': 2},
+    ]
+
+
+# Per 07-CONTEXT.md's FIFO decision, this phase's own auto-allocation caps
+# every draw at the BOM-planned quantity and therefore, by itself, can never
+# make actual usage exceed the plan. Phase 4's unmodified waste formula
+# (costing_routes.py, waste_qty = max(0, actual_used - planned_qty)) only
+# produces non-zero waste when an order's TOTAL recorded usage for a
+# material (this phase's own write plus any other existing batch_usage row)
+# exceeds planned -- so this test combines both, mirroring
+# tests/test_costing.py::test_order_costing's own established technique for
+# constructing a non-zero-waste scenario.
+def test_completion_fifo_produces_nonzero_waste_via_costing(logged_in_client):
+    client = logged_in_client
+
+    resp = client.post('/api/products', json={'code': 'SP-FIFO-6', 'name': 'SP FIFO 6'})
+    assert resp.status_code == 200
+
+    resp = client.put('/api/bom/SP-FIFO-6', json={
+        'lines': [
+            {'code': 'NVL-006', 'name': 'Keo FIFO', 'unit': 'kg', 'unitCost': 2000, 'qtyPerUnit': 2},
+        ],
+    })
+    assert resp.status_code == 200
+
+    resp = client.post('/api/production-orders', json={
+        'productCode': 'SP-FIFO-6', 'productName': 'SP FIFO 6', 'quantity': 5,
+    })
+    assert resp.status_code == 200
+    order_id = resp.get_json()['id']  # plannedQty = round(2*5, 2) = 10
+
+    resp = client.post('/api/material-batches', json={'materialCode': 'NVL-006', 'quantity': 15})
+    assert resp.status_code == 200
+    pre_batch_id = resp.get_json()['id']
+    resp = client.post(f'/api/material-batches/{pre_batch_id}/qc-result', json={'qcStatus': 'passed'})
+    assert resp.status_code == 200
+
+    # Simulate 6 units already recorded through another mechanism before
+    # this order completes.
+    conn = get_connection()
+    try:
+        conn.execute(
+            'INSERT INTO batch_usage (batch_id, order_id, quantity_used, created_at) '
+            'VALUES (?, ?, ?, ?)',
+            (pre_batch_id, order_id, 6, now()),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+    resp = client.post('/api/material-batches', json={'materialCode': 'NVL-006', 'quantity': 15})
+    assert resp.status_code == 200
+    fresh_batch_id = resp.get_json()['id']
+    resp = client.post(f'/api/material-batches/{fresh_batch_id}/qc-result', json={'qcStatus': 'passed'})
+    assert resp.status_code == 200
+
+    final = _drive_to_completed(client, order_id)
+    assert 'materialShortfalls' in final
+
+    conn = get_connection()
+    try:
+        total_used = conn.execute(
+            'SELECT COALESCE(SUM(bu.quantity_used), 0) AS total FROM batch_usage bu '
+            'JOIN material_batches mb ON mb.id = bu.batch_id '
+            "WHERE bu.order_id = ? AND mb.material_code = 'NVL-006'",
+            (order_id,),
+        ).fetchone()['total']
+    finally:
+        conn.close()
+    assert total_used == 16  # pre-existing 6 + this completion's own new 10
+
+    resp = client.get(f'/api/production-orders/{order_id}/costing')
+    assert resp.status_code == 200
+    data = resp.get_json()
+    line = next(l for l in data['lines'] if l['materialCode'] == 'NVL-006')
+    assert line['actualUsed'] == 16
+    assert line['wasteQty'] == round(16 - 10, 2) == 6
+    assert line['wasteCostLine'] == round(6 * 2000) == 12000
+    assert data['wasteCost'] == 12000
