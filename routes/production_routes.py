@@ -197,6 +197,88 @@ def delete_production_order(order_id):
 
 # ── Status transition + events timeline (PROD-02) ───────────────────────
 
+def _allocate_material_usage_fifo(conn, order_row):
+    """COST-03: FIFO auto-allocation of real material-batch consumption on
+    production-order completion, per 07-CONTEXT.md's locked FIFO decision.
+
+    For each BOM line matching order_row['product_code'], auto-consumes the
+    planned quantity (qty_per_unit * order_row['quantity']) from the oldest
+    available (qc_status='passed', non-expired, non-deleted) matching
+    material_batches rows, FIFO by import_date. Writes exactly one
+    batch_usage row per batch actually drawn from.
+
+    Two things matter for correctness:
+    (a) material_batches.quantity is never decremented anywhere else in this
+        schema, so a candidate batch's "available" quantity here must
+        subtract that batch's own prior batch_usage.quantity_used summed
+        across ALL orders (not just the one currently completing) --
+        skipping this subtraction would let the same physical batch be
+        treated as fully available forever across every order's completion,
+        corrupting both the shortfall math and the waste math.
+    (b) every draw here is capped at the line's plannedQty, so pure
+        FIFO-to-plan by itself, by design, never exceeds plannedQty --
+        Phase 4's unmodified exceeds-only waste formula (costing_routes.py)
+        can only become non-zero when an order's TOTAL actual usage for a
+        material (this write plus any other existing batch_usage row for
+        that same order+material) exceeds the plan.
+
+    Returns a list of shortfall dicts (empty when nothing was short):
+    [{'materialCode', 'plannedQty', 'allocatedQty', 'shortfallQty'}, ...]
+    """
+    bom_rows = conn.execute(
+        'SELECT code, qty_per_unit FROM bom_lines WHERE product_code = ?',
+        (order_row['product_code'],),
+    ).fetchall()
+
+    shortfalls = []
+    today = now()[:10]
+
+    for bom_row in bom_rows:
+        code = bom_row['code']
+        planned_qty = round(bom_row['qty_per_unit'] * order_row['quantity'], 2)
+        if planned_qty <= 0:
+            continue
+
+        candidates = conn.execute(
+            "SELECT id, quantity FROM material_batches WHERE material_code = ? "
+            "AND is_deleted = FALSE AND qc_status = 'passed' "
+            "AND (expiry_date IS NULL OR expiry_date = '' OR expiry_date >= ?) "
+            "ORDER BY import_date ASC",
+            (code, today),
+        ).fetchall()
+
+        remaining = planned_qty
+        for batch in candidates:
+            if remaining <= 0:
+                break
+            used_row = conn.execute(
+                'SELECT COALESCE(SUM(quantity_used), 0) AS used FROM batch_usage WHERE batch_id = ?',
+                (batch['id'],),
+            ).fetchone()
+            available = round(batch['quantity'] - used_row['used'], 2)
+            if available <= 0:
+                continue
+            draw = min(available, remaining)
+            if draw <= 0:
+                continue
+            conn.execute(
+                'INSERT INTO batch_usage (batch_id, order_id, quantity_used, created_at) '
+                'VALUES (?, ?, ?, ?)',
+                (batch['id'], order_row['id'], draw, now()),
+            )
+            remaining = round(remaining - draw, 2)
+
+        if remaining > 0:
+            shortfalls.append({
+                'materialCode': code,
+                'plannedQty': planned_qty,
+                'allocatedQty': round(planned_qty - remaining, 2),
+                'shortfallQty': remaining,
+            })
+
+    return shortfalls
+
+
 @production_bp.route('/api/production-orders/<int:order_id>/transition', methods=['POST'])
 @login_required
 def transition_order(order_id):
@@ -249,6 +331,8 @@ def transition_order(order_id):
             (order_id, event_label, note, now()),
         )
 
+        response = {'success': True, 'message': 'Cập nhật trạng thái thành công'}
+
         if new_status == 'completed':
             product = conn.execute(
                 'SELECT id, stock_quantity, name FROM products WHERE code = ?',
@@ -268,8 +352,15 @@ def transition_order(order_id):
             # No matching product row: lenient no-op per 01-RESEARCH.md
             # Pitfall 4 / Open Question 2 — order still completes.
 
+            # COST-03: FIFO-allocate real batch_usage rows before commit, so
+            # a mid-way failure rolls back the status change, stock
+            # increment, AND any batch_usage rows together (never a partial
+            # commit) — see this plan's key_links.
+            material_shortfalls = _allocate_material_usage_fifo(conn, row)
+            response['materialShortfalls'] = material_shortfalls
+
         conn.commit()
-        return jsonify({'success': True, 'message': 'Cập nhật trạng thái thành công'})
+        return jsonify(response)
     except Exception as e:
         conn.rollback()
         return jsonify({'success': False, 'message': str(e)}), 400

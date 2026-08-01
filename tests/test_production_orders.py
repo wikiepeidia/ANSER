@@ -192,3 +192,106 @@ def test_status_transitions(logged_in_client):
     # transitioning a terminal (completed) order is rejected
     resp = client.post(f'/api/production-orders/{order_id}/transition', json={'status': 'cancelled'})
     assert resp.status_code == 409
+
+
+def _drive_to_completed(client, order_id):
+    """Shared helper: drives an order through the full valid transition
+    sequence (draft -> pending_approval -> approved -> in_progress ->
+    completed), asserting 200 at every step, and returns the final
+    'completed' transition's response JSON."""
+    for status in ('pending_approval', 'approved', 'in_progress', 'completed'):
+        resp = client.post(f'/api/production-orders/{order_id}/transition', json={'status': status})
+        assert resp.status_code == 200, f'transition to {status} failed: {resp.get_json()}'
+    return resp.get_json()
+
+
+def test_completion_fifo_oldest_batch_first(logged_in_client):
+    client = logged_in_client
+
+    resp = client.post('/api/products', json={'code': 'SP-FIFO-1', 'name': 'SP FIFO 1'})
+    assert resp.status_code == 200
+
+    resp = client.put('/api/bom/SP-FIFO-1', json={
+        'lines': [
+            {'code': 'NVL-001', 'name': 'Vai FIFO', 'unit': 'm', 'unitCost': 1000, 'qtyPerUnit': 3},
+        ],
+    })
+    assert resp.status_code == 200
+
+    resp = client.post('/api/production-orders', json={
+        'productCode': 'SP-FIFO-1', 'productName': 'SP FIFO 1', 'quantity': 4,
+    })
+    assert resp.status_code == 200
+    order_id = resp.get_json()['id']  # plannedQty = round(3*4, 2) = 12
+
+    resp = client.post('/api/material-batches', json={'materialCode': 'NVL-001', 'quantity': 5})
+    assert resp.status_code == 200
+    older_batch_id = resp.get_json()['id']
+
+    resp = client.post('/api/material-batches', json={'materialCode': 'NVL-001', 'quantity': 20})
+    assert resp.status_code == 200
+    newer_batch_id = resp.get_json()['id']
+
+    # Control FIFO order deterministically (POST doesn't accept a
+    # client-supplied import_date).
+    conn = get_connection()
+    try:
+        conn.execute(
+            "UPDATE material_batches SET import_date = '2026-01-01 00:00:00' WHERE id = ?",
+            (older_batch_id,),
+        )
+        conn.execute(
+            "UPDATE material_batches SET import_date = '2026-06-01 00:00:00' WHERE id = ?",
+            (newer_batch_id,),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+    resp = client.post(f'/api/material-batches/{older_batch_id}/qc-result', json={'qcStatus': 'passed'})
+    assert resp.status_code == 200
+    resp = client.post(f'/api/material-batches/{newer_batch_id}/qc-result', json={'qcStatus': 'passed'})
+    assert resp.status_code == 200
+
+    final = _drive_to_completed(client, order_id)
+    assert final['materialShortfalls'] == []
+
+    conn = get_connection()
+    try:
+        rows = conn.execute(
+            'SELECT batch_id, quantity_used FROM batch_usage WHERE order_id = ? ORDER BY batch_id',
+            (order_id,),
+        ).fetchall()
+    finally:
+        conn.close()
+    assert len(rows) == 2
+    usage_by_batch = {r['batch_id']: r['quantity_used'] for r in rows}
+    assert usage_by_batch[older_batch_id] == 5
+    assert usage_by_batch[newer_batch_id] == 7
+
+    resp = client.get(f'/api/production-orders/{order_id}/costing')
+    assert resp.status_code == 200
+    data = resp.get_json()
+    line = next(l for l in data['lines'] if l['materialCode'] == 'NVL-001')
+    assert line['actualUsed'] == 12
+    assert line['wasteCostLine'] == 0
+    assert data['wasteCost'] == 0
+
+    # Zero-BOM product completes cleanly, inserts zero batch_usage rows.
+    resp = client.post('/api/production-orders', json={
+        'productCode': 'SP-FIFO-NOBOM', 'productName': 'SP FIFO NoBOM', 'quantity': 2,
+    })
+    assert resp.status_code == 200
+    nobom_order_id = resp.get_json()['id']
+
+    final_nobom = _drive_to_completed(client, nobom_order_id)
+    assert final_nobom['materialShortfalls'] == []
+
+    conn = get_connection()
+    try:
+        rows = conn.execute(
+            'SELECT id FROM batch_usage WHERE order_id = ?', (nobom_order_id,)
+        ).fetchall()
+    finally:
+        conn.close()
+    assert rows == []
