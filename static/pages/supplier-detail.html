@@ -1,4 +1,4 @@
-<!-- supplier-detail.html — Chi tiết nhà cung cấp + lịch sử lô NVL đã nhập (mock, đứng thay GET /api/suppliers/<id>/batches) -->
+<!-- supplier-detail.html — Chi tiết nhà cung cấp + lịch sử lô NVL đã nhập (real API: GET /api/suppliers/<id>/batches) -->
 <div class="content__header">
   <div>
     <a href="#suppliers" style="color:var(--text-muted);font-size:13px;text-decoration:none">
@@ -48,7 +48,7 @@
 </div>
 
 <script>
-(function () {
+(async function () {
   const id = Helpers.load("selectedSupplierId", null);
   const supplier = id ? Store.getSupplierById(id) : null;
 
@@ -76,7 +76,7 @@
     <button class="btn btn--outline" onclick="Router.deleteSupplier(${supplier.id})"><i class="fa-solid fa-trash"></i> Xoá</button>
   `;
 
-  const batches = Store.getSupplierBatches(supplier.id);
+  const batches = await Store.getSupplierBatches(supplier.id);
   document.getElementById("sdBatchesBody").innerHTML = batches.length
     ? batches.map((b) => {
         const qc = Store.QC_STATUSES[b.qcStatus];
