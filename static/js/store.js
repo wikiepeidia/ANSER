@@ -319,18 +319,28 @@ const Store = {
     return bom.reduce((sum, l) => sum + l.lineCost, 0);
   },
 
-  // Giá thành thực tế (MOCK) — chưa có hệ thống chấm công/tiêu hao NVL thật
-  // theo từng ca sản xuất, nên sinh lệch % ổn định (theo mã đơn) quanh định
-  // mức (getOrderCost), thiên về hao hụt dương (thực tế thường cao hơn định
-  // mức) để trang báo cáo có dữ liệu "hao hụt" minh hoạ. Chỉ có giá trị với
-  // đơn đã bắt đầu sản xuất trở lên (in_progress/completed).
-  async getActualCost(order) {
-    if (!order || !["in_progress", "completed"].includes(order.status)) return null;
-    const standard = await this.getOrderCost(order);
-    if (standard === null) return null;
-    const h = this._hashStr(order.code);
-    const variancePct = -5 + (h % 30); // -5% .. +24%
-    return Math.round(standard * (1 + variancePct / 100));
+  // GET /api/production-orders/<id>/costing (real API, routes/costing_routes.py)
+  // — actual material/waste/total cost + profit estimate for one order,
+  // computed server-side from real batch_usage rows. Replaces the mock
+  // getActualCost() hash-variance estimate.
+  async getOrderCosting(orderId) {
+    try {
+      return await this._api(`/api/production-orders/${orderId}/costing`);
+    } catch (e) {
+      console.error("getOrderCosting failed:", e);
+      return null;
+    }
+  },
+
+  // GET /api/costing/reports?groupBy=batch|shift (real API)
+  async getCostingReports(groupBy = "shift") {
+    try {
+      const data = await this._api(`/api/costing/reports?groupBy=${encodeURIComponent(groupBy)}`);
+      return data.report || [];
+    } catch (e) {
+      console.error("getCostingReports failed:", e);
+      return [];
+    }
   },
 
   productionOrders: [],
