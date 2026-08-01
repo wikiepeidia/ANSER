@@ -295,3 +295,163 @@ def test_completion_fifo_oldest_batch_first(logged_in_client):
     finally:
         conn.close()
     assert rows == []
+
+
+def test_completion_fifo_shortfall_not_blocking(logged_in_client):
+    client = logged_in_client
+
+    resp = client.post('/api/products', json={'code': 'SP-FIFO-2', 'name': 'SP FIFO 2'})
+    assert resp.status_code == 200
+
+    resp = client.put('/api/bom/SP-FIFO-2', json={
+        'lines': [
+            {'code': 'NVL-002', 'name': 'Chi FIFO', 'unit': 'cuộn', 'unitCost': 500, 'qtyPerUnit': 5},
+        ],
+    })
+    assert resp.status_code == 200
+
+    resp = client.post('/api/production-orders', json={
+        'productCode': 'SP-FIFO-2', 'productName': 'SP FIFO 2', 'quantity': 2,
+    })
+    assert resp.status_code == 200
+    order_id = resp.get_json()['id']  # plannedQty = round(5*2, 2) = 10
+
+    resp = client.post('/api/material-batches', json={'materialCode': 'NVL-002', 'quantity': 6})
+    assert resp.status_code == 200
+    batch_id = resp.get_json()['id']
+    resp = client.post(f'/api/material-batches/{batch_id}/qc-result', json={'qcStatus': 'passed'})
+    assert resp.status_code == 200
+
+    final = _drive_to_completed(client, order_id)
+    assert final['materialShortfalls'] == [
+        {'materialCode': 'NVL-002', 'plannedQty': 10, 'allocatedQty': 6, 'shortfallQty': 4},
+    ]
+
+    conn = get_connection()
+    try:
+        rows = conn.execute(
+            'SELECT batch_id, quantity_used FROM batch_usage WHERE order_id = ?', (order_id,)
+        ).fetchall()
+    finally:
+        conn.close()
+    assert len(rows) == 1
+    assert rows[0]['batch_id'] == batch_id
+    assert rows[0]['quantity_used'] == 6
+
+
+def test_completion_fifo_filters_qc_expiry_deleted(logged_in_client):
+    client = logged_in_client
+
+    resp = client.post('/api/products', json={'code': 'SP-FIFO-3', 'name': 'SP FIFO 3'})
+    assert resp.status_code == 200
+
+    resp = client.put('/api/bom/SP-FIFO-3', json={
+        'lines': [
+            {'code': 'NVL-003', 'name': 'Khuy FIFO', 'unit': 'cái', 'unitCost': 100, 'qtyPerUnit': 1},
+        ],
+    })
+    assert resp.status_code == 200
+
+    resp = client.post('/api/production-orders', json={
+        'productCode': 'SP-FIFO-3', 'productName': 'SP FIFO 3', 'quantity': 10,
+    })
+    assert resp.status_code == 200
+    order_id = resp.get_json()['id']  # plannedQty = 10
+
+    # batch_pending: default qc_status='pending', never QC'd.
+    resp = client.post('/api/material-batches', json={'materialCode': 'NVL-003', 'quantity': 50})
+    assert resp.status_code == 200
+    batch_pending = resp.get_json()['id']
+
+    # batch_failed: qc_status='failed'.
+    resp = client.post('/api/material-batches', json={'materialCode': 'NVL-003', 'quantity': 50})
+    assert resp.status_code == 200
+    batch_failed = resp.get_json()['id']
+    resp = client.post(f'/api/material-batches/{batch_failed}/qc-result', json={'qcStatus': 'failed'})
+    assert resp.status_code == 200
+
+    # batch_expired: qc_status='passed' but expiry_date in the past.
+    resp = client.post('/api/material-batches', json={'materialCode': 'NVL-003', 'quantity': 50})
+    assert resp.status_code == 200
+    batch_expired = resp.get_json()['id']
+    resp = client.post(f'/api/material-batches/{batch_expired}/qc-result', json={'qcStatus': 'passed'})
+    assert resp.status_code == 200
+    conn = get_connection()
+    try:
+        conn.execute(
+            "UPDATE material_batches SET expiry_date = '2020-01-01' WHERE id = ?", (batch_expired,)
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+    # batch_deleted: qc_status='passed' but soft-deleted.
+    resp = client.post('/api/material-batches', json={'materialCode': 'NVL-003', 'quantity': 50})
+    assert resp.status_code == 200
+    batch_deleted = resp.get_json()['id']
+    resp = client.post(f'/api/material-batches/{batch_deleted}/qc-result', json={'qcStatus': 'passed'})
+    assert resp.status_code == 200
+    resp = client.delete(f'/api/material-batches/{batch_deleted}')
+    assert resp.status_code == 200
+
+    # batch_good: the only eligible batch, covers plannedQty exactly.
+    resp = client.post('/api/material-batches', json={'materialCode': 'NVL-003', 'quantity': 10})
+    assert resp.status_code == 200
+    batch_good = resp.get_json()['id']
+    resp = client.post(f'/api/material-batches/{batch_good}/qc-result', json={'qcStatus': 'passed'})
+    assert resp.status_code == 200
+
+    final = _drive_to_completed(client, order_id)
+    assert final['materialShortfalls'] == []
+
+    conn = get_connection()
+    try:
+        rows = conn.execute(
+            'SELECT batch_id, quantity_used FROM batch_usage WHERE order_id = ?', (order_id,)
+        ).fetchall()
+    finally:
+        conn.close()
+    assert len(rows) == 1
+    assert rows[0]['batch_id'] == batch_good
+    assert rows[0]['quantity_used'] == 10
+    excluded_ids = {batch_pending, batch_failed, batch_expired, batch_deleted}
+    assert all(r['batch_id'] not in excluded_ids for r in rows)
+
+
+def test_completion_fifo_all_batches_excluded_full_shortfall(logged_in_client):
+    client = logged_in_client
+
+    resp = client.post('/api/products', json={'code': 'SP-FIFO-4', 'name': 'SP FIFO 4'})
+    assert resp.status_code == 200
+
+    resp = client.put('/api/bom/SP-FIFO-4', json={
+        'lines': [
+            {'code': 'NVL-004', 'name': 'Nhan FIFO', 'unit': 'cái', 'unitCost': 200, 'qtyPerUnit': 2},
+        ],
+    })
+    assert resp.status_code == 200
+
+    resp = client.post('/api/production-orders', json={
+        'productCode': 'SP-FIFO-4', 'productName': 'SP FIFO 4', 'quantity': 3,
+    })
+    assert resp.status_code == 200
+    order_id = resp.get_json()['id']  # plannedQty = round(2*3, 2) = 6
+
+    # Single batch, never QC'd (stays at default qc_status='pending') --
+    # zero eligible batches at all.
+    resp = client.post('/api/material-batches', json={'materialCode': 'NVL-004', 'quantity': 100})
+    assert resp.status_code == 200
+
+    final = _drive_to_completed(client, order_id)
+    assert final['materialShortfalls'] == [
+        {'materialCode': 'NVL-004', 'plannedQty': 6, 'allocatedQty': 0, 'shortfallQty': 6},
+    ]
+
+    conn = get_connection()
+    try:
+        rows = conn.execute(
+            'SELECT id FROM batch_usage WHERE order_id = ?', (order_id,)
+        ).fetchall()
+    finally:
+        conn.close()
+    assert rows == []
