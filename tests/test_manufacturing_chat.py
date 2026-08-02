@@ -81,6 +81,12 @@ class _FakeSanXuatAPI:
             ensure_ascii=False,
         )
 
+    def get_bom_for_product(self, product_code):
+        return json.dumps(
+            {"lines": [], "estimated_unit_cost": 0},
+            ensure_ascii=False,
+        )
+
 
 def test_manufacturing_chat_data_internal_dispatches_to_sanxuat_and_shapes_context(monkeypatch):
     manager = _FakeManager()

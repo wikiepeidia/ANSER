@@ -468,9 +468,21 @@ async def chat_manufacturing_endpoint(
             try:
                 orders_raw = sanxuat.lookup_production_order(user_msg)
                 batches_raw = sanxuat.get_material_batch_status(user_msg)
+
+                bom_raw = "(không có lệnh sản xuất khớp để tra định mức)"
+                try:
+                    parsed_orders = json.loads(orders_raw)
+                    if isinstance(parsed_orders, list) and parsed_orders:
+                        first_pc = parsed_orders[0].get("product_code")
+                        if first_pc:
+                            bom_raw = sanxuat.get_bom_for_product(first_pc)
+                except (json.JSONDecodeError, TypeError):
+                    pass
+
                 db_context = (
                     f"[LỆNH SẢN XUẤT KHỚP TRUY VẤN]\n{orders_raw}\n\n"
-                    f"[LÔ NGUYÊN LIỆU KHỚP TRUY VẤN]\n{batches_raw}"
+                    f"[LÔ NGUYÊN LIỆU KHỚP TRUY VẤN]\n{batches_raw}\n\n"
+                    f"[ĐỊNH MỨC / GIÁ THÀNH NGUYÊN LIỆU]\n{bom_raw}"
                 )
             except Exception as exc:
                 logger.warning(
