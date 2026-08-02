@@ -248,3 +248,112 @@ def test_manufacturing_chat_technical_route_reuses_plan_or_ask(monkeypatch):
 
     assert result["route"] == "TECHNICAL"
     assert result["text"] == "no plan here"
+
+
+class _FakeStockResult:
+    def __init__(self, row):
+        self._row = row
+
+    def fetchone(self):
+        return self._row
+
+
+class _FakeStockConnection:
+    def __init__(self, stock_map):
+        self._stock_map = stock_map
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        return False
+
+    def execute(self, sql, params):
+        code = params["code"]
+        if code in self._stock_map:
+            return _FakeStockResult((self._stock_map[code],))
+        return _FakeStockResult(None)
+
+
+class _FakeStockEngine:
+    def __init__(self, stock_map):
+        self._stock_map = stock_map
+
+    def connect(self):
+        return _FakeStockConnection(self._stock_map)
+
+
+def test_infer_qty_to_produce_stock_aware_math():
+    api = SanXuatAPI.__new__(SanXuatAPI)
+    api.engine = _FakeStockEngine({"SP-001": 5, "SP-002": 0})
+
+    result = api.infer_qty_to_produce([
+        {"sku": "SP-001", "qty": 20},
+        {"sku": "SP-002", "qty": 10},
+        {"sku": "SP-999", "qty": 3},
+    ])
+
+    assert result == [
+        {"sku": "SP-001", "qty_to_produce": 15},
+        {"sku": "SP-002", "qty_to_produce": 10},
+        {"sku": "SP-999", "qty_to_produce": 3},
+    ]
+
+
+def test_infer_qty_to_produce_degrades_to_naive_passthrough_without_engine():
+    api = SanXuatAPI.__new__(SanXuatAPI)
+    api.engine = None
+
+    result = api.infer_qty_to_produce([
+        {"sku": "SP-001", "qty": 20},
+        {"sku": "SP-002", "qty": 7},
+    ])
+
+    assert result == [
+        {"sku": "SP-001", "qty_to_produce": 20},
+        {"sku": "SP-002", "qty_to_produce": 7},
+    ]
+
+
+class _FakeSanXuatAPIFull(SanXuatAPI):
+    def __init__(self):
+        self.engine = None
+
+    def lookup_production_order(self, query, limit=20):
+        return "Không tìm thấy lệnh sản xuất khớp."
+
+    def get_material_batch_status(self, query, limit=20):
+        return "Không tìm thấy lô nguyên liệu khớp."
+
+
+def test_manufacturing_chat_endpoint_returns_inference_field_end_to_end(monkeypatch):
+    manager = _FakeManager()
+    _patch_runtime_basics(monkeypatch, manager)
+    monkeypatch.setattr(chat_mod, "_sanxuat", _FakeSanXuatAPIFull())
+
+    response = client.post(
+        "/chat/manufacturing",
+        json={
+            "prompt": "tinh SL SP can san xuat theo ma SKU",
+            "route": "TECHNICAL",
+            "context": {
+                "infer_production": {
+                    "items": [
+                        {"sku": "SP-001", "qty": 20},
+                        {"sku": "SP-002", "qty": 5},
+                    ],
+                },
+            },
+        },
+    )
+    assert response.status_code == 200
+    body = response.json()
+
+    result_status = _poll_task(client, body["task_id"])
+    assert result_status["status"] == "completed"
+
+    result = result_status["result"]
+    assert result["inference"]["items"] == [
+        {"sku": "SP-001", "qty_to_produce": 20},
+        {"sku": "SP-002", "qty_to_produce": 5},
+    ]
