@@ -30,6 +30,16 @@ class ChatRequest(BaseModel):
     message: str
 
 
+class ManufacturingChatRequest(BaseModel):
+    """Request body for POST /chat/manufacturing (San Xuất, no user/store
+    concept). `route` is the caller's own routing hint, informational only --
+    this endpoint always computes its own real route via `analyze_task` and
+    never trusts the caller's hint."""
+    prompt: str
+    route: Optional[str] = None
+    context: Optional[dict] = None
+
+
 # ---------------------------------------------------------------------------
 # Concurrency Guards
 # ---------------------------------------------------------------------------

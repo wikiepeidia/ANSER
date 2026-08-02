@@ -26,7 +26,7 @@ from fastapi import APIRouter, BackgroundTasks, Header, HTTPException, Request
 from typing import Optional
 
 from src.api.dependencies import (
-    ChatRequest, runtime, require_api_token, resolve_identity,
+    ChatRequest, ManufacturingChatRequest, runtime, require_api_token, resolve_identity,
     clean_output, extract_user_content, web_search_fallback,
 )
 from src.core.engine import TASK_REGISTRY
@@ -61,6 +61,25 @@ async def _get_saas():
             from src.core.saas_api import SaasAPI
             _saas = SaasAPI()
     return _saas
+
+
+# SanXuatAPI singleton nhẹ (tạo engine 1 lần) — dùng cho route
+# POST /chat/manufacturing, độc lập với _saas/_saas_lock ở trên (San Xuất
+# có Postgres riêng, khác Retail's DATABASE_URL).
+_sanxuat = None
+_sanxuat_lock = asyncio.Lock()
+
+
+async def _get_sanxuat():
+    global _sanxuat
+    if _sanxuat is not None:
+        return _sanxuat
+
+    async with _sanxuat_lock:
+        if _sanxuat is None:
+            from src.core.sanxuat_api import SanXuatAPI
+            _sanxuat = SanXuatAPI()
+    return _sanxuat
 
 
 def _extract_json_block(text: str):
@@ -348,6 +367,195 @@ async def chat_endpoint(
                 logger.error("Webhook dispatch failed for task %s: %s", task_id, exc)
 
         return chat_response.model_dump()
+
+    background_tasks.add_task(runtime.engine.background_worker, task_id, process_chat)
+    return {"task_id": task_id, "status": "processing"}
+
+
+@router.post("/chat/manufacturing")
+async def chat_manufacturing_endpoint(
+    req: ManufacturingChatRequest,
+    request: Request,
+    background_tasks: BackgroundTasks,
+    x_api_token: Optional[str] = Header(None),
+):
+    """
+    Chat sản xuất thật cho San Xuất — cùng hạ tầng async task+poll với
+    `POST /chat`, tái sử dụng nguyên vẹn 3 nhánh TECHNICAL/RETRIEVAL/GENERAL
+    của `/chat`, chỉ thay nhánh DATA_INTERNAL bằng `SanXuatAPI` (dữ liệu sản
+    xuất thật, không phải DB của Retail). Không có khái niệm user_id/store_id
+    trong schema San Xuất nên không gọi `resolve_identity`.
+    """
+    require_api_token(x_api_token)
+    await runtime.ensure_text_runtime()
+    if not runtime.manager or not runtime.coder:
+        raise HTTPException(status_code=503, detail="Text runtime unavailable")
+
+    user_msg = (req.prompt or "").strip()
+    request_id = request.state.request_id
+    logger.info(
+        "Manufacturing chat request received",
+        extra={"request_id": request_id},
+    )
+
+    task_id = str(uuid.uuid4())
+
+    async def process_chat():
+        decision = await runtime.manager.analyze_task(user_msg)
+        cat = decision.get("category", "GENERAL")
+        logger.info(
+            "Manufacturing route selected: %s (score=%.2f margin=%.3f method=%s)",
+            cat,
+            decision.get("score", 0.0),
+            decision.get("margin", 0.0),
+            decision.get("method", "?"),
+            extra={"request_id": request_id, "route": cat},
+        )
+
+        resp = ""
+
+        # ------------------------------------------------------------------
+        # TECHNICAL — sinh workflow n8n, validate trước khi trả (giống hệt
+        # /chat -- tái dùng các helper module-level, không nhân bản logic).
+        # ------------------------------------------------------------------
+        if cat == "TECHNICAL":
+            plan = await runtime.manager.plan_or_ask(req.prompt)
+
+            if "[PLAN]" not in plan:
+                resp = clean_output(plan)
+            else:
+                raw = await runtime.coder.write_code(user_msg, plan)
+                obj, err = _extract_json_block(raw)
+
+                ok = False
+                if obj is not None:
+                    ok, err = _validate_workflow(obj)
+
+                if not ok:
+                    logger.warning(
+                        "Workflow JSON không hợp lệ (%s) — thử lại",
+                        err, extra={"request_id": request_id},
+                    )
+                    feedback = (
+                        f"Lần trước JSON bị lỗi: {err}. "
+                        "Sửa lại và chỉ xuất JSON hợp lệ, không thêm chữ nào khác."
+                    )
+                    raw = await runtime.coder.write_code(user_msg, plan, feedback=feedback)
+                    obj, err = _extract_json_block(raw)
+                    if obj is not None:
+                        ok, err = _validate_workflow(obj)
+
+                if ok:
+                    resp = json.dumps(obj, ensure_ascii=False)
+                    logger.info(
+                        "Workflow hợp lệ: %d node",
+                        len(obj["payload"]["nodes"]),
+                        extra={"request_id": request_id},
+                    )
+                else:
+                    logger.error(
+                        "Workflow vẫn hỏng sau retry: %s",
+                        err, extra={"request_id": request_id},
+                    )
+                    resp = _WORKFLOW_FAILED_MSG
+
+        # ------------------------------------------------------------------
+        # DATA_INTERNAL — dữ liệu sản xuất thật từ SanXuatAPI (lệnh sản
+        # xuất + lô nguyên liệu).
+        # ------------------------------------------------------------------
+        elif cat == "DATA_INTERNAL":
+            sanxuat = await _get_sanxuat()
+            try:
+                orders_raw = sanxuat.lookup_production_order(user_msg)
+                batches_raw = sanxuat.get_material_batch_status(user_msg)
+                db_context = (
+                    f"[LỆNH SẢN XUẤT KHỚP TRUY VẤN]\n{orders_raw}\n\n"
+                    f"[LÔ NGUYÊN LIỆU KHỚP TRUY VẤN]\n{batches_raw}"
+                )
+            except Exception as exc:
+                logger.warning(
+                    "Truy vấn DB sản xuất thất bại: %s", exc,
+                    extra={"request_id": request_id},
+                )
+                db_context = "(không lấy được dữ liệu từ cơ sở dữ liệu sản xuất)"
+
+            resp = await runtime.manager.answer_data(user_msg, context=db_context)
+
+        # ------------------------------------------------------------------
+        # RETRIEVAL — RAG tài liệu nội bộ của Retail, fallback web (giống hệt
+        # /chat -- 12-CONTEXT.md's deferred section: không có kho tài liệu
+        # sản xuất riêng).
+        # ------------------------------------------------------------------
+        elif cat == "RETRIEVAL":
+            context_docs = ""
+            found_internal = False
+
+            if runtime.kb:
+                try:
+                    results = runtime.kb.search(user_msg, top_k=2)
+                    if results:
+                        context_docs = f"[TÀI LIỆU NỘI BỘ]\n{results}"
+                        found_internal = True
+                        logger.info(
+                            "Tìm thấy tài liệu nội bộ",
+                            extra={"request_id": request_id},
+                        )
+                except Exception as exc:
+                    logger.warning(
+                        "KB search lỗi: %s", exc,
+                        extra={"request_id": request_id},
+                    )
+
+            if not found_internal:
+                web_results = web_search_fallback(user_msg)
+                if web_results:
+                    context_docs = f"[KẾT QUẢ TÌM KIẾM]\n{web_results}"
+                else:
+                    context_docs = ""
+
+            resp = await runtime.manager.answer_retrieval(user_msg, context=context_docs)
+
+        # ------------------------------------------------------------------
+        # GENERAL — hội thoại, tính toán, giải thích
+        # ------------------------------------------------------------------
+        else:
+            resp = await runtime.manager.answer_general(user_msg)
+
+        cleaned = clean_output(resp)
+
+        result = {"success": True, "mock": False, "route": cat, "text": cleaned}
+
+        # Contract with routes/n8n_api.py::internal_brain_chat (mock this
+        # endpoint eventually replaces per Phase 13): when the caller sends
+        # context.infer_production.items, always return inference.items[]
+        # regardless of which category the router picked for `prompt`.
+        infer_items = ((req.context or {}).get("infer_production") or {}).get("items")
+        if isinstance(infer_items, list):
+            sanxuat_for_infer = await _get_sanxuat()
+            result["inference"] = {"items": sanxuat_for_infer.infer_qty_to_produce(infer_items)}
+
+        # Proactive Webhook Dispatcher (giống hệt /chat)
+        callback_url = os.getenv("BODY_CALLBACK_URL")
+        if callback_url:
+            try:
+                from src.core.utils import HttpClientPool
+
+                payload = {"task_id": task_id, "result": result}
+
+                api_token = os.getenv("API_AUTH_TOKEN", "default-secret")
+                headers = {
+                    "Content-Type": "application/json",
+                    "X-Webhook-Token": api_token,
+                    "X-Task-ID": task_id,
+                }
+
+                client = await HttpClientPool.get_client()
+                await client.post(callback_url, json=payload, headers=headers)
+                logger.info("Webhook dispatched for task %s", task_id)
+            except Exception as exc:
+                logger.error("Webhook dispatch failed for task %s: %s", task_id, exc)
+
+        return result
 
     background_tasks.add_task(runtime.engine.background_worker, task_id, process_chat)
     return {"task_id": task_id, "status": "processing"}
