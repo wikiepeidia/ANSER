@@ -14,7 +14,7 @@ from fastapi import APIRouter, File, Header, HTTPException, Request, UploadFile
 
 from src.api.dependencies import runtime, require_api_token, MAX_UPLOAD_BYTES
 from src.core.mcp_server import MCPServer
-from src.core.schemas import InvoicePayload
+from src.core.schemas import InvoicePayload, ManufacturingInvoicePayload
 
 logger = logging.getLogger("projecta.api.documents")
 router = APIRouter()
@@ -120,6 +120,74 @@ async def ocr_endpoint(
         raise
     except Exception as exc:
         logger.exception("OCR endpoint failed: %s", exc)
+        return {"success": False, "error": str(exc)}
+    finally:
+        _safe_unlink(path)
+
+
+@router.post("/ocr/manufacturing")
+async def ocr_manufacturing_endpoint(
+    request: Request,
+    file: UploadFile = File(...),
+    x_api_token: Optional[str] = Header(None),
+):
+    """
+    OCR chứng từ sản xuất (San Xuất) -- nhập nguyên liệu HOẶC đơn khách hàng, cùng
+    một endpoint (One Unified Schema, 10-CONTEXT.md). Cùng nguyên tắc deterministic-
+    first như /ocr: số tiền VLM trích xuất luôn được MCPServer tính lại trước khi tin.
+    Route mới, hoàn toàn tách biệt -- không đụng /ocr/InvoicePayload của Retail.
+    """
+    require_api_token(x_api_token)
+    await runtime.ensure_vision_runtime()
+    if not runtime.vision:
+        raise HTTPException(status_code=503, detail="Vision runtime unavailable")
+
+    path = await _read_upload_to_tmp(request, file)
+    try:
+        extracted = await runtime.vision.extract_manufacturing_invoice(path)
+        if "error" in extracted:
+            return {
+                "success": False,
+                "backend": "qwen2-vl-2b",
+                "error": extracted["error"],
+                "raw": extracted.get("raw", ""),
+            }
+
+        # 1) Ép schema (bắt JSON sai cấu trúc ngay)
+        try:
+            invoice = ManufacturingInvoicePayload(**extracted)
+        except Exception as exc:
+            return {
+                "success": False,
+                "backend": "qwen2-vl-2b",
+                "error": f"schema_invalid: {exc}",
+                "raw_json": extracted,
+            }
+
+        # 2) DETERMINISTIC-FIRST: tính lại tổng bằng code thuần (MCPServer).
+        #    Remap unit_price -> price, MCPServer chỉ biết đọc key "price".
+        mcp_items = [
+            {"name": it.name, "price": it.unit_price, "qty": it.qty}
+            for it in invoice.items
+        ]
+        validation = MCPServer.validate_invoice_total(mcp_items, invoice.total)
+
+        # AI-OCR-03: một kết quả rỗng trung thực (items=[], total=0) sẽ pass
+        # đối chiếu deterministic một cách tầm thường (0 == 0) -- phải tự nó
+        # cũng gắn cờ needs_manual_review, không chỉ dựa vào validation["is_valid"].
+        needs_manual_review = (not validation["is_valid"]) or (len(invoice.items) == 0)
+
+        return {
+            "success": True,
+            "backend": "qwen2-vl-2b",
+            "invoice": invoice.model_dump(),
+            "validation": validation,
+            "needs_manual_review": needs_manual_review,
+        }
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.exception("Manufacturing OCR endpoint failed: %s", exc)
         return {"success": False, "error": str(exc)}
     finally:
         _safe_unlink(path)

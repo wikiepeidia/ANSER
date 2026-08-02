@@ -1,3 +1,5 @@
+import re
+
 from pydantic import BaseModel, Field, field_validator
 from typing import List, Optional
 
@@ -35,6 +37,111 @@ class InvoicePayload(BaseModel):
     def total_positive(cls, v: float) -> float:
         if v <= 0:
             raise ValueError("total must be > 0")
+        return v
+
+
+# ---------------------------------------------------------------------------
+# Manufacturing OCR (San Xuất) — unified schema for material-batch-intake and
+# customer-order documents, T-10-01: sanitize any VLM-parsed text field
+# against embedded prompt-override phrases before it ever reaches a response.
+# ---------------------------------------------------------------------------
+
+_INJECTION_PATTERN = re.compile(
+    r"(ignore\s+(the\s+)?(previous|prior|above)\s+instructions?"
+    r"|disregard\s+(the\s+)?above"
+    r"|disregard\s+(the\s+)?(previous|prior)\s+instructions?"
+    r"|system\s*:"
+    r"|assistant\s*:"
+    r"|you\s+are\s+now\b)",
+    re.IGNORECASE,
+)
+
+
+def _sanitize_optional_str(v):
+    """None stays None (honesty bar: field genuinely absent). Otherwise strip
+    control chars, neutralize prompt-override phrases, and collapse an
+    all-neutralized/whitespace-only result back to None."""
+    if v is None:
+        return None
+    if not isinstance(v, str):
+        return v
+    cleaned = re.sub(r"[\x00-\x1f\x7f]", "", v)
+    cleaned = _INJECTION_PATTERN.sub("[removed]", cleaned)
+    cleaned = cleaned.strip()
+    return cleaned or None
+
+
+def _sanitize_name(v):
+    """Same stripping as _sanitize_optional_str, but falls back to
+    'Unknown Item' instead of None since name stays a required str field."""
+    if not isinstance(v, str):
+        return "Unknown Item"
+    cleaned = re.sub(r"[\x00-\x1f\x7f]", "", v)
+    cleaned = _INJECTION_PATTERN.sub("[removed]", cleaned)
+    cleaned = cleaned.strip()
+    return cleaned or "Unknown Item"
+
+
+class ManufacturingInvoiceItem(BaseModel):
+    sku: Optional[str] = Field(None, description="Material/product SKU code, None if unreadable")
+    name: str = Field(default="Unknown Item", description="Item name")
+    qty: float = Field(0, description="Số lượng, có thể lẻ (vd 12.5 kg)")
+    unit_price: float = Field(0, description="Unit price before tax")
+
+    @field_validator("sku", mode="before")
+    @classmethod
+    def sanitize_sku(cls, v):
+        return _sanitize_optional_str(v)
+
+    @field_validator("name", mode="before")
+    @classmethod
+    def sanitize_item_name(cls, v):
+        return _sanitize_name(v)
+
+    @field_validator("qty")
+    @classmethod
+    def qty_non_negative(cls, v: float) -> float:
+        if v < 0:
+            raise ValueError("qty must be >= 0")
+        return v
+
+    @field_validator("unit_price")
+    @classmethod
+    def unit_price_non_negative(cls, v: float) -> float:
+        if v < 0:
+            raise ValueError("unit_price must be >= 0")
+        return v
+
+
+class ManufacturingInvoicePayload(BaseModel):
+    items: List[ManufacturingInvoiceItem] = Field(
+        default_factory=list, description="List of items; empty if unreadable"
+    )
+    total: float = Field(0, description="Stated total; 0 if unreadable")
+    farmer: Optional[str] = Field(None, description="Farmer/HTX name (material-batch intake)")
+    region_grown: Optional[str] = Field(None, description="Region grown (material-batch intake)")
+    part: Optional[str] = Field(None, description="Plant part, e.g. lá/rễ/hoa (material-batch intake)")
+    form: Optional[str] = Field(None, description="Form, e.g. tươi/khô (material-batch intake)")
+    gacp_cert: Optional[str] = Field(None, description="GACP certificate number (material-batch intake)")
+    doc_no: Optional[str] = Field(None, description="Document number (customer order)")
+    customer_code: Optional[str] = Field(None, description="Customer code (customer order)")
+    region: Optional[str] = Field(None, description="Delivery region (customer order)")
+    deadline: Optional[str] = Field(None, description="Deadline (customer order)")
+
+    @field_validator(
+        "farmer", "region_grown", "part", "form", "gacp_cert",
+        "doc_no", "customer_code", "region", "deadline",
+        mode="before",
+    )
+    @classmethod
+    def sanitize_optional_text_fields(cls, v):
+        return _sanitize_optional_str(v)
+
+    @field_validator("total")
+    @classmethod
+    def total_non_negative(cls, v: float) -> float:
+        if v < 0:
+            raise ValueError("total must be >= 0")
         return v
 
 

@@ -33,6 +33,21 @@ class VisionAgent:
             "(đã gồm thuế). Mọi số tiền là số nguyên VND, không dùng dấu phân cách hàng nghìn. "
             "Bỏ qua dòng nào không đọc được."
         ),
+        "manufacturing": (
+            "Bạn là hệ thống trích xuất chứng từ sản xuất. Ảnh có thể là MỘT trong hai loại "
+            "chứng từ: (1) phiếu nhập nguyên liệu từ nông dân/HTX, hoặc (2) đơn đặt hàng của "
+            "khách hàng. Đọc ảnh và trả về DUY NHẤT một JSON hợp lệ, KHÔNG kèm giải thích, "
+            "đúng schema:\n"
+            '{"items": [{"sku": null, "name": "string", "qty": 0, "unit_price": 0}], '
+            '"total": 0, "farmer": null, "region_grown": null, "part": null, "form": null, '
+            '"gacp_cert": null, "doc_no": null, "customer_code": null, "region": null, '
+            '"deadline": null}\n'
+            "Quy tắc: chỉ điền các trường THỰC SỰ xuất hiện trên chứng từ, các trường còn lại "
+            "để null — KHÔNG suy đoán hay bịa thông tin. 'unit_price' là ĐƠN GIÁ trước thuế; "
+            "'total' là tổng tiền ghi trên chứng từ. Mọi số tiền là số nguyên VND, không dùng "
+            "dấu phân cách hàng nghìn. Nếu ảnh mờ/không đọc được: trả về items: [], total: 0, "
+            "và MỌI trường khác là null — TUYỆT ĐỐI không bịa dữ liệu."
+        ),
     }
 
     def __init__(self, engine):
@@ -43,6 +58,8 @@ class VisionAgent:
 
     def _prompt_for(self, task_hint: str) -> str:
         task_hint = (task_hint or "").lower()
+        if "manufacturing" in task_hint or "san_xuat" in task_hint or "sanxuat" in task_hint:
+            return self.PROMPTS["manufacturing"]
         if "invoice" in task_hint or "hoa_don" in task_hint or "hóa đơn" in task_hint:
             return self.PROMPTS["invoice"]
         if "ocr" in task_hint:
@@ -50,10 +67,10 @@ class VisionAgent:
         return self.PROMPTS["caption"]
 
     async def analyze_image(self, image_path: str, task_hint: str = "caption") -> str:
-        """Trả về text. task_hint ∈ {'caption', 'ocr', 'invoice'}."""
+        """Trả về text. task_hint ∈ {'caption', 'ocr', 'invoice', 'manufacturing'}."""
         prompt = self._prompt_for(task_hint)
         th = (task_hint or "").lower()
-        max_tokens = 1024 if ("ocr" in th or "invoice" in th) else 512
+        max_tokens = 1024 if ("ocr" in th or "invoice" in th or "manufacturing" in th) else 512
         try:
             return await self.engine.generate_vision(image_path, prompt, max_new_tokens=max_tokens)
         except Exception as exc:
@@ -66,6 +83,23 @@ class VisionAgent:
         Trả {'error': ...} nếu không đọc/parse được — KHÔNG bịa số.
         """
         raw = await self.analyze_image(image_path, task_hint="invoice")
+        if isinstance(raw, str) and raw.startswith("Error"):
+            return {"error": raw}
+        try:
+            parsed = repair_json(raw, return_objects=True)
+            if isinstance(parsed, dict):
+                return parsed
+            return {"error": "VLM không trả JSON object", "raw": raw}
+        except Exception as exc:
+            return {"error": f"parse_failed: {exc}", "raw": raw}
+
+    async def extract_manufacturing_invoice(self, image_path: str) -> dict:
+        """
+        Trích xuất chứng từ sản xuất (nhập nguyên liệu HOẶC đơn khách hàng) ra JSON
+        đã parse từ output của VLM. Trả {'error': ...} nếu không đọc/parse được —
+        KHÔNG bịa số (thin sibling of extract_invoice, same never-fabricate pattern).
+        """
+        raw = await self.analyze_image(image_path, task_hint="manufacturing")
         if isinstance(raw, str) and raw.startswith("Error"):
             return {"error": raw}
         try:
