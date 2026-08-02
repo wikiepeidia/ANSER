@@ -131,3 +131,114 @@ def test_manufacturing_chat_survives_unreachable_db(monkeypatch):
     result = result_status["result"]
     assert result["success"] is True
     assert "không lấy được dữ liệu" in manager.last_context
+
+
+class _FakeSanXuatAPIBom:
+    def lookup_production_order(self, query, limit=20):
+        return json.dumps(
+            [{
+                "code": "DH-1002", "product_code": "SP-002",
+                "product_name": "Cao dược liệu B", "quantity": 30,
+                "unit": "hộp", "status": "in_progress",
+            }],
+            ensure_ascii=False,
+        )
+
+    def get_material_batch_status(self, query, limit=20):
+        return json.dumps([], ensure_ascii=False)
+
+    def get_bom_for_product(self, product_code):
+        assert product_code == "SP-002"
+        return json.dumps({
+            "lines": [{
+                "code": "NL-001", "name": "Lá dược liệu", "unit": "kg",
+                "unit_cost": 5000, "qty_per_unit": 2,
+            }],
+            "estimated_unit_cost": 10000,
+        }, ensure_ascii=False)
+
+
+def test_manufacturing_chat_bom_enrichment_included_when_order_matched(monkeypatch):
+    manager = _FakeManager()
+    _patch_runtime_basics(monkeypatch, manager)
+    monkeypatch.setattr(chat_mod, "_sanxuat", _FakeSanXuatAPIBom())
+
+    response = client.post(
+        "/chat/manufacturing",
+        json={"prompt": "định mức sản phẩm SP-002"},
+    )
+    assert response.status_code == 200
+    body = response.json()
+
+    result_status = _poll_task(client, body["task_id"])
+    assert result_status["status"] == "completed"
+
+    assert "SP-002" in manager.last_context
+    assert "estimated_unit_cost" in manager.last_context or "10000" in manager.last_context
+
+
+class _FakeManagerAllRoutes:
+    def __init__(self, category):
+        self.category = category
+
+    async def analyze_task(self, msg):
+        return {"category": self.category, "score": 1.0, "margin": 1.0, "method": "test"}
+
+    async def answer_general(self, task):
+        return "[GENERAL OK]"
+
+
+def test_manufacturing_chat_general_route_reuses_answer_general(monkeypatch):
+    manager = _FakeManagerAllRoutes("GENERAL")
+    _patch_runtime_basics(monkeypatch, manager)
+    monkeypatch.setattr(chat_mod, "_sanxuat", _FakeSanXuatAPI())
+
+    response = client.post("/chat/manufacturing", json={"prompt": "xin chào"})
+    body = response.json()
+    result_status = _poll_task(client, body["task_id"])
+    result = result_status["result"]
+
+    assert result["route"] == "GENERAL"
+    assert result["text"] == "[GENERAL OK]"
+
+
+def test_manufacturing_chat_retrieval_route_reuses_web_fallback_and_answer_retrieval(monkeypatch):
+    manager = _FakeManagerAllRoutes("RETRIEVAL")
+
+    async def _fake_answer_retrieval(task, context=""):
+        return "[RETRIEVAL OK]"
+
+    manager.answer_retrieval = _fake_answer_retrieval
+
+    _patch_runtime_basics(monkeypatch, manager)
+    monkeypatch.setattr(deps.runtime, "kb", None)
+    monkeypatch.setattr(chat_mod, "web_search_fallback", lambda query, max_results=3: "")
+    monkeypatch.setattr(chat_mod, "_sanxuat", _FakeSanXuatAPI())
+
+    response = client.post("/chat/manufacturing", json={"prompt": "quy trình QC là gì"})
+    body = response.json()
+    result_status = _poll_task(client, body["task_id"])
+    result = result_status["result"]
+
+    assert result["route"] == "RETRIEVAL"
+    assert result["text"] == "[RETRIEVAL OK]"
+
+
+def test_manufacturing_chat_technical_route_reuses_plan_or_ask(monkeypatch):
+    manager = _FakeManagerAllRoutes("TECHNICAL")
+
+    async def _fake_plan_or_ask(full_context):
+        return "no plan here"
+
+    manager.plan_or_ask = _fake_plan_or_ask
+
+    _patch_runtime_basics(monkeypatch, manager)
+    monkeypatch.setattr(chat_mod, "_sanxuat", _FakeSanXuatAPI())
+
+    response = client.post("/chat/manufacturing", json={"prompt": "tự động hoá quy trình nhập kho"})
+    body = response.json()
+    result_status = _poll_task(client, body["task_id"])
+    result = result_status["result"]
+
+    assert result["route"] == "TECHNICAL"
+    assert result["text"] == "no plan here"
