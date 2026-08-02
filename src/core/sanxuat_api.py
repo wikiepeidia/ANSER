@@ -180,14 +180,39 @@ class SanXuatAPI:
 
     def infer_qty_to_produce(self, items):
         """
-        Ước tính `qty_to_produce`. Placeholder Task 1: naive 1:1 passthrough,
-        giống hệt mock hiện tại (`routes/n8n_api.py::internal_brain_chat`:
-        `it.get("qty") or 0`) -- giữ AI-CHAT-03 chạy được tối thiểu ngay từ
-        task này. Task 3 sẽ thay THÂN method này bằng công thức thật
-        stock-aware (`max(0, ordered_qty - current_available_stock)`) mà
-        không đổi chữ ký hay call site.
+        Ước tính `qty_to_produce` theo công thức đã chốt ở 12-CONTEXT.md:
+        `qty_to_produce = max(0, ordered_qty - current_available_stock)`,
+        dùng `products.stock_quantity` thật (per `products.code` — cột này
+        dùng chung cho cả thành phẩm lẫn nguyên liệu-mô-hình-hoá-như-sản-phẩm,
+        theo `routes/inventory_routes.py::_resolve_material_product`).
+
+        Khi không đọc được tồn kho thật (thiếu engine, sku không có trong
+        `products`, hoặc lỗi truy vấn), method này lùi về đúng hành vi
+        naive-passthrough của mock (`routes/n8n_api.py::internal_brain_chat`:
+        `it.get("qty") or 0`) -- không bao giờ tệ hơn mock nó thay thế. Một
+        lookup lỗi chỉ ảnh hưởng đúng item đó, không huỷ cả batch.
         """
-        return [
-            {"sku": it.get("sku"), "qty_to_produce": it.get("qty") or 0}
-            for it in (items or []) if isinstance(it, dict)
-        ]
+        results = []
+        for it in (items or []):
+            if not isinstance(it, dict):
+                continue
+            sku = it.get("sku")
+            ordered_qty = it.get("qty") or 0
+            qty_to_produce = ordered_qty  # fallback/naive passthrough, set first
+
+            if self.engine and sku:
+                try:
+                    with self.engine.connect() as conn:
+                        sql = text(f"SELECT stock_quantity FROM {PRODUCTS_TABLE} WHERE code = :code")
+                        row = conn.execute(sql, {"code": sku}).fetchone()
+                        current_stock = row[0] if row and row[0] is not None else 0
+                        qty_to_produce = max(0, ordered_qty - current_stock)
+                except SQLAlchemyError:
+                    logger.warning(
+                        "Lỗi tra cứu tồn kho sku=%s -- dùng SL đặt làm SL cần SX",
+                        sku, exc_info=True,
+                    )
+                    # qty_to_produce stays at its fallback value (ordered_qty)
+
+            results.append({"sku": sku, "qty_to_produce": qty_to_produce})
+        return results
