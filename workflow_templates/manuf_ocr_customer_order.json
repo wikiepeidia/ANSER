@@ -75,30 +75,116 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "={{ $env.BRAIN_BASE_URL }}/chat",
+        "url": "={{ $env.BRAIN_BASE_URL }}/chat/manufacturing",
         "authentication": "none",
         "sendHeaders": true,
-        "headerParameters": { "parameters": [{ "name": "x-anser-token", "value": "={{ $env.ANSER_WEBHOOK_TOKEN }}" }] },
+        "headerParameters": { "parameters": [{ "name": "X-API-Token", "value": "={{ $env.BRAIN_API_TOKEN }}" }] },
         "sendBody": true, "contentType": "raw", "rawContentType": "application/json",
-        "body": "={{ JSON.stringify({ route: 'TECHNICAL', prompt: 'Tu don hang nay tinh SL SP can san xuat theo ma SKU', context: { infer_production: { items: $('Call Brain OCR Order').first().json.items } } }) }}",
-        "options": {}
+        "body": "={{ JSON.stringify({ route: 'TECHNICAL', prompt: 'Tu don hang nay tinh SL SP can san xuat theo ma SKU', context: { infer_production: { items: $('Call Brain OCR Order').first().json.invoice.items } } }) }}",
+        "options": { "timeout": 15000 }
       },
       "id": "co-infer",
       "name": "Infer Production Qty (Brain)",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
-      "position": [1500, 100],
-      "retryOnFail": true, "maxTries": 2, "waitBetweenTries": 1500
+      "position": [1500, 100]
     },
     {
       "parameters": {
-        "jsCode": "const ocr = $('Call Brain OCR Order').first().json;\nconst inf = ($input.first().json.inference || {}).items || [];\nconst first = ocr.items[0] || {};\nconst inferred = inf.find(x => x.sku === first.sku) || {};\nconst override = $('Verify Anser Token').first().json.order_code_override;\nconst order_code = override || ocr.doc_no;\nconst payload = {\n  order_code,\n  customer_code: ocr.customer_code,\n  product_code: first.sku,\n  product_name: first.name,\n  qty_ordered: first.qty || 0,\n  qty_to_produce: inferred.qty_to_produce || first.qty || 0,\n  unit_price: first.unit_price || 0,\n  region: ocr.region || null,\n  deadline: ocr.deadline || null\n};\nreturn [{ json: { order_code, request_body: JSON.stringify(payload), qty_ordered: payload.qty_ordered, qty_to_produce: payload.qty_to_produce, deadline: payload.deadline } }];"
+        "jsCode": "return [{ json: { task_id: $json.task_id, poll_count: 0 } }];"
+      },
+      "id": "co-poll-init",
+      "name": "Init Poll State",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1500, 260]
+    },
+    {
+      "parameters": { "resume": "timeInterval", "amount": 5, "unit": "seconds" },
+      "id": "co-wait",
+      "name": "Wait Before Poll",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [1720, 260]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $env.BRAIN_BASE_URL }}/api/v1/task/{{ $json.task_id }}",
+        "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": { "parameters": [{ "name": "X-API-Token", "value": "={{ $env.BRAIN_API_TOKEN }}" }] },
+        "options": { "timeout": 10000 }
+      },
+      "id": "co-poll",
+      "name": "Poll Inference Task",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [1940, 260]
+    },
+    {
+      "parameters": {
+        "jsCode": "const polled = $input.first().json;\nconst task_id = $('Init Poll State').first().json.task_id;\nlet poll_count = 0;\ntry {\n  poll_count = ($('Merge Poll Count').first().json.poll_count || 0) + 1;\n} catch (e) {\n  poll_count = $('Init Poll State').first().json.poll_count || 0;\n}\nconst ready = polled.status === 'completed';\nconst give_up = polled.status === 'failed' || poll_count >= 24;\nreturn [{ json: { status: polled.status, result: polled.result || null, error: polled.error || null, task_id, poll_count, ready, give_up } }];"
+      },
+      "id": "co-poll-merge",
+      "name": "Merge Poll Count",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2160, 260]
+    },
+    {
+      "parameters": { "conditions": { "boolean": [{ "value1": "={{ $json.ready }}", "value2": true }] } },
+      "id": "co-ready",
+      "name": "Inference Ready?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [2380, 260]
+    },
+    {
+      "parameters": { "conditions": { "boolean": [{ "value1": "={{ $json.give_up }}", "value2": true }] } },
+      "id": "co-giveup",
+      "name": "Give Up Polling?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [2380, 420]
+    },
+    {
+      "parameters": {
+        "jsCode": "const d = $input.first().json;\nconst pending_body = JSON.stringify({ kind: 'customer_order', reason: 'AI inference timeout/that bai sau ' + d.poll_count + ' lan poll (status: ' + d.status + (d.error ? (', error: ' + d.error) : '') + ')', raw_payload: $('Call Brain OCR Order').first().json });\nreturn [{ json: { pending_body } }];"
+      },
+      "id": "co-poll-fail",
+      "name": "Build Poll Failure Notice",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2600, 420]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.RAG_BASE_URL }}/pending-review",
+        "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": { "parameters": [{ "name": "x-anser-token", "value": "={{ $env.ANSER_WEBHOOK_TOKEN }}" }] },
+        "sendBody": true, "contentType": "raw", "rawContentType": "application/json",
+        "body": "={{ $json.pending_body }}",
+        "options": {}
+      },
+      "id": "co-pending-ai-timeout",
+      "name": "Insert Pending Review (AI Timeout)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [2820, 420],
+      "retryOnFail": true, "maxTries": 3, "waitBetweenTries": 1000
+    },
+    {
+      "parameters": {
+        "jsCode": "const ocrResp = $('Call Brain OCR Order').first().json; const ocr = ocrResp.invoice;\nconst inf = (($input.first().json.result || {}).inference || {}).items || [];\nconst first = ocr.items[0] || {};\nconst inferred = inf.find(x => x.sku === first.sku) || {};\nconst override = $('Verify Anser Token').first().json.order_code_override;\nconst order_code = override || ocr.doc_no;\nconst payload = {\n  order_code,\n  customer_code: ocr.customer_code,\n  product_code: first.sku,\n  product_name: first.name,\n  qty_ordered: first.qty || 0,\n  qty_to_produce: inferred.qty_to_produce || first.qty || 0,\n  unit_price: first.unit_price || 0,\n  region: ocr.region || null,\n  deadline: ocr.deadline || null\n};\nreturn [{ json: { order_code, request_body: JSON.stringify(payload), qty_ordered: payload.qty_ordered, qty_to_produce: payload.qty_to_produce, deadline: payload.deadline } }];"
       },
       "id": "co-build-order",
       "name": "Build Production Order",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1720, 100]
+      "position": [2600, 100]
     },
     {
       "parameters": {
@@ -115,7 +201,7 @@
       "name": "Insert Production Order",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
-      "position": [1940, 100],
+      "position": [2820, 100],
       "retryOnFail": true, "maxTries": 3, "waitBetweenTries": 1000
     },
     {
@@ -126,7 +212,7 @@
       "name": "Build Notice",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [2160, 100]
+      "position": [3040, 100]
     },
     {
       "parameters": {
@@ -143,7 +229,7 @@
       "name": "Notify Production Manager",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
-      "position": [2380, 100]
+      "position": [3260, 100]
     },
     {
       "parameters": {
@@ -155,7 +241,7 @@
       "name": "Respond 201",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
-      "position": [2600, 100]
+      "position": [3480, 100]
     },
     {
       "parameters": {
@@ -207,7 +293,15 @@
     "Call Brain OCR Order": { "main": [[{ "node": "Validate Order Total", "type": "main", "index": 0 }]] },
     "Validate Order Total": { "main": [[{ "node": "Order Valid?", "type": "main", "index": 0 }]] },
     "Order Valid?": { "main": [[{ "node": "Infer Production Qty (Brain)", "type": "main", "index": 0 }], [{ "node": "Insert Pending Review", "type": "main", "index": 0 }]] },
-    "Infer Production Qty (Brain)": { "main": [[{ "node": "Build Production Order", "type": "main", "index": 0 }]] },
+    "Infer Production Qty (Brain)": { "main": [[{ "node": "Init Poll State", "type": "main", "index": 0 }]] },
+    "Init Poll State": { "main": [[{ "node": "Wait Before Poll", "type": "main", "index": 0 }]] },
+    "Wait Before Poll": { "main": [[{ "node": "Poll Inference Task", "type": "main", "index": 0 }]] },
+    "Poll Inference Task": { "main": [[{ "node": "Merge Poll Count", "type": "main", "index": 0 }]] },
+    "Merge Poll Count": { "main": [[{ "node": "Inference Ready?", "type": "main", "index": 0 }]] },
+    "Inference Ready?": { "main": [[{ "node": "Build Production Order", "type": "main", "index": 0 }], [{ "node": "Give Up Polling?", "type": "main", "index": 0 }]] },
+    "Give Up Polling?": { "main": [[{ "node": "Build Poll Failure Notice", "type": "main", "index": 0 }], [{ "node": "Wait Before Poll", "type": "main", "index": 0 }]] },
+    "Build Poll Failure Notice": { "main": [[{ "node": "Insert Pending Review (AI Timeout)", "type": "main", "index": 0 }]] },
+    "Insert Pending Review (AI Timeout)": { "main": [[{ "node": "Respond 422", "type": "main", "index": 0 }]] },
     "Build Production Order": { "main": [[{ "node": "Insert Production Order", "type": "main", "index": 0 }]] },
     "Insert Production Order": { "main": [[{ "node": "Build Notice", "type": "main", "index": 0 }]] },
     "Build Notice": { "main": [[{ "node": "Notify Production Manager", "type": "main", "index": 0 }]] },
