@@ -8,9 +8,26 @@ its own workflow_templates/ (manuf_*.json, sourced from demo_wokflow).
 The manuf templates call back into this app via {{ $env.RAG_BASE_URL }},
 {{ $env.BRAIN_BASE_URL }}, {{ $env.NOTIFY_URL }} (set in docker-compose.yml).
 RAG_BASE_URL/NOTIFY_URL land on real internal endpoints below that write to
-San Xuat's own `automation_events` table. BRAIN_BASE_URL (OCR/LLM) has no
-real backing service in this project — its endpoints return a clearly
-labelled mock response so a full workflow run still completes end-to-end.
+San Xuat's own `automation_events` table.
+
+BRAIN_BASE_URL (OCR/LLM) now points at the real `ANSER_AI` service by
+default (AI-WIRING-01, Phase 13) -- a live Colab GPU session tunneled via
+ngrok, see notebooks/brainsanxuat.ipynb and docker-compose.yml's
+BRAIN_BASE_URL/BRAIN_API_TOKEN comments. The `internal_brain_*` functions
+below remain in this file as an explicitly documented LOCAL-DEV FALLBACK
+for developers without Colab/GPU access (AI-WIRING-04) -- they are NOT the
+default path anymore, and their endpoints still return a clearly labelled
+mock response so a full workflow run can still complete end-to-end without
+a live Brain session.
+
+Important caveat: `workflow_templates/*.json` now call the real service's
+contract shape (multipart `/ocr/manufacturing`, `/chat/manufacturing` +
+polling, per Phase 13) -- simply re-pointing `BRAIN_BASE_URL` back at this
+Flask app's own prefix does NOT make the currently-deployed templates hit
+these mock routes again, since the shapes diverged intentionally
+(AI-WIRING-04 decision). To exercise these mock routes directly, call them
+yourself (e.g. via curl/Postman) rather than through the live templates,
+unless the templates are also reverted.
 """
 
 import os
@@ -694,6 +711,15 @@ def internal_notify():
     return jsonify({'success': True, 'id': event_id})
 
 
+# --- LOCAL-DEV FALLBACK, not the default path (AI-WIRING-04) ---
+# The 3 routes below (internal_brain_chat, internal_brain_upload,
+# internal_brain_validate_invoice) are San Xuat's own mock of the Brain
+# contract, kept only for developers without a live Colab/GPU session.
+# docker-compose.yml's BRAIN_BASE_URL now defaults to the REAL ANSER_AI
+# service (AI-WIRING-01) -- see this module's top docstring for the full
+# explanation and the re-pointing caveat (the live workflow templates call
+# a different contract shape than these mocks, so pointing BRAIN_BASE_URL
+# back here does not make them work together again).
 @n8n_api_bp.route('/api/n8n/internal/brain/chat', methods=['POST'])
 def internal_brain_chat():
     """Realistic mock for {{ $env.BRAIN_BASE_URL }}/chat — no real LLM is
