@@ -2,7 +2,7 @@
   "name": "manuf_ocr_customer_order",
   "nodes": [
     {
-      "parameters": { "httpMethod": "POST", "path": "customer-order-ocr", "responseMode": "responseNode", "options": {} },
+      "parameters": { "httpMethod": "POST", "path": "customer-order-ocr", "responseMode": "responseNode", "options": { "binaryData": true } },
       "id": "co-webhook",
       "name": "Receive Order Upload",
       "type": "n8n-nodes-base.webhook",
@@ -11,7 +11,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const raw = $input.first().json;\nconst expected = $env.ANSER_WEBHOOK_TOKEN || '';\nif (expected && ((raw.headers || {})['x-anser-token'] || '') !== expected) {\n  return [{ json: { valid: false, error: 'Unauthorized' } }];\n}\nconst b = (raw.body && typeof raw.body === 'object') ? raw.body : raw;\nreturn [{ json: { valid: true, scenario: b.scenario || 'order', order_code_override: b.order_code || null } }];"
+        "jsCode": "const raw = $input.first().json;\nconst expected = $env.ANSER_WEBHOOK_TOKEN || '';\nif (expected && ((raw.headers || {})['x-anser-token'] || '') !== expected) {\n  return [{ json: { valid: false, error: 'Unauthorized' } }];\n}\nif (!raw.binary || Object.keys(raw.binary).length === 0) {\n  return [{ json: { valid: false, error: 'Thiếu tệp ảnh đơn hàng để OCR' } }];\n}\nconst b = (raw.body && typeof raw.body === 'object') ? raw.body : raw;\n// scenario is now vestigial mock-testing-only metadata -- not consumed by the real OCR call.\nreturn [{ json: { valid: true, scenario: b.scenario || 'order', order_code_override: b.order_code || null } }];"
       },
       "id": "co-verify",
       "name": "Verify Anser Token",
@@ -30,17 +30,21 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "={{ $env.BRAIN_BASE_URL }}/upload?scenario={{ $json.scenario }}",
+        "url": "={{ $env.BRAIN_BASE_URL }}/ocr/manufacturing",
         "authentication": "none",
         "sendHeaders": true,
-        "headerParameters": { "parameters": [{ "name": "x-anser-token", "value": "={{ $env.ANSER_WEBHOOK_TOKEN }}" }] },
-        "options": { "timeout": 45000 }
+        "headerParameters": { "parameters": [{ "name": "X-API-Token", "value": "={{ $env.BRAIN_API_TOKEN }}" }] },
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": { "parameters": [{ "parameterType": "formBinaryData", "name": "file", "inputDataFieldName": "data" }] },
+        "options": { "timeout": 60000 }
       },
       "id": "co-ocr",
       "name": "Call Brain OCR Order",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
-      "position": [840, 200]
+      "position": [840, 200],
+      "retryOnFail": true, "maxTries": 2, "waitBetweenTries": 2000
     },
     {
       "parameters": {
@@ -48,19 +52,20 @@
         "url": "={{ $env.BRAIN_BASE_URL }}/mcp/validate-invoice",
         "authentication": "none",
         "sendHeaders": true,
-        "headerParameters": { "parameters": [{ "name": "x-anser-token", "value": "={{ $env.ANSER_WEBHOOK_TOKEN }}" }] },
+        "headerParameters": { "parameters": [{ "name": "X-API-Token", "value": "={{ $env.BRAIN_API_TOKEN }}" }] },
         "sendBody": true, "contentType": "raw", "rawContentType": "application/json",
-        "body": "={{ JSON.stringify({ items: $json.items, total: $json.total }) }}",
-        "options": {}
+        "body": "={{ JSON.stringify({ items: $json.invoice.items, total: $json.invoice.total }) }}",
+        "options": { "timeout": 20000 }
       },
       "id": "co-validate",
       "name": "Validate Order Total",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
-      "position": [1060, 200]
+      "position": [1060, 200],
+      "retryOnFail": true, "maxTries": 2, "waitBetweenTries": 2000
     },
     {
-      "parameters": { "conditions": { "boolean": [{ "value1": "={{ $json.is_valid }}", "value2": true }] } },
+      "parameters": { "conditions": { "boolean": [{ "value1": "={{ $json.validation.is_valid }}", "value2": true }] } },
       "id": "co-isvalid",
       "name": "Order Valid?",
       "type": "n8n-nodes-base.if",
@@ -160,7 +165,7 @@
         "sendHeaders": true,
         "headerParameters": { "parameters": [{ "name": "x-anser-token", "value": "={{ $env.ANSER_WEBHOOK_TOKEN }}" }] },
         "sendBody": true, "contentType": "raw", "rawContentType": "application/json",
-        "body": "={{ JSON.stringify({ kind: 'customer_order', reason: 'Lech tong ' + $json.difference + ' VND', ocr_total: $json.ocr_total, calculated_total: $json.calculated_total, raw_payload: $('Call Brain OCR Order').first().json }) }}",
+        "body": "={{ JSON.stringify({ kind: 'customer_order', reason: 'Lech tong ' + $json.validation.difference + ' VND', ocr_total: $json.validation.stated_total, calculated_total: $json.validation.calculated_total, raw_payload: $('Call Brain OCR Order').first().json }) }}",
         "options": {}
       },
       "id": "co-pending",
