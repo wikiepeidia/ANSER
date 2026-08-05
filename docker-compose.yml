@@ -16,7 +16,28 @@ services:
       # via host.docker.internal — these env vars are read inside the imported
       # workflow JSON as {{ $env.RAG_BASE_URL }} etc.
       - RAG_BASE_URL=http://host.docker.internal:5003/api/n8n/internal/rag
-      - BRAIN_BASE_URL=http://host.docker.internal:5003/api/n8n/internal/brain
+      # BRAIN_BASE_URL must now be the bare tunnel ROOT of a live ANSER_AI Colab session --
+      # NOT San Xuat's own .../api/n8n/internal/brain prefix. ANSER_AI's real routes
+      # (/ocr/manufacturing, /mcp/validate-invoice, /chat/manufacturing, /api/v1/task/{id})
+      # are mounted at the FastAPI app's root with no path prefix (see
+      # ANSER_AI/src/api/main.py's include_router() calls). Set this to the live Colab
+      # session's ngrok public URL -- notebooks/brainsanxuat.ipynb Cell 1's NGROK_DOMAIN
+      # should be set to a RESERVED ngrok domain so this value stays stable across Colab
+      # session restarts (13-CONTEXT.md's locked decision) instead of needing to be edited
+      # here every time the session restarts with a fresh random URL.
+      # Local-dev fallback (no live Brain session available):
+      #   http://host.docker.internal:5003/api/n8n/internal/brain
+      # (San Xuat's own documented mock -- see routes/n8n_api.py). NOTE: re-pointing this
+      # var back at the mock alone does NOT make the currently-deployed workflow templates
+      # (13-01/13-02) work against it again -- the mock's endpoints were intentionally left
+      # at their old shape (AI-WIRING-04 decision) while the templates now call the real
+      # service's contract shape (multipart /ocr/manufacturing, /chat/manufacturing +
+      # polling).
+      - BRAIN_BASE_URL=CHANGE_ME_TO_YOUR_RESERVED_NGROK_DOMAIN_e.g._https://my-brain.ngrok-free.app
+      # Must match the live Colab session's API_AUTH_TOKEN (notebooks/brainsanxuat.ipynb
+      # Cell 1) -- consumed by 13-01/13-02's HTTP nodes as the X-API-Token header
+      # ANSER_AI/src/api/dependencies.py::require_api_token checks.
+      - BRAIN_API_TOKEN=CHANGE_ME_TO_THE_COLAB_SESSIONS_API_AUTH_TOKEN
       - NOTIFY_URL=http://host.docker.internal:5003/api/n8n/internal/notify
       - DOCS_URL=http://host.docker.internal:5003/api/n8n/internal/notify
       - ANSER_WEBHOOK_TOKEN=sanxuat-dev-token
