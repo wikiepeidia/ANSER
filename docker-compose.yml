@@ -8,6 +8,10 @@ services:
     environment:
       - N8N_SECURE_COOKIE=false
       - GENERIC_TIMEZONE=Asia/Ho_Chi_Minh
+      # Newer n8n versions block $env/process.env access from Code nodes by default
+      # (security hardening) -- our templates' "Verify Anser Token"/"Verify" code
+      # nodes read $env.ANSER_WEBHOOK_TOKEN directly, so this must be off.
+      - N8N_BLOCK_ENV_ACCESS_IN_NODE=false
       # N8N_SECURE_COOKIE=false required for HTTP (non-HTTPS) communication
       # Without this, n8n reports webhook URLs using its internal port (5678)
       # instead of the actual host-mapped port, which breaks manual testing.
@@ -15,6 +19,11 @@ services:
       # Templates call back into San Xuat's own Flask app (host, not container)
       # via host.docker.internal — these env vars are read inside the imported
       # workflow JSON as {{ $env.RAG_BASE_URL }} etc.
+      #
+      # Running Docker inside a nested VM (e.g. VMware)? host.docker.internal only
+      # resolves to the VM itself there, not the actual host machine one level up --
+      # use docker-compose.vmware.yml as an override instead of editing this file:
+      #   docker-compose -f docker-compose.yml -f docker-compose.vmware.yml up -d
       - RAG_BASE_URL=http://host.docker.internal:5003/api/n8n/internal/rag
       # BRAIN_BASE_URL must now be the bare tunnel ROOT of a live ANSER_AI Colab session --
       # NOT San Xuat's own .../api/n8n/internal/brain prefix. ANSER_AI's real routes
@@ -33,11 +42,14 @@ services:
       # at their old shape (AI-WIRING-04 decision) while the templates now call the real
       # service's contract shape (multipart /ocr/manufacturing, /chat/manufacturing +
       # polling).
-      - BRAIN_BASE_URL=CHANGE_ME_TO_YOUR_RESERVED_NGROK_DOMAIN_e.g._https://my-brain.ngrok-free.app
+      # NOTE: no trailing slash -- every node builds URLs as "${BRAIN_BASE_URL}/ocr/..."
+      # etc.; a trailing slash here produces a double-slash path (e.g. ".dev//ocr/...")
+      # which FastAPI 404s on as a genuinely different route. Found live 2026-08-05.
+      - BRAIN_BASE_URL=https://izetta-expellable-literarily.ngrok-free.dev
       # Must match the live Colab session's API_AUTH_TOKEN (notebooks/brainsanxuat.ipynb
       # Cell 1) -- consumed by 13-01/13-02's HTTP nodes as the X-API-Token header
       # ANSER_AI/src/api/dependencies.py::require_api_token checks.
-      - BRAIN_API_TOKEN=CHANGE_ME_TO_THE_COLAB_SESSIONS_API_AUTH_TOKEN
+      - BRAIN_API_TOKEN=brainsanxuat
       - NOTIFY_URL=http://host.docker.internal:5003/api/n8n/internal/notify
       - DOCS_URL=http://host.docker.internal:5003/api/n8n/internal/notify
       - ANSER_WEBHOOK_TOKEN=sanxuat-dev-token

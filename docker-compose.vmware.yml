@@ -1,0 +1,20 @@
+# Override file for VMware-nested Docker setups only.
+# host.docker.internal doesn't resolve to the actual Windows host when the Docker
+# daemon runs inside a nested VM (e.g. VMware Workstation/Player) -- it only reaches
+# the VM itself. Use this file's IP instead, layered on top of the base compose file:
+#
+#   docker-compose -f docker-compose.yml -f docker-compose.vmware.yml up -d
+#   docker-compose -f docker-compose.yml -f docker-compose.vmware.yml up -d --force-recreate n8n
+#
+# Find the right IP from inside the VM: `ip route` -> the `default via X.X.X.X` line.
+# VMware NAT convention: .1 is usually the host machine's own virtual adapter, .2 is
+# the NAT router device itself (confirmed via curl on 2026-08-05 for this machine).
+#
+# Also requires app.py's app.run() to bind host='0.0.0.0', not '127.0.0.1' -- a
+# loopback-only bind is unreachable from the VM regardless of which IP is used here.
+services:
+  n8n:
+    environment:
+      - RAG_BASE_URL=http://192.168.146.1:5003/api/n8n/internal/rag
+      - NOTIFY_URL=http://192.168.146.1:5003/api/n8n/internal/notify
+      - DOCS_URL=http://192.168.146.1:5003/api/n8n/internal/notify

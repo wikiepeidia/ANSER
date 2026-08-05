@@ -2,30 +2,55 @@
   "name": "manuf_ocr_customer_order",
   "nodes": [
     {
-      "parameters": { "httpMethod": "POST", "path": "customer-order-ocr", "responseMode": "responseNode", "options": { "binaryData": true } },
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "customer-order-ocr",
+        "responseMode": "responseNode",
+        "options": {
+          "binaryData": true
+        }
+      },
       "id": "co-webhook",
       "name": "Receive Order Upload",
       "type": "n8n-nodes-base.webhook",
-      "typeVersion": 1,
-      "position": [180, 300]
+      "typeVersion": 2.1,
+      "position": [
+        180,
+        300
+      ]
     },
     {
       "parameters": {
-        "jsCode": "const raw = $input.first().json;\nconst expected = $env.ANSER_WEBHOOK_TOKEN || '';\nif (expected && ((raw.headers || {})['x-anser-token'] || '') !== expected) {\n  return [{ json: { valid: false, error: 'Unauthorized' } }];\n}\nif (!raw.binary || Object.keys(raw.binary).length === 0) {\n  return [{ json: { valid: false, error: 'Thiếu tệp ảnh đơn hàng để OCR' } }];\n}\nconst b = (raw.body && typeof raw.body === 'object') ? raw.body : raw;\n// scenario is now vestigial mock-testing-only metadata -- not consumed by the real OCR call.\nreturn [{ json: { valid: true, scenario: b.scenario || 'order', order_code_override: b.order_code || null } }];"
+        "jsCode": "const item = $input.first();\nconst raw = item.json;\nconst expected = $env.ANSER_WEBHOOK_TOKEN || '';\nif (expected && ((raw.headers || {})['x-anser-token'] || '') !== expected) {\n  return [{ json: { valid: false, error: 'Unauthorized' } }];\n}\n// .json and .binary are SIBLING properties on an n8n item, not nested -- the\n// uploaded file lives at item.binary (n8n's Webhook node merges all multipart\n// fields into a single binary property keyed 'data' by default), never at\n// item.json.binary. Found live during the 13-04 checkpoint (2026-08-05):\n// the original raw.binary check always failed regardless of upload, since\n// that path never existed on the item.\nif (!item.binary || Object.keys(item.binary).length === 0) {\n  return [{ json: { valid: false, error: 'Thiếu tệp ảnh đơn hàng để OCR' } }];\n}\nconst b = (raw.body && typeof raw.body === 'object') ? raw.body : raw;\n// scenario is now vestigial mock-testing-only metadata -- not consumed by the real OCR call.\n// n8n Code nodes do NOT auto-forward binary data from input to output -- must\n// re-attach item.binary explicitly or downstream HTTP nodes (co-ocr) silently\n// see no file at all. Found live during the 13-04 checkpoint (2026-08-05).\nreturn [{ json: { valid: true, scenario: b.scenario || 'order', order_code_override: b.order_code || null }, binary: item.binary }];"
       },
       "id": "co-verify",
       "name": "Verify Anser Token",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [400, 300]
+      "position": [
+        400,
+        300
+      ]
     },
     {
-      "parameters": { "conditions": { "boolean": [{ "value1": "={{ $json.valid }}", "value2": true }] } },
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.valid }}",
+              "value2": true
+            }
+          ]
+        }
+      },
       "id": "co-authz",
       "name": "Authorized?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
-      "position": [620, 300]
+      "position": [
+        620,
+        300
+      ]
     },
     {
       "parameters": {
@@ -33,18 +58,40 @@
         "url": "={{ $env.BRAIN_BASE_URL }}/ocr/manufacturing",
         "authentication": "none",
         "sendHeaders": true,
-        "headerParameters": { "parameters": [{ "name": "X-API-Token", "value": "={{ $env.BRAIN_API_TOKEN }}" }] },
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-API-Token",
+              "value": "={{ $env.BRAIN_API_TOKEN }}"
+            }
+          ]
+        },
         "sendBody": true,
         "contentType": "multipart-form-data",
-        "bodyParameters": { "parameters": [{ "parameterType": "formBinaryData", "name": "file", "inputDataFieldName": "data" }] },
-        "options": { "timeout": 60000 }
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "file",
+              "inputDataFieldName": "data"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 60000
+        }
       },
       "id": "co-ocr",
       "name": "Call Brain OCR Order",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
-      "position": [840, 200],
-      "retryOnFail": true, "maxTries": 2, "waitBetweenTries": 2000
+      "position": [
+        840,
+        200
+      ],
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 2000
     },
     {
       "parameters": {
@@ -52,25 +99,53 @@
         "url": "={{ $env.BRAIN_BASE_URL }}/mcp/validate-invoice",
         "authentication": "none",
         "sendHeaders": true,
-        "headerParameters": { "parameters": [{ "name": "X-API-Token", "value": "={{ $env.BRAIN_API_TOKEN }}" }] },
-        "sendBody": true, "contentType": "raw", "rawContentType": "application/json",
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-API-Token",
+              "value": "={{ $env.BRAIN_API_TOKEN }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
         "body": "={{ JSON.stringify({ items: $json.invoice.items, total: $json.invoice.total }) }}",
-        "options": { "timeout": 20000 }
+        "options": {
+          "timeout": 20000
+        }
       },
       "id": "co-validate",
       "name": "Validate Order Total",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
-      "position": [1060, 200],
-      "retryOnFail": true, "maxTries": 2, "waitBetweenTries": 2000
+      "position": [
+        1060,
+        200
+      ],
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 2000
     },
     {
-      "parameters": { "conditions": { "boolean": [{ "value1": "={{ $json.validation.is_valid }}", "value2": true }] } },
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.validation.is_valid }}",
+              "value2": true
+            }
+          ]
+        }
+      },
       "id": "co-isvalid",
       "name": "Order Valid?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
-      "position": [1280, 200]
+      "position": [
+        1280,
+        200
+      ]
     },
     {
       "parameters": {
@@ -78,16 +153,30 @@
         "url": "={{ $env.BRAIN_BASE_URL }}/chat/manufacturing",
         "authentication": "none",
         "sendHeaders": true,
-        "headerParameters": { "parameters": [{ "name": "X-API-Token", "value": "={{ $env.BRAIN_API_TOKEN }}" }] },
-        "sendBody": true, "contentType": "raw", "rawContentType": "application/json",
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-API-Token",
+              "value": "={{ $env.BRAIN_API_TOKEN }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
         "body": "={{ JSON.stringify({ route: 'TECHNICAL', prompt: 'Tu don hang nay tinh SL SP can san xuat theo ma SKU', context: { infer_production: { items: $('Call Brain OCR Order').first().json.invoice.items } } }) }}",
-        "options": { "timeout": 15000 }
+        "options": {
+          "timeout": 15000
+        }
       },
       "id": "co-infer",
       "name": "Infer Production Qty (Brain)",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
-      "position": [1500, 100]
+      "position": [
+        1500,
+        100
+      ]
     },
     {
       "parameters": {
@@ -97,15 +186,25 @@
       "name": "Init Poll State",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1500, 260]
+      "position": [
+        1500,
+        260
+      ]
     },
     {
-      "parameters": { "resume": "timeInterval", "amount": 5, "unit": "seconds" },
+      "parameters": {
+        "resume": "timeInterval",
+        "amount": 5,
+        "unit": "seconds"
+      },
       "id": "co-wait",
       "name": "Wait Before Poll",
       "type": "n8n-nodes-base.wait",
       "typeVersion": 1,
-      "position": [1720, 260]
+      "position": [
+        1720,
+        260
+      ]
     },
     {
       "parameters": {
@@ -113,14 +212,26 @@
         "url": "={{ $env.BRAIN_BASE_URL }}/api/v1/task/{{ $json.task_id }}",
         "authentication": "none",
         "sendHeaders": true,
-        "headerParameters": { "parameters": [{ "name": "X-API-Token", "value": "={{ $env.BRAIN_API_TOKEN }}" }] },
-        "options": { "timeout": 10000 }
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-API-Token",
+              "value": "={{ $env.BRAIN_API_TOKEN }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 10000
+        }
       },
       "id": "co-poll",
       "name": "Poll Inference Task",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
-      "position": [1940, 260]
+      "position": [
+        1940,
+        260
+      ]
     },
     {
       "parameters": {
@@ -130,23 +241,50 @@
       "name": "Merge Poll Count",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [2160, 260]
+      "position": [
+        2160,
+        260
+      ]
     },
     {
-      "parameters": { "conditions": { "boolean": [{ "value1": "={{ $json.ready }}", "value2": true }] } },
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.ready }}",
+              "value2": true
+            }
+          ]
+        }
+      },
       "id": "co-ready",
       "name": "Inference Ready?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
-      "position": [2380, 260]
+      "position": [
+        2380,
+        260
+      ]
     },
     {
-      "parameters": { "conditions": { "boolean": [{ "value1": "={{ $json.give_up }}", "value2": true }] } },
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.give_up }}",
+              "value2": true
+            }
+          ]
+        }
+      },
       "id": "co-giveup",
       "name": "Give Up Polling?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
-      "position": [2380, 420]
+      "position": [
+        2380,
+        420
+      ]
     },
     {
       "parameters": {
@@ -156,7 +294,10 @@
       "name": "Build Poll Failure Notice",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [2600, 420]
+      "position": [
+        2600,
+        420
+      ]
     },
     {
       "parameters": {
@@ -164,8 +305,17 @@
         "url": "={{ $env.RAG_BASE_URL }}/pending-review",
         "authentication": "none",
         "sendHeaders": true,
-        "headerParameters": { "parameters": [{ "name": "x-anser-token", "value": "={{ $env.ANSER_WEBHOOK_TOKEN }}" }] },
-        "sendBody": true, "contentType": "raw", "rawContentType": "application/json",
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-anser-token",
+              "value": "={{ $env.ANSER_WEBHOOK_TOKEN }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
         "body": "={{ $json.pending_body }}",
         "options": {}
       },
@@ -173,18 +323,46 @@
       "name": "Insert Pending Review (AI Timeout)",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
-      "position": [2820, 420],
-      "retryOnFail": true, "maxTries": 3, "waitBetweenTries": 1000
+      "position": [
+        2820,
+        420
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1000
     },
     {
       "parameters": {
-        "jsCode": "const ocrResp = $('Call Brain OCR Order').first().json; const ocr = ocrResp.invoice;\nconst inf = (($input.first().json.result || {}).inference || {}).items || [];\nconst first = ocr.items[0] || {};\nconst inferred = inf.find(x => x.sku === first.sku) || {};\nconst override = $('Verify Anser Token').first().json.order_code_override;\nconst order_code = override || ocr.doc_no;\nconst payload = {\n  order_code,\n  customer_code: ocr.customer_code,\n  product_code: first.sku,\n  product_name: first.name,\n  qty_ordered: first.qty || 0,\n  qty_to_produce: inferred.qty_to_produce || first.qty || 0,\n  unit_price: first.unit_price || 0,\n  region: ocr.region || null,\n  deadline: ocr.deadline || null\n};\nreturn [{ json: { order_code, request_body: JSON.stringify(payload), qty_ordered: payload.qty_ordered, qty_to_produce: payload.qty_to_produce, deadline: payload.deadline } }];"
+        "jsCode": "const ocrResp = $('Call Brain OCR Order').first().json; const ocr = ocrResp.invoice || {};\nconst inf = (($input.first().json.result || {}).inference || {}).items || [];\nconst first = (ocr.items || [])[0] || {};\nconst inferred = inf.find(x => x.sku === first.sku) || {};\nconst override = $('Verify Anser Token').first().json.order_code_override;\nconst order_code = override || ocr.doc_no;\nconst payload = {\n  order_code,\n  customer_code: ocr.customer_code,\n  product_code: first.sku,\n  product_name: first.name,\n  qty_ordered: first.qty || 0,\n  qty_to_produce: inferred.qty_to_produce || first.qty || 0,\n  unit_price: first.unit_price || 0,\n  region: ocr.region || null,\n  deadline: ocr.deadline || null\n};\nconst missing_fields = [\n  ['order_code', order_code],\n  ['customer_code', payload.customer_code],\n  ['product_code', payload.product_code],\n  ['product_name', payload.product_name]\n].filter(([, value]) => typeof value !== 'string' || value.trim() === '').map(([field]) => field);\nconst ready_for_production_order = missing_fields.length === 0;\nconst pending_body = ready_for_production_order ? null : JSON.stringify({\n  kind: 'customer_order',\n  reason: 'Thiếu trường bắt buộc từ OCR: ' + missing_fields.join(', '),\n  missing_fields,\n  raw_payload: ocrResp\n});\nreturn [{ json: { order_code, request_body: JSON.stringify(payload), qty_ordered: payload.qty_ordered, qty_to_produce: payload.qty_to_produce, deadline: payload.deadline, ready_for_production_order, pending_body } }];"
       },
       "id": "co-build-order",
       "name": "Build Production Order",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [2600, 100]
+      "position": [
+        2600,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.ready_for_production_order }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "co-identifiers-ready",
+      "name": "Order Identifiers Complete?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        2820,
+        100
+      ]
     },
     {
       "parameters": {
@@ -192,8 +370,17 @@
         "url": "={{ $env.RAG_BASE_URL }}/production-order-insert",
         "authentication": "none",
         "sendHeaders": true,
-        "headerParameters": { "parameters": [{ "name": "x-anser-token", "value": "={{ $env.ANSER_WEBHOOK_TOKEN }}" }] },
-        "sendBody": true, "contentType": "raw", "rawContentType": "application/json",
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-anser-token",
+              "value": "={{ $env.ANSER_WEBHOOK_TOKEN }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
         "body": "={{ $json.request_body }}",
         "options": {}
       },
@@ -201,8 +388,45 @@
       "name": "Insert Production Order",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
-      "position": [2820, 100],
-      "retryOnFail": true, "maxTries": 3, "waitBetweenTries": 1000
+      "position": [
+        2820,
+        100
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1000
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.RAG_BASE_URL }}/pending-review",
+        "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-anser-token",
+              "value": "={{ $env.ANSER_WEBHOOK_TOKEN }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ $json.pending_body }}",
+        "options": {}
+      },
+      "id": "co-pending-missing-identifiers",
+      "name": "Insert Pending Review (Missing Identifiers)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        3040,
+        300
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1000
     },
     {
       "parameters": {
@@ -212,7 +436,10 @@
       "name": "Build Notice",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [3040, 100]
+      "position": [
+        3040,
+        100
+      ]
     },
     {
       "parameters": {
@@ -220,8 +447,17 @@
         "url": "={{ $env.NOTIFY_URL }}",
         "authentication": "none",
         "sendHeaders": true,
-        "headerParameters": { "parameters": [{ "name": "x-anser-token", "value": "={{ $env.ANSER_WEBHOOK_TOKEN }}" }] },
-        "sendBody": true, "contentType": "raw", "rawContentType": "application/json",
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-anser-token",
+              "value": "={{ $env.ANSER_WEBHOOK_TOKEN }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
         "body": "={{ $json.notify_body }}",
         "options": {}
       },
@@ -229,19 +465,27 @@
       "name": "Notify Production Manager",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
-      "position": [3260, 100]
+      "position": [
+        3260,
+        100
+      ]
     },
     {
       "parameters": {
         "respondWith": "json",
         "responseBody": "={{ $('Build Notice').first().json.resp }}",
-        "options": { "responseCode": 201 }
+        "options": {
+          "responseCode": 201
+        }
       },
       "id": "co-resp-201",
       "name": "Respond 201",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
-      "position": [3480, 100]
+      "position": [
+        3480,
+        100
+      ]
     },
     {
       "parameters": {
@@ -249,8 +493,17 @@
         "url": "={{ $env.RAG_BASE_URL }}/pending-review",
         "authentication": "none",
         "sendHeaders": true,
-        "headerParameters": { "parameters": [{ "name": "x-anser-token", "value": "={{ $env.ANSER_WEBHOOK_TOKEN }}" }] },
-        "sendBody": true, "contentType": "raw", "rawContentType": "application/json",
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-anser-token",
+              "value": "={{ $env.ANSER_WEBHOOK_TOKEN }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
         "body": "={{ JSON.stringify({ kind: 'customer_order', reason: 'Lech tong ' + $json.validation.difference + ' VND', ocr_total: $json.validation.stated_total, calculated_total: $json.validation.calculated_total, raw_payload: $('Call Brain OCR Order').first().json }) }}",
         "options": {}
       },
@@ -258,56 +511,330 @@
       "name": "Insert Pending Review",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
-      "position": [1500, 320],
-      "retryOnFail": true, "maxTries": 3, "waitBetweenTries": 1000
+      "position": [
+        1500,
+        320
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1000
     },
     {
       "parameters": {
         "respondWith": "json",
         "responseBody": "={{ JSON.stringify({ status: 'pending_review', review_id: $json.id }) }}",
-        "options": { "responseCode": 422 }
+        "options": {
+          "responseCode": 422
+        }
       },
       "id": "co-resp-422",
       "name": "Respond 422",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
-      "position": [1720, 320]
+      "position": [
+        1720,
+        320
+      ]
     },
     {
       "parameters": {
         "respondWith": "json",
         "responseBody": "={{ JSON.stringify({ error: $json.error, status: 400 }) }}",
-        "options": { "responseCode": 400 }
+        "options": {
+          "responseCode": 400
+        }
       },
       "id": "co-resp-400",
       "name": "Respond 400",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
-      "position": [840, 440]
+      "position": [
+        840,
+        440
+      ]
     }
   ],
   "connections": {
-    "Receive Order Upload": { "main": [[{ "node": "Verify Anser Token", "type": "main", "index": 0 }]] },
-    "Verify Anser Token": { "main": [[{ "node": "Authorized?", "type": "main", "index": 0 }]] },
-    "Authorized?": { "main": [[{ "node": "Call Brain OCR Order", "type": "main", "index": 0 }], [{ "node": "Respond 400", "type": "main", "index": 0 }]] },
-    "Call Brain OCR Order": { "main": [[{ "node": "Validate Order Total", "type": "main", "index": 0 }]] },
-    "Validate Order Total": { "main": [[{ "node": "Order Valid?", "type": "main", "index": 0 }]] },
-    "Order Valid?": { "main": [[{ "node": "Infer Production Qty (Brain)", "type": "main", "index": 0 }], [{ "node": "Insert Pending Review", "type": "main", "index": 0 }]] },
-    "Infer Production Qty (Brain)": { "main": [[{ "node": "Init Poll State", "type": "main", "index": 0 }]] },
-    "Init Poll State": { "main": [[{ "node": "Wait Before Poll", "type": "main", "index": 0 }]] },
-    "Wait Before Poll": { "main": [[{ "node": "Poll Inference Task", "type": "main", "index": 0 }]] },
-    "Poll Inference Task": { "main": [[{ "node": "Merge Poll Count", "type": "main", "index": 0 }]] },
-    "Merge Poll Count": { "main": [[{ "node": "Inference Ready?", "type": "main", "index": 0 }]] },
-    "Inference Ready?": { "main": [[{ "node": "Build Production Order", "type": "main", "index": 0 }], [{ "node": "Give Up Polling?", "type": "main", "index": 0 }]] },
-    "Give Up Polling?": { "main": [[{ "node": "Build Poll Failure Notice", "type": "main", "index": 0 }], [{ "node": "Wait Before Poll", "type": "main", "index": 0 }]] },
-    "Build Poll Failure Notice": { "main": [[{ "node": "Insert Pending Review (AI Timeout)", "type": "main", "index": 0 }]] },
-    "Insert Pending Review (AI Timeout)": { "main": [[{ "node": "Respond 422", "type": "main", "index": 0 }]] },
-    "Build Production Order": { "main": [[{ "node": "Insert Production Order", "type": "main", "index": 0 }]] },
-    "Insert Production Order": { "main": [[{ "node": "Build Notice", "type": "main", "index": 0 }]] },
-    "Build Notice": { "main": [[{ "node": "Notify Production Manager", "type": "main", "index": 0 }]] },
-    "Notify Production Manager": { "main": [[{ "node": "Respond 201", "type": "main", "index": 0 }]] },
-    "Insert Pending Review": { "main": [[{ "node": "Respond 422", "type": "main", "index": 0 }]] }
+    "Receive Order Upload": {
+      "main": [
+        [
+          {
+            "node": "Verify Anser Token",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verify Anser Token": {
+      "main": [
+        [
+          {
+            "node": "Authorized?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Authorized?": {
+      "main": [
+        [
+          {
+            "node": "Call Brain OCR Order",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond 400",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call Brain OCR Order": {
+      "main": [
+        [
+          {
+            "node": "Validate Order Total",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Order Total": {
+      "main": [
+        [
+          {
+            "node": "Order Valid?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Order Valid?": {
+      "main": [
+        [
+          {
+            "node": "Infer Production Qty (Brain)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Insert Pending Review",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Infer Production Qty (Brain)": {
+      "main": [
+        [
+          {
+            "node": "Init Poll State",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Init Poll State": {
+      "main": [
+        [
+          {
+            "node": "Wait Before Poll",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait Before Poll": {
+      "main": [
+        [
+          {
+            "node": "Poll Inference Task",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Poll Inference Task": {
+      "main": [
+        [
+          {
+            "node": "Merge Poll Count",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Poll Count": {
+      "main": [
+        [
+          {
+            "node": "Inference Ready?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Inference Ready?": {
+      "main": [
+        [
+          {
+            "node": "Build Production Order",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Give Up Polling?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Give Up Polling?": {
+      "main": [
+        [
+          {
+            "node": "Build Poll Failure Notice",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait Before Poll",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Poll Failure Notice": {
+      "main": [
+        [
+          {
+            "node": "Insert Pending Review (AI Timeout)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert Pending Review (AI Timeout)": {
+      "main": [
+        [
+          {
+            "node": "Respond 422",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Production Order": {
+      "main": [
+        [
+          {
+            "node": "Order Identifiers Complete?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Order Identifiers Complete?": {
+      "main": [
+        [
+          {
+            "node": "Insert Production Order",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Insert Pending Review (Missing Identifiers)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert Production Order": {
+      "main": [
+        [
+          {
+            "node": "Build Notice",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert Pending Review (Missing Identifiers)": {
+      "main": [
+        [
+          {
+            "node": "Respond 422",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Notice": {
+      "main": [
+        [
+          {
+            "node": "Notify Production Manager",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notify Production Manager": {
+      "main": [
+        [
+          {
+            "node": "Respond 201",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert Pending Review": {
+      "main": [
+        [
+          {
+            "node": "Respond 422",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
   },
   "active": false,
-  "settings": { "executionOrder": "v1" }
+  "settings": {
+    "executionOrder": "v1"
+  }
 }
