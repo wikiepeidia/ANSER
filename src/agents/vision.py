@@ -18,6 +18,18 @@ logger = logging.getLogger("projecta.agents.vision")
 
 
 class VisionAgent:
+    MANUFACTURING_METADATA_FIELDS = (
+        "farmer",
+        "region_grown",
+        "part",
+        "form",
+        "gacp_cert",
+        "doc_no",
+        "customer_code",
+        "region",
+        "deadline",
+    )
+
     PROMPTS = {
         "caption": "Mô tả chi tiết nội dung hình ảnh này bằng tiếng Việt.",
         "ocr": (
@@ -43,7 +55,9 @@ class VisionAgent:
             "- total: số.\n"
             "- farmer, region_grown, part, form, gacp_cert, doc_no, customer_code, region, "
             "deadline: chuỗi hoặc null.\n"
-            "Hai khóa items và total PHẢI luôn xuất hiện trong JSON.\n"
+            "TẤT CẢ 11 khóa cấp cao sau PHẢI luôn xuất hiện trong JSON, không được bỏ bất kỳ khóa nào: "
+            "items, total, farmer, region_grown, part, form, gacp_cert, doc_no, customer_code, "
+            "region, deadline.\n"
             "Ánh xạ nhãn thường gặp, kể cả bản không dấu hoặc khác chữ hoa/thường:\n"
             "- Số chứng từ / So chung tu -> doc_no.\n"
             "- Mã khách hàng / Ma Khach hang -> customer_code.\n"
@@ -62,6 +76,27 @@ class VisionAgent:
             "dấu phân cách hàng nghìn. Nếu ảnh mờ/không đọc được: trả về items: [], total: 0, "
             "và MỌI trường khác là null — TUYỆT ĐỐI không bịa dữ liệu."
         ),
+        "manufacturing_metadata": (
+            "Bạn là hệ thống trích xuất metadata chứng từ sản xuất. Ảnh có thể là "
+            "phiếu nhập nguyên liệu từ nông dân/HTX hoặc đơn đặt hàng khách hàng. "
+            "Chỉ đọc phần thông tin nhận diện/chứng từ và trả về DUY NHẤT một JSON hợp lệ, "
+            "KHÔNG kèm giải thích. Chỉ dùng đúng 9 khóa cấp cao sau: farmer, region_grown, "
+            "part, form, gacp_cert, doc_no, customer_code, region, deadline. Tất cả 9 khóa "
+            "phải xuất hiện; giá trị là chuỗi đọc được hoặc null. Không trả về items, SKU, "
+            "số lượng, đơn giá hay total trong lượt này.\n"
+            "Ánh xạ nhãn thường gặp, kể cả bản không dấu hoặc khác chữ hoa/thường:\n"
+            "- Nông dân / Nong dan / HTX -> farmer.\n"
+            "- Vùng trồng / Vung trong -> region_grown.\n"
+            "- Bộ phận cây / Bo phan cay -> part.\n"
+            "- Dạng tươi/khô / Dang tuoi/kho -> form.\n"
+            "- Chứng nhận GACP / Chung nhan GACP -> gacp_cert.\n"
+            "- Số chứng từ / So chung tu -> doc_no.\n"
+            "- Mã khách hàng / Ma Khach hang -> customer_code.\n"
+            "- Khu vực giao / Khu vuc giao -> region.\n"
+            "- Hạn giao / Han giao -> deadline.\n"
+            "Chỉ điền thông tin THỰC SỰ xuất hiện trên ảnh. Trường không xuất hiện hoặc "
+            "không đọc được phải là null — KHÔNG suy đoán hay bịa thông tin."
+        ),
     }
 
     def __init__(self, engine):
@@ -72,6 +107,8 @@ class VisionAgent:
 
     def _prompt_for(self, task_hint: str) -> str:
         task_hint = (task_hint or "").lower()
+        if "manufacturing_metadata" in task_hint:
+            return self.PROMPTS["manufacturing_metadata"]
         if "manufacturing" in task_hint or "san_xuat" in task_hint or "sanxuat" in task_hint:
             return self.PROMPTS["manufacturing"]
         if "invoice" in task_hint or "hoa_don" in task_hint or "hóa đơn" in task_hint:
@@ -79,6 +116,23 @@ class VisionAgent:
         if "ocr" in task_hint:
             return self.PROMPTS["ocr"]
         return self.PROMPTS["caption"]
+
+    @classmethod
+    def _merge_manufacturing_metadata(cls, primary: dict, metadata: dict) -> dict:
+        """Fill missing top-level metadata while keeping primary line facts authoritative."""
+        merged = dict(primary)
+        for field in cls.MANUFACTURING_METADATA_FIELDS:
+            primary_value = merged.get(field)
+            secondary_value = metadata.get(field)
+            primary_present = primary_value is not None and not (
+                isinstance(primary_value, str) and not primary_value.strip()
+            )
+            secondary_present = secondary_value is not None and not (
+                isinstance(secondary_value, str) and not secondary_value.strip()
+            )
+            if not primary_present and secondary_present:
+                merged[field] = secondary_value
+        return merged
 
     async def analyze_image(self, image_path: str, task_hint: str = "caption") -> str:
         """Trả về text. task_hint ∈ {'caption', 'ocr', 'invoice', 'manufacturing'}."""
@@ -113,11 +167,11 @@ class VisionAgent:
         đã parse từ output của VLM. Trả {'error': ...} nếu không đọc/parse được —
         KHÔNG bịa số (thin sibling of extract_invoice, same never-fabricate pattern).
         """
-        raw = await self.analyze_image(image_path, task_hint="manufacturing")
-        if isinstance(raw, str) and raw.startswith("Error"):
-            return {"error": raw}
+        primary_raw = await self.analyze_image(image_path, task_hint="manufacturing")
+        if isinstance(primary_raw, str) and primary_raw.startswith("Error"):
+            return {"error": primary_raw}
         try:
-            parsed = repair_json(raw, return_objects=True)
+            parsed = repair_json(primary_raw, return_objects=True)
             if isinstance(parsed, dict):
                 missing_keys = sorted({"items", "total"} - parsed.keys())
                 if missing_keys:
@@ -128,9 +182,33 @@ class VisionAgent:
                     )
                     return {
                         "error": "VLM JSON thiếu trường bắt buộc: " + ", ".join(missing_keys),
-                        "raw": raw,
+                        "raw": primary_raw,
                     }
-                return parsed
-            return {"error": "VLM không trả JSON object", "raw": raw}
+            else:
+                return {"error": "VLM không trả JSON object", "raw": primary_raw}
         except Exception as exc:
-            return {"error": f"parse_failed: {exc}", "raw": raw}
+            return {"error": f"parse_failed: {exc}", "raw": primary_raw}
+
+        metadata_raw = await self.analyze_image(
+            image_path,
+            task_hint="manufacturing_metadata",
+        )
+        if isinstance(metadata_raw, str) and metadata_raw.startswith("Error"):
+            logger.warning("Manufacturing metadata pass failed; keeping primary extraction")
+            return parsed
+
+        try:
+            metadata = repair_json(metadata_raw, return_objects=True)
+        except Exception as exc:
+            logger.warning(
+                "Manufacturing metadata JSON parse failed; keeping primary extraction: %s",
+                exc,
+            )
+            return parsed
+        if not isinstance(metadata, dict):
+            logger.warning(
+                "Manufacturing metadata VLM did not return a JSON object; keeping primary extraction"
+            )
+            return parsed
+
+        return self._merge_manufacturing_metadata(parsed, metadata)

@@ -174,8 +174,21 @@ async def ocr_manufacturing_endpoint(
 
         # AI-OCR-03: một kết quả rỗng trung thực (items=[], total=0) sẽ pass
         # đối chiếu deterministic một cách tầm thường (0 == 0) -- phải tự nó
-        # cũng gắn cờ needs_manual_review, không chỉ dựa vào validation["is_valid"].
-        needs_manual_review = (not validation["is_valid"]) or (len(invoice.items) == 0)
+        # cũng gắn cờ needs_manual_review. Tương tự, items/total có thể đọc đúng
+        # nhưng thiếu toàn bộ metadata nhận diện chứng từ; arithmetic hợp lệ không
+        # đủ để coi kết quả OCR đó là đầy đủ.
+        metadata_present = any(
+            getattr(invoice, field) is not None
+            for field in (
+                "farmer", "region_grown", "part", "form", "gacp_cert",
+                "doc_no", "customer_code", "region", "deadline",
+            )
+        )
+        needs_manual_review = (
+            (not validation["is_valid"])
+            or (len(invoice.items) == 0)
+            or (not metadata_present)
+        )
 
         return {
             "success": True,

@@ -103,6 +103,51 @@ def test_manufacturing_ocr_partial_fields_customer_order_only(monkeypatch):
     assert payload["needs_manual_review"] is False
 
 
+def test_manufacturing_ocr_valid_total_without_any_metadata_requires_review(monkeypatch):
+    extraction = {
+        "items": [
+            {
+                "sku": "SP-001",
+                "name": "Cao Atiso 100g",
+                "qty": 10,
+                "unit_price": 150000,
+            }
+        ],
+        "total": 1650000,
+    }
+    _patch_vision(monkeypatch, extraction)
+
+    response = _post_manufacturing_ocr()
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["validation"]["is_valid"] is True
+    assert payload["needs_manual_review"] is True
+
+
+def test_manufacturing_ocr_material_metadata_prevents_false_review(monkeypatch):
+    extraction = {
+        "items": [
+            {
+                "sku": "NL-001",
+                "name": "Lá dược liệu",
+                "qty": 10,
+                "unit_price": 1000,
+            }
+        ],
+        "total": 11000,
+        "farmer": "HTX Nông sản Sạch Đà Lạt",
+    }
+    _patch_vision(monkeypatch, extraction)
+
+    response = _post_manufacturing_ocr()
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["validation"]["is_valid"] is True
+    assert payload["needs_manual_review"] is False
+
+
 def test_manufacturing_ocr_low_quality_returns_honest_empty_result(monkeypatch):
     extraction = {
         "items": [], "total": 0,
