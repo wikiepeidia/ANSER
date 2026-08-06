@@ -38,10 +38,10 @@ class VisionAgent:
             "chứng từ: (1) phiếu nhập nguyên liệu từ nông dân/HTX, hoặc (2) đơn đặt hàng của "
             "khách hàng. Đọc ảnh và trả về DUY NHẤT một JSON hợp lệ, KHÔNG kèm giải thích, "
             "đúng schema:\n"
-            '{"items": [{"sku": null, "name": "string", "qty": 0, "unit_price": 0}], '
-            '"total": 0, "farmer": null, "region_grown": null, "part": null, "form": null, '
-            '"gacp_cert": null, "doc_no": null, "customer_code": null, "region": null, '
-            '"deadline": null}\n'
+            '{"items": [{"sku": "string|null", "name": "string", "qty": 0, "unit_price": 0}], '
+            '"total": 0, "farmer": "string|null", "region_grown": "string|null", "part": "string|null", '
+            '"form": "string|null", "gacp_cert": "string|null", "doc_no": "string|null", '
+            '"customer_code": "string|null", "region": "string|null", "deadline": "string|null"}\n'
             "Quy tắc: chỉ điền các trường THỰC SỰ xuất hiện trên chứng từ, các trường còn lại "
             "để null — KHÔNG suy đoán hay bịa thông tin. 'unit_price' là ĐƠN GIÁ trước thuế; "
             "'total' là tổng tiền ghi trên chứng từ. Mọi số tiền là số nguyên VND, không dùng "
