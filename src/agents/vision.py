@@ -37,11 +37,25 @@ class VisionAgent:
             "Bạn là hệ thống trích xuất chứng từ sản xuất. Ảnh có thể là MỘT trong hai loại "
             "chứng từ: (1) phiếu nhập nguyên liệu từ nông dân/HTX, hoặc (2) đơn đặt hàng của "
             "khách hàng. Đọc ảnh và trả về DUY NHẤT một JSON hợp lệ, KHÔNG kèm giải thích, "
-            "đúng schema:\n"
-            '{"items": [{"sku": null, "name": "string", "qty": 0, "unit_price": 0}], '
-            '"total": 0, "farmer": null, "region_grown": null, "part": null, "form": null, '
-            '"gacp_cert": null, "doc_no": null, "customer_code": null, "region": null, '
-            '"deadline": null}\n'
+            "với ĐÚNG các trường và kiểu sau (đây là mô tả kiểu, không phải giá trị mẫu):\n"
+            "- items: mảng các dòng hàng; mỗi dòng có items[].sku (chuỗi hoặc null), "
+            "items[].name (chuỗi), items[].qty (số), items[].unit_price (số).\n"
+            "- total: số.\n"
+            "- farmer, region_grown, part, form, gacp_cert, doc_no, customer_code, region, "
+            "deadline: chuỗi hoặc null.\n"
+            "Hai khóa items và total PHẢI luôn xuất hiện trong JSON.\n"
+            "Ánh xạ nhãn thường gặp, kể cả bản không dấu hoặc khác chữ hoa/thường:\n"
+            "- Số chứng từ / So chung tu -> doc_no.\n"
+            "- Mã khách hàng / Ma Khach hang -> customer_code.\n"
+            "- Khu vực giao / Khu vuc giao -> region.\n"
+            "- Hạn giao / Han giao -> deadline.\n"
+            "- Mã SKU sản phẩm / Ma SKU san pham -> items[].sku.\n"
+            "- Tên sản phẩm / Ten san pham -> items[].name.\n"
+            "- Số lượng đặt / So luong dat -> items[].qty.\n"
+            "- Đơn giá (trước thuế) / Don gia (truoc thue) -> items[].unit_price.\n"
+            "- Tổng cộng thanh toán / Tong cong thanh toan -> total.\n"
+            "- Nông dân hoặc HTX -> farmer; vùng trồng -> region_grown; bộ phận cây -> part; "
+            "dạng tươi/khô -> form; chứng nhận GACP -> gacp_cert.\n"
             "Quy tắc: chỉ điền các trường THỰC SỰ xuất hiện trên chứng từ, các trường còn lại "
             "để null — KHÔNG suy đoán hay bịa thông tin. 'unit_price' là ĐƠN GIÁ trước thuế; "
             "'total' là tổng tiền ghi trên chứng từ. Mọi số tiền là số nguyên VND, không dùng "
@@ -105,6 +119,17 @@ class VisionAgent:
         try:
             parsed = repair_json(raw, return_objects=True)
             if isinstance(parsed, dict):
+                missing_keys = sorted({"items", "total"} - parsed.keys())
+                if missing_keys:
+                    logger.warning(
+                        "Manufacturing VLM JSON missing required keys %s; parsed keys=%s",
+                        missing_keys,
+                        sorted(parsed.keys()),
+                    )
+                    return {
+                        "error": "VLM JSON thiếu trường bắt buộc: " + ", ".join(missing_keys),
+                        "raw": raw,
+                    }
                 return parsed
             return {"error": "VLM không trả JSON object", "raw": raw}
         except Exception as exc:
