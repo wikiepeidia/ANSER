@@ -2,12 +2,20 @@
   "name": "manuf_batch_process_log",
   "nodes": [
     {
-      "parameters": { "httpMethod": "POST", "path": "batch-process", "responseMode": "responseNode", "options": {} },
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "batch-process",
+        "responseMode": "responseNode",
+        "options": {}
+      },
       "id": "bp-webhook",
       "name": "Receive Batch Event",
       "type": "n8n-nodes-base.webhook",
-      "typeVersion": 1,
-      "position": [180, 300]
+      "typeVersion": 2.1,
+      "position": [
+        180,
+        300
+      ]
     },
     {
       "parameters": {
@@ -17,15 +25,30 @@
       "name": "Verify + Validate",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [400, 300]
+      "position": [
+        400,
+        300
+      ]
     },
     {
-      "parameters": { "conditions": { "boolean": [{ "value1": "={{ $json.valid }}", "value2": true }] } },
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.valid }}",
+              "value2": true
+            }
+          ]
+        }
+      },
       "id": "bp-authz",
       "name": "Valid?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
-      "position": [620, 300]
+      "position": [
+        620,
+        300
+      ]
     },
     {
       "parameters": {
@@ -33,8 +56,17 @@
         "url": "={{ $env.RAG_BASE_URL }}/process-event",
         "authentication": "none",
         "sendHeaders": true,
-        "headerParameters": { "parameters": [{ "name": "x-anser-token", "value": "={{ $env.ANSER_WEBHOOK_TOKEN }}" }] },
-        "sendBody": true, "contentType": "raw", "rawContentType": "application/json",
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-anser-token",
+              "value": "={{ $env.ANSER_WEBHOOK_TOKEN }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
         "body": "={{ $json.request_body }}",
         "options": {}
       },
@@ -42,8 +74,13 @@
       "name": "Process Event (idempotent)",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
-      "position": [860, 200],
-      "retryOnFail": true, "maxTries": 3, "waitBetweenTries": 1000
+      "position": [
+        860,
+        200
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1000
     },
     {
       "parameters": {
@@ -53,15 +90,30 @@
       "name": "Build Notice",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1100, 200]
+      "position": [
+        1100,
+        200
+      ]
     },
     {
-      "parameters": { "conditions": { "boolean": [{ "value1": "={{ $json.notify_needed }}", "value2": true }] } },
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.notify_needed }}",
+              "value2": true
+            }
+          ]
+        }
+      },
       "id": "bp-need",
       "name": "Notify Needed?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
-      "position": [1340, 200]
+      "position": [
+        1340,
+        200
+      ]
     },
     {
       "parameters": {
@@ -69,8 +121,17 @@
         "url": "={{ $env.NOTIFY_URL }}",
         "authentication": "none",
         "sendHeaders": true,
-        "headerParameters": { "parameters": [{ "name": "x-anser-token", "value": "={{ $env.ANSER_WEBHOOK_TOKEN }}" }] },
-        "sendBody": true, "contentType": "raw", "rawContentType": "application/json",
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-anser-token",
+              "value": "={{ $env.ANSER_WEBHOOK_TOKEN }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
         "body": "={{ $json.notify_body }}",
         "options": {}
       },
@@ -78,42 +139,141 @@
       "name": "Notify Production",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
-      "position": [1580, 100]
+      "position": [
+        1580,
+        100
+      ]
     },
     {
       "parameters": {
         "respondWith": "json",
         "responseBody": "={{ $('Build Notice').first().json.resp }}",
-        "options": { "responseCode": 201 }
+        "options": {
+          "responseCode": 201
+        }
       },
       "id": "bp-resp-201",
       "name": "Respond 201",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
-      "position": [1800, 200]
+      "position": [
+        1800,
+        200
+      ]
     },
     {
       "parameters": {
         "respondWith": "json",
         "responseBody": "={{ JSON.stringify({ error: $json.error, status: 400 }) }}",
-        "options": { "responseCode": 400 }
+        "options": {
+          "responseCode": 400
+        }
       },
       "id": "bp-resp-400",
       "name": "Respond 400",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
-      "position": [860, 440]
+      "position": [
+        860,
+        440
+      ]
     }
   ],
   "connections": {
-    "Receive Batch Event": { "main": [[{ "node": "Verify + Validate", "type": "main", "index": 0 }]] },
-    "Verify + Validate": { "main": [[{ "node": "Valid?", "type": "main", "index": 0 }]] },
-    "Valid?": { "main": [[{ "node": "Process Event (idempotent)", "type": "main", "index": 0 }], [{ "node": "Respond 400", "type": "main", "index": 0 }]] },
-    "Process Event (idempotent)": { "main": [[{ "node": "Build Notice", "type": "main", "index": 0 }]] },
-    "Build Notice": { "main": [[{ "node": "Notify Needed?", "type": "main", "index": 0 }]] },
-    "Notify Needed?": { "main": [[{ "node": "Notify Production", "type": "main", "index": 0 }], [{ "node": "Respond 201", "type": "main", "index": 0 }]] },
-    "Notify Production": { "main": [[{ "node": "Respond 201", "type": "main", "index": 0 }]] }
+    "Receive Batch Event": {
+      "main": [
+        [
+          {
+            "node": "Verify + Validate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verify + Validate": {
+      "main": [
+        [
+          {
+            "node": "Valid?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Valid?": {
+      "main": [
+        [
+          {
+            "node": "Process Event (idempotent)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond 400",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Event (idempotent)": {
+      "main": [
+        [
+          {
+            "node": "Build Notice",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Notice": {
+      "main": [
+        [
+          {
+            "node": "Notify Needed?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notify Needed?": {
+      "main": [
+        [
+          {
+            "node": "Notify Production",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond 201",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notify Production": {
+      "main": [
+        [
+          {
+            "node": "Respond 201",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
   },
   "active": false,
-  "settings": { "executionOrder": "v1" }
+  "settings": {
+    "executionOrder": "v1"
+  }
 }

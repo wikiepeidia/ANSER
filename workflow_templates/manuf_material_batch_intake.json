@@ -2,38 +2,75 @@
   "name": "manuf_material_batch_intake",
   "nodes": [
     {
-      "parameters": { "httpMethod": "POST", "path": "material-intake", "responseMode": "responseNode", "options": { "binaryData": true } },
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "material-intake",
+        "responseMode": "responseNode",
+        "options": {
+          "binaryData": true
+        }
+      },
       "id": "in-webhook",
       "name": "Receive Material Intake",
       "type": "n8n-nodes-base.webhook",
-      "typeVersion": 1,
-      "position": [180, 300]
+      "typeVersion": 2.1,
+      "position": [
+        180,
+        300
+      ]
     },
     {
       "parameters": {
-        "jsCode": "const raw = $input.first().json;\nconst expected = $env.ANSER_WEBHOOK_TOKEN || '';\nif (expected && ((raw.headers || {})['x-anser-token'] || '') !== expected) {\n  return [{ json: { valid: false, error: 'Unauthorized' } }];\n}\nconst b = (raw.body && typeof raw.body === 'object') ? raw.body : raw;\n// 2 đường vào (PDF V2 E2): chụp phiếu cân (ảnh binary thực, webhook binaryData:true) → OCR HOẶC nhập app trực tiếp.\n// b.scenario is now vestigial mock-testing-only metadata -- not consumed by the real OCR call.\nconst use_ocr = !!(raw.binary && Object.keys(raw.binary).length > 0);\nif (!use_ocr && (!b.material_code || !b.qty_kg)) {\n  return [{ json: { valid: false, error: 'Missing required fields: material_code, qty_kg (hoặc ảnh phiếu cân để OCR)' } }];\n}\n// harvest_ts: client gửi ISO hoặc harvest_hours_ago (phiếu cân ghi giờ thu hái)\nconst hoursAgo = Number(b.harvest_hours_ago ?? 5);\nconst harvest_ts = b.harvest_ts || new Date(Date.now() - hoursAgo * 3600 * 1000).toISOString();\nconst lot_code = b.lot_code || ('LOT-' + new Date().toISOString().slice(0, 10).replace(/-/g, '') + '-' + Math.random().toString(36).slice(2, 7).toUpperCase());\nreturn [{ json: { valid: true, use_ocr, scenario: b.scenario || null, lot_code, harvest_ts, order_code: b.order_code || null, direct: { farmer: b.farmer || null, region_grown: b.region_grown || null, part: b.part || null, form: b.form || 'tuoi', material_code: b.material_code || null, qty_kg: b.qty_kg || 0, unit_cost_vnd: b.unit_cost_vnd || 0, gacp_cert: b.gacp_cert || null } } }];"
+        "jsCode": "const item = $input.first();\nconst raw = item.json;\nconst expected = $env.ANSER_WEBHOOK_TOKEN || '';\nif (expected && ((raw.headers || {})['x-anser-token'] || '') !== expected) {\n  return [{ json: { valid: false, error: 'Unauthorized' } }];\n}\nconst b = (raw.body && typeof raw.body === 'object') ? raw.body : raw;\n// 2 đường vào (PDF V2 E2): chụp phiếu cân (ảnh binary thực, webhook binaryData:true) → OCR HOẶC nhập app trực tiếp.\n// b.scenario is now vestigial mock-testing-only metadata -- not consumed by the real OCR call.\n// .json and .binary are SIBLING properties on an n8n item, not nested -- raw.binary\n// (raw = item.json) never exists; the real capture lives at item.binary. Same bug\n// found live in manuf_ocr_customer_order.json's co-verify during the 13-04 checkpoint.\nconst use_ocr = !!(item.binary && Object.keys(item.binary).length > 0);\nif (!use_ocr && (!b.material_code || !b.qty_kg)) {\n  return [{ json: { valid: false, error: 'Missing required fields: material_code, qty_kg (hoặc ảnh phiếu cân để OCR)' } }];\n}\n// harvest_ts: client gửi ISO hoặc harvest_hours_ago (phiếu cân ghi giờ thu hái)\nconst hoursAgo = Number(b.harvest_hours_ago ?? 5);\nconst harvest_ts = b.harvest_ts || new Date(Date.now() - hoursAgo * 3600 * 1000).toISOString();\nconst lot_code = b.lot_code || ('LOT-' + new Date().toISOString().slice(0, 10).replace(/-/g, '') + '-' + Math.random().toString(36).slice(2, 7).toUpperCase());\n// n8n Code nodes do NOT auto-forward binary data -- must re-attach item.binary\n// explicitly or the downstream OCR HTTP node silently sees no file.\nreturn [{ json: { valid: true, use_ocr, scenario: b.scenario || null, lot_code, harvest_ts, order_code: b.order_code || null, direct: { farmer: b.farmer || null, region_grown: b.region_grown || null, part: b.part || null, form: b.form || 'tuoi', material_code: b.material_code || null, qty_kg: b.qty_kg || 0, unit_cost_vnd: b.unit_cost_vnd || 0, gacp_cert: b.gacp_cert || null } }, binary: item.binary }];"
       },
       "id": "in-verify",
       "name": "Verify Anser Token",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [400, 300]
+      "position": [
+        400,
+        300
+      ]
     },
     {
-      "parameters": { "conditions": { "boolean": [{ "value1": "={{ $json.valid }}", "value2": true }] } },
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.valid }}",
+              "value2": true
+            }
+          ]
+        }
+      },
       "id": "in-authz",
       "name": "Authorized?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
-      "position": [620, 300]
+      "position": [
+        620,
+        300
+      ]
     },
     {
-      "parameters": { "conditions": { "boolean": [{ "value1": "={{ $json.use_ocr }}", "value2": true }] } },
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.use_ocr }}",
+              "value2": true
+            }
+          ]
+        }
+      },
       "id": "in-mode",
       "name": "From Weigh Slip (OCR)?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
-      "position": [840, 200]
+      "position": [
+        840,
+        200
+      ]
     },
     {
       "parameters": {
@@ -41,18 +78,40 @@
         "url": "={{ $env.BRAIN_BASE_URL }}/ocr/manufacturing",
         "authentication": "none",
         "sendHeaders": true,
-        "headerParameters": { "parameters": [{ "name": "X-API-Token", "value": "={{ $env.BRAIN_API_TOKEN }}" }] },
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-API-Token",
+              "value": "={{ $env.BRAIN_API_TOKEN }}"
+            }
+          ]
+        },
         "sendBody": true,
         "contentType": "multipart-form-data",
-        "bodyParameters": { "parameters": [{ "parameterType": "formBinaryData", "name": "file", "inputDataFieldName": "data" }] },
-        "options": { "timeout": 60000 }
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "file",
+              "inputDataFieldName": "data"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 60000
+        }
       },
       "id": "in-ocr",
       "name": "OCR Weigh Slip (Brain)",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
-      "position": [1060, 100],
-      "retryOnFail": true, "maxTries": 2, "waitBetweenTries": 2000
+      "position": [
+        1060,
+        100
+      ],
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 2000
     },
     {
       "parameters": {
@@ -60,17 +119,33 @@
         "url": "={{ $env.BRAIN_BASE_URL }}/mcp/validate-invoice",
         "authentication": "none",
         "sendHeaders": true,
-        "headerParameters": { "parameters": [{ "name": "X-API-Token", "value": "={{ $env.BRAIN_API_TOKEN }}" }] },
-        "sendBody": true, "contentType": "raw", "rawContentType": "application/json",
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-API-Token",
+              "value": "={{ $env.BRAIN_API_TOKEN }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
         "body": "={{ JSON.stringify({ items: $json.invoice.items, total: $json.invoice.total }) }}",
-        "options": { "timeout": 20000 }
+        "options": {
+          "timeout": 20000
+        }
       },
       "id": "in-validate",
       "name": "Validate Weigh Total",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
-      "position": [1280, 100],
-      "retryOnFail": true, "maxTries": 2, "waitBetweenTries": 2000
+      "position": [
+        1280,
+        100
+      ],
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 2000
     },
     {
       "parameters": {
@@ -80,15 +155,30 @@
       "name": "Merge OCR + Validation",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1500, 100]
+      "position": [
+        1500,
+        100
+      ]
     },
     {
-      "parameters": { "conditions": { "boolean": [{ "value1": "={{ $json.is_valid }}", "value2": true }] } },
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.is_valid }}",
+              "value2": true
+            }
+          ]
+        }
+      },
       "id": "in-isvalid",
       "name": "Weigh Slip Valid?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
-      "position": [1720, 100]
+      "position": [
+        1720,
+        100
+      ]
     },
     {
       "parameters": {
@@ -98,7 +188,10 @@
       "name": "Build Direct Intake",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1060, 320]
+      "position": [
+        1060,
+        320
+      ]
     },
     {
       "parameters": {
@@ -106,8 +199,17 @@
         "url": "={{ $env.RAG_BASE_URL }}/material-batch-insert",
         "authentication": "none",
         "sendHeaders": true,
-        "headerParameters": { "parameters": [{ "name": "x-anser-token", "value": "={{ $env.ANSER_WEBHOOK_TOKEN }}" }] },
-        "sendBody": true, "contentType": "raw", "rawContentType": "application/json",
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-anser-token",
+              "value": "={{ $env.ANSER_WEBHOOK_TOKEN }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
         "body": "={{ $json.intake_body }}",
         "options": {}
       },
@@ -115,8 +217,13 @@
       "name": "Insert Material Batch",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
-      "position": [1940, 200],
-      "retryOnFail": true, "maxTries": 3, "waitBetweenTries": 1000
+      "position": [
+        1940,
+        200
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1000
     },
     {
       "parameters": {
@@ -126,7 +233,10 @@
       "name": "Build Notice",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [2160, 200]
+      "position": [
+        2160,
+        200
+      ]
     },
     {
       "parameters": {
@@ -134,8 +244,17 @@
         "url": "={{ $env.NOTIFY_URL }}",
         "authentication": "none",
         "sendHeaders": true,
-        "headerParameters": { "parameters": [{ "name": "x-anser-token", "value": "={{ $env.ANSER_WEBHOOK_TOKEN }}" }] },
-        "sendBody": true, "contentType": "raw", "rawContentType": "application/json",
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-anser-token",
+              "value": "={{ $env.ANSER_WEBHOOK_TOKEN }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
         "body": "={{ $json.notify_body }}",
         "options": {}
       },
@@ -143,19 +262,27 @@
       "name": "Notify Purchasing",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
-      "position": [2380, 200]
+      "position": [
+        2380,
+        200
+      ]
     },
     {
       "parameters": {
         "respondWith": "json",
         "responseBody": "={{ $('Build Notice').first().json.resp }}",
-        "options": { "responseCode": 201 }
+        "options": {
+          "responseCode": 201
+        }
       },
       "id": "in-resp-201",
       "name": "Respond 201",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
-      "position": [2600, 200]
+      "position": [
+        2600,
+        200
+      ]
     },
     {
       "parameters": {
@@ -163,8 +290,17 @@
         "url": "={{ $env.RAG_BASE_URL }}/pending-review",
         "authentication": "none",
         "sendHeaders": true,
-        "headerParameters": { "parameters": [{ "name": "x-anser-token", "value": "={{ $env.ANSER_WEBHOOK_TOKEN }}" }] },
-        "sendBody": true, "contentType": "raw", "rawContentType": "application/json",
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-anser-token",
+              "value": "={{ $env.ANSER_WEBHOOK_TOKEN }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
         "body": "={{ $json.pending_body }}",
         "options": {}
       },
@@ -172,49 +308,217 @@
       "name": "Insert Pending Review",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
-      "position": [1940, 420],
-      "retryOnFail": true, "maxTries": 3, "waitBetweenTries": 1000
+      "position": [
+        1940,
+        420
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1000
     },
     {
       "parameters": {
         "respondWith": "json",
         "responseBody": "={{ JSON.stringify({ status: 'pending_review', review_id: $json.id }) }}",
-        "options": { "responseCode": 422 }
+        "options": {
+          "responseCode": 422
+        }
       },
       "id": "in-resp-422",
       "name": "Respond 422",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
-      "position": [2160, 420]
+      "position": [
+        2160,
+        420
+      ]
     },
     {
       "parameters": {
         "respondWith": "json",
         "responseBody": "={{ JSON.stringify({ error: $json.error, status: 400 }) }}",
-        "options": { "responseCode": 400 }
+        "options": {
+          "responseCode": 400
+        }
       },
       "id": "in-resp-400",
       "name": "Respond 400",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
-      "position": [840, 460]
+      "position": [
+        840,
+        460
+      ]
     }
   ],
   "connections": {
-    "Receive Material Intake": { "main": [[{ "node": "Verify Anser Token", "type": "main", "index": 0 }]] },
-    "Verify Anser Token": { "main": [[{ "node": "Authorized?", "type": "main", "index": 0 }]] },
-    "Authorized?": { "main": [[{ "node": "From Weigh Slip (OCR)?", "type": "main", "index": 0 }], [{ "node": "Respond 400", "type": "main", "index": 0 }]] },
-    "From Weigh Slip (OCR)?": { "main": [[{ "node": "OCR Weigh Slip (Brain)", "type": "main", "index": 0 }], [{ "node": "Build Direct Intake", "type": "main", "index": 0 }]] },
-    "OCR Weigh Slip (Brain)": { "main": [[{ "node": "Validate Weigh Total", "type": "main", "index": 0 }]] },
-    "Validate Weigh Total": { "main": [[{ "node": "Merge OCR + Validation", "type": "main", "index": 0 }]] },
-    "Merge OCR + Validation": { "main": [[{ "node": "Weigh Slip Valid?", "type": "main", "index": 0 }]] },
-    "Weigh Slip Valid?": { "main": [[{ "node": "Insert Material Batch", "type": "main", "index": 0 }], [{ "node": "Insert Pending Review", "type": "main", "index": 0 }]] },
-    "Build Direct Intake": { "main": [[{ "node": "Insert Material Batch", "type": "main", "index": 0 }]] },
-    "Insert Material Batch": { "main": [[{ "node": "Build Notice", "type": "main", "index": 0 }]] },
-    "Build Notice": { "main": [[{ "node": "Notify Purchasing", "type": "main", "index": 0 }]] },
-    "Notify Purchasing": { "main": [[{ "node": "Respond 201", "type": "main", "index": 0 }]] },
-    "Insert Pending Review": { "main": [[{ "node": "Respond 422", "type": "main", "index": 0 }]] }
+    "Receive Material Intake": {
+      "main": [
+        [
+          {
+            "node": "Verify Anser Token",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verify Anser Token": {
+      "main": [
+        [
+          {
+            "node": "Authorized?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Authorized?": {
+      "main": [
+        [
+          {
+            "node": "From Weigh Slip (OCR)?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond 400",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "From Weigh Slip (OCR)?": {
+      "main": [
+        [
+          {
+            "node": "OCR Weigh Slip (Brain)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Direct Intake",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OCR Weigh Slip (Brain)": {
+      "main": [
+        [
+          {
+            "node": "Validate Weigh Total",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Weigh Total": {
+      "main": [
+        [
+          {
+            "node": "Merge OCR + Validation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge OCR + Validation": {
+      "main": [
+        [
+          {
+            "node": "Weigh Slip Valid?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Weigh Slip Valid?": {
+      "main": [
+        [
+          {
+            "node": "Insert Material Batch",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Insert Pending Review",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Direct Intake": {
+      "main": [
+        [
+          {
+            "node": "Insert Material Batch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert Material Batch": {
+      "main": [
+        [
+          {
+            "node": "Build Notice",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Notice": {
+      "main": [
+        [
+          {
+            "node": "Notify Purchasing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notify Purchasing": {
+      "main": [
+        [
+          {
+            "node": "Respond 201",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert Pending Review": {
+      "main": [
+        [
+          {
+            "node": "Respond 422",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
   },
   "active": false,
-  "settings": { "executionOrder": "v1" }
+  "settings": {
+    "executionOrder": "v1"
+  }
 }
