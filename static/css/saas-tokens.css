@@ -31,7 +31,6 @@ html, body {
 
 /* Disable dark mode / ambient effects */
 .dark-mode { background-color: var(--app-bg) !important; }
-.retail-ambient { display: none !important; }
 
 /* ── 3. Shared Button Styles ────────────────────────────────────── */
 .btn {

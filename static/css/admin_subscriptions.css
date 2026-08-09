@@ -83,11 +83,6 @@
     color: var(--gray-900);
 }
 
-.period {
-    font-size: 16px;
-    color: var(--gray-600);
-}
-
 .plan-save {
     margin-top: 10px;
     color: #43e97b;
@@ -97,19 +92,6 @@
 
 .plan-features {
     padding: 25px;
-}
-
-.feature {
-    padding: 10px 0;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    color: var(--gray-600);
-}
-
-.feature i {
-    color: #43e97b;
-    font-size: 18px;
 }
 
 .badge-expiring {
@@ -132,28 +114,9 @@
 }
 
 /* Automation overview styles */
-.auto-card {
-    display: flex;
-    gap: 16px;
-    background: var(--surface-100);
-    border-radius: 16px;
-    padding: 18px;
-    box-shadow: 0 4px 18px rgba(15,23,42,0.08);
-    align-items: center;
-}
-.auto-card-icon { width: 52px; height: 52px; border-radius: 14px; display:flex; align-items:center; justify-content:center; color:#fff; font-size:20px; }
-.auto-card-body h6 { margin: 0; font-weight: 600; color: var(--gray-900); }
-.auto-card-value { margin: 4px 0; font-size: 20px; font-weight: 700; color: var(--gray-900); }
 .bg-gradient-primary { background: linear-gradient(135deg, #003152, #0077b6); }
 .bg-gradient-warning { background: linear-gradient(135deg, #facc15, #f97316); }
 .bg-gradient-success { background: linear-gradient(135deg, #34d399, #10b981); }
-
-.automation-panel { border-radius: 18px; box-shadow: 0 12px 40px rgba(15,23,42,0.08); }
-.timeline { list-style: none; padding: 0; margin: 0; }
-.timeline li { display:flex; gap:12px; margin-bottom:18px; align-items:center; }
-.timeline-icon { width:40px; height:40px; border-radius:12px; color:#fff; display:flex; align-items:center; justify-content:center; font-size:16px; }
-.timeline h6 { margin:0; font-weight:600; }
-.timeline small { color: var(--gray-600); }
 
 .table-align-middle td, .table-align-middle th { vertical-align: middle; }
 
@@ -191,16 +154,6 @@
 }
 
 .subscriptions-page .plan-card .plan-save,
-.subscriptions-page .plan-card .feature,
-.subscriptions-page .plan-card .period,
-.subscriptions-page .plan-card .amount {
-    color: inherit;
-}
-
-.subscriptions-page .plan-card .feature,
-.subscriptions-page .plan-card .period {
-    color: var(--gray-600);
-}
 
 .subscriptions-page .modal-content {
     background: var(--surface-100);

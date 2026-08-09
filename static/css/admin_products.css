@@ -65,13 +65,6 @@
     color: var(--gray-900);
 }
 
-.excel-guide {
-    background: var(--surface-200);
-    border-radius: 10px;
-    padding: 14px 16px;
-    font-size: 0.85rem;
-}
-
 .guide-table th {
     background: var(--surface-300, #e9ecef);
     font-size: 0.78rem;

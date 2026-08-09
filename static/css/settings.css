@@ -7,16 +7,6 @@
     color: #0f172a;
 }
 
-.settings-card {
-    border: 1px solid var(--border-color);
-    transition: transform 0.2s, box-shadow 0.2s;
-}
-
-.settings-card:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-md) !important;
-}
-
 .settings-icon-box {
     width: 40px;
     height: 40px;
@@ -24,13 +14,6 @@
     display: grid;
     place-items: center;
     color: #0f172a;
-}
-
-.settings-badge-group {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    flex-wrap: wrap;
 }
 
 /* Dark mode adjustments */

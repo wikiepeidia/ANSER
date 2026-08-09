@@ -242,15 +242,6 @@ body.dark-mode #productSearch {
     border-color: var(--input-border);
 }
 
-.history-table-head {
-    background-color: var(--surface-100);
-}
-
-.history-table-head th {
-    background-color: var(--surface-100); /* Ensure headers have background to hide scrolling content */
-    color: var(--bs-body-color); /* Adaptive text color */
-}
-
 /* History Table Fixes */
 #historyTable {
     color: var(--bs-body-color);
@@ -280,7 +271,6 @@ body.dark-mode #productSearch {
     color: var(--gray-500);
 }
 
-
 [data-theme="dark"] .history-toolbar,
 body.dark-mode .history-toolbar {
     background-color: var(--surface-200); /* Darker shade */
@@ -288,11 +278,6 @@ body.dark-mode .history-toolbar {
 }
 
 /* Modal Details Styling */
-.details-header {
-    background-color: var(--surface-200);
-    border: 1px solid var(--border-soft);
-    color: var(--bs-body-color); /* Ensure text is correct color */
-}
 
 /* Force Modal Content to Dark in Dark Mode */
 [data-theme="dark"] .modal-content,
@@ -300,19 +285,6 @@ body.dark-mode .modal-content {
     background-color: var(--surface-100);
     color: var(--bs-body-color);
     border-color: var(--border-strong);
-}
-
-.details-table-header,
-.details-table-footer {
-    background-color: var(--surface-200);
-    color: var(--bs-body-color);
-}
-
-.details-table-header th,
-.details-table-footer td {
-    background-color: var(--surface-200) !important; /* Force bg */
-    color: var(--bs-body-color) !important;
-    border-color: var(--border-soft);
 }
 
 /* Ensure table text follows theme in modal and background is transparent */
@@ -324,12 +296,6 @@ body.dark-mode .modal-content {
 /* --- History Modal Deep Fixes (Dark Mode) --- */
 
 /* Fix History Table Header Background and Text */
-[data-theme="dark"] .history-table-head th,
-body.dark-mode .history-table-head th {
-    background-color: var(--surface-300) !important;
-    color: var(--bs-body-color) !important;
-    border-color: var(--border-soft);
-}
 
 /* Fix History Toolbar Inputs (Search bar) */
 [data-theme="dark"] .history-toolbar .form-control,
@@ -408,5 +374,4 @@ body.dark-mode #historyTable {
     background-color: transparent;
     color: var(--bs-body-color);
 }
-
 

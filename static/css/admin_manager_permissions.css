@@ -1,9 +1,4 @@
 /* Manager Permissions layout */
-.manager-permissions-page {
-    display: flex;
-    min-height: 100vh;
-    background: var(--surface-200);
-}
 
 .permissions-main {
     color: var(--gray-900);
@@ -19,11 +14,6 @@
     background: var(--surface-200);
     color: var(--gray-900);
     transition: background 0.3s ease, color 0.3s ease;
-}
-
-html[data-theme='dark'] .manager-permissions-page,
-body.dark-mode .manager-permissions-page {
-    background: var(--surface-100);
 }
 
 .permissions-header,
@@ -45,9 +35,6 @@ body.dark-mode .permissions-main {
         padding: 1.5rem;
     }
 
-    .manager-permissions-page {
-        flex-direction: column;
-    }
 }
 
 /* Mobile topbar (fixed, 56px) only renders below 768px — restore the
@@ -247,7 +234,6 @@ body.dark-mode .table-header p {
     transform: translateY(-50%);
     color: var(--gray-400);
 }
-
 
 .input-wrapper input {
     padding: 0.5rem 0.75rem 0.5rem 2.5rem;
@@ -485,29 +471,6 @@ body.dark-mode .permissions-table tr:hover td {
     background: rgba(129, 140, 248, 0.12);
 }
 
-.manager-permissions-page .btn-outline-light {
-    color: var(--gray-900) !important;
-    border-color: var(--border-soft) !important;
-}
-
-html[data-theme='dark'] .manager-permissions-page .btn-outline-light,
-body.dark-mode .manager-permissions-page .btn-outline-light {
-    color: var(--gray-900) !important;
-    border-color: var(--gray-400) !important;
-    background: transparent !important;
-}
-
-.manager-permissions-page .btn-outline-light:hover {
-    background: var(--surface-200) !important;
-    color: var(--gray-900) !important;
-}
-
-html[data-theme='dark'] .manager-permissions-page .btn-outline-light:hover,
-body.dark-mode .manager-permissions-page .btn-outline-light:hover {
-    background: var(--surface-300) !important;
-    color: var(--gray-900) !important;
-}
-
 .permissions-header .header-actions .btn-outline-light {
     color: var(--gray-900) !important;
     border-color: var(--border-soft) !important;
@@ -532,25 +495,7 @@ body.dark-mode .permissions-header .header-actions .btn-outline-light:hover {
 }
 
 /* Force override for specific reload button to defeat any residual specificity or inline styles */
-html[data-theme='dark'] .manager-permissions-page .permissions-header .header-actions button.btn.btn-outline-light[onclick="loadUsers()"],
-body.dark-mode .manager-permissions-page .permissions-header .header-actions button.btn.btn-outline-light[onclick="loadUsers()"] {
-    color: var(--gray-900) !important;
-    border-color: var(--gray-400) !important;
-    background: transparent !important;
-    background-image: none !important;
-    box-shadow: none !important;
-}
 
 /* Ensure the icon and text inside also adopt the color */
-html[data-theme='dark'] .manager-permissions-page .permissions-header .header-actions button.btn.btn-outline-light[onclick="loadUsers()"] i,
-body.dark-mode .manager-permissions-page .permissions-header .header-actions button.btn.btn-outline-light[onclick="loadUsers()"] i {
-    color: var(--gray-900) !important;
-}
 
 /* Empty the background and border for active/hover states as well */
-html[data-theme='dark'] .manager-permissions-page .permissions-header .header-actions button.btn.btn-outline-light[onclick="loadUsers()"]:hover,
-body.dark-mode .manager-permissions-page .permissions-header .header-actions button.btn.btn-outline-light[onclick="loadUsers()"]:hover {
-    color: var(--gray-900) !important;
-    border-color: var(--gray-300) !important;
-    background: var(--surface-300) !important;
-}

@@ -72,10 +72,6 @@ html[data-theme='dark'] .main-content, body.dark-mode .main-content {
     opacity: 0.9;
 }
 
-.metric-content {
-    flex: 1;
-}
-
 .metric-label {
     font-size: 12px;
     opacity: 0.9;
@@ -89,13 +85,6 @@ html[data-theme='dark'] .main-content, body.dark-mode .main-content {
     font-size: 28px;
     font-weight: 700;
     margin-bottom: 5px;
-}
-
-.metric-change {
-    font-size: 14px;
-    display: flex;
-    align-items: center;
-    gap: 5px;
 }
 
 .chart-card {
@@ -128,7 +117,6 @@ html[data-theme='dark'] .main-content, body.dark-mode .main-content {
 /* tighten title sizes */
 .chart-card .card-title { font-size:16px; font-weight:700; }
 .chart-card--small .card-title { font-size:15px; }
-
 
 /* Metric card uniform sizing */
 .metric-card { min-height: 84px; display:flex; flex-direction:column; justify-content:center; padding:12px 14px; border-radius:12px; }
@@ -167,7 +155,6 @@ html[data-theme='dark'] .bg-primary.text-white { background: linear-gradient(135
 .metric-value { font-size:20px; font-weight:800; text-align:center; }
 .metric-info-panel { background: rgba(0,0,0,0.04); padding: 10px 14px; border-radius: 10px; margin-bottom: 12px; text-align:center; transition: opacity 0.3s ease; opacity: 1; }
 
-
 /* Ensure sharp chart rendering */
 .chart-card canvas {
     image-rendering: -webkit-optimize-contrast;
@@ -189,18 +176,10 @@ html[data-theme='dark'] .bg-primary.text-white { background: linear-gradient(135
 html[data-theme='dark'] #trafficLegend, body.dark-mode #trafficLegend { color: var(--gray-900) !important; }
 
 /* Ensure legend labels use the same text color as card titles */
-#trafficLegend .traffic-legend-label { color: var(--text-high); }
-html[data-theme='dark'] #trafficLegend .traffic-legend-label, body.dark-mode #trafficLegend .traffic-legend-label { color: var(--gray-900) !important; }
 
 /* Force legend labels to adopt the same style as chart titles (higher specificity + !important) */
-.chart-card #trafficLegend .traffic-legend-label,
-.chart-card--small #trafficLegend .traffic-legend-label { color: var(--text-high) !important; }
-html[data-theme='dark'] .chart-card #trafficLegend .traffic-legend-label,
-body.dark-mode .chart-card #trafficLegend .traffic-legend-label { color: var(--gray-900) !important; }
 
 /* Make legend swatches visible on dark backgrounds */
-#trafficLegend .traffic-legend-swatch { border: 1px solid rgba(0,0,0,0.06); }
-html[data-theme='dark'] #trafficLegend .traffic-legend-swatch { border-color: rgba(255,255,255,0.08); }
 
 [data-theme="dark"] .chart-card { background: var(--surface-900); }
 
@@ -218,93 +197,9 @@ html[data-theme='dark'] #trafficLegend .traffic-legend-swatch { border-color: rg
 .analytics-overview .mt-3 { display:flex; align-items:center; justify-content:center; gap:10px; }
 #btnCheckTracking { min-width:110px; }
 
-
-
-.analytics-page .card {
-    background: var(--surface-100);
-    border: 1px solid var(--border-soft);
-    border-radius: 16px;
-    box-shadow: 0 4px 18px rgba(15, 23, 42, 0.08);
-    transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
-}
-
-.analytics-page .card:hover {
-    box-shadow: 0 10px 35px rgba(15, 23, 42, 0.12);
-}
-
-.analytics-page .card:not([class*='bg-']) .card-body,
-.analytics-page .card:not([class*='bg-']) .card-title,
-.analytics-page .card:not([class*='bg-']) .card-text {
-    color: var(--gray-900);
-}
-
 /* Ensure metric labels are white on the colored metric cards */
 .metric-card .text-muted.small { color: rgba(255,255,255,0.85) !important; }
 .metric-card .h3 { color: #ffffff !important; }
-
-.analytics-page .table {
-    color: var(--gray-900);
-    border-color: var(--border-soft);
-}
-
-.analytics-page .table thead th {
-    background: var(--surface-200);
-    border-bottom: 1px solid var(--border-soft);
-    color: var(--table-header-color) !important;
-    font-weight: 700;
-}
-
-.analytics-page .table tbody tr {
-    background: var(--surface-100);
-    transition: background 0.3s ease;
-}
-
-.analytics-page .table tbody tr:nth-child(even) {
-    background: var(--surface-200);
-}
-
-.analytics-page .table tbody tr:hover {
-    background: var(--surface-300);
-}
-
-.analytics-page .table tbody td {
-    border-top: 1px solid var(--border-soft);
-}
-
-.analytics-page .form-select {
-    background: var(--surface-100);
-    color: var(--gray-900);
-    border: 1px solid var(--border-soft);
-    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.12);
-    transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
-}
-
-.analytics-page .form-select:focus {
-    border-color: var(--primary);
-    box-shadow: 0 0 0 3px rgba(0, 119, 182, 0.25);
-    background: var(--surface-100);
-    color: var(--gray-900);
-}
-
-html[data-theme='dark'] .analytics-page .form-select,
-body.dark-mode .analytics-page .form-select {
-    border-color: var(--gray-400);
-}
-
-html[data-theme='dark'] .analytics-page .form-select:focus,
-body.dark-mode .analytics-page .form-select:focus {
-    border-color: var(--primary);
-}
-
-.analytics-page .card:not([class*='bg-']) .card-title {
-    font-size: 18px;
-    font-weight: 700;
-    color: var(--gray-900);
-    margin-bottom: 20px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
 
 .product-item,
 .customer-item {
@@ -614,63 +509,8 @@ html[data-theme='dark'] .list-item strong {
     border: 1px solid var(--border-soft);
 }
 
-.traffic-legend-item {
-    display: flex !important;
-    align-items: center;
-    gap: 12px;
-    padding: 8px;
-    border-radius: 8px;
-    transition: background 0.2s ease, transform 0.15s ease;
-    margin: 0 !important;
-    float: none !important;
-}
-
-.traffic-legend-item:hover {
-    background: var(--surface-200);
-    transform: translateX(2px);
-}
-
-.traffic-legend-swatch {
-    width: 16px;
-    height: 16px;
-    border-radius: 4px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    flex-shrink: 0;
-}
-
-.traffic-legend-text {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    flex: 1;
-}
-
-.traffic-legend-label {
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--gray-900);
-}
-
-.traffic-legend-value {
-    font-size: 12px;
-    color: var(--gray-600);
-    font-weight: 500;
-}
-
 html[data-theme='dark'] #trafficLegend {
     background: var(--surface-800);
-}
-
-html[data-theme='dark'] .traffic-legend-item:hover {
-    background: var(--surface-700);
-}
-
-html[data-theme='dark'] .traffic-legend-label {
-    color: var(--gray-100);
-}
-
-html[data-theme='dark'] .traffic-legend-value {
-    color: var(--gray-400);
 }
 
 @media (max-width: 768px) {

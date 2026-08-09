@@ -67,11 +67,6 @@ body.dark-mode .sc-tpl-empty {
     border-color: var(--scenario-border, rgba(255,255,255,0.1));
 }
 
-[data-theme="dark"] .tutorial-card {
-    background-color: var(--scenario-panel-alt, #1e293b) !important;
-    color: var(--scenario-text, #f8fafc);
-}
-
 [data-theme="dark"] .text-muted {
     color: var(--scenario-muted, #94a3b8) !important;
 }
@@ -154,29 +149,6 @@ body.scenarios-page {
     justify-content: center;
 }
 
-.logout-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 8px 14px;
-    border-radius: 999px;
-    border: 1px solid var(--scenario-border);
-    color: var(--scenario-text);
-    text-decoration: none;
-    font-size: 0.85rem;
-    transition: all var(--scenario-transition);
-}
-
-.logout-btn:hover {
-    background: rgba(0, 0, 0, 0.05);
-    text-decoration: none;
-}
-
-.search-box {
-    margin-top: 70px;
-    position: relative;
-}
-
 .search-input {
     width: 100%;
     padding: 12px 42px 12px 14px;
@@ -209,88 +181,6 @@ body.scenarios-page {
     color: var(--scenario-muted);
 }
 
-.folders-section {
-    padding: 24px;
-    overflow-y: auto;
-    flex: 1;
-}
-
-.folder-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: var(--scenario-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.08rem;
-    margin-bottom: 14px;
-}
-
-.add-folder-btn {
-    border: none;
-    background: transparent;
-    color: var(--scenario-muted);
-    cursor: pointer;
-    padding: 6px;
-    border-radius: 8px;
-    transition: background var(--scenario-transition), color var(--scenario-transition);
-}
-
-.add-folder-btn:hover {
-    background: rgba(0, 119, 182, 0.08);
-}
-
-.folder-item {
-    display: flex;
-    align-items: center;
-    padding: 14px 16px;
-    border-radius: var(--scenario-radius-md);
-    border: 1px solid transparent;
-    margin-bottom: 10px;
-    transition: all var(--scenario-transition);
-    cursor: pointer;
-}
-
-.folder-item.active {
-    background: rgba(0, 119, 182, 0.1);
-    border-color: var(--scenario-border-strong);
-    box-shadow: 0 10px 25px rgba(0, 119, 182, 0.15);
-}
-
-.folder-item:hover:not(.active) {
-    border-color: var(--scenario-border);
-    background: var(--scenario-card-soft);
-}
-
-.folder-icon {
-    width: 38px;
-    height: 38px;
-    border-radius: 12px;
-    background: rgba(0, 119, 182, 0.12);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-right: 14px;
-    font-size: 1rem;
-}
-
-.folder-info {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-}
-
-.folder-name {
-    font-weight: 600;
-    color: var(--scenario-text);
-}
-
-.folder-count {
-    font-size: 0.8rem;
-    color: var(--scenario-muted);
-}
-
 /* Main Content */
 /* margin-left: 280px and .sidebar-collapsed variant are owned by
    saas-tokens.css (base offset) and style.css (collapsed state) */
@@ -317,11 +207,6 @@ body.scenarios-page {
 /* Inner row to keep header / templates / grid perfectly aligned */
 .content-header > .content-header-inner,
 .content-area > .content-area-inner,
-.scenario-templates-panel > .scenario-templates-inner {
-    width: 100%;
-    max-width: var(--scenario-row-max);
-    margin: 0 auto;
-}
 
 /* Header action row — keep title + status + buttons in one tidy line */
 .sc-header-actions {
@@ -534,37 +419,6 @@ body.scenarios-page {
     margin-top: 32px;
 }
 
-.scenario-card {
-    background: var(--scenario-card-bg);
-    border-radius: var(--scenario-radius-lg);
-    border: 1px solid var(--scenario-border);
-    padding: 24px;
-    box-shadow: 0 15px 35px rgba(15, 23, 42, 0.08);
-    transition: transform var(--scenario-transition), box-shadow var(--scenario-transition);
-}
-
-.scenario-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 20px 45px rgba(15, 23, 42, 0.15);
-}
-
-.scenario-meta {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 0.8rem;
-    color: var(--scenario-muted);
-    margin-top: 18px;
-}
-
-.scenario-tag {
-    padding: 6px 12px;
-    border-radius: 999px;
-    background: var(--scenario-chip-bg);
-    color: var(--scenario-accent);
-    font-weight: 600;
-}
-
 /* Responsive */
 @media (max-width: 1100px) {
     .sidebar {
@@ -593,11 +447,6 @@ body.scenarios-page {
         flex-wrap: wrap;
         border-right: none;
         border-bottom: 1px solid var(--scenario-border);
-    }
-
-    .folders-section {
-        width: 100%;
-        max-height: 220px;
     }
 
     .content-header {

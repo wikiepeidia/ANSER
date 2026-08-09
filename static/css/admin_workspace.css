@@ -36,12 +36,6 @@ body {
     overflow-y: auto;
 }
 
-.workspace-container {
-    display: flex;
-    min-height: 100vh;
-    background: var(--admin-bg);
-}
-
 /* Activity Bar */
 .activity-bar {
     width: 48px;
@@ -149,27 +143,6 @@ body {
     font-size: 0.85rem;
 }
 
-.logout-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.35rem;
-    padding: 0.4rem 0.75rem;
-    border-radius: 6px;
-    font-size: 0.85rem;
-    text-decoration: none;
-    border: 1px solid transparent;
-    background: linear-gradient(135deg, #ff6b6b, #f06595);
-    color: #ffffff;
-    font-weight: 600;
-    transition: all 0.2s ease;
-}
-
-.logout-btn:hover {
-    opacity: 0.9;
-    box-shadow: 0 6px 18px rgba(240, 101, 149, 0.3);
-    text-decoration: none;
-}
-
 .sidebar-title {
     font-size: 0.9rem;
     font-weight: 600;
@@ -252,22 +225,6 @@ body {
     transform: rotate(90deg);
 }
 
-.tree-icon {
-    width: 16px;
-    height: 16px;
-    margin-right: 0.5rem;
-    font-size: 0.8rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.tree-label {
-    flex: 1;
-    font-size: 0.85rem;
-    line-height: 1.4;
-}
-
 .tree-badge {
     background: var(--admin-accent);
     color: #ffffff;
@@ -277,51 +234,7 @@ body {
     margin-left: 0.5rem;
 }
 
-.tree-children {
-    padding-left: 1rem;
-    overflow: hidden;
-    transition: max-height 0.3s ease;
-}
-
-.tree-item:not(.expanded) .tree-children {
-    max-height: 0;
-}
-
-.tree-item.expanded .tree-children {
-    max-height: 1000px;
-}
-
 /* Context Menu */
-.context-menu {
-    position: absolute;
-    background: var(--admin-panel);
-    border: 1px solid var(--admin-border);
-    border-radius: 4px;
-    padding: 0.25rem 0;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-    z-index: 1000;
-    min-width: 160px;
-}
-
-.context-item {
-    padding: 0.5rem 1rem;
-    cursor: pointer;
-    font-size: 0.85rem;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-.context-item:hover {
-    background: #094771;
-    color: #ffffff;
-}
-
-.context-separator {
-    height: 1px;
-    background: #3e3e3e;
-    margin: 0.25rem 0;
-}
 
 /* Main Content */
 .main-content {
@@ -390,54 +303,6 @@ body {
     color: #ffffff;
 }
 
-.editor-area {
-    flex: 1;
-    background: var(--admin-bg);
-    position: relative;
-    overflow: hidden;
-}
-
-.welcome-screen {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 100%;
-    text-align: center;
-    padding: 2rem;
-}
-
-.welcome-logo {
-    font-size: 4rem;
-    margin-bottom: 1rem;
-    background: linear-gradient(135deg, #007acc, #005a9e);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-}
-
-.welcome-title {
-    font-size: 2rem;
-    font-weight: 700;
-    color: var(--admin-text);
-    margin-bottom: 0.5rem;
-}
-
-.welcome-subtitle {
-    font-size: 1.2rem;
-    color: var(--admin-text-dim);
-    margin-bottom: 2rem;
-    max-width: 500px;
-    line-height: 1.6;
-}
-
-.welcome-actions {
-    display: flex;
-    gap: 1rem;
-    flex-wrap: wrap;
-    justify-content: center;
-}
-
 .action-card {
     background: var(--admin-panel);
     border: 1px solid var(--admin-border);
@@ -463,70 +328,9 @@ body {
     margin-bottom: 1rem;
 }
 
-.action-title {
-    font-size: 1rem;
-    font-weight: 600;
-    color: #ffffff;
-    margin-bottom: 0.5rem;
-}
-
-.action-description {
-    font-size: 0.85rem;
-    color: #a0a0a0;
-    line-height: 1.4;
-}
-
 /* Status Bar */
-.status-bar {
-    height: 22px;
-    background: #007acc;
-    color: #ffffff;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 1rem;
-    font-size: 0.75rem;
-}
-
-.status-left {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-}
-
-.status-right {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-}
-
-.status-item {
-    cursor: pointer;
-    padding: 0 0.25rem;
-    border-radius: 2px;
-    transition: background 0.2s ease;
-}
-
-.status-item:hover {
-    background: rgba(255, 255, 255, 0.1);
-}
 
 /* Workspace specific styles */
-.workspace-type-personal {
-    color: #28a745;
-}
-
-.workspace-type-team {
-    color: #007acc;
-}
-
-.workspace-type-project {
-    color: #ffc107;
-}
-
-.workspace-type-scenario {
-    color: #dc3545;
-}
 
 /* Modal Styles */
 .modal {
@@ -704,44 +508,6 @@ body {
     transform: translateX(0);
 }
 
-.panel-header {
-    padding: 1rem;
-    border-bottom: 1px solid var(--admin-border);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-}
-
-.panel-header h4 {
-    color: var(--admin-text);
-    margin: 0;
-    font-size: 1rem;
-}
-
-.panel-close {
-    background: none;
-    border: none;
-    color: var(--admin-text-dim);
-    font-size: 1.2rem;
-    cursor: pointer;
-    padding: 0;
-    width: 20px;
-    height: 20px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.panel-close:hover {
-    color: var(--admin-text);
-}
-
-.panel-content {
-    flex: 1;
-    padding: 1rem;
-    overflow-y: auto;
-}
-
 .item-meta {
     display: flex;
     flex-wrap: wrap;
@@ -824,11 +590,6 @@ body {
 
     .sidebar {
         width: 250px;
-    }
-
-    .welcome-actions {
-        flex-direction: column;
-        align-items: center;
     }
 
     .action-card {

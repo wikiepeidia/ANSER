@@ -97,7 +97,6 @@
     to   { transform: rotate(360deg); }
 }
 
-
 /* ════════════════════════════════════════
    REVEAL — Class tiện ích cho scroll animation
    ════════════════════════════════════════
@@ -136,12 +135,6 @@
 }
 
 /* Delay classes — stagger animation cho nhóm element */
-.reveal-delay-1 { transition-delay: 0.1s; }
-.reveal-delay-2 { transition-delay: 0.2s; }
-.reveal-delay-3 { transition-delay: 0.3s; }
-.reveal-delay-4 { transition-delay: 0.4s; }
-.reveal-delay-5 { transition-delay: 0.5s; }
-.reveal-delay-6 { transition-delay: 0.6s; }
 
 /* Hỗ trợ data-reveal cũ (backward compatible) */
 [data-reveal] {
@@ -169,7 +162,6 @@
 [data-delay="4"] { transition-delay: 0.4s; }
 [data-delay="5"] { transition-delay: 0.5s; }
 [data-delay="6"] { transition-delay: 0.6s; }
-
 
 /* ════════════════════════════════════════
    Giảm animation cho người dùng ưu tiên accessibility
