@@ -1,36 +1,17 @@
 /* Admin Managers page specific styles */
 .main-content {
-    margin-left: 280px;
     padding: 30px;
     background: var(--surface-200);
-    min-height: 100vh;
 }
 
 @media (max-width: 767.98px) {
     .main-content {
-        margin-left: 0;
         padding: 15px;
         padding-top: 76px; /* clears the fixed 56px mobile topbar */
     }
 }
 
-.managers-page .card {
-    background: var(--surface-100);
-    border: 1px solid var(--border-soft);
-    border-radius: 16px;
-    box-shadow: 0 3px 18px rgba(15, 23, 42, 0.08);
-    transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
-}
-
-.managers-page .card:hover {
-    box-shadow: 0 12px 35px rgba(15, 23, 42, 0.12);
-}
-
-.managers-page .card:not([class*='bg-']) .card-body,
-.managers-page .card:not([class*='bg-']) .card-title,
-.managers-page .card:not([class*='bg-']) .card-text {
-    color: var(--gray-900);
-}
+/* .managers-page .card base styling owned by saas-tokens.css */
 
 .managers-page .card-title i {
     color: inherit;

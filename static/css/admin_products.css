@@ -124,15 +124,7 @@
 .import-result .stat-errors   { background: rgba(220, 53, 69, 0.10);  color: #dc3545; }
 
 /* Admin products page layout tweaks */
-.main-content {
-    margin-left: 280px;
-}
-
-@media (max-width: 767.98px) {
-    .main-content {
-        margin-left: 0;
-    }
-}
+/* main-content offset owned by saas-tokens.css */
 
 /* Scoped products page styles to match global dark mode variables */
 .products-page .card {

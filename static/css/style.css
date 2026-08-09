@@ -1887,8 +1887,6 @@ body.dark-mode .social-btn {
 .app-content {
     flex: 1;
     min-width: 0; /* Let flex item shrink below its content's natural width instead of pushing the page into horizontal overflow */
-    min-height: 100vh;
-    margin-left: 280px; /* Matches sidebar width */
     padding: 40px;
     background: var(--surface-200);
     color: var(--input-text);

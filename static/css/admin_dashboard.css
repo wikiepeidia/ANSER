@@ -1,9 +1,7 @@
 /* Admin dashboard page specific styles */
 .main-content {
-    margin-left: 280px;
     padding: 30px;
     background: var(--surface-200);
-    min-height: 100vh;
 }
 
 .dashboard-header {
@@ -153,7 +151,6 @@
    off-screen. */
 @media (max-width: 767.98px) {
     .main-content {
-        margin-left: 0;
         padding: 10px;
         padding-top: 76px; /* clears the fixed 56px mobile topbar */
     }

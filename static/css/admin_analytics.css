@@ -1,9 +1,7 @@
 /* Admin analytics page specific styles */
 .main-content {
-    margin-left: 280px;
     padding: 20px;
     background: linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%);
-    min-height: 100vh;
     position: relative;
     z-index: 1;
 }

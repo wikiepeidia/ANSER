@@ -14,8 +14,6 @@
 .scenario-main {
     flex: 1;
     min-width: 0; /* Let flex item shrink below its content's natural width instead of pushing the page into horizontal overflow */
-    min-height: 100vh;
-    margin-left: 280px;
     padding: 0 40px 40px;
     color: var(--input-text);
     background: var(--surface-200);

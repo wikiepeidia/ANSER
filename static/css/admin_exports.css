@@ -1,7 +1,5 @@
 /* Admin Exports page specific styles */
-.main-content {
-    margin-left: 280px;
-}
+/* main-content offset owned by saas-tokens.css */
 
 .exports-page.main-content, .main-content.exports-page {
     padding: 30px;
@@ -10,9 +8,6 @@
 }
 
 @media (max-width: 767.98px) {
-    .main-content {
-        margin-left: 0;
-    }
     .exports-page.main-content, .main-content.exports-page {
         padding: 15px;
         padding-top: 76px; /* clears the fixed 56px mobile topbar */
