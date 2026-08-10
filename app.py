@@ -147,6 +147,7 @@ def create_app(config_object=None):
                 "'self'",
                 'https://fonts.gstatic.com',
                 'https://cdnjs.cloudflare.com',
+                'https://cdn.jsdelivr.net',
             ],
             'connect-src': ["'self'", 'https://www.google-analytics.com'],
             'object-src': ["'none'"],

@@ -10,103 +10,103 @@
 
     /* Headers */
     .border-bottom {
-        border-bottom: 1px solid var(--border-light) !important;
+        border-bottom: 1px solid var(--border-soft) !important;
         margin-bottom: 32px !important;
         padding-bottom: 16px !important;
     }
     h1.h2 { 
         font-size: 1.5rem; font-weight: 700; letter-spacing: -0.02em; 
-        color: var(--text-main); display: flex; align-items: center; gap: 12px;
+        color: var(--gray-900); display: flex; align-items: center; gap: 12px;
     }
-    h1.h2 i { color: var(--text-muted); font-size: 1.25rem; }
+    h1.h2 i { color: var(--gray-500); font-size: 1.25rem; }
 
     /* Buttons */
     .btn { 
         border-radius: 8px; font-weight: 500; font-size: 0.875rem; 
         padding: 8px 16px; border: 1px solid transparent; 
-        box-shadow: var(--shadow-sm); transition: all 0.2s ease;
+        box-shadow: var(--shadow-md); transition: all 0.2s ease;
         display: inline-flex; align-items: center; gap: 8px;
     }
     .btn i { font-size: 0.85rem; }
     .btn:hover { transform: translateY(-1px); box-shadow: var(--shadow-md); }
     
-    .btn-primary { background-color: var(--accent-primary) !important; color: #fff !important; }
-    .btn-primary:hover { background-color: var(--accent-hover) !important; }
+    .btn-primary { background-color: var(--primary) !important; color: #fff !important; }
+    .btn-primary:hover { background-color: var(--primary-dark) !important; }
     
-    .btn-success { background-color: var(--accent-success) !important; color: #fff !important; }
+    .btn-success { background-color: var(--success) !important; color: #fff !important; }
     .btn-success:hover { background-color: #059669 !important; }
 
     .btn-info { background-color: var(--accent-info) !important; color: #fff !important; }
     .btn-info:hover { background-color: #2563EB !important; }
 
-    .btn-warning { background-color: var(--accent-warning) !important; color: #fff !important; }
+    .btn-warning { background-color: var(--warning) !important; color: #fff !important; }
     .btn-warning:hover { background-color: #D97706 !important; }
     
     .btn-secondary, .btn-outline-secondary { 
-        background-color: #fff !important; color: var(--text-main) !important; 
-        border-color: var(--border-light) !important; box-shadow: var(--shadow-sm) !important;
+        background-color: #fff !important; color: var(--gray-900) !important; 
+        border-color: var(--border-soft) !important; box-shadow: var(--shadow-md) !important;
     }
     .btn-secondary:hover, .btn-outline-secondary:hover { background-color: #F9FAFB !important; }
 
     /* Stat Cards */
     .saas-stat-card {
-        background: var(--card-bg) !important;
-        border: 1px solid var(--border-light) !important;
+        background: var(--surface-100) !important;
+        border: 1px solid var(--border-soft) !important;
         border-radius: 12px !important;
-        box-shadow: var(--shadow-sm) !important;
+        box-shadow: var(--shadow-md) !important;
         padding: 24px; transition: all 0.2s ease; height: 100%;
     }
     .saas-stat-card:hover { border-color: #D1D5DB !important; box-shadow: var(--shadow-md) !important; transform: translateY(-2px); }
     .saas-stat-card .card-body { padding: 0 !important; }
     .saas-stat-card .card-title {
-        font-size: 0.875rem; font-weight: 600; color: var(--text-muted); 
+        font-size: 0.875rem; font-weight: 600; color: var(--gray-500); 
         text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px;
     }
     .saas-stat-card h2 {
-        font-size: 2.25rem; font-weight: 700; color: var(--text-main); margin: 0; line-height: 1; letter-spacing: -0.02em;
+        font-size: 2.25rem; font-weight: 700; color: var(--gray-900); margin: 0; line-height: 1; letter-spacing: -0.02em;
     }
 
     /* Main Content Card (Table Container) */
     .card:not(.saas-stat-card) {
-        background: var(--card-bg) !important;
-        border: 1px solid var(--border-light) !important;
+        background: var(--surface-100) !important;
+        border: 1px solid var(--border-soft) !important;
         border-radius: 12px !important;
-        box-shadow: var(--shadow-sm) !important;
+        box-shadow: var(--shadow-md) !important;
         overflow: hidden;
     }
     .card:not(.saas-stat-card) > .card-body { padding: 0; }
     .card:not(.saas-stat-card) > .card-body > .card-title {
-        padding: 20px 24px; margin: 0; border-bottom: 1px solid var(--border-light);
-        font-size: 1rem; font-weight: 600; color: var(--text-main); background: #fff;
+        padding: 20px 24px; margin: 0; border-bottom: 1px solid var(--border-soft);
+        font-size: 1rem; font-weight: 600; color: var(--gray-900); background: #fff;
     }
 
     /* Table Styling */
     .table { margin-bottom: 0; }
     .table th { 
-        background-color: #F9FAFB; color: var(--text-muted); font-size: 0.75rem; 
+        background-color: #F9FAFB; color: var(--gray-500); font-size: 0.75rem; 
         text-transform: uppercase; letter-spacing: 0.05em; padding: 12px 24px; 
-        border-bottom: 1px solid var(--border-light); font-weight: 600; border-top: none;
+        border-bottom: 1px solid var(--border-soft); font-weight: 600; border-top: none;
     }
     .table td { 
-        padding: 16px 24px; vertical-align: middle; border-bottom: 1px solid var(--border-light); 
-        color: var(--text-main); font-size: 0.875rem; 
+        padding: 16px 24px; vertical-align: middle; border-bottom: 1px solid var(--border-soft); 
+        color: var(--gray-900); font-size: 0.875rem; 
     }
     .table-hover tbody tr:hover { background-color: #F9FAFB; }
     .table tbody tr:last-child td { border-bottom: none; }
 
     /* Modals */
     .modal-content { 
-        border-radius: 16px; border: 1px solid var(--border-light); 
-        box-shadow: var(--shadow-lg); overflow: hidden; background: var(--card-bg);
+        border-radius: 16px; border: 1px solid var(--border-soft); 
+        box-shadow: var(--shadow-lg); overflow: hidden; background: var(--surface-100);
     }
     .modal-header { 
-        background-color: var(--card-bg); border-bottom: 1px solid var(--border-light); 
+        background-color: var(--surface-100); border-bottom: 1px solid var(--border-soft); 
         padding: 20px 24px; 
     }
-    .modal-title { font-weight: 700; color: var(--text-main); font-size: 1.1rem; display: flex; align-items: center; gap: 8px;}
+    .modal-title { font-weight: 700; color: var(--gray-900); font-size: 1.1rem; display: flex; align-items: center; gap: 8px;}
     .modal-body { padding: 24px; }
     .modal-footer { 
-        background-color: #F9FAFB; border-top: 1px solid var(--border-light); 
+        background-color: #F9FAFB; border-top: 1px solid var(--border-soft); 
         padding: 16px 24px; 
     }
     
@@ -116,9 +116,9 @@
         font-size: 0.9rem; box-shadow: inset 0 1px 2px rgba(0,0,0,0.02); transition: all 0.2s;
     }
     .form-control:focus, .form-select:focus { 
-        border-color: var(--accent-primary); box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2); outline: none;
+        border-color: var(--primary); box-shadow: 0 0 0 3px rgba(0, 49, 82, 0.2); outline: none;
     }
-    .form-label { font-weight: 500; color: var(--text-main); font-size: 0.875rem; margin-bottom: 6px; }
+    .form-label { font-weight: 500; color: var(--gray-900); font-size: 0.875rem; margin-bottom: 6px; }
 </style>
 {% endblock %}
 
@@ -223,7 +223,7 @@
 
                     <hr>
                     <h6 data-i18n="sale.colProduct" style="font-weight: 600; margin-bottom: 12px;">Sản phẩm</h6>
-                    <div class="table-responsive mb-3" style="border: 1px solid var(--border-light); border-radius: 8px;">
+                    <div class="table-responsive mb-3" style="border: 1px solid var(--border-soft); border-radius: 8px;">
                         <table class="table" id="exportItemsTable">
                             <thead>
                                 <tr>
@@ -275,7 +275,7 @@
                     <strong data-i18n="imports.notesLabel">Ghi chú:</strong> <span id="viewExportNotes"></span>
                 </div>
 
-                <div class="table-responsive" style="border: 1px solid var(--border-light); border-radius: 8px;">
+                <div class="table-responsive" style="border: 1px solid var(--border-soft); border-radius: 8px;">
                     <table class="table table-striped">
                         <thead>
                             <tr>

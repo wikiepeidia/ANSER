@@ -8,14 +8,14 @@
 <style>
     /* ── Page-specific styles (shared tokens now in saas-tokens.css) ── */
 
-    .create-user-header { border-bottom: 1px solid var(--border-light) !important; margin-bottom: 32px !important; padding-bottom: 16px !important; }
-    .create-user-header h1 { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.02em; color: var(--text-main); margin:0 0 8px 0;}
-    .create-user-header p { color: var(--text-muted); font-size: 0.95rem; margin: 0;}
+    .create-user-header { border-bottom: 1px solid var(--border-soft) !important; margin-bottom: 32px !important; padding-bottom: 16px !important; }
+    .create-user-header h1 { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.02em; color: var(--gray-900); margin:0 0 8px 0;}
+    .create-user-header p { color: var(--gray-500); font-size: 0.95rem; margin: 0;}
 
     /* Override Custom CSS Classes */
     .create-user-card { 
-        background: var(--card-bg) !important; border: 1px solid var(--border-light) !important; 
-        border-radius: 12px !important; box-shadow: var(--shadow-sm) !important; padding: 32px !important; 
+        background: var(--surface-100) !important; border: 1px solid var(--border-soft) !important; 
+        border-radius: 12px !important; box-shadow: var(--shadow-md) !important; padding: 32px !important; 
     }
     
     .info-box { 
@@ -26,28 +26,28 @@
     .info-box i { margin-right: 8px; }
     .info-box p { margin: 0; }
 
-    .form-section h3 { font-size: 1rem !important; font-weight: 600 !important; border-bottom: 1px solid var(--border-light); padding-bottom: 12px; margin-bottom: 24px !important; color: var(--text-main) !important;}
-    .form-group label { font-weight: 600 !important; color: var(--text-main) !important; font-size: 0.875rem !important; margin-bottom: 8px !important; display: block;}
+    .form-section h3 { font-size: 1rem !important; font-weight: 600 !important; border-bottom: 1px solid var(--border-soft); padding-bottom: 12px; margin-bottom: 24px !important; color: var(--gray-900) !important;}
+    .form-group label { font-weight: 600 !important; color: var(--gray-900) !important; font-size: 0.875rem !important; margin-bottom: 8px !important; display: block;}
     
     input[type="email"], input[type="password"], input[type="text"], .search-input { 
-        width: 100%; border-radius: 8px !important; border: 1px solid #D1D5DB !important; padding: 10px 14px !important; font-size: 0.9rem !important; transition: all 0.2s; background: #fff !important; color: var(--text-main) !important; box-shadow: inset 0 1px 2px rgba(0,0,0,0.02);
+        width: 100%; border-radius: 8px !important; border: 1px solid #D1D5DB !important; padding: 10px 14px !important; font-size: 0.9rem !important; transition: all 0.2s; background: #fff !important; color: var(--gray-900) !important; box-shadow: inset 0 1px 2px rgba(0,0,0,0.02);
     }
     input[type="email"]:focus, input[type="password"]:focus, input[type="text"]:focus, .search-input:focus { 
-        border-color: var(--accent-primary) !important; box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2) !important; outline: none;
+        border-color: var(--primary) !important; box-shadow: 0 0 0 3px rgba(0, 49, 82, 0.2) !important; outline: none;
     }
 
     .form-actions { margin-top: 32px !important; display: flex; gap: 12px; }
 
-    .btn { border-radius: 8px; font-weight: 500; font-size: 0.875rem; padding: 10px 20px; border: 1px solid transparent; box-shadow: var(--shadow-sm); transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 8px; cursor: pointer;}
-    .btn-primary { background-color: var(--accent-primary) !important; color: #fff !important; }
+    .btn { border-radius: 8px; font-weight: 500; font-size: 0.875rem; padding: 10px 20px; border: 1px solid transparent; box-shadow: var(--shadow-md); transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 8px; cursor: pointer;}
+    .btn-primary { background-color: var(--primary) !important; color: #fff !important; }
     .btn-primary:hover { background-color: #4F46E5 !important; transform: translateY(-1px); box-shadow: var(--shadow-md); }
-    .btn-secondary { background-color: #fff !important; color: var(--text-main) !important; border-color: var(--border-light) !important; }
+    .btn-secondary { background-color: #fff !important; color: var(--gray-900) !important; border-color: var(--border-soft) !important; }
     .btn-secondary:hover { background-color: #F9FAFB !important; transform: translateY(-1px); }
 
     /* Tables Override */
     .user-table { width: 100%; border-collapse: collapse; margin-top: 16px;}
-    .user-table th { background: #F9FAFB !important; padding: 12px 24px !important; border-bottom: 1px solid var(--border-light) !important; font-size: 0.75rem !important; text-transform: uppercase !important; color: var(--text-muted) !important; font-weight: 600 !important; text-align: left;}
-    .user-table td { padding: 16px 24px !important; border-bottom: 1px solid var(--border-light) !important; font-size: 0.875rem !important; color: var(--text-main) !important;}
+    .user-table th { background: #F9FAFB !important; padding: 12px 24px !important; border-bottom: 1px solid var(--border-soft) !important; font-size: 0.75rem !important; text-transform: uppercase !important; color: var(--gray-500) !important; font-weight: 600 !important; text-align: left;}
+    .user-table td { padding: 16px 24px !important; border-bottom: 1px solid var(--border-soft) !important; font-size: 0.875rem !important; color: var(--gray-900) !important;}
     .user-table tr:hover td { background-color: #F9FAFB !important; }
 </style>
 {% endblock %}
@@ -121,8 +121,8 @@
             <!-- Right Column: User List Table -->
             <div class="col-lg-7 col-xl-8">
                 <div class="create-user-card h-100 mb-0">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; border-bottom: 1px solid var(--border-light); padding-bottom: 16px;">
-                        <h2 style="margin: 0; font-size: 1.1rem; font-weight: 700; color: var(--text-main);"><i class="fas fa-users text-muted me-2"></i> <span data-i18n="createUser.employeeList">Danh sách nhân viên</span></h2>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; border-bottom: 1px solid var(--border-soft); padding-bottom: 16px;">
+                        <h2 style="margin: 0; font-size: 1.1rem; font-weight: 700; color: var(--gray-900);"><i class="fas fa-users text-muted me-2"></i> <span data-i18n="createUser.employeeList">Danh sách nhân viên</span></h2>
                         <button class="btn btn-secondary btn-sm" onclick="loadUserList()" aria-label="Tải lại danh sách">
                             <i class="fas fa-sync-alt"></i> <span data-i18n="mgrPerm.reload">Tải lại</span>
                         </button>
@@ -135,7 +135,7 @@
                         </div>
                     </div>
 
-                    <div style="overflow-x: auto; border: 1px solid var(--border-light); border-radius: 8px;">
+                    <div style="overflow-x: auto; border: 1px solid var(--border-soft); border-radius: 8px;">
                         <table class="user-table mb-0">
                             <thead>
                                 <tr>
@@ -149,7 +149,7 @@
                             <tbody id="userListBody">
                                 <tr>
                                     <td colspan="5" class="text-center py-5 text-muted">
-                                        <i class="fas fa-spinner fa-spin mb-3" style="font-size: 1.5rem; color: var(--accent-primary);"></i>
+                                        <i class="fas fa-spinner fa-spin mb-3" style="font-size: 1.5rem; color: var(--primary);"></i>
                                         <p data-i18n="createUser.loadingList" class="mb-0">Đang tải danh sách...</p>
                                     </td>
                                 </tr>

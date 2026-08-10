@@ -7,41 +7,41 @@
     /* ── Page-specific styles (shared tokens now in saas-tokens.css) ── */
 
     /* Left Panel (Products) */
-    .left-panel { background-color: var(--app-bg) !important; }
+    .left-panel { background-color: var(--body-bg) !important; }
     .search-section .input-group-text, .search-section .form-control {
-        background-color: var(--card-bg); border-color: var(--border-light); 
-        padding-top: 14px; padding-bottom: 14px; font-size: 1rem; box-shadow: var(--shadow-sm);
+        background-color: var(--surface-100); border-color: var(--border-soft); 
+        padding-top: 14px; padding-bottom: 14px; font-size: 1rem; box-shadow: var(--shadow-md);
     }
-    .search-section .form-control:focus { border-color: var(--accent-primary); box-shadow: 0 0 0 3px rgba(99,102,241,0.2); }
+    .search-section .form-control:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(0, 49, 82, 0.2); }
     
-    .section-title { font-size: 1.1rem; font-weight: 700; color: var(--text-main); letter-spacing: -0.02em; }
+    .section-title { font-size: 1.1rem; font-weight: 700; color: var(--gray-900); letter-spacing: -0.02em; }
 
     /* Right Panel (Cart) */
     .right-panel { 
-        background: var(--card-bg) !important; border-left: 1px solid var(--border-light) !important; 
+        background: var(--surface-100) !important; border-left: 1px solid var(--border-soft) !important; 
         box-shadow: -4px 0 20px rgba(0,0,0,0.03) !important; z-index: 10;
     }
-    .cart-header { background: var(--card-bg); border-bottom: 1px solid var(--border-light) !important; padding: 20px !important;}
-    .cart-header h5 { font-size: 1.1rem; font-weight: 700; margin: 0; color: var(--text-main);}
-    .badge.bg-primary { background: #EEF2FF !important; color: var(--accent-primary) !important; font-weight: 600; border: 1px solid #C7D2FE; padding: 6px 12px; }
+    .cart-header { background: var(--surface-100); border-bottom: 1px solid var(--border-soft) !important; padding: 20px !important;}
+    .cart-header h5 { font-size: 1.1rem; font-weight: 700; margin: 0; color: var(--gray-900);}
+    .badge.bg-primary { background: #EEF2FF !important; color: var(--primary) !important; font-weight: 600; border: 1px solid #C7D2FE; padding: 6px 12px; }
 
-    .cart-table th { background: #F9FAFB; color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; padding: 12px 16px; border-bottom: 1px solid var(--border-light); font-weight: 600; }
-    .cart-table td { padding: 16px; vertical-align: middle; border-bottom: 1px solid var(--border-light); color: var(--text-main); font-size: 0.9rem; }
+    .cart-table th { background: #F9FAFB; color: var(--gray-500); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; padding: 12px 16px; border-bottom: 1px solid var(--border-soft); font-weight: 600; }
+    .cart-table td { padding: 16px; vertical-align: middle; border-bottom: 1px solid var(--border-soft); color: var(--gray-900); font-size: 0.9rem; }
     
-    .payment-section { background: #F9FAFB; border-top: 1px solid var(--border-light) !important; padding: 24px !important;}
+    .payment-section { background: #F9FAFB; border-top: 1px solid var(--border-soft) !important; padding: 24px !important;}
     
     /* Payment Buttons */
-    .btn-outline-primary { border-color: var(--border-light); color: var(--text-main); background: #fff; font-weight: 500;}
-    .btn-outline-primary:hover { background: #F9FAFB; border-color: #D1D5DB; color: var(--text-main); }
-    .btn-check:checked + .btn-outline-primary { background-color: #EEF2FF !important; color: var(--accent-primary) !important; border-color: var(--accent-primary) !important; box-shadow: var(--shadow-sm);}
+    .btn-outline-primary { border-color: var(--border-soft); color: var(--gray-900); background: #fff; font-weight: 500;}
+    .btn-outline-primary:hover { background: #F9FAFB; border-color: #D1D5DB; color: var(--gray-900); }
+    .btn-check:checked + .btn-outline-primary { background-color: #EEF2FF !important; color: var(--primary) !important; border-color: var(--primary) !important; box-shadow: var(--shadow-md);}
 
-    .btn-primary { background-color: var(--accent-primary) !important; color: #fff !important; border: none; box-shadow: var(--shadow-sm); }
+    .btn-primary { background-color: var(--primary) !important; color: #fff !important; border: none; box-shadow: var(--shadow-md); }
     .btn-primary:hover { background-color: #4F46E5 !important; transform: translateY(-1px); box-shadow: var(--shadow-md); }
     
     /* Modals */
-    .modal-content { border-radius: 16px; border: 1px solid var(--border-light); box-shadow: var(--shadow-lg); background: var(--card-bg); }
-    .modal-header { border-bottom: 1px solid var(--border-light); padding: 20px 24px; }
-    .modal-title { font-weight: 700; color: var(--text-main); font-size: 1.1rem; }
+    .modal-content { border-radius: 16px; border: 1px solid var(--border-soft); box-shadow: var(--shadow-lg); background: var(--surface-100); }
+    .modal-header { border-bottom: 1px solid var(--border-soft); padding: 20px 24px; }
+    .modal-title { font-weight: 700; color: var(--gray-900); font-size: 1.1rem; }
 </style>
 {% endblock %}
 
@@ -69,7 +69,7 @@
             </div>
 
             <div class="products-grid-container flex-grow-1">
-                <h5 class="mb-4 section-title"><i class="fas fa-box-open me-2" style="color: #6366F1;"></i><span data-i18n="sale.suggested">Gợi ý sản phẩm</span></h5>
+                <h5 class="mb-4 section-title"><i class="fas fa-box-open me-2" style="color: var(--primary);"></i><span data-i18n="sale.suggested">Gợi ý sản phẩm</span></h5>
                 <div id="productSuggestions" class="row row-cols-2 row-cols-md-3 row-cols-xl-4 g-4">
                     <!-- Sản phẩm ngẫu nhiên sẽ được tải tại đây -->
                 </div>
@@ -146,7 +146,7 @@
                 </div>
 
                 <div class="d-grid gap-3">
-                    <button class="btn btn-primary btn-lg py-3 fw-bold" id="btnCompleteSale" disabled style="border-radius: 12px; font-size: 1.1rem; box-shadow: 0 4px 12px rgba(99,102,241,0.3);">
+                    <button class="btn btn-primary btn-lg py-3 fw-bold" id="btnCompleteSale" disabled style="border-radius: 12px; font-size: 1.1rem; box-shadow: 0 4px 12px rgba(0, 49, 82, 0.3);">
                         <i class="fas fa-check-circle me-2"></i> <span data-i18n="sale.completeSale">HOÀN TẤT BÁN HÀNG</span>
                     </button>
                     <button class="btn btn-outline-danger py-2" id="btnClearCart" style="border-radius: 8px; border-color: #FECACA; color: #EF4444; background: transparent;">

@@ -10,39 +10,39 @@
 <style>
     /* ── Page-specific styles (shared tokens now in saas-tokens.css) ── */
     
-    .content-header { border-bottom: 1px solid var(--border-light) !important; margin-bottom: 32px !important; padding-bottom: 24px !important; }
-    .content-title { font-size: 1.8rem !important; font-weight: 700 !important; letter-spacing: -0.02em !important; color: var(--text-main) !important; }
-    .nav-breadcrumb { color: var(--text-muted) !important; font-size: 0.85rem !important; font-weight: 600 !important; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px;}
-    .nav-breadcrumb a { color: var(--accent-primary) !important; text-decoration: none; }
+    .content-header { border-bottom: 1px solid var(--border-soft) !important; margin-bottom: 32px !important; padding-bottom: 24px !important; }
+    .content-title { font-size: 1.8rem !important; font-weight: 700 !important; letter-spacing: -0.02em !important; color: var(--gray-900) !important; }
+    .nav-breadcrumb { color: var(--gray-500) !important; font-size: 0.85rem !important; font-weight: 600 !important; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px;}
+    .nav-breadcrumb a { color: var(--primary) !important; text-decoration: none; }
 
     /* Button Overrides */
-    .create-btn { background-color: var(--accent-primary) !important; color: #fff !important; border-radius: 8px !important; font-weight: 500 !important; border: none !important; box-shadow: var(--shadow-sm) !important; transition: all 0.2s ease !important; }
+    .create-btn { background-color: var(--primary) !important; color: #fff !important; border-radius: 8px !important; font-weight: 500 !important; border: none !important; box-shadow: var(--shadow-md) !important; transition: all 0.2s ease !important; }
     .create-btn:hover { background-color: #4F46E5 !important; transform: translateY(-1px); box-shadow: var(--shadow-md) !important; }
-    .btn-secondary { background-color: #fff !important; color: var(--text-main) !important; border: 1px solid var(--border-light) !important; border-radius: 8px !important; font-weight: 500 !important; box-shadow: var(--shadow-sm) !important; transition: all 0.2s ease !important; }
+    .btn-secondary { background-color: #fff !important; color: var(--gray-900) !important; border: 1px solid var(--border-soft) !important; border-radius: 8px !important; font-weight: 500 !important; box-shadow: var(--shadow-md) !important; transition: all 0.2s ease !important; }
     .btn-secondary:hover { background-color: #F9FAFB !important; transform: translateY(-1px); }
 
     /* JS Injected Card Overrides */
     .sc-card, .sc-tpl-card { 
-        background: var(--card-bg) !important; border: 1px solid var(--border-light) !important; 
-        border-radius: 12px !important; box-shadow: var(--shadow-sm) !important; transition: all 0.2s ease !important;
-        color: var(--text-main) !important;
+        background: var(--surface-100) !important; border: 1px solid var(--border-soft) !important; 
+        border-radius: 12px !important; box-shadow: var(--shadow-md) !important; transition: all 0.2s ease !important;
+        color: var(--gray-900) !important;
     }
-    .sc-card:hover, .sc-tpl-card:hover { border-color: var(--accent-primary) !important; box-shadow: var(--shadow-md) !important; transform: translateY(-2px) !important; }
+    .sc-card:hover, .sc-tpl-card:hover { border-color: var(--primary) !important; box-shadow: var(--shadow-md) !important; transform: translateY(-2px) !important; }
     
-    .sc-card-title, .sc-tpl-title { color: var(--text-main) !important; font-weight: 600 !important; font-size: 1.1rem !important;}
-    .sc-card-desc, .sc-tpl-desc { color: var(--text-muted) !important; font-size: 0.9rem !important; }
+    .sc-card-title, .sc-tpl-title { color: var(--gray-900) !important; font-weight: 600 !important; font-size: 1.1rem !important;}
+    .sc-card-desc, .sc-tpl-desc { color: var(--gray-500) !important; font-size: 0.9rem !important; }
     
     .scenario-templates-panel { background: #EEF2FF !important; border: 1px solid #C7D2FE !important; border-radius: 12px !important; margin-bottom: 32px !important;}
-    .scenario-templates-label { color: var(--accent-primary) !important; font-weight: 600 !important; }
+    .scenario-templates-label { color: var(--primary) !important; font-weight: 600 !important; }
 
     /* Empty State */
-    .empty-state { background: var(--card-bg) !important; border: 1px dashed #D1D5DB !important; border-radius: 12px !important; padding: 48px 24px !important; text-align: center; }
+    .empty-state { background: var(--surface-100) !important; border: 1px dashed #D1D5DB !important; border-radius: 12px !important; padding: 48px 24px !important; text-align: center; }
     .empty-icon i { color: #D1D5DB !important; font-size: 3rem !important; }
-    .empty-title { color: var(--text-main) !important; font-weight: 600 !important; margin-top: 16px !important;}
-    .empty-description { color: var(--text-muted) !important; }
+    .empty-title { color: var(--gray-900) !important; font-weight: 600 !important; margin-top: 16px !important;}
+    .empty-description { color: var(--gray-500) !important; }
 
     /* Status Pill */
-    .sc-status { background: #F3F4F6 !important; border: 1px solid var(--border-light) !important; color: var(--text-main) !important; border-radius: 100px !important; padding: 6px 14px !important; font-size: 0.85rem !important; font-weight: 500 !important; }
+    .sc-status { background: #F3F4F6 !important; border: 1px solid var(--border-soft) !important; color: var(--gray-900) !important; border-radius: 100px !important; padding: 6px 14px !important; font-size: 0.85rem !important; font-weight: 500 !important; }
 </style>
 {% endblock %}
 
@@ -82,7 +82,7 @@
             <div class="sc-tpl-viewport">
                 <button class="sc-tpl-nav prev" data-tpl-dir="prev" aria-label="Cuộn trái"><i class="fas fa-chevron-left"></i></button>
                 <div class="sc-tpl-grid" id="tplGrid">
-                    <div class="sc-tpl-loading" style="color: var(--text-muted); font-weight: 500;">Đang tải templates...</div>
+                    <div class="sc-tpl-loading" style="color: var(--gray-500); font-weight: 500;">Đang tải templates...</div>
                 </div>
                 <button class="sc-tpl-nav next" data-tpl-dir="next" aria-label="Cuộn phải"><i class="fas fa-chevron-right"></i></button>
             </div>
@@ -90,8 +90,8 @@
 
         <!-- Workflows -->
         <div class="content-area">
-            <div id="wfLoading" class="sc-loading" style="color: var(--text-muted); font-weight: 500; padding: 40px;">
-                <i class="fas fa-spinner fa-spin me-2" style="color: var(--accent-primary);"></i> Đang tải workflows...
+            <div id="wfLoading" class="sc-loading" style="color: var(--gray-500); font-weight: 500; padding: 40px;">
+                <i class="fas fa-spinner fa-spin me-2" style="color: var(--primary);"></i> Đang tải workflows...
             </div>
             <div id="wfEmpty" class="empty-state" style="display:none;">
                 <div class="empty-icon"><i class="fas fa-project-diagram"></i></div>

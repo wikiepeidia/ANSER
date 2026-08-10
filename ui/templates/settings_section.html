@@ -7,22 +7,22 @@
 <style>
     /* ── Page-specific styles (shared tokens now in saas-tokens.css) ── */
 
-    .btn { border-radius: 8px; font-weight: 500; font-size: 0.875rem; padding: 8px 16px; border: 1px solid transparent; box-shadow: var(--shadow-sm); transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 8px; }
-    .btn-outline-secondary { background-color: #fff !important; color: var(--text-main) !important; border-color: var(--border-light) !important; }
+    .btn { border-radius: 8px; font-weight: 500; font-size: 0.875rem; padding: 8px 16px; border: 1px solid transparent; box-shadow: var(--shadow-md); transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 8px; }
+    .btn-outline-secondary { background-color: #fff !important; color: var(--gray-900) !important; border-color: var(--border-soft) !important; }
     .btn-outline-secondary:hover { background-color: #F9FAFB !important; transform: translateY(-1px); }
 
     .settings-header-icon {
         width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center;
-        color: #ffffff !important; font-size: 1.2rem; box-shadow: var(--shadow-sm);
+        color: #ffffff !important; font-size: 1.2rem; box-shadow: var(--shadow-md);
     }
 
-    .card { background: var(--card-bg) !important; border: 1px solid var(--border-light) !important; border-radius: 12px !important; box-shadow: var(--shadow-sm) !important; overflow: hidden; margin-bottom: 24px;}
+    .card { background: var(--surface-100) !important; border: 1px solid var(--border-soft) !important; border-radius: 12px !important; box-shadow: var(--shadow-md) !important; overflow: hidden; margin-bottom: 24px;}
     .card-body { padding: 32px; }
 
     .form-control, .form-select { border-radius: 8px; border: 1px solid #D1D5DB; padding: 10px 14px; font-size: 0.9rem; }
-    .form-control:focus, .form-select:focus { border-color: var(--accent-primary); box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2); }
-    .form-label { font-weight: 600; color: var(--text-main); font-size: 0.875rem; margin-bottom: 8px; }
-    .form-text { font-size: 0.8rem; color: var(--text-muted); margin-top: 6px; }
+    .form-control:focus, .form-select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(0, 49, 82, 0.2); }
+    .form-label { font-weight: 600; color: var(--gray-900); font-size: 0.875rem; margin-bottom: 8px; }
+    .form-text { font-size: 0.8rem; color: var(--gray-500); margin-top: 6px; }
 </style>
 {% endblock %}
 
@@ -101,7 +101,7 @@
                 <div class="col-lg-4">
                     <div class="card" style="background: #F9FAFB !important; border-style: dashed !important;">
                         <div class="card-body">
-                            <h6 style="font-weight: 600; color: var(--text-main); margin-bottom: 12px;"><i class="fas fa-info-circle text-primary me-2"></i><span data-i18n="settingsSection.aboutThis">Về mục này</span></h6>
+                            <h6 style="font-weight: 600; color: var(--gray-900); margin-bottom: 12px;"><i class="fas fa-info-circle text-primary me-2"></i><span data-i18n="settingsSection.aboutThis">Về mục này</span></h6>
                             <p class="small text-muted mb-0" style="line-height: 1.5;">
                                 <span data-i18n="settingsSection.autoSaveHint">Thay đổi sẽ được tự động lưu một cách bảo mật ngay khi bạn rời khỏi trường nhập liệu. Không cần phải nhấn nút lưu.</span>
                             </p>

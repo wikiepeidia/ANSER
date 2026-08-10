@@ -9,55 +9,55 @@
     /* ── Page-specific styles (shared tokens now in saas-tokens.css) ── */
     
     /* Header Override */
-    .permissions-header { border-bottom: 1px solid var(--border-light) !important; margin-bottom: 32px !important; padding-bottom: 24px !important; display: flex; justify-content: space-between; align-items: flex-end;}
-    .permissions-header h1 { font-size: 2rem !important; font-weight: 700 !important; letter-spacing: -0.02em !important; color: var(--text-main) !important; margin: 4px 0 8px 0 !important;}
-    .permissions-header p { color: var(--text-muted) !important; margin: 0; font-size: 0.95rem; }
-    .eyebrow { color: var(--text-muted) !important; font-weight: 600 !important; text-transform: uppercase; font-size: 0.75rem !important; letter-spacing: 0.05em; margin-bottom: 4px !important; }
+    .permissions-header { border-bottom: 1px solid var(--border-soft) !important; margin-bottom: 32px !important; padding-bottom: 24px !important; display: flex; justify-content: space-between; align-items: flex-end;}
+    .permissions-header h1 { font-size: 2rem !important; font-weight: 700 !important; letter-spacing: -0.02em !important; color: var(--gray-900) !important; margin: 4px 0 8px 0 !important;}
+    .permissions-header p { color: var(--gray-500) !important; margin: 0; font-size: 0.95rem; }
+    .eyebrow { color: var(--gray-500) !important; font-weight: 600 !important; text-transform: uppercase; font-size: 0.75rem !important; letter-spacing: 0.05em; margin-bottom: 4px !important; }
 
     /* Buttons */
-    .btn { border-radius: 8px; font-weight: 500; font-size: 0.875rem; padding: 10px 20px; border: 1px solid transparent; box-shadow: var(--shadow-sm); transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 8px; }
-    .btn-primary { background-color: var(--accent-primary) !important; color: #fff !important; }
+    .btn { border-radius: 8px; font-weight: 500; font-size: 0.875rem; padding: 10px 20px; border: 1px solid transparent; box-shadow: var(--shadow-md); transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 8px; }
+    .btn-primary { background-color: var(--primary) !important; color: #fff !important; }
     .btn-primary:hover { background-color: #4F46E5 !important; transform: translateY(-1px); box-shadow: var(--shadow-md); }
-    .btn-outline-light { background-color: #fff !important; color: var(--text-main) !important; border: 1px solid var(--border-light) !important; }
+    .btn-outline-light { background-color: #fff !important; color: var(--gray-900) !important; border: 1px solid var(--border-soft) !important; }
     .btn-outline-light:hover { background-color: #F9FAFB !important; transform: translateY(-1px); }
 
     /* Summary Cards */
-    .summary-card { background: var(--card-bg) !important; border: 1px solid var(--border-light) !important; border-radius: 12px !important; box-shadow: var(--shadow-sm) !important; padding: 32px !important; color: var(--text-main) !important; transition: all 0.2s ease;}
+    .summary-card { background: var(--surface-100) !important; border: 1px solid var(--border-soft) !important; border-radius: 12px !important; box-shadow: var(--shadow-md) !important; padding: 32px !important; color: var(--gray-900) !important; transition: all 0.2s ease;}
     .summary-card:hover { border-color: #D1D5DB !important; box-shadow: var(--shadow-md) !important; transform: translateY(-2px); }
-    .summary-card h3 { font-size: 1.5rem !important; font-weight: 700 !important; color: var(--text-main) !important; margin-bottom: 12px !important; letter-spacing: -0.01em;}
-    .summary-card p { color: var(--text-muted) !important; font-size: 0.9rem !important; line-height: 1.5;}
+    .summary-card h3 { font-size: 1.5rem !important; font-weight: 700 !important; color: var(--gray-900) !important; margin-bottom: 12px !important; letter-spacing: -0.01em;}
+    .summary-card p { color: var(--gray-500) !important; font-size: 0.9rem !important; line-height: 1.5;}
     
-    .permission-pill-list li { background: #F3F4F6 !important; border: 1px solid var(--border-light) !important; color: var(--text-main) !important; border-radius: 6px !important; font-size: 0.85rem !important; font-weight: 500 !important; box-shadow: none !important;}
-    .permission-pill-list li i { color: var(--accent-primary) !important; }
+    .permission-pill-list li { background: #F3F4F6 !important; border: 1px solid var(--border-soft) !important; color: var(--gray-900) !important; border-radius: 6px !important; font-size: 0.85rem !important; font-weight: 500 !important; box-shadow: none !important;}
+    .permission-pill-list li i { color: var(--primary) !important; }
 
-    .status-row { border-bottom: 1px solid var(--border-light) !important; padding: 16px 0 !important;}
+    .status-row { border-bottom: 1px solid var(--border-soft) !important; padding: 16px 0 !important;}
     .status-row:last-child { border-bottom: none !important; }
-    .status-row span { color: var(--text-muted) !important; font-weight: 500 !important;}
-    .status-row strong { color: var(--text-main) !important; font-size: 1.1rem !important; font-weight: 700 !important;}
+    .status-row span { color: var(--gray-500) !important; font-weight: 500 !important;}
+    .status-row strong { color: var(--gray-900) !important; font-size: 1.1rem !important; font-weight: 700 !important;}
 
     /* Table Card */
-    .permissions-table-card { background: var(--card-bg) !important; border: 1px solid var(--border-light) !important; border-radius: 12px !important; box-shadow: var(--shadow-sm) !important; overflow: hidden; padding: 0 !important; }
-    .table-header { padding: 24px !important; border-bottom: 1px solid var(--border-light) !important; background: #fff !important; }
-    .table-header h2 { font-size: 1.1rem !important; font-weight: 700 !important; color: var(--text-main) !important; margin-bottom: 4px !important;}
-    .table-header p { color: var(--text-muted) !important; font-size: 0.9rem !important; margin: 0 !important;}
+    .permissions-table-card { background: var(--surface-100) !important; border: 1px solid var(--border-soft) !important; border-radius: 12px !important; box-shadow: var(--shadow-md) !important; overflow: hidden; padding: 0 !important; }
+    .table-header { padding: 24px !important; border-bottom: 1px solid var(--border-soft) !important; background: #fff !important; }
+    .table-header h2 { font-size: 1.1rem !important; font-weight: 700 !important; color: var(--gray-900) !important; margin-bottom: 4px !important;}
+    .table-header p { color: var(--gray-500) !important; font-size: 0.9rem !important; margin: 0 !important;}
     
-    .input-wrapper input { border-radius: 8px !important; border: 1px solid #D1D5DB !important; padding: 10px 14px 10px 36px !important; font-size: 0.9rem !important; background: #fff !important; color: var(--text-main) !important;}
-    .input-wrapper input:focus { border-color: var(--accent-primary) !important; box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2) !important; outline: none; }
+    .input-wrapper input { border-radius: 8px !important; border: 1px solid #D1D5DB !important; padding: 10px 14px 10px 36px !important; font-size: 0.9rem !important; background: #fff !important; color: var(--gray-900) !important;}
+    .input-wrapper input:focus { border-color: var(--primary) !important; box-shadow: 0 0 0 3px rgba(0, 49, 82, 0.2) !important; outline: none; }
     .input-wrapper i { color: #9CA3AF !important; left: 14px !important; }
     .form-select { border-radius: 8px !important; border: 1px solid #D1D5DB !important; padding: 10px 36px 10px 14px !important; font-size: 0.9rem !important; font-weight: 500 !important;}
 
     .permissions-table table { width: 100%; border-collapse: collapse;}
-    .permissions-table th { background-color: #F9FAFB !important; color: var(--text-muted) !important; font-size: 0.75rem !important; text-transform: uppercase; letter-spacing: 0.05em; padding: 16px 24px !important; border-bottom: 1px solid var(--border-light) !important; font-weight: 600 !important; text-align: left;}
-    .permissions-table td { padding: 16px 24px !important; vertical-align: middle; border-bottom: 1px solid var(--border-light) !important; color: var(--text-main) !important; font-size: 0.9rem !important; }
+    .permissions-table th { background-color: #F9FAFB !important; color: var(--gray-500) !important; font-size: 0.75rem !important; text-transform: uppercase; letter-spacing: 0.05em; padding: 16px 24px !important; border-bottom: 1px solid var(--border-soft) !important; font-weight: 600 !important; text-align: left;}
+    .permissions-table td { padding: 16px 24px !important; vertical-align: middle; border-bottom: 1px solid var(--border-soft) !important; color: var(--gray-900) !important; font-size: 0.9rem !important; }
     .permissions-table tr:hover td { background-color: #F9FAFB !important; }
     
-    .loading-state p { color: var(--text-muted) !important; font-weight: 500 !important; margin-top: 12px !important;}
-    .spinner-border { color: var(--accent-primary) !important; }
+    .loading-state p { color: var(--gray-500) !important; font-weight: 500 !important; margin-top: 12px !important;}
+    .spinner-border { color: var(--primary) !important; }
 
     /* Modal */
-    .modal-content { border-radius: 16px; border: 1px solid var(--border-light); box-shadow: var(--shadow-lg); background: var(--card-bg); }
-    .modal-header { border-bottom: 1px solid var(--border-light); padding: 20px 24px; }
-    .modal-title { font-weight: 700; color: var(--text-main); font-size: 1.1rem; }
+    .modal-content { border-radius: 16px; border: 1px solid var(--border-soft); box-shadow: var(--shadow-lg); background: var(--surface-100); }
+    .modal-header { border-bottom: 1px solid var(--border-soft); padding: 20px 24px; }
+    .modal-title { font-weight: 700; color: var(--gray-900); font-size: 1.1rem; }
 </style>
 {% endblock %}
 
@@ -180,8 +180,8 @@
             </div>
             <div class="modal-body p-4">
                 <input type="hidden" id="grantUserId">
-                <div class="mb-4 p-3 rounded" style="background: #F9FAFB; border: 1px solid var(--border-light);">
-                    <label class="form-label mb-0" style="color: var(--text-muted);"><span data-i18n="mgrPerm.userColon">Người dùng:</span> <strong id="grantUserName" style="color: var(--text-main); font-size: 1.1rem; display: block; margin-top: 4px;"></strong></label>
+                <div class="mb-4 p-3 rounded" style="background: #F9FAFB; border: 1px solid var(--border-soft);">
+                    <label class="form-label mb-0" style="color: var(--gray-500);"><span data-i18n="mgrPerm.userColon">Người dùng:</span> <strong id="grantUserName" style="color: var(--gray-900); font-size: 1.1rem; display: block; margin-top: 4px;"></strong></label>
                 </div>
                 <div class="mb-2">
                     <label for="permissionTypeSelect" class="form-label" data-i18n="mgrPerm.selectPermission">Chọn quyền cần cấp</label>

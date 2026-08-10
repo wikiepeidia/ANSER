@@ -21,20 +21,20 @@
     .saas-header {
         display: flex; justify-content: space-between; align-items: flex-end;
         margin-bottom: 40px; padding-bottom: 24px;
-        border-bottom: 1px solid var(--border-light);
+        border-bottom: 1px solid var(--border-soft);
     }
     .saas-eyebrow {
-        color: var(--text-muted); font-weight: 600; text-transform: uppercase;
+        color: var(--gray-500); font-weight: 600; text-transform: uppercase;
         font-size: 0.75rem; letter-spacing: 0.05em; margin-bottom: 8px;
     }
     .saas-header h2 { 
         font-size: 2rem; font-weight: 700; letter-spacing: -0.02em; 
-        color: var(--text-main); margin: 0; 
+        color: var(--gray-900); margin: 0; 
     }
 
     /* Primary CTA Button (Stripe Style) */
     .btn-saas-primary {
-        background-color: var(--accent-primary);
+        background-color: var(--primary);
         color: #ffffff !important; 
         padding: 10px 20px; 
         border-radius: 8px; 
@@ -47,19 +47,19 @@
         transition: all 0.2s ease;
     }
     .btn-saas-primary:hover { 
-        background-color: var(--accent-hover); 
+        background-color: var(--primary-dark); 
         transform: translateY(-1px);
-        box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.2); 
+        box-shadow: 0 4px 6px -1px rgba(0, 49, 82, 0.2); 
     }
     .btn-saas-primary i { font-size: 0.8rem; }
 
     /* 4. Section Titles */
     .saas-section-title {
-        font-size: 1rem; font-weight: 600; color: var(--text-main);
+        font-size: 1rem; font-weight: 600; color: var(--gray-900);
         margin-bottom: 16px; display: flex; align-items: center; gap: 8px;
         letter-spacing: -0.01em;
     }
-    .saas-section-title i { color: var(--text-muted); font-size: 0.9rem; }
+    .saas-section-title i { color: var(--gray-500); font-size: 0.9rem; }
 
     /* 5. Stat Cards (Crisp & White) */
     .saas-stats-grid { 
@@ -68,31 +68,31 @@
     }
     
     .saas-stat-card {
-        background: var(--card-bg); 
-        border: 1px solid var(--border-light); 
+        background: var(--surface-100); 
+        border: 1px solid var(--border-soft); 
         border-radius: 12px; 
         padding: 24px; 
-        box-shadow: var(--shadow-base);
+        box-shadow: var(--shadow-md);
         transition: all 0.2s ease;
     }
     .saas-stat-card:hover {
         border-color: #D1D5DB;
-        box-shadow: var(--shadow-hover);
+        box-shadow: var(--shadow-lg);
         transform: translateY(-2px);
     }
     
     .saas-stat-card p { 
-        font-size: 0.875rem; font-weight: 500; color: var(--text-muted); 
+        font-size: 0.875rem; font-weight: 500; color: var(--gray-500); 
         margin-bottom: 12px; display: flex; justify-content: space-between;
     }
     .saas-stat-card h3 { 
-        font-size: 2.25rem; font-weight: 700; color: var(--text-main); 
+        font-size: 2.25rem; font-weight: 700; color: var(--gray-900); 
         margin: 0 0 12px 0; letter-spacing: -0.02em; line-height: 1; 
     }
     .saas-stat-pill { 
         display: inline-block; padding: 2px 8px; 
-        background: #F3F4F6; border: 1px solid var(--border-light);
-        border-radius: 6px; color: var(--text-muted); 
+        background: #F3F4F6; border: 1px solid var(--border-soft);
+        border-radius: 6px; color: var(--gray-500); 
         font-size: 0.75rem; font-weight: 500; 
     }
 
@@ -102,32 +102,32 @@
     }
     .saas-action-card {
         display: flex; align-items: flex-start; gap: 16px; padding: 20px;
-        background: var(--card-bg); border: 1px solid var(--border-light);
-        border-radius: 12px; box-shadow: var(--shadow-base);
+        background: var(--surface-100); border: 1px solid var(--border-soft);
+        border-radius: 12px; box-shadow: var(--shadow-md);
         text-decoration: none !important; color: inherit; cursor: pointer;
         transition: all 0.2s ease;
     }
     .saas-action-card:hover {
-        border-color: var(--accent-primary);
-        box-shadow: var(--shadow-hover);
+        border-color: var(--primary);
+        box-shadow: var(--shadow-lg);
         transform: translateY(-2px);
     }
     
     .action-icon-wrapper {
         width: 40px; height: 40px; border-radius: 8px; 
         background: #EEF2FF; /* Very light indigo */
-        color: var(--accent-primary); 
+        color: var(--primary); 
         display: flex; align-items: center; justify-content: center;
         font-size: 1.1rem; flex-shrink: 0;
     }
     
     .action-content { flex: 1; }
     .action-content h4 { 
-        font-size: 0.95rem; font-weight: 600; color: var(--text-main); 
+        font-size: 0.95rem; font-weight: 600; color: var(--gray-900); 
         margin: 0 0 4px 0; 
     }
     .action-content p { 
-        margin: 0; font-size: 0.85rem; color: var(--text-muted); line-height: 1.4;
+        margin: 0; font-size: 0.85rem; color: var(--gray-500); line-height: 1.4;
     }
     
     .action-arrow { 
@@ -135,7 +135,7 @@
         margin-top: 2px;
     }
     .saas-action-card:hover .action-arrow { 
-        color: var(--accent-primary); transform: translateX(4px); 
+        color: var(--primary); transform: translateX(4px); 
     }
 
     @media (max-width: 992px) {

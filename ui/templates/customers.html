@@ -8,29 +8,29 @@
 <style>
     /* ── Page-specific styles (shared tokens now in saas-tokens.css) ── */
 
-    .border-bottom { border-bottom: 1px solid var(--border-light) !important; margin-bottom: 32px !important; padding-bottom: 16px !important; }
-    h1.h2 { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.02em; color: var(--text-main); display: flex; align-items: center; gap: 12px; margin:0;}
-    h1.h2 i { color: var(--text-muted); font-size: 1.25rem; }
+    .border-bottom { border-bottom: 1px solid var(--border-soft) !important; margin-bottom: 32px !important; padding-bottom: 16px !important; }
+    h1.h2 { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.02em; color: var(--gray-900); display: flex; align-items: center; gap: 12px; margin:0;}
+    h1.h2 i { color: var(--gray-500); font-size: 1.25rem; }
 
-    .btn { border-radius: 8px; font-weight: 500; font-size: 0.875rem; padding: 8px 16px; border: 1px solid transparent; box-shadow: var(--shadow-sm); transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 8px; }
-    .btn-primary { background-color: var(--accent-primary) !important; color: #fff !important; }
+    .btn { border-radius: 8px; font-weight: 500; font-size: 0.875rem; padding: 8px 16px; border: 1px solid transparent; box-shadow: var(--shadow-md); transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 8px; }
+    .btn-primary { background-color: var(--primary) !important; color: #fff !important; }
     .btn-primary:hover { background-color: #4F46E5 !important; transform: translateY(-1px); box-shadow: var(--shadow-md); }
-    .btn-secondary { background-color: #fff !important; color: var(--text-main) !important; border-color: var(--border-light) !important; }
+    .btn-secondary { background-color: #fff !important; color: var(--gray-900) !important; border-color: var(--border-soft) !important; }
 
-    .card { background: var(--card-bg) !important; border: 1px solid var(--border-light) !important; border-radius: 12px !important; box-shadow: var(--shadow-sm) !important; overflow: hidden; margin-bottom: 24px;}
+    .card { background: var(--surface-100) !important; border: 1px solid var(--border-soft) !important; border-radius: 12px !important; box-shadow: var(--shadow-md) !important; overflow: hidden; margin-bottom: 24px;}
     .card-body { padding: 0; }
 
     .table { margin-bottom: 0; }
-    .table th { background-color: #F9FAFB; color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; padding: 12px 24px; border-bottom: 1px solid var(--border-light); font-weight: 600; border-top: none;}
-    .table td { padding: 16px 24px; vertical-align: middle; border-bottom: 1px solid var(--border-light); color: var(--text-main); font-size: 0.875rem; }
+    .table th { background-color: #F9FAFB; color: var(--gray-500); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; padding: 12px 24px; border-bottom: 1px solid var(--border-soft); font-weight: 600; border-top: none;}
+    .table td { padding: 16px 24px; vertical-align: middle; border-bottom: 1px solid var(--border-soft); color: var(--gray-900); font-size: 0.875rem; }
     .table-hover tbody tr:hover { background-color: #F9FAFB; }
     .table tbody tr:last-child td { border-bottom: none; }
 
-    .modal-content { border-radius: 16px; border: 1px solid var(--border-light); }
-    .modal-header, .modal-body, .modal-footer { border-color: var(--border-light); }
+    .modal-content { border-radius: 16px; border: 1px solid var(--border-soft); }
+    .modal-header, .modal-body, .modal-footer { border-color: var(--border-soft); }
     .form-control { border-radius: 8px; border: 1px solid #D1D5DB; padding: 10px 14px; font-size: 0.9rem; }
-    .form-control:focus { border-color: var(--accent-primary); box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2); }
-    .form-label { font-weight: 600; color: var(--text-main); font-size: 0.875rem; margin-bottom: 8px; }
+    .form-control:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(0, 49, 82, 0.2); }
+    .form-label { font-weight: 600; color: var(--gray-900); font-size: 0.875rem; margin-bottom: 8px; }
 </style>
 {% endblock %}
 
