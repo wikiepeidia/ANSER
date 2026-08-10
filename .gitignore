@@ -34,3 +34,9 @@ src/data/*.jsonl
 offline_training/*.jsonl
 offline_training/product_catalogs.json
 *.pyc
+# Corpus — không đưa vào git
+src/data/corpus/
+data/vector_db/
+*.docx
+*.pdf
+!docs/**/*.pdf
