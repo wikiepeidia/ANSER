@@ -1,5 +1,9 @@
 # Luật Thuế giá trị gia tăng
 # Trạng thái file: SẠCH — đã sửa 2 lỗi l)/1), đã xóa rác đầu/cuối
+#
+# LƯU Ý: file .txt giữ nguyên văn bản NHƯ ĐÃ BAN HÀNH, không cập nhật theo
+# văn bản sửa đổi. Sửa đổi được theo dõi qua bi_sua_doi_boi bên dưới và qua
+# việc nạp văn bản sửa đổi vào corpus như một file riêng.
 so_hieu: "48/2024/QH15"
 loai_vb: luat
 co_quan: "Quốc hội"
@@ -7,7 +11,7 @@ co_quan: "Quốc hội"
 ngay_ban_hanh: 2024-11-26        # kỳ họp thứ 8 khóa XV thông qua
 ngay_hieu_luc: 2025-07-01
 ngay_het_hieu_luc: null
-trang_thai: con_hieu_luc
+trang_thai: duoc_sua_doi         # cũ: con_hieu_luc
 
 # Điều 18 khoản 2: quy định về mức doanh thu của hộ, cá nhân kinh doanh
 # tại khoản 25 Điều 5 và Điều 17 chỉ có hiệu lực từ 01/01/2026.
@@ -19,14 +23,30 @@ hieu_luc_bo_phan:
 
 linh_vuc: [thue_gtgt]
 huong_dan_cho: []
+duoc_huong_dan_boi: ["181/2025/NĐ-CP", "69/2025/TT-BTC"]
 sua_doi: ["13/2008/QH12", "31/2013/QH13", "71/2014/QH13", "106/2016/QH13"]
-bi_sua_doi_boi: []               # <<< tra công báo xem đã có văn bản nào sửa chưa
+
+# Tra ngày 11/8/2026. Nguồn thứ cấp — cần đối chiếu công báo trước khi
+# đưa hai văn bản này vào corpus.
+bi_sua_doi_boi:
+  - so_hieu: "90/2025/QH15"
+    ghi_chu: "Sửa đổi, bổ sung một số điều"
+    da_co_trong_corpus: false
+  - so_hieu: "Luật sửa đổi, bổ sung một số điều của Luật Thuế GTGT"
+    ngay_thong_qua: 2025-12-11    # kỳ họp thứ 10 khóa XV
+    ngay_hieu_luc: 2026-01-01
+    ghi_chu: >
+      Sửa khoản 1 Điều 5 (sản phẩm cây trồng, chăn nuôi, thủy sản chưa chế biến);
+      sửa khoản 5 Điều 9 (phế phẩm, phụ phẩm, phế liệu);
+      BÃI BỎ khoản 3 Điều 12 và điểm c khoản 9 Điều 15.
+    da_co_trong_corpus: false
 
 nguon_url: ""                    # <<< dán URL đã tải
 ngay_tai: 2026-08-11
+ngay_kiem_tra_sua_doi: 2026-08-11
 dinh_dang_goc: pdf_text          # có text layer, không cần OCR
 file_goc: "luat48-2024.pdf"
-sha256_txt: "c8d111fc532a75b2"
+sha256_txt: "c8d111fc532a75b2"   # KHÔNG đổi — file .txt không bị sửa
 n_ky_tu: 43921
 n_dieu: 18
 

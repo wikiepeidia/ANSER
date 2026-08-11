@@ -14,7 +14,7 @@ from rank_bm25 import BM25Okapi
 logger = logging.getLogger("projecta.knowledge")
 
 class KnowledgeBase:
-    def __init__(self, persist_dir="./data/vector_db", doc_dir="./src/data/docs"):
+    def __init__(self, persist_dir="./data/vector_db", doc_dir="./src/data/corpus/legal"):
         # Ngưỡng điểm cross-encoder để coi là liên quan.
         # Tăng lên nếu vẫn lọt tài liệu lạc đề, giảm nếu bỏ sót.
         self.relevance_threshold = float(
