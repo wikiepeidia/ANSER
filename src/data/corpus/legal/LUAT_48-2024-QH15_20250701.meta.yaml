@@ -1,0 +1,33 @@
+# Luật Thuế giá trị gia tăng
+# Trạng thái file: SẠCH — đã sửa 2 lỗi l)/1), đã xóa rác đầu/cuối
+so_hieu: "48/2024/QH15"
+loai_vb: luat
+co_quan: "Quốc hội"
+
+ngay_ban_hanh: 2024-11-26        # kỳ họp thứ 8 khóa XV thông qua
+ngay_hieu_luc: 2025-07-01
+ngay_het_hieu_luc: null
+trang_thai: con_hieu_luc
+
+# Điều 18 khoản 2: quy định về mức doanh thu của hộ, cá nhân kinh doanh
+# tại khoản 25 Điều 5 và Điều 17 chỉ có hiệu lực từ 01/01/2026.
+hieu_luc_bo_phan:
+  - dieu: [5, 17]
+    khoan: 25
+    ngay_hieu_luc: 2026-01-01
+    ghi_chu: "Mức doanh thu hộ, cá nhân kinh doanh không chịu thuế"
+
+linh_vuc: [thue_gtgt]
+huong_dan_cho: []
+sua_doi: ["13/2008/QH12", "31/2013/QH13", "71/2014/QH13", "106/2016/QH13"]
+bi_sua_doi_boi: []               # <<< tra công báo xem đã có văn bản nào sửa chưa
+
+nguon_url: ""                    # <<< dán URL đã tải
+ngay_tai: 2026-08-11
+dinh_dang_goc: pdf_text          # có text layer, không cần OCR
+file_goc: "luat48-2024.pdf"
+sha256_txt: "c8d111fc532a75b2"
+n_ky_tu: 43921
+n_dieu: 18
+
+ingest: true

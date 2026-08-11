@@ -1,0 +1,26 @@
+# Nghị quyết giảm 2% thuế suất thuế GTGT
+# Trạng thái file: SẠCH — không cần sửa gì
+so_hieu: "204/2025/QH15"
+loai_vb: nghi_quyet
+co_quan: "Quốc hội"
+
+ngay_ban_hanh: 2025-06-17        # kỳ họp thứ 9 khóa XV thông qua
+ngay_hieu_luc: 2025-07-01
+ngay_het_hieu_luc: 2026-12-31    # ghi rõ trong Điều 2 — MỐC KIỂM THỬ filter hiệu lực
+trang_thai: con_hieu_luc
+
+linh_vuc: [thue_gtgt, giam_thue]
+huong_dan_cho: ["48/2024/QH15"]
+duoc_huong_dan_boi: ["174/2025/NĐ-CP"]
+sua_doi: []
+bi_sua_doi_boi: []
+
+nguon_url: ""                    # <<< dán URL đã tải
+ngay_tai: 2026-08-11
+dinh_dang_goc: pdf_ocr
+file_goc: "204-qh15.signed.pdf"
+sha256_txt: "74a6c3efd5d77574"
+n_ky_tu: 1321
+n_dieu: 2
+
+ingest: true

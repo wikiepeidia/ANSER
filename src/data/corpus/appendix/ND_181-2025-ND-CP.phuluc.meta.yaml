@@ -1,0 +1,42 @@
+# Phụ lục I & II của NĐ 181/2025/NĐ-CP — Danh mục tài nguyên, khoáng sản
+# Đã số hóa thành CSV. Phụ lục III, IV, V là biểu mẫu -> không số hóa.
+so_hieu: "181/2025/NĐ-CP"
+loai_vb: phu_luc
+thuoc_van_ban: "181/2025/NĐ-CP"
+
+ngay_hieu_luc: 2025-07-01
+ngay_het_hieu_luc: null
+trang_thai: con_hieu_luc
+linh_vuc: [thue_gtgt, tai_nguyen_khoang_san]
+
+noi_dung:
+  - "Phụ lục I  — Tài nguyên, khoáng sản khai thác CHƯA chế biến thành sản phẩm khác (Chương 25, 26, 27)"
+  - "Phụ lục II — Tài nguyên, khoáng sản khai thác ĐÃ chế biến thành sản phẩm khác (Chương 28, 71-81)"
+
+# Phụ lục III, IV, V là biểu mẫu và công thức, không phải danh mục tra cứu.
+phu_luc_khong_so_hoa:
+  - "Phụ lục III — Mẫu kê hàng bán cho khách xuất cảnh, cửa hàng miễn thuế"
+  - "Phụ lục IV  — Hoàn thuế hàng mua tại VN của người nước ngoài xuất cảnh"
+  - "Phụ lục V   — Xác định tỷ trọng trị giá tài nguyên trên giá thành"
+
+file_csv: "ND_181-2025-ND-CP.phuluc.csv"
+file_txt: "ND_181-2025-ND-CP.phuluc.txt"
+n_ban_ghi: 504
+n_co_ma_hs: 493
+sha256_txt: "169beaf54c99ea8a"
+
+# 59 bản ghi (12%) có cột can_kiem_tra='x': OCR làm lệch cột nên mô tả của mã
+# trước bị đẩy xuống mã sau. Phải đối chiếu bản gốc PDF trước khi tin.
+n_can_kiem_tra: 59
+file_can_kiem_tra: "can_kiem_tra_181.csv"
+trang_thai_kiem_tra: chua_doi_chieu    # <<< đổi thành 'da_doi_chieu' khi xong
+
+nguon_url: ""                          # <<< dán URL đã tải
+ngay_tai: 2026-08-11
+dinh_dang_goc: pdf_ocr
+file_goc: "181-2025.pdf"
+
+ingest: true
+collection: anser_legal_phuluc
+# KHÔNG index chung anser_legal: 504 dòng dày đặc từ khóa chung
+# ("loại khác", "hàng hóa") sẽ cạnh tranh với điều khoản thật ở nhánh BM25.

@@ -1,0 +1,35 @@
+# Nghị định quy định chính sách giảm thuế GTGT theo NQ 204/2025/QH15
+# Trạng thái file: SẠCH (phần thân) — Phụ lục I, II chưa số hóa
+so_hieu: "174/2025/NĐ-CP"
+loai_vb: nghi_dinh
+co_quan: "Chính phủ"
+
+ngay_ban_hanh: 2025-06-30
+ngay_hieu_luc: 2025-07-01
+ngay_het_hieu_luc: 2026-12-31    # xác nhận tại Điều 2 khoản 1 của chính nghị định
+trang_thai: con_hieu_luc
+
+linh_vuc: [thue_gtgt, giam_thue]
+huong_dan_cho: ["204/2025/QH15"]
+sua_doi: []
+bi_sua_doi_boi: []
+
+nguon_url: ""                    # <<< dán URL đã tải
+ngay_tai: 2026-08-11
+dinh_dang_goc: pdf_ocr
+file_goc: "174nd.signed.pdf"
+sha256_txt: "f8761f573c4ea8c1"
+n_ky_tu: 5724
+n_dieu: 2
+
+ingest: true
+
+# Phụ lục I & II = danh mục hàng KHÔNG được giảm còn 8%.
+# Đây là dữ liệu mcp_server.py cần để quyết định 8% hay 10%.
+phu_luc_can_so_hoa:
+  - ten: "Phụ lục I"
+    noi_dung: "Viễn thông, tài chính, ngân hàng, chứng khoán, bảo hiểm, bất động sản, sản phẩm kim loại, khai khoáng (trừ than)"
+    trang_thai: chua_so_hoa
+  - ten: "Phụ lục II"
+    noi_dung: "Hàng hóa, dịch vụ chịu thuế tiêu thụ đặc biệt (trừ xăng)"
+    trang_thai: chua_so_hoa

@@ -1,0 +1,39 @@
+# Phụ lục I của TT 69/2025/TT-BTC — Bảng tỷ lệ % tính thuế GTGT
+# INGEST: đây là dữ liệu cốt lõi, mcp_server.py tra trực tiếp
+so_hieu: "69/2025/TT-BTC"
+loai_vb: phu_luc
+thuoc_van_ban: "69/2025/TT-BTC"
+
+ngay_hieu_luc: 2025-07-01
+ngay_het_hieu_luc: null
+trang_thai: con_hieu_luc
+linh_vuc: [thue_gtgt, ty_le_tinh_thue]
+
+# Xác nhận chéo với Điều 12 khoản 2 Luật 48/2024/QH15 — bốn giá trị khớp
+ty_le_tinh_thue:
+  - nhom: 1
+    nganh: "Phân phối, cung cấp hàng hóa"
+    ty_le: 0.01
+    can_cu: "điểm b1 khoản 2 Điều 12 Luật 48/2024/QH15"
+  - nhom: 2
+    nganh: "Dịch vụ, xây dựng không bao thầu nguyên vật liệu"
+    ty_le: 0.05
+    can_cu: "điểm b2 khoản 2 Điều 12 Luật 48/2024/QH15"
+  - nhom: 3
+    nganh: "Sản xuất, vận tải, dịch vụ gắn với hàng hóa, xây dựng có bao thầu nguyên vật liệu"
+    ty_le: 0.03
+    can_cu: "điểm b3 khoản 2 Điều 12 Luật 48/2024/QH15"
+  - nhom: 4
+    nganh: "Hoạt động kinh doanh khác"
+    ty_le: 0.02
+    can_cu: "điểm b4 khoản 2 Điều 12 Luật 48/2024/QH15"
+
+nguon_url: ""                    # <<< dán URL đã tải
+ngay_tai: 2026-08-11
+dinh_dang_goc: pdf_ocr
+file_goc: "69-btc.signed.pdf"
+sha256_txt: "1fe3cf38dd6a93ab"
+n_ky_tu: 3874
+
+ingest: true
+collection: anser_legal_phuluc

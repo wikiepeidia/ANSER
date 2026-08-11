@@ -1,0 +1,1654 @@
+Phụ lục I
+NGUYÊN, KHOÁNG SẢN KHAI THÁC
+ỬA CHẾ BIẾN THÀNH SẢN PHẨM KHÁC
+Kèm theo Nghị định số 181/2025/NĐ-CP
+Mã hàng
+| Mô tả hàng hoá
+Chương 25
+| Muối; lưu huỳnh; đất và đá; thạch cao, vôi và xi măng
+2502.00.00
+| Pirít sắt chưa nung.
+2503.00.00
+| Lưu huỳnh các loại, trừ lưu huỳnh thăng hoa, lưu huỳnh kết tủa và lưu
+huỳnh dạng keo.
+25.04
+| Graphit tự nhiên.
+2504.10.00
+| Ở dạng bột hoặc dạng mảnh
+2504.90.00
+| Loại khác
+i
+25.05
+| Các loại cát tự nhiên, đã hoặc chưa nhuộm màu, trừ cát chứa kim loại
+thuộc Chương 26.
+2505.10.00
+| Cát oxit silic và cát thạch anh:
+2505.10.00.10
+| Bột oxit silic mịn và siêu mịn có kích thước hạt từ 96µm (micrô mét) trở
+xuống, hàm lượng SiO2 ≥ 97,7%, Fe2O3 ≤ 0,030%, độ ẩm ≤ 0,3%
+2505.10.00.20
+| - - Bột oxit silic mịn có kích thước hạt từ 500 µm (micromet) trở xuống, hàm
+lượng $SiO2\ge99,3\%$; Fe2O3 ≤ 0,01%, độ $\dot{a}m\le5\%$
+2505.10.00.90
+| - - Loại khác
+2505.90.00
+| Loại khác
+25.06.
+| Thạch anh (trừ cát tự nhiên); quartzite, đã hoặc chưa đẽo thô hoặc mới
+chỉ được cắt, bằng cưa hoặc cách khác, thành khối hoặc tấm hình chữ
+nhật (kể cả hình vuông).
+2506.10.00
+| Thạch anh
+2506.20.00
+| Quartzite
+2507.00.00
+| Cao lanh và đất sét cao lanh khác, đã hoặc chưa nung.
+25.08
+| Đất sét khác (không kể đất sét trương nở thuộc nhóm 68.06),
+andalusite, kyanite và sillimanite, đã hoặc chưa nung; mullite; đất chịu
+lửa (chamotte) hoặc đất dinas.
+2508.10.00
+| Bentonite
+2508.30.00
+| Đất sét chịu lửa
+2508.40
+| Đất sét khác:
+2508.40.10
+| - - Đất hồ (đất tẩy màu)
+2508.40.90
+| Loại khác
+2508.50.00
+| Andalusite, kyanite và sillimanite
+2508.60.00
+| Mullite
+2508.70.00
+| Đất chịu lửa hoặc đất dinas
+2509.00.00
+| Đá phấn.
+Mã hàng
+| Mô tả hàng hoá
+25.10
+| Canxi phosphat tự nhiên, canxi phosphat nhôm tự nhiên và đá phấn có
+chứa phosphat.
+2510.10
+| |- Chưa nghiền:
+AL
+2510.10.10
+| -- Apatit (apatite)
+2510.10.90
+| - - Loại khác
+2510.20
+| |- Đã nghiền:
+2510.20.10
+2510.20.10.10
+2510.20.10.20
+| -- Apatít (apatite):
+- - - Loại hạt mịn có kích thước nhỏ hơn hoặc bằng 0,25 mm
+- Loại hạt có kích thước trên 0,25 mm đến 15 mm
+2510.20.10.90
+| Loại khác
+2510.20.90
+| Loại khác
+25.11
+2511.10.00
+| Bari sulphat tự nhiên (barytes); bari carbonat tự nhiên (witherite), đã
+hoặc chưa nung, trừ bari oxit thuộc nhóm 28.16.
+- Bari sulphat tự nhiên (barytes)
+2511.20.00
+| - Bari carbonat tự nhiên (witherite)
+2512.00.00
+| Bột hóa thạch silic (ví dụ, đất tảo cát, tripolite và diatomite) và đất silic
+tương tự, đã hoặc chưa nung, có trọng lượng riêng biểu kiến không quá
+1.
+25.13
+| Đá bọt; đá nhám; corundum tự nhiên, đá garnet tự nhiên và đá mài tự
+nhiên khác, đã hoặc chưa qua xử lý nhiệt.
+2513.10.00
+| - Đá bọt
+2513.20.00
+| Đá nhám, corundum tự nhiên, đá garnet tự nhiên và đá mài tự nhiên khác
+2514.00.00
+| Đá phiến, đã hoặc chưa đẽo thô hoặc mới chỉ cắt, bằng cưa hoặc cách
+khác, thành khối hoặc tấm hình chữ nhật (kể cả hình vuông).
+25.15
+2515.11.00
+| Đá hoa (marble), đá travertine, ecaussine và đá vôi khác để làm tượng
+đài hoặc đá xây dựng có trọng lượng riêng biểu kiến từ 2,5 trở lên, và
+thạch cao tuyết hoa, đã hoặc chưa đẽo thô hoặc mới chỉ cắt, bằng cưa
+hay bằng cách khác, thành các khối hoặc tấm hình chữ nhật (kể cả hình
+vuông).
+- Đá hoa (marble) và đá travertine:
+Thô hoặc đã đẽo thô
+2515.12
+| - - Mới chỉ cắt, bằng cưa hoặc cách khác, thành các khối hoặc tấm hình chữ
+nhật (kể cả hình vuông):
+2515.12.10
+2515.12.10.10
+| - - - Dạng khối:
+Đá hoa trắng
+2515.12.10.90
+| Loại khác
+2515.12.20
+| - - Dạng tấm
+2515.20.00
+| Ecaussine và đá vôi khác để làm tượng đài hoặc đá xây dựng; thạch cao
+tuyết hoa:
+2515.20.00.10
+| Đá vôi trắng dạng khối
+2515.20.00.90
+| - - Loại khác
+25.16
+| Đá granit, đá pocfía, bazan, đá cát kết (sa thạch) và đá khác để làm
+tượng đài hay đá xây dựng, đã hoặc chưa đẽo thô hay mới chỉ cắt bằng
+Mã hàng
+| Mô tả hàng hoá
+| cưa hoặc cách khác, thành khối hoặc tấm hình chữ nhật (kể cả hình
+vuông).
+Granit:
+2516.11.00
+| Thô hoặc đã đẽo thô
+2516.12
+| Mới chỉ cắt, bằng cưa hoặc cách khác, thành các khối hoặc tấm hình chữ
+nhật (kể cả hình vuông):
+2516.12.10
+2516.12.20
+| - - - Dạng khối
+Dạng tấm
+2516.20
+| Đá cát kết:
+2516.20.10
+| Thô hoặc đã đẽo thô
+2516.20.20
+2516.90.00
+25.17
+| - - Mới chỉ cắt, bằng cưa hoặc cách khác, thành khối hoặc tấm hình chữ
+nhật (kể cả hình vuông)
+Đá khác để làm tượng đài hoặc làm đá xây dựng
+Đá cuội, sỏi, đá đã vỡ hoặc nghiền, chủ yếu để làm cốt bê tông, để rải
+đường bộ hay đường sắt hoặc đá ballast, đá cuội nhỏ và đá lửa tự nhiên
+(flint) khác, đã hoặc chưa qua xử lý nhiệt; đá dăm từ xỉ, từ xỉ luyện kim
+hoặc từ phế thải công nghiệp tương tự, có hoặc không kết hợp với các
+vật liệu trong phần đầu của nhóm này; đá dăm trộn nhựa đường, đá ở
+dạng viên, mảnh và bột, làm từ các loại đá thuộc nhóm 25.15 hoặc
+25.16, đã hoặc chưa qua xử lý nhiệt.
+2517.10.00
+| - Đá cuội, sỏi, đá đã vỡ hoặc nghiền, chủ yếu để làm cốt bê tông, để rải
+đường bộ hay đường sắt hoặc đá ballast khác, đá cuội nhỏ và đá lửa tự
+nhiên (flint) khác, đã hoặc chưa qua xử lý nhiệt:
+2517.10.00.10
+2517.10.00.90
+| - Loại có kích cỡ đến 400 mm
+- - Loại khác
+2517.20.00
+2517.30.00
+2517.41.00
+| - Đá dăm từ xi, từ xi luyện kim hoặc từ phế thải công nghiệp tương tự, có
+hoặc không kết hợp với các vật liệu của phân nhóm 2517.10
+- Đá dăm trộn nhựa đường
+- Đá ở dạng viên, mảnh và bột, làm từ các loại đá thuộc nhóm 25.15 hoặc
+25.16, đã hoặc chưa qua xử lý nhiệt:
+- Từ đá hoa (marble):
+2517.41.00.20
+| - Bột cacbonat canxi được sản xuất từ loại đá thuộc nhóm 25.15, có kích
+thước hạt trên 0,125 mm đến dưới 1mm
+2517.41.00.30
+| -- - Loại có kích cỡ đến 400 mm
+2517.41.00.90
+| Loại khác
+2517.49.00
+| - Loại khác:
+2517.49.00.20
+2517.49.00.30
+| - - -Bột cacbonat canxi được sản xuất từ loại đá thuộc nhóm 25.15, có kích
+thước hạt trên 0,125 mm đến dưới 1mm
+Loại có kích cỡ đến 400 mm
+2517.49.00.90
+| - Loại khác
+25.18
+2518.10.00
+2518.20.00
+| Dolomite, đã hoặc chưa nung hoặc thiêu kết, kể cả dolomite đã đẽo thô
+hay mới chỉ cắt bằng cưa hoặc các cách khác, thành các khối hoặc tấm
+hình chữ nhật (kể cả hình vuông).
+- Dolomite, chua nung hoặc thiêu kết
+- Dolomite đã nung hoặc thiêu kết
+25.19
+| Magiê carbonat tự nhiên (magiesite); magiê ôxít nấu chảy; magiê ôxít
+nung trơ (thiêu kết), có hoặc không thêm một lượng nhỏ ôxít khác
+Mã hàng
+| Mô tả hàng hoá
+| trước khi thiêu kết; magiê ôxít khác, tinh khiết hoặc không tinh khiết.
+2519.10.00
+| - Magiê carbonat tự nhiên (magnesite)
+2519.90
+2519.90.10
+| - Loại khác:
+- - Magiê ôxít nấu chảy, magiê ôxít nung trơ (thiêu kết)
+2519.90.90
+| - - Loại khác
+25.20
+2520.10.00
+| Thạch cao; thạch cao khan; thạch cao plaster (bao gồm thạch cao nung
+hoặc canxi sulphat đã nung), đã hoặc chưa nhuộm màu, có hoặc không
+thêm một lượng nhỏ chất xúc tác hoặc chất ức chế.
+- Thạch cao; thạch cao khan
+2520.20
+2520.20.10
+2520.20.90
+| Thạch cao plaster:
+- - Loại phù hợp dùng trong nha khoa
+- - Loại khác
+2521.00.00
+| Chất gây chảy gốc đá vôi; đá vôi và đá có chứa canxi khác, dùng để sản
+xuất vôi hoặc xi măng.
+25.22
+| Vôi sống, vôi tôi và vôi thủy lực, trừ oxit canxi và hydroxit canxi thuộc
+nhóm 28.25.
+2522.10.00
+| - Vôi sống
+2522.20.00
+| Vôi tôi
+2522.30.00
+| Vôi thủy lực
+25.24
+| Amiăng.
+2524.10.00
+| Crocidolite
+2524.90.00
+| Loại khác
+25.25
+2525.10.00
+| Mi ca, kể cả mi ca tách lớp; phế liệu mi ca.
+- Mi ca thô và mi ca đã tách thành tấm hoặc lớp
+2525.20.00
+| Bột mì ca
+2525.30.00
+| Phế liệu mi ca
+25.26
+| Quặng steatit tự nhiên, đã hoặc chưa đẽo thô hoặc mới chỉ cắt, bằng
+cưa hoặc các cách khác, thành các khối hoặc tấm hình chữ nhật (kể cả
+hình vuông); talc.
+2526.10.00
+2526.20
+| Chưa nghiên, chưa làm thành bột
+Đã nghiền hoặc làm thành bột:
+2526.20.10
+| - Bột talc
+2526.20.90
+| Loại khác
+2528.00.00
+| Quặng borat tự nhiên và tinh quặng borat (đã hoặc chưa nung), nhưng
+không kể borat tách từ nước biên tự nhiên; axit boric tự nhiên chứa
+không quá 85% H3BO3 tính theo trọng lượng khô.
+25.29
+| Tràng thạch (đá bồ tát); loxit (leucite), nephelin và nephelin xienit;
+khoáng fluorite.
+2529.10
+2529.10.10
+| - Tràng thạch (đá bồ tát):
+Potash tràng thạch; soda tràng thạch
+2529.10.90
+| - - Loại khác
+| Khoáng fluorite:
+Mã hàng
+| Mô tả hàng hoá
+2529.21.00
+| Có chứa canxi florua không quá 97% tính theo khối lượng
+2529.22.00
+| Có chứa canxi florua trên 97% tính theo khối lượng
+2529.30.00
+| Loxit; nephelin và nephelin xienit
+25.30
+| Các chất khoáng chưa được chi tiết hoặc ghi ở nơi khác.
+2530.10.00
+| - Vermiculite, đá trân châu và clorit, chưa giãn nở
+2530.20
+| - Kiezerit, epsomit (magiê sulphat tự nhiên):
+2530.20.10
+| Kiezerit
+2530.20.20
+| Epsomite (magiê sulphat tự nhiên)
+2530.90
+| - Loại khác:
+2530.90.10
+| Cát zircon cỡ hạt micron (zircon silicat) loại dùng làm chất cản quang
+2530.90.90
+| - Loại khác:
+2530.90.90.10
+| Quặng đất hiểm
+2530.90.90.90
+| Loại khác
+Chương 26
+| Quặng, xi và tro
+26.01
+|
+2601.11
+2601.11.10
+2601.11.90
+2601.11.90.10
+| Quặng sắt và tỉnh quặng sắt, kể cả pirit sắt đã nung.
+Quặng sắt và tỉnh quặng sắt, trừ pirit sắt đã nung:
+Chưa nung kết:
+Hematite và tinh quặng hematite
+- - Loại khác:
+Tinh quặng sắt hàm lượng cao $(Fe\ge68\%$ $SiO2\le3,6\%;$ Al2O3 ≤
+0,3%; $TiO2\le0,002\%,$ $P\le0,001\%$ $CaO\le0,02\%$ $MgO\le0,4\%$; K2O ≤
+0,01%; $Na20\le0.030\%$; $Cu\le0,002\%$; $Zn\le0,004\%$; $Mn\le0,2\%,$ MKN ≤
+0,01%; $S\le0,01\%)$
+2601.11.90.90
+| Loại khác
+2601.12
+| -- Đã nung kết:
+2601.12.10
+2601.12.90
+| Hematite và tinh quặng hematite
+- - - Loại khác:
+2601.12.90.10
+| Tình quặng sắt hàm lượng cao $(Fe\ge68\%$; $iO2\le3,6\%;$ Al2O3 ≤
+0,3%; $TiO2\le0,002\%,$ $P\le0,001\%$ $CaO\le0,02\%,$ $MgO\le0,4\%$; K2O ≤
+$Na2O\le0,030\%$; $Cu\le0,002\%,$ $Zn\le0,004\%,$ $Mn\le0,2\%$; MKN ≤
+0,01%;
+0,01%; $S\le0,01\%)$
+2601.12.90.90
+| - Loại khác
+2601.20.00
+| - Pirit sắt đã nung
+2602.00.00
+| Quặng mangan và tình quặng mangan, kể cả quặng mangan chứa sắt và
+tinh quặng mangan chứa sắt với hàm lượng mangan từ 20% trở lên, tính
+theo trọng lượng khô.
+2603.00.00
+| Quặng đồng và tinh quặng đồng.
+26.04
+| Quặng niken và tỉnh quặng niken.
+2604.00.00.10
+| Quặng thô
+2604.00.00.90
+| -
+Tinh quặng
+26.05
+| Quặng coban và tỉnh quặng coban.
+2605.00.00.10
+| - Quặng thô
+2605.00.00.90
+| Tinh quặng
+Mã hàng
+| Mô tả hàng hoá
+26.06
+| Quặng nhôm và tinh quặng nhôm.
+2606.00.00.10
+| Quặng thô
+2606.00.00.90
+| Tình quặng
+2607.00.00
+| Quặng chì và tinh quặng chì.
+2608.00.00
+| Quặng kẽm và tinh quặng kẽm.
+26.09
+| Quặng thiếc và tỉnh quặng thiếc.
+2609.00.00.10
+| Quặng thô
+2609.00.00.90
+| Tình quặng
+2610.00.00
+| Quặng crôm và tinh quặng crôm.
+26.11
+2611.00.00.10
+| Quặng vonfram và tỉnh quặng vonfram.
+Quặng thô
+2611.00.00.90
+| Tình quặng
+26.12
+| Quặng urani hoặc quặng thori và tỉnh quặng urani hoặc tỉnh quặng
+thori.
+2612.10.00
+2612.10.00.10
+| Quặng urani và tinh quặng urani:
+- - Quặng thô
+2612.10.00.90
+| Tình quặng
+2612.20.00
+| Quặng thori và tinh quặng thori:
+2612.20.00.10
+| Quặng thô
+2612.20.00.90
+| Tình quặng
+26.13
+| Quặng molipden và tỉnh quặng molipden.
+2613.10.00
+| Đã nung
+2613.90.00
+| Loại khác:
+2613.90.00.10
+| Quặng thô
+2613.90.00.90
+| Tinh quặng
+26.14
+| Quặng titan và tinh quặng titan.
+2614.00.10
+| Quặng inmenit và tỉnh quặng inmenit:
+2614.00.10.10
+| -- Tình quặng inmenit
+2614.00.10.90
+| Loại khác
+2614.00.90
+| Loại khác:
+2614.00.90.10
+| Tinh quặng rutil 83%<TiO2≤87%
+2614.00.90.90
+| - - Loại khác
+26.15
+| Quặng niobi, tantali, vanadi hoặc zircon và tỉnh quặng của các loại
+quặng đó.
+2615.10.00
+| Quặng zircon và tinh quặng zircon:
+2615.10.00.10
+| Quặng thô
+Tinh quặng:
+2615.10.00.20
+| Bột zircon siêu mịn cỡ hạt nhỏ hơn 75µm (micrô mét)
+2615.10.00.90
+| - - - Loại khác
+Mã hàng
+| Mô tả hàng hoá
+2615.90.00
+| |- - Loại khác:
+| - Niobi:
+2615.90.00.10
+| Quặng thô
+2615.90.00.20
+| - - - Tình quặng
+- Loại khác:
+2615.90.00.30
+| - - - Quặng thô
+2615.90.00.90
+| Tình quặng
+26.16
+| Quặng kim loại quý và tinh quặng kim loại quý.
+2616.10.00
+| Quặng bạc và tinh quặng bạc:
+2616.10.00.10
+| Quặng thô
+2616.10.00.90
+| - - Tình quặng
+2616.90.00
+2616.90.00.10
+| Loại khác:
+- - Quặng vàng
+| - Loại khác:
+2616.90.00.20
+| - - - Quặng thô
+2616.90.00.90
+| Tình quặng
+26.17
+| Các quặng khác và tỉnh quặng của các quặng đó.
+2617.10.00
+| - Quặng antimon và tỉnh quặng antimon:
+2617.10.00.10
+| -- Quặng thô
+2617.10.00.90
+| - - Tinh quặng
+2617.90.00
+| - Loại khác:
+2617.90.00.10
+| - - Quặng thô
+2617.90.00.90
+| Tình quặng
+2618.00.00
+| Xi hạt (xỉ cát) từ công nghiệp luyện sắt hoặc thép.
+2619.00.00
+| Xi, xỉ luyện kim (trừ xỉ hạt), vụn xỉ và các phế thải khác từ công nghiệp
+luyện sắt hoặc thép.
+26.20
+| Xỉ, tro và cặn (trừ loại thu được từ quá trình sản xuất sắt hoặc thép), có
+chứa kim loại, arsen hoặc các hợp chất của chúng.
+| |- Chứa chủ yếu là kẽm:
+2620.11.00
+| - - Kẽm tạp chất cứng (sten tráng kẽm)
+2620.19.00
+| Loại khác
+| Chứa chủ yếu là chỉ:
+2620.21.00
+| - Cặn của xăng pha chì và cặn của hợp chất chì chống kích nổ
+2620.29.00
+| - Loại khác
+2620.30.00
+| - Chứa chủ yếu là đồng
+2620.40.00
+| Chứa chủ yếu là nhôm
+2620.60.00
+2620.91.00
+| - Chứa arsen, thuỷ ngân, tali hoặc hỗn hợp của chúng, là loại dùng để tách
+arsen hoặc những kim loại trên hoặc dùng để sản xuất các hợp chất hoá
+học của chúng
+- Loại khác:
+Chứa antimon, berily, cađimi, crom hoặc các hỗn hợp của chúng
+2620.99
+| - Loại khác:
+2620.99.10
+| Xi và phần chưa cháy hết (hardhead) của thiếc
+2620.99.90
+| - Loại khác
+Mã hàng
+| Mô tả hàng hoá
+26.21
+2621.90.90
+| Xỉ và tro khác, kể cả tro tảo biển (tảo bẹ); tro và cặn từ quá trình đốt
+rác thải đô thị.
+- - Loại khác
+2621.90.90.10
+| ----Xi than
+Chương 27
+| Nhiên liệu khoáng, dầu khoáng và các sản phẩm chưng cất từ chúng;
+các chất chứa bi-tum; các loại sáp khoáng chất
+27.01
+| Than đá; than bánh, than quả bàng và nhiên liệu rắn tương tự sản xuất
+từ than đá.
+Than đá, đã hoặc chưa nghiền thành bột, nhưng chưa đóng bánh:
+2701.11.00
+| Anthracite
+2701.12
+| Than bi-tum:
+2701.12.10
+| Than để luyện cốc
+2701.12.90
+| Loại khác
+2701.19.00
+| Than đả loại khác
+2701.20.00
+| - Than bánh, than quả bàng và nhiên liệu rắn tương tự sản xuất từ than đá
+27.02
+| Than non, đã hoặc chưa đóng bánh, trừ than huyền.
+2702.10.00
+| Than non, đã hoặc chưa nghiền thành bột, nhưng chưa đóng bánh
+2702.20.00
+| - Than non đã đóng bánh
+27.03
+2703.00.10
+2703.00.20
+| Than bùn (kể cả bùn rác), đã hoặc chưa đóng bánh.
+- Than bùn, đã hoặc chưa ép thành kiện, nhưng chưa đóng bánh
+- Than bùn đã đóng bánh
+27.04
+2704.00.10
+| Than cốc và than nửa cốc luyện từ than đá, than non hoặc than bùn, đã
+hoặc chưa đóng bánh; muội bình chưng than đá.
+Than cốc và than nửa cốc luyện từ than đá
+2704.00.20
+| Than cốc và than nửa cốc luyện từ than non hoặc than bùn
+2704.00.30
+| - Muội bình chưng than đá
+27.09
+| Dầu mỏ và các loại dầu thu được từ các khoáng bi-tum, ở dạng thô.
+2709.00.10
+| Dầu mỏ thô
+2709.00.20
+| Condensate
+27.11
+| Khí dầu mỏ và các loại khí hydrocarbon khác.
+| Dạng hóa lỏng:
+2711.11.00
+| Khí tự nhiên
+2711.12.00
+| Propan
+2711.13.00
+| Butan
+2711.14
+| Etylen, propylen, butylen và butadien:
+2711.14.10
+| - - - Etylen
+2711.14.90
+| - - Loại khác
+2711.19.00
+| Loại khác
+| - Dạng khí:
+2711.21
+| Khí tự nhiên:
+2711.21.10
+| - - Loại sử dụng làm nhiên liệu động cơ
+2711.21.90
+| - - - Loại khác
+2711.29.00
+| Loại khác
+Mã hàng
+| Mô tả hàng hoá
+27.12
+| Vazolin (petroleum jelly); sáp parafin, sáp dầu lửa vi tinh thể, sáp than
+cám, ozokerite, sáp than non, sáp than bùn, sáp khoáng khác, và sản
+phẩm tương tự thu được từ qui trình tổng hợp hoặc qui trình khác, đã
+hoặc chưa nhuộm màu.
+2712.10.00
+| - Vazolin (petroleum jelly)
+2712.20.00
+| - Sáp parafin có hàm lượng dầu dưới 0,75% tính theo trọng lượng
+2712.90
+| - Loại khác:
+2712.90.10
+| - Sáp parafin
+2712.90.90
+| Loại khác
+27.13
+| :
+2713.11.00
+| Chưa
+2713.12.00
+|
+2713.20.00
+|
+2713.90.00
+| Cốc dầu mỏ, bi-tum dầu mỏ và các cặn khác từ dầu có nguồn gốc từ
+dầu mỏ hoặc từ các loại dầu thu được từ các khoáng bi-tum.
+Cốc dầu mỏ
+- nung
+Đã nung
+Bi-tum dầu mỏ
+Cặn khác từ dầu có nguồn gốc từ dầu mỏ hoặc từ các loại dầu thu được từ
+các khoáng bi-tum
+27.14
+2714.10.00
+| Bi-tum và nhựa đường (asphalt), ở dạng tự nhiên; đá phiến sét dầu
+hoặc đá phiến sét bi-tum và cát hắc ín; asphaltit và đá chứa asphaltic.
+- Đá phiến sét dầu hoặc đá phiến sét bi-tum và cát hắc ín
+2714.90.00
+| - Loại khác
+27.15
+2715.00.10
+| Hỗn hợp chứa bi-tum dựa trên asphalt tự nhiên, bi-tum tự nhiên, bi-
+tum dầu mỏ, hắc ín khoáng chất hoặc nhựa hắc ín khoáng chất (ví dụ,
+matít có chứa bi-tum, cut-backs).
+- Chất phủ hắc ín polyurethan
+2715.00.90
+| - Loại khác
+Phụ lục II
+NGUYÊN, KHOÁNG SẢN KHAI THÁC
+CHẾ BIẾN THÀNH SẢN PHẨM KHÁC
+Kèm theo Nghị định số 181/2025/NĐ-CP
+Mã hàng
+| Mô tả hàng hoá
+Chương 28
+28.04
+| Hoá chất vô cơ; các hợp chất vô cơ hoặc hữu cơ của kim loại quý, kim
+loại đất hiếm, các nguyên tố phóng xạ hoặc các chất đồng vị
+Hydro, khí hiếm và các phi kim loại khác.
+2804.70.00
+| - Phospho:
+2804.70.00.10
+| - Phospho vàng
+28.11
+| Axit vô cơ khác và các hợp chất vô cơ chứa oxy khác của các phi kim
+loại.
+Hợp chất vô cơ chứa oxy khác của phi kim loại:
+2811.22
+| Silic dioxit:
+2811.22.10
+| Dạng bột
+28.17
+| Kẽm oxit; kẽm peroxit.
+2817.00.10
+| Kẽm oxit:
+2817.00.10.10
+| - - Kẽm oxit dạng bột
+28.23
+| Titan oxit.
+2823.00.00.10
+| - Xi titan có hàm lượng TiO2≥ 85%, FeO 10%
+2823.00.00.20
+| - Xi titan có hàm lượng 70% ≤ TiO2 < 85%, $FeO\le10\%$
+2823.00.00.30
+| - Rutile có hàm lượng $TiO2>87\%$
+2823.00.00.40
+| - Inmenit hoàn nguyên có hàm lượng TiO2 ≥ 56%, FeO 11%
+28.36
+| Carbonat; peroxocarbonat (percarbonat); amoni carbonat thương
+phẩm có chứa amoni carbamat.
+2836.50
+| Canxi carbonat:
+2836.50.90
+| Loại khác
+28.49
+| Carbua, đã hoặc chưa xác định về mặt hóa học.
+2849.20.00
+| Của silic
+Chương 71
+71.02
+7102.10.00
+7102.10.00.10
+| | Ngọc trai tự nhiên hoặc nuôi cấy, đá quý hoặc đá bán quý, kim loại quý,
+kim loại được dát phủ kim loại quý, và các sản phẩm của chúng; đồ
+trang sức làm bằng chất liệu khác; tiền kim loại
+Kim cương, đã hoặc chưa được gia công, nhưng chưa được gắn hoặc
+nam dát.
+- Kim cương chưa được phân loại:
+Chưa gia công hoặc mới chỉ được cắt, tách một cách đơn giản hay mới
+chỉ được chuốt hoặc mài sơ qua
+7102.10.00.90
+| Loại khác
+| Kim cương công nghiệp:
+Mã hàng
+| Mô tả hàng hoá
+7102.21.00
+| Chưa gia công hoặc mới chỉ được cắt, tách một cách đơn giản hoặc mới
+chỉ được chuốt hoặc mài sơ qua
+7102.29.00
+7102.31.00
+7102.39.00
+| Loại khác
+Kim cương phi công nghiệp:
+Chưa gia công hoặc mới chỉ được cắt, tách một cách đơn giản hoặc mới
+chỉ được chuốt hoặc mài sơ qua
+Loại khác
+71.03
+7103.10
+| Đá quý (trừ kim cương) và đá bán quý, đã hoặc chưa được gia công
+hoặc phân loại nhưng chưa xâu chuỗi, chưa gắn hoặc nạm dát; đá quý
+(trừ kim cương) và đá bán quý chưa được phân loại, đã được xâu thành
+chuỗi tạm thời để tiện vận chuyển.
+|- Chưa gia công hoặc mới chỉ được cắt đơn giản hoặc tạo hình thô:
+7103.10.10
+| Rubi
+7103.10.20
+| - Ngọc bích (nephrite và jadeite)
+7103.10.90
+| Loại khác
+| - Đã gia công cách khác:
+7103.91
+| Rubi, saphia và ngọc lục bảo:
+7103.91.10
+| Rubi
+7103.91.90
+| Loại khác
+7103.99.00
+| - Loại khác
+71.04
+| Đá quý hoặc đá bán quý tổng hợp hoặc tái tạo, đã hoặc chưa gia công
+hoặc phân loại nhưng chưa xâu thành chuỗi, chưa gắn hoặc nạm dát; đá
+quý hoặc đá bán quý tổng hợp hoặc tái tạo chưa phân loại, đã được xâu
+thành chuỗi tạm thời để tiện vận chuyển.
+7104.10
+| - Thạch anh áp điện:
+7104.10.10
+| Chưa được gia công
+7104.10.20
+| Đã gia công
+| Loại khác, chưa gia công hoặc mới chỉ được cắt đơn giản hoặc tạo hình
+thô:
+7104.21.00
+| - Kim cương
+7104.29.00
+| - Loại khác
+| - Loại khác:
+7104.91.00
+| Kim cương
+7104.99.00
+| - - Loại khác
+71.05
+| Bụi và bột của đá quý hoặc đá bán quý tự nhiên hoặc tổng hợp.
+7105.10.00
+7105.90.00
+| Của kim cương
+|- Loại khác
+71.06
+7106.10.00
+| Bạc (kể cả bạc được mạ vàng hoặc bạch kim), chưa gia công hoặc ở
+dạng bán thành phẩm, hoặc dạng bột.
+|- Dạng bột
+| - Loại khác:
+7106.91.00
+| -- Chưa gia công
+7106.92.00
+| - - Dạng bán thành phẩm
+71.08
+| Vàng (kể cả vàng mạ bạch kim) chưa gia công hoặc ở dạng bán thành
+phẩm, hoặc ở dạng bột.
+Mã hàng
+| Mô tả hàng hoá
+7108.11.00
+| - Không phải dạng tiền tệ:
+- - Dạng bột
+7108.12
+| - Dạng chưa gia công khác:
+7108.12.10
+| Dạng cục, thỏi hoặc thanh đúc
+7108.12.90
+| Loại khác
+7108.13.00
+7108.20.00
+| - - Dạng bán thành phẩm khác
+Dạng tiền tệ
+71.13
+7113.19
+| Đồ trang sức và các bộ phận của đồ trang sức, bằng kim loại quý hoặc
+kim loại được dát phủ kim loại quý.
+Bằng kim loại quý đã hoặc chưa mạ hoặc dát phủ kim loại quý:
+Bằng kim loại quý khác, đã hoặc chưa mạ hoặc dát phủ kim loại quý:
+7113.19.10
+| Bộ phận
+7113.19.90
+| Loại khác
+71.14
+7114.19.00
+| Đồ kỹ nghệ vàng hoặc bạc và các bộ phận của đồ kỹ nghệ vàng bạc,
+| bằng kim loại quý hoặc kim loại dát phủ kim loại quý.
+|- Bằng kim loại quý đã hoặc chưa mạ hoặc dát phủ kim loại quý:
+Bằng kim loại quý khác, đã hoặc chưa mạ hoặc dát phủ kim loại quý
+71.15
+| Các sản phẩm khác bằng kim loại quý hoặc kim loại dát phủ kim loại
+quý.
+7115.90
+| - Loại khác:
+7115.90.10
+| - Bằng vàng hoặc bạc
+Chương 72
+| Sắt và thép
+72.02
+| Hợp kim fero.
+7202.99.00
+| - Loại khác:
+Loại khác
+72.04
+| Phế liệu và mảnh vụn sắt; thỏi đúc phế liệu nấu lại từ sắt hoặc thép.
+7204.10.00
+| - Phế liệu và mảnh vụn của gang đúc
+| |- Phế liệu và mảnh vụn của thép hợp kim:
+7204.21.00
+| Bằng thép không gi
+7204.29.00
+| Loại khác
+7204.30.00
+| - Phế liệu và mảnh vụn của sắt hoặc thép tráng thiếc
+Phế liệu và mảnh vụn khác:
+7204.41.00
+| - Phoi tiện, phoi bào, mảnh vỡ, vảy cán, mạt cưa, mạt giữa, phoi cắt và
+bavia, đã hoặc chưa được ép thành khối hoặc đóng thành kiện, bánh, bó
+7204.49.00
+| Loại khác
+7204.50.00
+| - Thỏi đúc phế liệu nấu lại
+Chương 74
+| Đồng và các sản phẩm bằng đồng
+74.01
+| Sten đồng; đồng xi măng hoá (đồng kết tủa).
+7401.00.10
+| - Sten đồng
+7401.00.20
+| - Đồng xi măng hóa (đồng kết tủa)
+74.02
+| Đồng chưa tỉnh luyện; a-nốt đồng dùng cho điện phân tinh luyện.
+7402.00.10
+| - Đông xốp (blister copper)
+Mã hàng
+| Mô tả hàng hoá
+7402.00.90
+| - Loại khác
+74.03
+| Đồng tinh luyện và hợp kim đồng, chưa gia công.
+- Đồng tinh luyện:
+7403.11.00
+| Ca-tốt và các phần của ca-tốt:
+7403.11.00.10
+| - Đồng tinh luyện nguyên chất
+7403.11.00.90
+| - - Loại khác
+7403.12.00
+| Thanh để kéo dây
+7403.13.00
+| Que
+7403.19.00
+| - Loại khác
+Hợp kim đồng:
+7403.21.00
+7403.22.00
+| - Hợp kim đồng-kẽm (đồng thau)
+Hợp kim đồng-thiếc (đồng thanh)
+7403.29.00
+7404.00.00
+7405.00.00
+74.06
+7406.10.00
+7406.20.00
+74.07
+7407.10
+7407.10.30
+7407.10.41
+| - - Hợp kim đồng khác (trừ các loại hợp kim đồng chủ thuộc nhóm 74.05)
+liệu và mảnh vụn của đồng.
+kim đồng chủ.
+Bột và vảy đồng.
+Bột không có cấu trúc lớp
+Bột có cấu trúc lớp; vày đồng
+Đồng ở dạng thanh, que và dạng hình.
+- Bằng đồng tinh luyện:
+Dạng hình
+- Dạng thanh và que:
+Mặt cắt ngang hình vuông hoặc hình chữ nhật
+Phế
+Hợp
+|-
+|-
+7407.10.49
+| Loại khác
+| |- Bằng hợp kim đồng:
+7407.21.00
+| Bằng hợp kim đồng-kẽm (đồng thau)
+7407.29.00
+| - - Loại khác
+74.11
+7411.10.00
+| Các loại ống và ống dẫn bằng đồng.
+Bằng đồng tinh luyện:
+7411.10.00.90
+7411.21.00
+7411.22.00
+| Loại khác
+Bằng hợp kim đồng:
+Bằng hợp kim đồng-kẽm (đồng thau)
+Bằng hợp kim đồng-niken (đồng kền) hoặc hợp kim đồng-niken-kẽm (bạc
+niken)
+7411.29.00
+| - - Loại khác
+Chương 75
+| Niken và các sản phẩm bằng niken
+75.01
+7501.10.00
+| Sten niken, oxit niken thiêu kết và các sản phẩm trung gian khác của
+| quá trình luyện niken.
+Sten niken
+7501.20.00
+| Oxit niken thiêu kết và các sản phẩm trung gian khác của quá trình luyện
+niken
+Mã hàng
+| Mô tả hàng hoá
+75.02
+| Niken chưa gia công.
+7502.10.00
+| Niken, không hợp kim
+7502.20.00
+| - Hợp kim niken
+75.03
+7503.00.00.10
+| Phế liệu và mảnh vụn niken.
+Phoi tiện, phoi bào, bụi xẻ, mùn mạt giữa, bột nghiên, bột đẽo của niken,
+đã hoặc chưa được ép thành khối hay đóng thành kiện, bánh, bó
+7503.00.00.90
+| Loại khác
+7504.00.00
+| Bột và vảy niken.
+75.05
+| Niken ở dạng thanh, que, hình và dây.
+Thanh, que và hình:
+7505.11.00
+| -- Bằng niken, không hợp kim
+7505.12.00
+| Bằng hợp kim niken
+Chương 76
+| Nhôm và các sản phẩm bằng nhôm
+76.01
+| Nhôm chưa gia công.
+7601.10.00
+| Nhôm, không hợp kim
+7601.20.00
+| - Hợp kim nhôm
+76.02
+| Phế liệu và mảnh vụn nhôm.
+7602.00.00.10
+| Phoi tiện, phoi bào, bụi xẻ, mùn mạt giữa, bột nghiên, bột đẽo của nhôm,
+đã hoặc chưa được ép thành khối hay đóng thành kiện, bánh, bó.
+7602.00.00.20
+| - Loại khác
+76.03
+| Bột và vảy nhôm.
+7603.10.00
+7603.20
+| Bột không có cấu trúc lớp
+Bột có cấu trúc lớp; vảy nhôm:
+7603.20.10
+| - Vảy nhôm
+7603.20.20
+| Bột có cấu trúc lớp
+76.04
+| Nhôm ở dạng thanh, que và hình.
+7604.10
+| Bằng nhôm, không hợp kim:
+7604.10.10
+| Dạng thanh và que
+7604.10.90
+| Loại khác
+7604.21
+| - Bằng hợp kim nhôm:
+| - - Dạng hình rỗng:
+7604.21.10
+| Loại phù hợp để làm dàn lạnh của máy điều hoà không khí cho xe có
+động cơ
+7604.21.20
+| Thanh đệm bằng nhôm cho cửa ra vào và cửa số
+7604.21.90
+| Loại khác
+7604.29
+| - Loại khác:
+7604.29.10
+| - Dạng thanh và que được ép đùn
+7604.29.30
+| Dạng hình chữ Y dùng cho dây khóa kéo, ở dạng cuộn
+7604.29.90
+| - - Loại khác
+Mã hàng
+| Mô tả hàng hoá
+76.05
+| | Dây nhôm.
+|- Bằng nhôm, không hợp kim:
+7605.11.00
+| Kích thước mặt cắt ngang lớn nhất trên 7 mm
+7605.19
+| - Loại khác:
+7605.19.10
+| Đường kính không quá 0,0508 mm
+7605.19.90
+| - Loại khác
+7605.21.00
+| |- Bằng hợp kim nhôm:
+Kích thước mặt cắt ngang lớn nhất trên 7 mm
+7605.29
+| - Loại khác:
+7605.29.10
+7605.29.90
+| Có đường kính không quá 0,254 mm
+- - - Loại khác
+76.06
+| Nhôm ở dạng tấm, lá và dải, chiều dày trên 0,2 mm.
+7606.11
+| Hình chữ nhật (kể cả hình vuông):
+Bằng nhôm, không hợp kim:
+7606.12.32
+| Dạng lá:
+- - - - Để làm lon (kể cả đáy lon và nắp lon), dạng cuộn:
+7606.12.32.10
+| Dải nhôm cuộn
+Chương 78
+| Chì và các sản phẩm bằng chì
+78.01
+| Chì chưa gia công.
+7801.10.00
+| - Chì tinh luyện
+- Loại khác:
+7801.91.00
+| Có hàm lượng antimon tính theo khối lượng là lớn nhất so với hàm lượng
+của các nguyên tố khác ngoài chì
+7801.99.00
+| Loại khác
+78.02
+| Phế liệu và mảnh vụn chì.
+7802.00.00.10
+| Phoi tiện, phoi bào, bụi xẻ, mùn mạt giữa, bột nghiền, bột đẽo của chì, đã
+hoặc chưa được ép thành khối hay đóng thành kiện, bánh, bó.
+7802.00.00.90
+| - Loại khác
+78.04
+| Chì ở dạng tấm, lá, dải và lá mỏng; bột và vảy chì.
+- Chì ở dạng tấm, lá, dải và lá mỏng:
+7804.11
+| - - Lá, dải và lá mỏng có chiều dày (trừ phần bồi) không quá 0,2 mm:
+7804.11.10
+| Chiều dày không quá 0,15 mm
+7804.11.90
+| Loại khác
+7804.19.00
+| - - Loại khác
+7804.20.00
+| Bột và vảy chì
+78.06
+| Các sản phẩm khác bằng chì.
+7806.00.20
+7806.00.20.10
+| Thanh, que, dạng hình và dây:
+-- Thanh, que, dạng hình
+Chương 79
+| Kẽm và các sản phẩm bằng kẽm
+79.01
+| Kẽm chưa gia công.
+| - Kẽm, không hợp kim:
+Mã hàng
+| | Mô tả hàng hoá
+7901.11.00
+| | | - - Có hàm lượng kẽm từ 99,99% trở lên tính theo khối lượng:
+7901.11.00.10
+| | Dạng thỏi
+7901.11.00.90
+| | Loại khác
+7901.12.00
+| | | - - Có hàm lượng kẽm dưới 99,99% tính theo khối lượng :
+7901.12.00.10
+| | - - - Dạng thỏi
+7901.12.00.90
+| | Loại khác
+7901.20.00
+| | - Hợp kim kẽm:
+7901.20.00.10
+| | Dạng thỏi
+7901.20.00.90
+| -
+| - Loại khác
+79.02
+| | Phế liệu và mảnh vụn kẽm.
+7902.00.00.10
+| | Phoi tiện, phoi bào, bụi xẻ, mùn mạt giữa, bột nghiên, bột đẽo của kẽm, đã
+hoặc chưa được đóng, ép thành khối hay thành kiện, bánh, bỏ.
+7902.00.00.90
+| | - Loại khác
+79.03
+| | Bột, bụi và vảy kẽm.
+7903.10.00
+| | Bụi kẽm
+7903.90.00
+| | Loại khác
+7904.00.00
+| | Kẽm ở dạng thanh, que, hình và dây.
+79.05
+7905.00.40
+| | Kẽm ở dạng tấm, lá, dải và lá mỏng.
+- Chiều dày không quá 0,15 mm
+7905.00.90
+| | - Loại khác
+Chương 80
+| | Thiếc và các sản phẩm bằng thiếc
+80.01
+8001.10.00
+| | Thiếc chưa gia công.
+Thiếc, không hợp kim:
+8001.10.00.10
+| | Dạng thỏi
+8001.10.00.90
+| | Loại khác
+8001.20.00
+| -
+| Hợp kim thiếc:
+8001.20.00.10
+| | Dạng thỏi
+8001.20.00.90
+| | Loại khác
+80.02
+| | Phế liệu và mảnh vụn thiếc.
+8002.00.00.10
+8002.00.00.90
+| | - Phoi tiện, phoi bào, bụi xẻ, mùn mạt giữa, bột nghiên, bột đẽo của thiếc, đã
+hoặc chưa được ép thành khối hay đóng thành kiện, bánh, bó
+- Loại khác
+80.03
+| | Thiếc ở dạng thanh, que, dạng hình và dây.
+8003.00.10
+| | Thanh và que hàn
+8003.00.90
+| | - Loại khác
+80.07
+| | Các sản phẩm khác bằng thiếc.
+8007.00.30
+| | - Lá mỏng (đã hoặc chưa in hoặc bồi trên giấy, bìa, plastic hoặc vật liệu bồi
+tương tự), có chiều dày (trừ phần bồi) không quá 0,2 mm; dạng bột và vảy:
+8007.00.30.10
+| | | - - Dạng bột và vảy
+Mã hàng
+| Mô tả hàng hoá
+Chương 81
+| Kim loại cơ bản khác; gốm kim loại; các sản phẩm của chúng
+81.01
+| Vonfram và các sản phẩm làm từ vonfram, kể cả phế liệu và mảnh vụn.
+8101.10.00
+| - Bột
+| - Loại khác:
+8101.94.00
+| Vonfram chưa gia công, kể cả thanh và que thu được từ quá trình thiêu
+kết
+8101.96.00
+| Dây
+8101.97.00
+| Phế liệu và mảnh vụn
+8101.99
+| - Loại khác:
+8101.99.10
+8101.99.90
+| Thanh và que, trừ các loại thu được từ quá trình thiêu kết; dạng hình,
+lá, dải và là mỏng
+Loại khác
+81.02
+| Molypden và các sản phẩm làm từ molypđen, kể cả phế liệu và mảnh
+vụn.
+8102.10.00
+8102.94.00
+| Bột
+- Loại khác:
+Molypđen chưa gia công, kể cả thanh và que thu được từ quá trình thiêu
+kết
+8102.95.00
+| Thanh và que, trừ các loại thu được từ quá trình thiêu kết, dạng hình,
+tấm, lá, dải và lá mỏng
+8102.96.00
+| - Dây
+8102.97.00
+| -- Phế liệu và mảnh vụn
+8102.99.00
+| - Loại khác
+81.03
+| Tantan và các sản phẩm làm từ tantan, kể cả phế liệu và mảnh vụn.
+8103.20.00
+| Tantan chưa gia công, kể cả thanh và que thu được từ quá trình thiêu kết;
+bột
+8103.30.00
+| - Phế liệu và mảnh vụn
+- Loại khác:
+8103.91.00
+| Chén nung (crucible)
+8103.99.00
+| Loại khác
+81.04
+| Magiê và các sản phẩm của magiê, kể cả phế liệu và mảnh vụn.
+- Magiê chưa gia công:
+8104.11.00
+| - Có chứa hàm lượng magiê ít nhất 99,8% tính theo khối lượng
+8104.19.00
+| - Loại khác
+8104.20.00
+| |- Phế liệu và mảnh vụn
+8104.30.00
+8104.90.00
+| - Mạt giũa, phoi tiện và hạt, đã được phân loại theo kích cỡ; bột
+- Loại khác
+81.05
+| Coban sten và các sản phẩm trung gian khác từ luyện coban; coban và
+các sản phẩm bằng coban, kể cả phế liệu và mảnh vụn,
+8105.20
+| Coban sten và các sản phẩm trung gian khác từ luyện coban; coban chưa
+gia công; bột:
+8105.20.10
+| -- Coban chưa gia công
+8105.20.90
+| - Loại khác
+8105.30.00
+| |- Phế liệu và mảnh vụn
+8105.90.00
+| - Loại khác
+Mã hàng
+| Mô tả hàng hoá
+81.06
+| Bismut và các sản phẩm làm từ bismut, kể cả phế liệu và mảnh vụn.
+8106.10
+| Chứa hàm lượng bismut trên 99,99%, tính theo khối lượng:
+8106.10.10
+| Bismut chưa gia công; phế liệu và mảnh vụn; bột:
+8106.10.10.10
+| Phế liệu và mảnh vụn
+8106.10.10.90
+| Loại khác
+8106.10.90
+| Loại khác
+8106.90
+| - Loại khác:
+8106.90.10
+| Bismut chưa gia công; phế liệu và mảnh vụn; bột:
+8106.90.10.10
+| Phế liệu và mảnh vụn
+8106.90.10.90
+| Loại khác
+8106.90.90
+| Loại khác
+81.08
+| Titan và các sản phẩm làm từ titan, kể cả phế liệu và mảnh vụn.
+8108.20.00
+| - Titan chưa gia công; bột
+8108.30.00
+| Phế liệu và mảnh vụn
+8108.90.00
+| - Loại khác
+81.09
+| Zircon và các sản phẩm làm từ zircon, kể cả phế liệu và mảnh vụn.
+Zircon chưa gia công; bột:
+8109.21.00
+| Chứa hàm lượng hafini trong zircon dưới 1/500 tính theo khối lượng
+8109.29.00
+| Loại khác
+| Phế liệu và mảnh vụn:
+8109.31.00
+| Chứa hàm lượng hafini trong zircon dưới 1/500 tính theo khối lượng
+8109.39.00
+| Loại khác
+| - Loại khác:
+8109.91.00
+| Chứa hàm lượng hafini trong zircon dưới 1/500 tính theo khối lượng
+8109.99.00
+| Loại khác
+81.10
+| Antimon và các sản phẩm làm từ antimon, kể cả phế liệu và mảnh vụn.
+8110.10.00
+| - Antimon chưa gia công; bột
+8110.20.00
+| - Phế liệu và mảnh vụn
+8110.90.00
+| - Loại khác
+81.11
+| Mangan và các sản phẩm làm từ mangan, kể cả phế liệu và mảnh vụn.
+8111.00.10
+8111.00.90
+| Phế liệu và mảnh vụn
+- Loại khác
+81.12
+| Beryli, crôm, hafini, reni, tali, cadimi, germani, vanadi, gali, indi và
+niobi (columbi), và các sản phẩm từ các kim loại này, kể cả phế liệu và
+mảnh vụn.
+| - Beryli:
+8112.12.00
+8112.13.00
+| Chưa gia công bột
+Phế liệu và mảnh vụn
+8112.19.00
+| Loại khác
+| Crôm:
+8112.21.00
+| Chưa gia công; bột
+8112.22.00
+| Phế liệu và mảnh vụn
+8112.29.00
+| Loại khác
+Mã hàng
+| Mô tả hàng hoá
+| - Hafini:
+8112.31.00
+| Chưa gia công; phê liệu và mảnh vụn; bột:
+8112.31.00.10
+| Phế liệu và mảnh vụn
+8112.31.00.90
+| Loại khác
+8112.39.00
+| - Loại khác
+| Reni:
+8112.41.00
+| - - Chưa gia công; phế liệu và mảnh vụn; bột
+8112.41.00.10
+| Phế liệu và mảnh vụn
+8112.41.00.90
+| Loại khác
+8112.49.00
+| Loại khác
+| Tali:
+8112.51.00
+| Chưa gia công; bột
+8112.52.00
+| - Phế liệu và mảnh vụn
+8112.59.00
+| - Loại khác
+| Cađimi:
+8112.61.00
+| -- Phế liệu và mảnh vụn
+8112.69
+| - Loại khác:
+8112.69.10
+| Chưa gia công; bột
+8112.69.90
+| Loại khác
+| - Loại khác:
+8112.92.00
+| - - Chưa gia công; phế liệu và mảnh vụn; bột:
+8112.92.00.10
+| - - - Phế liệu và mảnh vụn
+8112.92.00.90
+| Loại khác
+8112.99.00
+| - Loại khác
+81.13
+| Gốm kim loại và các sản phẩm làm từ gốm kim loại, kể cả phế liệu và
+mảnh vụn.
+8113.00.00.10
+| - Phế liệu và mảnh vụn
+8113.00.00.90
+| - Loại khác:
+Phụ lục III
+KÊ HÀNG HÓA BÁN CHO KHÁCH XUẤT CẢNH
+KHU
+VỰC CÁCH LY, CỬA HÀNG MIỄN THUẾ
+(Kèm theo Nghị định số 181/2025/NĐ-CP
+ngày 01 tháng 7 năm 2025 của Chính phủ)
+WAN
+(01) Tên doanh nghiệp:
+(02) Mã số thuế:
+(03) Cửa hàng/kho chứa hàng:
+(04) Quốc gia/vùng lãnh thổ giao hàng:
+| | | Thông
+| tin người mua hàng
+| | Thông tin
+| hàng
+| hóa
+STT
+| Số hóa
+đơn
+| Ngày hóa
+đơn
+| Họ tên
+| Số hộ chiếu/số giấy
+Quốc thông hành/số giấy
+tịch
+tờ có giá trị đi lại
+quốc tế
+| Ngày
+cấp
+| Đơn
+vị
+Tên
+hàng
+tính
+| Số
+lượng
+| Trị
+giá
+(05)
+| (06)
+| (07)
+| (08)
+| (09)
+(10)
+| (11)
+| (12)
+(13)
+| (14)
+| (15)
+ĐẠI DIỆN THEO PHÁP LUẬT
+CỦA DOANH NGHIỆP
+(Ký tên và đóng dấu)
+Phụ lục IV
+ÂN THUẾ ĐỐI VỚI HÀNG HÓA MUA TẠI VIỆT NAM
+THEO KHI XUẤT CẢNH CỦA NGƯỜI NƯỚC NGOÀI,
+NGUOIVIET NAM ĐỊNH CƯ Ở NƯỚC NGOÀI MANG HỘ CHIẾU
+HOẶC GIẤY TỜ CÓ GIÁ TRỊ ĐI LẠI QUỐC TẾ
+(Kèm theo Nghị định số 181/2025/NĐ-CP
+ngày 01 tháng 7 năm 2025 của Chính phủ)
+Việc hoàn thuế đối với trường hợp người nước ngoài, người Việt Nam
+định cư ở nước ngoài mang hộ chiếu hoặc giấy tờ có giá trị đi lại quốc tế mua
+hàng hóa tại Việt Nam và mang theo khi xuất cảnh quy định tại Điều 33 Nghị
+định này được thực hiện như sau:
+1. Hàng hóa được hoàn thuế giá trị gia tăng quy định tại Phụ lục này là
+hàng hóa đáp ứng quy định sau:
+a) Hàng hóa không thuộc Danh mục hàng hóa cấm xuất khẩu; Danh mục
+hàng hóa xuất khẩu theo giấy phép của Bộ Công Thương hoặc Danh mục hàng
+hóa xuất khẩu thuộc diện quản lý chuyên ngành quy định tại Nghị định
+số 69/2018/NĐ-CP ngày 15 tháng 5 năm 2018 của Chính phủ quy định chi tiết
+một số điều của Luật Quản lý ngoại thương và các văn bản hướng dẫn Nghị định này.
+b) Hàng hóa không thuộc đối tượng cấm đưa lên tàu bay quy định tại Điều
+12 Luật Hàng không dân dụng Việt Nam ngày 29 tháng 6 năm 2006 và các văn
+bản hướng dẫn thực hiện.
+c) Hàng hóa không thuộc các mặt hàng được hoàn thuế giá trị gia tăng của
+người nước ngoài, người Việt Nam định cư ở nước ngoài theo quy định
+tại Thông tư số 08/2003/TT-BTC ngày 15 tháng 01 năm 2003 của Bộ trưởng Bộ
+Tài chính hướng dẫn hoàn thuế giá trị gia tăng đối với cơ quan đại diện ngoại
+giao, cơ quan lãnh sự và cơ quan đại diện của tổ chức quốc tế tại Việt Nam.
+d) Hàng hóa mua tại doanh nghiệp bán hàng hoàn thuế giá trị gia tăng,
+chưa qua sử dụng, còn nguyên đai, nguyên kiện khi mua hàng, có hóa đơn giá
+trị gia tăng kiêm tờ khai hoàn thuế được lập trong thời gian tối đa 60 ngày tính
+đến ngày người nước ngoài, người Việt Nam định cư ở nước ngoài xuất cảnh.
+đ) Trị giá hàng hóa ghi trên hóa đơn giá trị gia tăng kiêm tờ khai hoàn thuế
+mua tại 01 cửa hàng trong 01 ngày (kể cả cộng gộp nhiều hóa đơn mua hàng trong
+cùng 01 ngày tại 01 cửa hàng) tối thiểu từ 02 (hai) triệu đồng trở lên.
+2. Số tiền được hoàn thuế, đồng tiền hoàn thuế giá trị gia tăng
+a) Số tiền thuế giá trị gia tăng người nước ngoài, người Việt Nam định cư
+ở nước ngoài được hoàn bằng 85% (tám mươi lăm phần trăm) trên tổng số tiền
+thuế giá trị gia tăng của số hàng hóa đủ điều kiện được hoàn thuế giá trị gia tăng
+do người nước ngoài, người Việt Nam định cư ở nước ngoài mang theo khi xuất
+cảnh qua cửa khẩu hoàn thuế.
+Ngân hàng thương mại được hưởng bằng 15% (mười lăm phần trăm) trên
+tổng số tiền thuế giá trị gia tăng của số hàng hóa đủ điều kiện được hoàn thuế
+giá trị gia tăng do người nước ngoài, người Việt Nam định cư ở nước ngoài
+mang theo khi xuất cảnh qua cửa khẩu hoàn thuế.
+b) Đồng tiền hoàn thuế là đồng Việt Nam. Trường hợp người nước ngoài,
+người Việt Nam định cư ở nước ngoài có yêu cầu được chuyển số tiền hoàn
+thuế từ đồng Việt Nam sang ngoại tệ tự do chuyển đổi thì ngân hàng thương
+mại thực hiện bán ngoại tệ cho người nước ngoài, người Việt Nam định cư ở
+nước ngoài theo quy định của pháp luật.
+Tỷ giá chuyển đổi là tỷ giá do ngân hàng thương mại niêm yết tại thời
+điểm chuyển đổi và phù hợp với quy định của Ngân hàng Nhà nước Việt Nam.
+3. Thời điểm hoàn thuế giá trị gia tăng
+a) Thời điểm hoàn thuế giá trị gia tăng cho người nước ngoài, người Việt
+Nam định cư ở nước ngoài xuất cảnh được thực hiện ngay sau khi người nước
+ngoài, người Việt Nam định cư ở nước ngoài hoàn thành thủ tục kiểm tra hóa
+đơn giá trị gia tăng kiêm tờ khai hoàn thuế tại quầy hoàn thuế của ngân hàng
+thương mại làm đại lý hoàn thuế và trước giờ lên tàu bay của chuyến bay hoặc
+tàu biển của chuyến tàu người nước ngoài, người Việt Nam định cư ở nước
+ngoài xuất cảnh.
+b) Cơ quan hải quan, ngân hàng thương mại có trách nhiệm bố trí cán bộ,
+công chức làm việc trong tất cả các ngày kể cả ngày lễ, chủ nhật và ngoài giờ
+làm việc hành chính để thực hiện hoàn trả tiền thuế giá trị gia tăng cho người
+nước ngoài, người Việt Nam định cư ở nước ngoài theo quy định tại Nghị định
+này.
+4. Hồ sơ, thủ tục hoàn thuế giá trị gia tăng cho người nước ngoài, người
+Việt Nam định cư ở nước ngoài khi xuất cảnh
+a) Người nước ngoài, người Việt Nam định cư ở nước ngoài xuất trình cho
+cơ quan hải quan tại quầy kiểm tra hóa đơn giá trị gia tăng kiêm tờ khai hoàn
+thuế, hàng hóa, các giấy tờ sau đây:
+al) Hộ chiếu hoặc giấy tờ nhập xuất cảnh.
+a2) Hóa đơn giá trị gia tăng kiêm tờ khai hoàn thuế theo quy định của Bộ
+Tài chính.
+a3) Hàng hóa.
+b) Cơ quan hải quan kiểm tra thực tế hàng hóa tại quầy kiểm tra hóa đơn
+giá trị gia tăng kiêm tờ khai hoàn thuế, hàng hóa. Việc kiểm tra thực hiện như
+sau:
+b1) Đối chiếu xác định từng nội dung khớp đúng giữa thông tin ghi trên hộ
+chiếu hoặc giấy tờ nhập xuất cảnh với thông tin trên hóa đơn giá trị gia tăng
+kiêm tờ khai hoàn thuế do người nước ngoài, người Việt Nam định cư ở nước
+ngoài xuất trình; thông tin hóa đơn giá trị gia tăng kiêm tờ khai hoàn thuế trên
+Hệ thống quản lý hoàn thuế giá trị gia tăng cho người nước ngoài (Hệ thống) do
+doanh nghiệp bán hàng gửi, Hệ thống hóa đơn điện tử của cơ quan thuế và các
+quy định về hàng hóa được hoàn thuế quy định tại điểm 1 Phụ lục này.
+b2) Kiểm tra thực tế hàng hóa đối với hàng hóa phải kiểm tra thực tế theo
+nguyên tắc quản lý rủi ro.
+Trường hợp hàng hóa xuất trình không phù hợp với mô tả hàng hóa tại hóa
+đơn giá trị gia tăng kiêm tờ khai hoàn thuế hoặc hóa đơn giá trị gia tăng kiêm tờ
+khai hoàn thuế ghi không đầy đủ thông tin theo quy định hoặc hóa đơn giá trị
+gia tăng kiêm tờ khai hoàn thuế không có trên Hệ thống, Hệ thống hóa đơn điện
+tử của cơ quan thuế (trừ trường hợp Hệ thống xảy ra sự cố) thì cơ quan hải quan
+trao đổi, xác minh với doanh nghiệp bán hàng. Trường hợp thông tin trao đổi
+với doanh nghiệp bán hàng không khớp đúng với thông tin hàng hóa, hóa đơn
+và hộ chiếu thì cơ quan hải quan từ chối hoàn thuế.
+b3) Ghi kết quả kiểm tra, đóng dấu đồng ý hoàn thuế hay từ chối hoàn
+thuế. Trường hợp cơ quan hải quan đồng ý hoàn thuế thì xác định mặt hàng,
+tính số tiền thuế giá trị gia tăng người nước ngoài, người Việt Nam định cư ở
+nước ngoài thực tế được hoàn theo quy định tại điểm 2 Phụ lục này.
+b4) Cập nhật thông tin hoàn thuế giá trị gia tăng cho người nước ngoài,
+người Việt Nam định cư ở nước ngoài vào Hệ thống theo hướng dẫn của Bộ Tài
+chính, ký số.
+Trường hợp Hệ thống xảy ra sự cố, cơ quan hải quan ký, đóng dấu xác
+nhận đồng ý hoàn thuế hay từ chối hoàn thuế vào hóa đơn giá trị gia tăng kiêm
+tờ khai hoàn thuế.
+5. Hoàn trả tiền thuế cho người nước ngoài, người Việt Nam định cư ở
+nước ngoài
+a) Sau khi hóa đơn giá trị gia tăng kiêm tờ khai hoàn thuế và hàng hóa đã
+được cơ quan hải quan kiểm tra, người nước ngoài, người Việt Nam định cư ở
+nước ngoài có trách nhiệm xuất trình cho ngân hàng thương mại tại quầy hoàn
+thuế:
+al) Thẻ lên tàu bay, tàu biển.
+a2) Hóa đơn giá trị gia tăng kiêm tờ khai hoàn thuế đã được cơ quan hải
+quan kiểm tra xác định mặt hàng, tính số tiền hoàn thuế giá trị gia tăng người
+nước ngoài, người Việt Nam định cư ở nước ngoài được hoàn và đóng dấu xác
+nhận (bản chính).
+b) Ngân hàng thương mại thực hiện:
+b1) Kiểm tra thẻ lên tàu bay, tàu biển; hóa đơn giá trị gia tăng kiêm tờ khai
+hoàn thuế; kiểm tra trên Hệ thống thông tin về người xuất cảnh, hàng hóa, xác
+nhận đồng hoàn thuế của cơ quan hải quan và số thuế được hoàn.
+Trường hợp thông tin về tên hành khách trên thẻ lên tàu bay, tàu biển
+không đúng với thông tin trên hóa đơn giá trị gia tăng kiêm tờ khai hoàn thuế đã
+được cơ quan hải quan kiểm tra, xác nhận thì ngân hàng thương mại trao đổi,
+xác minh với cơ quan hải quan. Trường hợp thông tin trao đổi với cơ quan hải
+quan không khớp đúng với thông tin trên thẻ lên tàu bay, tàu biển thì ngân hàng
+thương mại từ chối hoàn thuế và thông báo trên Hệ thống để cơ quan hải quan
+biết.
+b2) Cập nhật thông tin số hiệu, ngày tháng chuyến bay, chuyến tàu của
+người nước ngoài, người Việt Nam định cư ở nước ngoài và các thông tin khác
+theo hướng dẫn của Bộ Tài chính vào Hệ thống hoặc trên phần mềm của ngân
+hàng thương mại kết nối với Hệ thống, ký số và truyền cho cơ quan hải quan.
+b3) Trả tiền hoàn thuế cho người nước ngoài, người Việt Nam định cư ở
+nước ngoài bằng tiền mặt hoặc qua thẻ quốc tế của người nước ngoài, người
+Việt Nam định cư ở nước ngoài theo số tiền thuế giá trị gia tăng người nước
+ngoài, người Việt Nam định cư ở nước ngoài thực tế được hoàn do cơ quan hải
+quan tính ghi trên hóa đơn giá trị gia tăng kiêm tờ khai hoàn thuế.
+Trường hợp trả tiền hoàn thuế cho người nước ngoài, người Việt Nam định
+cư ở nước ngoài qua thẻ quốc tế, ngân hàng đối chiếu thông tin (tên, số thẻ)
+người nước ngoài, người Việt Nam định cư ở nước ngoài đăng ký nhận tiền
+hoàn thuế và thẻ thực tế xuất trình để thực hiện việc hoàn thuế.
+Trường hợp Hệ thống xảy ra sự cố, ngân hàng thương mại căn cứ hóa đơn
+giá trị gia tăng kiêm tờ khai hoàn thuế giấy và xác nhận của cơ quan hải quan
+theo quy định tại tiết b4 điểm 4 Phụ lục này, thực hiện hoàn trả tiền thuế cho
+người nước ngoài, người Việt Nam định cư ở nước ngoài theo quy định tại điểm
+2 Phụ lục này, đồng thời ký tên, đóng dấu xác nhận đã thanh toán tiền hoàn thuế
+cho người nước ngoài, người Việt Nam định cư ở nước ngoài lên hóa đơn giá trị
+gia tăng kiêm tờ khai hoàn thuế.
+Ngay sau khi Hệ thống hoạt động bình thường, ngân hàng thương mại cập
+nhật các thông tin hóa đơn giá trị gia tăng kiêm tờ khai hoàn thuế đã hoàn thuế
+trên Hệ thống hoặc phần mềm của ngân hàng thương mại kết nối với Hệ thống,
+ký số và truyền cho cơ quan hải quan.
+b4) Trả lại người nước ngoài, người Việt Nam định cư ở nước ngoài thẻ
+lên tàu bay, tàu biển.
+b5) Lưu trữ hồ sơ hoàn thuế đối với chứng từ điện tử và chứng từ giấy theo
+quy định của pháp luật.
+6. Hồ sơ, thủ tục hoàn thuế giá trị gia tăng cho ngân hàng thương mại là
+đại lý hoàn thuế giá trị gia tăng cho khách xuất cảnh thực hiện theo quy định
+của pháp luật về quản lý thuế.
+Phụ lục V
+ĐÌNH TỶ TRỌNG TRỊ GIÁ TÀI NGUYÊN, KHOÁNG SẢN VÀ
+PHÍ NĂNG LƯỢNG TRÊN GIÁ THÀNH SẢN PHẨM
+(Kèm theo Nghị định số 181/2025/NĐ-CP
+ngày 01 tháng 7 năm 2025 của Chính phủ)
+Sản phẩm xuất khẩu là hàng hóa được chế biến trực tiếp từ nguyên liệu chính
+là tài nguyên, khoáng sản có tổng trị giá tài nguyên, khoáng sản cộng với chi phí
+năng lượng chiếm từ 51% giá thành sản xuất sản phẩm trở lên.
+1. Tài nguyên, khoáng sản là tài nguyên, khoáng sản có nguồn gốc trong
+nước gồm: Khoáng sản kim loại; khoáng sản không kim loại; dầu thô; khí thiên
+nhiên; khí than.
+2. Việc xác định tỷ trọng trị giá tài nguyên, khoáng sản và chi phí năng lượng
+trên giá thành được thực hiện theo công thức:
+Tỷ trọng trị giá tài
+nguyên, khoáng sản
+và chi phí năng
+lượng trên giá thành
+sản xuất sản phẩm
+Trong đó:
+Trị giá tài nguyên, khoáng sản + chi phí năng lượng
+Tổng giá thành sản xuất sản phẩm
+x 100%
+Trị giá tài nguyên, khoáng sản đưa vào chế biến được xác định như sau: Đối
+với tài nguyên, khoáng sản trực tiếp khai thác là chi phí trực tiếp, gián tiếp khai
+thác ra tài nguyên, khoáng sản không bao gồm chi phí vận chuyển tài nguyên,
+khoáng sản từ nơi khai thác đến nơi chế biến; đối với tài nguyên, khoáng sản mua
+để chế biến tiếp là giá thực tế mua không bao gồm chi phí vận chuyển tài nguyên,
+khoáng sản từ nơi mua đến nơi chế biến.
+Chi phí năng lượng gồm: nhiên liệu, điện năng, nhiệt năng.
+Trị giá tài nguyên, khoáng sản và chi phí năng lượng được xác định theo giá
+trị ghi sổ kế toán phù hợp với Bảng tổng hợp tính giá thành sản phẩm.
+Giá thành sản xuất sản phẩm bao gồm: Chi phí nguyên vật liệu trực tiếp, chi
+phí nhân công trực tiếp và chi phí sản xuất chung. Các chi phí gián tiếp như chi
+phí bán hàng, chi phí quản lý, chi phí tài chính và chi phí khác không được tính
+vào giá thành sản xuất sản phẩm.
+Tỷ lệ trị giá tài nguyên, khoáng sản và chi phí năng lượng trên giá thành sản
+xuất sản phẩm được xác định căn cứ vào quyết toán năm trước và tỷ lệ này được
+áp dụng ổn định trong năm xuất khẩu. Trường hợp năm đầu tiên xuất khẩu
+sản phẩm thì tỷ lệ trị giá tài nguyên, khoáng sản và chi phí năng lượng trên giá
+thành sản xuất sản phẩm được xác định theo phương án đầu tư và tỷ lệ này được
+áp dụng ổn định trong năm xuất khẩu; trường hợp không có phương án đầu tư
+thì tỷ lệ trị giá tài nguyên, khoáng sản và chi phí năng lượng trên giá thành sản
+xuất sản phẩm được xác định theo thực tế của sản phẩm xuất khẩu
+3. Trường hợp doanh nghiệp không xuất khẩu mà bán chó doanh nghiệp
+khác để xuất khẩu thì doanh nghiệp mua hàng hóa này để xuất khẩu phải thực
+hiện kê khai thuế giá trị gia tăng như sản phẩm cùng loại do doanh nghiệp sản
+xuất trực tiếp xuất khẩu.

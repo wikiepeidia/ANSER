@@ -1,0 +1,39 @@
+# Thông tư hướng dẫn Luật Thuế GTGT và NĐ 181/2025/NĐ-CP
+# Trạng thái file: SẠCH — đã sửa 1 lỗi l)/1), đã xóa 16 dòng rác (số trang)
+so_hieu: "69/2025/TT-BTC"
+loai_vb: thong_tu
+co_quan: "Bộ Tài chính"
+
+ngay_ban_hanh: 2025-07-01
+ngay_hieu_luc: 2025-07-01        # Điều 10 — KHÔNG phải 02/7 như ghi nhầm ở plan v2.0
+ngay_het_hieu_luc: null
+trang_thai: con_hieu_luc
+
+linh_vuc: [thue_gtgt]
+# Hướng dẫn CẢ HAI văn bản — hai mắt xích cho nở chuỗi multi-hop
+huong_dan_cho: ["48/2024/QH15", "181/2025/NĐ-CP"]
+sua_doi: []
+bi_sua_doi_boi: []               # <<< tra công báo
+
+nguon_url: ""                    # <<< dán URL đã tải
+ngay_tai: 2026-08-11
+dinh_dang_goc: pdf_ocr
+file_goc: "69-btc.signed.pdf"
+sha256_txt: "29c067c6e4bd36c6"
+n_ky_tu: 33041
+n_dieu: 10
+
+ingest: true
+phu_luc_tach_rieng: "TT_69-2025-TT-BTC.phuluc-1.txt"
+
+# Điều 7 và Điều 8 chỉ dẫn chiếu sang Phụ lục II, III — hai điều này RỖNG
+# nếu thiếu công thức. Cần chép tay từ ảnh PDF rồi cài thành hàm tính toán.
+phu_luc_can_so_hoa:
+  - ten: "Phụ lục II"
+    noi_dung: "Công thức xác định số thuế GTGT được hoàn với hàng hóa, dịch vụ xuất khẩu"
+    dan_chieu_tu: "Điều 7"
+    trang_thai: chua_so_hoa
+  - ten: "Phụ lục III"
+    noi_dung: "Công thức xác định số thuế GTGT được hoàn với hoạt động sản xuất HHDV chịu thuế suất 5%"
+    dan_chieu_tu: "Điều 8"
+    trang_thai: chua_so_hoa

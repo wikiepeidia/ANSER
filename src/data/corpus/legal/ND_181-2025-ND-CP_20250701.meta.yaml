@@ -1,0 +1,32 @@
+# Nghị định quy định chi tiết thi hành một số điều của Luật Thuế GTGT
+# Trạng thái file: SẠCH (phần thân, dòng 1-1920)
+so_hieu: "181/2025/NĐ-CP"
+loai_vb: nghi_dinh
+co_quan: "Chính phủ"
+
+ngay_ban_hanh: 2025-07-01
+ngay_hieu_luc: 2025-07-01
+ngay_het_hieu_luc: null
+trang_thai: con_hieu_luc
+
+linh_vuc: [thue_gtgt]
+huong_dan_cho: ["48/2024/QH15"]
+duoc_huong_dan_boi: ["69/2025/TT-BTC"]
+sua_doi: []
+bi_sua_doi_boi: []               # <<< tra công báo
+
+nguon_url: ""                    # <<< dán URL đã tải
+ngay_tai: 2026-08-11
+dinh_dang_goc: pdf_ocr
+file_goc: "181-2025.pdf"
+sha256_txt: "15d78adf316c3d97"
+n_ky_tu: 126972
+n_dieu: 40
+
+ingest: true
+
+# 5 phụ lục tách sang file riêng, KHÔNG ingest:
+# khoáng sản, biểu mẫu hàng miễn thuế, hoàn thuế khách xuất cảnh.
+# Không liên quan ngành hàng trà/thảo mộc, và dày đặc từ khóa chung
+# ("hàng hóa", "loại khác") nên sẽ nhiễu BM25 nếu index chung.
+phu_luc_tach_rieng: "../phuluc/ND_181-2025-ND-CP.phuluc.txt"
