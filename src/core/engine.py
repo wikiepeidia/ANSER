@@ -4,10 +4,69 @@ import logging
 import threading
 import time
 from collections import OrderedDict
+from pathlib import Path, PurePosixPath, PureWindowsPath
 
 from src.core.config import Config
 
 logger = logging.getLogger("projecta.engine")
+
+
+def _looks_like_local_model_source(model_source: str) -> bool:
+    """Recognize explicit local paths without misclassifying Hub ``owner/repo`` IDs."""
+    return (
+        PurePosixPath(model_source).is_absolute()
+        or PureWindowsPath(model_source).is_absolute()
+        or model_source.startswith(("./", "../", ".\\", "..\\", "~"))
+    )
+
+
+def validate_text_model_source(model_source: str) -> str:
+    """Fail fast when ``TEXT_MODEL_ID`` names a missing/incomplete local export.
+
+    Hugging Face accepts either a Hub repo ID or a local model directory. When an
+    absolute Colab Drive path is missing, its downstream validator interprets the
+    string as a repo ID and emits a misleading repository-name error. Validate only
+    explicit local-looking paths here; legitimate ``owner/repo`` IDs pass through.
+    """
+    model_source = model_source.strip()
+    if not model_source:
+        raise ValueError("TEXT_MODEL_ID is empty; set it to a Hub repo ID or model directory.")
+    if not _looks_like_local_model_source(model_source):
+        return model_source
+
+    model_dir = Path(model_source).expanduser()
+    if not model_dir.is_dir():
+        raise FileNotFoundError(
+            "TEXT_MODEL_ID points to a local model directory that does not exist: "
+            f"{model_source}. Mount the Google Drive account containing ANSER_data "
+            "or copy the complete quantized model export to this directory before "
+            "starting the server. To load from Hugging Face Hub instead, set "
+            "TEXT_MODEL_ID to an owner/repo ID."
+        )
+
+    missing_artifacts = []
+    if not (model_dir / "config.json").is_file():
+        missing_artifacts.append("config.json")
+    if not any(
+        path.is_file()
+        for pattern in ("*.safetensors", "*.bin", "*.pt")
+        for path in model_dir.glob(pattern)
+    ):
+        missing_artifacts.append("model weights (*.safetensors/*.bin/*.pt)")
+    if not any(
+        (model_dir / filename).is_file()
+        for filename in ("tokenizer.json", "tokenizer.model", "spiece.model", "vocab.json")
+    ):
+        missing_artifacts.append("tokenizer artifact")
+
+    if missing_artifacts:
+        raise FileNotFoundError(
+            f"TEXT_MODEL_ID local model directory is incomplete: {model_source}. "
+            f"Missing: {', '.join(missing_artifacts)}. Re-copy the complete AWQ export; "
+            "creating an empty directory is not sufficient."
+        )
+
+    return str(model_dir)
 
 
 class TaskRegistry:
@@ -90,6 +149,8 @@ class ModelEngine:
 
         logger.info("Booting COLAB engine — target GPU L4 22.5GB")
 
+        text_model_source = validate_text_model_source(self.config.text_model_id)
+
         import torch
         from vllm import LLM
         from transformers import Qwen2VLForConditionalGeneration, AutoProcessor
@@ -99,13 +160,13 @@ class ModelEngine:
         vc = self.config.vllm_config
         logger.info(
             "Loading text model: %s (util=%.2f, max_len=%d, quant=%s)",
-            self.config.text_model_id,
+            text_model_source,
             vc["gpu_memory_utilization"],
             vc["max_model_len"],
             vc.get("quantization"),
         )
         self.llm = LLM(
-            model=self.config.text_model_id,
+            model=text_model_source,
             gpu_memory_utilization=vc["gpu_memory_utilization"],
             max_model_len=vc["max_model_len"],
             dtype=vc["dtype"],
