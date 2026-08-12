@@ -55,6 +55,29 @@ def test_customer_order_exact_response_scores_complete(tmp_path):
     assert evaluation["field_scores"]["irrelevant_metadata_null"] is True
 
 
+def test_customer_order_mixed_family_metadata_requires_review(tmp_path):
+    manifest_path = generate_corpus(tmp_path / "corpus", count=2, seed=22)
+    case = _read_manifest(manifest_path)["cases"][0]
+    contaminated = dict(case["truth"])
+    contaminated.update(
+        {
+            "farmer": case["truth"]["customer_name"],
+            "region_grown": case["truth"]["region"],
+            "part": case["truth"]["items"][0]["name"],
+            "form": case["truth"]["items"][0]["sku"],
+            "gacp_cert": case["truth"]["customer_code"],
+        }
+    )
+
+    response = endpoint_like_result(contaminated)
+    evaluation = evaluate_case(case, response)
+
+    assert response["needs_manual_review"] is True
+    assert evaluation["field_scores"]["irrelevant_metadata_null"] is False
+    assert evaluation["review_correct"] is True
+    assert evaluation["review_false_negative"] is False
+
+
 def test_material_missing_field_exposes_review_false_negative(tmp_path):
     manifest_path = generate_corpus(tmp_path / "corpus", count=2, seed=23)
     case = _read_manifest(manifest_path)["cases"][1]

@@ -105,6 +105,42 @@ def test_manufacturing_parser_accepts_explicit_honest_empty():
     assert result == {"items": [], "total": 0}
 
 
+def test_manufacturing_parser_accepts_singleton_object_array():
+    primary = {
+        "items": [
+            {
+                "sku": "SP-003",
+                "name": "Tra Duong Quyen 100g",
+                "qty": 15,
+                "unit_price": 72000,
+            }
+        ],
+        "total": 1188000,
+    }
+
+    result = _extract(json.dumps([primary]))
+
+    assert result == primary
+
+
+@pytest.mark.parametrize(
+    "raw",
+    [
+        "[]",
+        '[{"items": [], "total": 0}, {"items": [], "total": 0}]',
+        '["not an object"]',
+    ],
+)
+def test_manufacturing_parser_rejects_ambiguous_or_non_object_arrays(raw):
+    engine = _RawVisionEngine(raw, "{}")
+    agent = VisionAgent(engine)
+
+    result = asyncio.run(agent.extract_manufacturing_invoice("unused.png"))
+
+    assert result["error"] == "VLM không trả JSON object"
+    assert len(engine.calls) == 1
+
+
 def test_manufacturing_parser_accepts_valid_single_item():
     raw = json.dumps(
         {
@@ -185,6 +221,30 @@ def test_manufacturing_two_pass_merges_material_batch_metadata():
     }
 
     result = _extract(json.dumps(primary), json.dumps(focused_metadata))
+
+    assert result == primary | focused_metadata
+
+
+def test_manufacturing_two_pass_accepts_singleton_metadata_object_array():
+    primary = {
+        "items": [
+            {
+                "sku": "SP-002",
+                "name": "Tra Atiso Tui Loc 20g",
+                "qty": 20,
+                "unit_price": 45000,
+            }
+        ],
+        "total": 990000,
+    }
+    focused_metadata = {
+        "doc_no": "DH-20260805-02",
+        "customer_code": "KH-0102",
+        "region": "Da Lat",
+        "deadline": "2026-08-18",
+    }
+
+    result = _extract(json.dumps(primary), json.dumps([focused_metadata]))
 
     assert result == primary | focused_metadata
 

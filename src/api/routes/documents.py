@@ -177,17 +177,12 @@ async def ocr_manufacturing_endpoint(
         # cũng gắn cờ needs_manual_review. Tương tự, items/total có thể đọc đúng
         # nhưng thiếu toàn bộ metadata nhận diện chứng từ; arithmetic hợp lệ không
         # đủ để coi kết quả OCR đó là đầy đủ.
-        metadata_present = any(
-            getattr(invoice, field) is not None
-            for field in (
-                "farmer", "region_grown", "part", "form", "gacp_cert",
-                "doc_no", "customer_code", "region", "deadline",
-            )
-        )
+        metadata_families = invoice.populated_metadata_families()
         needs_manual_review = (
             (not validation["is_valid"])
             or (len(invoice.items) == 0)
-            or (not metadata_present)
+            or (not metadata_families)
+            or (len(metadata_families) > 1)
         )
 
         return {

@@ -472,14 +472,12 @@ def endpoint_like_result(extracted: dict[str, Any]) -> dict[str, Any]:
         for item in invoice.items
     ]
     validation = MCPServer.validate_invoice_total(mcp_items, invoice.total)
-    metadata_present = any(
-        getattr(invoice, field) is not None
-        for field in MANUFACTURING_METADATA_FIELDS
-    )
+    metadata_families = invoice.populated_metadata_families()
     needs_manual_review = (
         (not validation["is_valid"])
         or (len(invoice.items) == 0)
-        or (not metadata_present)
+        or (not metadata_families)
+        or (len(metadata_families) > 1)
     )
     return {
         "success": True,

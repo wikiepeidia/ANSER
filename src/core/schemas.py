@@ -144,6 +144,21 @@ class ManufacturingInvoicePayload(BaseModel):
             raise ValueError("total must be >= 0")
         return v
 
+    def populated_metadata_families(self) -> set[str]:
+        """Return document families represented by non-null metadata."""
+        families = set()
+        if any(
+            getattr(self, field) is not None
+            for field in ("farmer", "region_grown", "part", "form", "gacp_cert")
+        ):
+            families.add("material_batch")
+        if any(
+            getattr(self, field) is not None
+            for field in ("doc_no", "customer_code", "region", "deadline")
+        ):
+            families.add("customer_order")
+        return families
+
 
 class RetailChatResponse(BaseModel):
     answer: str = Field(..., description="The main response text to the user")

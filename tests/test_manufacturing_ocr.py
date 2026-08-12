@@ -44,10 +44,10 @@ def test_manufacturing_ocr_happy_path_returns_all_fields(monkeypatch):
         "part": "lá",
         "form": "tuoi",
         "gacp_cert": "GACP-1234",
-        "doc_no": "DH-0001",
-        "customer_code": "KH-001",
-        "region": "HN",
-        "deadline": "2026-09-01",
+        "doc_no": None,
+        "customer_code": None,
+        "region": None,
+        "deadline": None,
     }
     _patch_vision(monkeypatch, extraction)
 
@@ -101,6 +101,33 @@ def test_manufacturing_ocr_partial_fields_customer_order_only(monkeypatch):
     assert invoice["doc_no"] == "DH-0002"
     assert invoice["customer_code"] == "KH-002"
     assert payload["needs_manual_review"] is False
+
+
+def test_manufacturing_ocr_mixed_document_family_metadata_requires_review(monkeypatch):
+    extraction = {
+        "items": [
+            {"sku": "SP-003", "name": "Tra Duong Quyen 100g", "qty": 15, "unit_price": 72000},
+            {"sku": "SP-008", "name": "Vien Nang Atiso 60 Vien", "qty": 13, "unit_price": 195000},
+        ],
+        "total": 3976500,
+        "farmer": "Cua hang Song Xanh",
+        "region_grown": "Ha Noi",
+        "part": "Tra Duong Quyen 100g",
+        "form": "SP-003",
+        "gacp_cert": "KH-0100",
+        "doc_no": "DH-202608-001",
+        "customer_code": "KH-0100",
+        "region": "Ha Noi",
+        "deadline": "2026-08-10",
+    }
+    _patch_vision(monkeypatch, extraction)
+
+    response = _post_manufacturing_ocr()
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["validation"]["is_valid"] is True
+    assert payload["needs_manual_review"] is True
 
 
 def test_manufacturing_ocr_valid_total_without_any_metadata_requires_review(monkeypatch):

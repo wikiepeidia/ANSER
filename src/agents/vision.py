@@ -117,6 +117,15 @@ class VisionAgent:
             return self.PROMPTS["ocr"]
         return self.PROMPTS["caption"]
 
+    @staticmethod
+    def _normalize_json_object(parsed):
+        """Accept a mapping or an unambiguous one-mapping wrapper only."""
+        if isinstance(parsed, dict):
+            return parsed
+        if isinstance(parsed, list) and len(parsed) == 1 and isinstance(parsed[0], dict):
+            return parsed[0]
+        return None
+
     @classmethod
     def _merge_manufacturing_metadata(cls, primary: dict, metadata: dict) -> dict:
         """Fill missing top-level metadata while keeping primary line facts authoritative."""
@@ -171,8 +180,9 @@ class VisionAgent:
         if isinstance(primary_raw, str) and primary_raw.startswith("Error"):
             return {"error": primary_raw}
         try:
-            parsed = repair_json(primary_raw, return_objects=True)
-            if isinstance(parsed, dict):
+            repaired = repair_json(primary_raw, return_objects=True)
+            parsed = self._normalize_json_object(repaired)
+            if parsed is not None:
                 missing_keys = sorted({"items", "total"} - parsed.keys())
                 if missing_keys:
                     logger.warning(
@@ -198,14 +208,15 @@ class VisionAgent:
             return parsed
 
         try:
-            metadata = repair_json(metadata_raw, return_objects=True)
+            repaired_metadata = repair_json(metadata_raw, return_objects=True)
+            metadata = self._normalize_json_object(repaired_metadata)
         except Exception as exc:
             logger.warning(
                 "Manufacturing metadata JSON parse failed; keeping primary extraction: %s",
                 exc,
             )
             return parsed
-        if not isinstance(metadata, dict):
+        if metadata is None:
             logger.warning(
                 "Manufacturing metadata VLM did not return a JSON object; keeping primary extraction"
             )
