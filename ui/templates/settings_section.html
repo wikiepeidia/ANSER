@@ -1,115 +1,102 @@
 {% extends "base.html" %}
+
 {% block title %}{{ section_meta.title }} - Cài đặt{% endblock %}
 
-{% block styles %}
-{{ super() }}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/settings.css') }}">
-<style>
-    /* ── Page-specific styles (shared tokens now in saas-tokens.css) ── */
-
-    .btn { border-radius: 8px; font-weight: 500; font-size: 0.875rem; padding: 8px 16px; border: 1px solid transparent; box-shadow: var(--shadow-md); transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 8px; }
-    .btn-outline-secondary { background-color: #fff !important; color: var(--gray-900) !important; border-color: var(--border-soft) !important; }
-    .btn-outline-secondary:hover { background-color: #F9FAFB !important; transform: translateY(-1px); }
-
-    .settings-header-icon {
-        width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center;
-        color: #ffffff !important; font-size: 1.2rem; box-shadow: var(--shadow-md);
-    }
-
-    .card { background: var(--surface-100) !important; border: 1px solid var(--border-soft) !important; border-radius: 12px !important; box-shadow: var(--shadow-md) !important; overflow: hidden; margin-bottom: 24px;}
-    .card-body { padding: 32px; }
-
-    .form-control, .form-select { border-radius: 8px; border: 1px solid #D1D5DB; padding: 10px 14px; font-size: 0.9rem; }
-    .form-control:focus, .form-select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(0, 49, 82, 0.2); }
-    .form-label { font-weight: 600; color: var(--gray-900); font-size: 0.875rem; margin-bottom: 8px; }
-    .form-text { font-size: 0.8rem; color: var(--gray-500); margin-top: 6px; }
-</style>
-{% endblock %}
-
-{% block scripts %}
-{{ super() }}
-
-{% endblock %}
-
 {% block content %}
-<div class="app-layout">
-    {% include 'components/sidebar.html' %}
 
-    <main class="app-content">
-        <div class="container-fluid py-4" style="max-width: 1000px; margin: 0 auto;">
-            <div class="d-flex align-items-center mb-5 gap-3">
-                <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('pages.settings') }}" aria-label="Quay lại cài đặt">
-                    <i class="fas fa-arrow-left"></i> <span data-i18n="sale.back">Quay lại</span>
-                </a>
-                <div class="d-flex align-items-center ms-2">
-                    <div class="settings-header-icon me-3" style="background: {{ section_meta.gradient }};">
-                        <i class="fas {{ section_meta.icon }}"></i>
-                    </div>
-                    <div>
-                        <p class="text-muted mb-1" style="font-size: 0.75rem; text-transform: uppercase; font-weight: 600; letter-spacing: 0.05em;" data-i18n="settingsSection.configuration">Cấu hình</p>
-                        <h3 class="mb-0" style="font-weight: 700; letter-spacing: -0.02em;">{{ section_meta.title }}</h3>
-                        <small class="text-muted">{{ section_meta.description }}</small>
-                    </div>
-                </div>
+<div style="max-width: 1000px; margin: 0 auto;">
+
+    <!-- Back + Header -->
+    <div class="flex items-center gap-3 mb-6" style="margin-bottom: var(--space-8);">
+        <a class="btn btn--outline btn--sm" href="{{ url_for('pages.settings') }}">
+            <i class="fa-solid fa-arrow-left"></i> Quay lại
+        </a>
+        <div class="flex items-center gap-3">
+            <div class="stat-card__icon stat-card__icon--purple" style="width: 48px; height: 48px; background: {{ section_meta.gradient }};">
+                <i class="fa-solid {{ section_meta.icon }}" style="font-size: 20px;"></i>
             </div>
-
-            <div class="row g-4">
-                <div class="col-lg-8">
-                    <div class="card">
-                        <div class="card-body">
-                            <form id="settingsForm">
-                                {% if section_key == 'store' %}
-                                <div class="mb-4">
-                                    <label class="form-label" data-i18n="settingsSection.storeName">Tên cửa hàng</label>
-                                    <input type="text" class="form-control setting-input" name="store_name"
-                                        value="{{ settings.get('store_name', 'Cửa hàng AI của tôi') }}" data-group="store">
-                                </div>
-                                <div class="mb-4">
-                                    <label class="form-label" data-i18n="settingsSection.address">Địa chỉ</label>
-                                    <input type="text" class="form-control setting-input" name="store_address"
-                                        value="{{ settings.get('store_address', '') }}" data-group="store">
-                                </div>
-                                <div class="mb-4">
-                                    <label class="form-label" data-i18n="settingsSection.currency">Tiền tệ</label>
-                                    <select class="form-select setting-input" name="currency" data-group="store">
-                                        <option value="VND" {% if settings.get('currency')=='VND' %}selected{% endif %}>VND (Đồng Việt Nam)</option>
-                                        <option value="USD" {% if settings.get('currency')=='USD' %}selected{% endif %}>USD (Đô la Mỹ)</option>
-                                    </select>
-                                </div>
-
-                                {% elif section_key == 'system' %}
-                                <div class="mb-4">
-                                    <label class="form-label" data-i18n="settingsSection.backupFrequency">Tần suất sao lưu</label>
-                                    <select class="form-select setting-input" name="backup_frequency" data-group="system">
-                                        <option value="daily" {% if settings.get('backup_frequency')=='daily' %}selected{% endif %} data-i18n="adminDash.daily">Hằng ngày</option>
-                                        <option value="weekly" {% if settings.get('backup_frequency')=='weekly' %}selected{% endif %} data-i18n="settingsSection.weekly">Hằng tuần</option>
-                                        <option value="manual" {% if settings.get('backup_frequency')=='manual' %}selected{% endif %} data-i18n="settingsSection.manualOnly">Chỉ thủ công</option>
-                                    </select>
-                                </div>
-                                <div class="mb-4">
-                                    <label class="form-label" data-i18n="settingsSection.keepImages">Giữ ảnh đã tải lên (ngày)</label>
-                                    <input type="number" class="form-control setting-input" name="keep_images_days"
-                                        value="{{ settings.get('keep_images_days', '30') }}" data-group="system">
-                                    <div class="form-text" data-i18n="settingsSection.keepImagesHint">Ảnh cũ hơn mốc này sẽ tự động bị xóa để tiết kiệm dung lượng.</div>
-                                </div>
-                                {% endif %}
-                            </form>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-lg-4">
-                    <div class="card" style="background: #F9FAFB !important; border-style: dashed !important;">
-                        <div class="card-body">
-                            <h6 style="font-weight: 600; color: var(--gray-900); margin-bottom: 12px;"><i class="fas fa-info-circle text-primary me-2"></i><span data-i18n="settingsSection.aboutThis">Về mục này</span></h6>
-                            <p class="small text-muted mb-0" style="line-height: 1.5;">
-                                <span data-i18n="settingsSection.autoSaveHint">Thay đổi sẽ được tự động lưu một cách bảo mật ngay khi bạn rời khỏi trường nhập liệu. Không cần phải nhấn nút lưu.</span>
-                            </p>
-                        </div>
-                    </div>
-                </div>
+            <div>
+                <p class="content__subtitle" style="margin: 0;">Cấu hình</p>
+                <h1 class="content__title" style="margin: 0; font-size: 24px;">{{ section_meta.title }}</h1>
+                <small style="color: var(--text-secondary);">{{ section_meta.description }}</small>
             </div>
         </div>
-    </main>
+    </div>
+
+    <!-- Two-column layout -->
+    <div class="detail-page">
+        <div>
+            <section class="card">
+                <div class="card__body">
+                    <form id="settingsForm">
+                        {% if section_key == 'store' %}
+                        <div class="form-group">
+                            <label for="store_name">Tên cửa hàng</label>
+                            <input type="text" class="form-control" id="store_name" name="store_name" value="{{ settings.get('store_name', 'Cửa hàng AI của tôi') }}" data-group="store">
+                        </div>
+                        <div class="form-group">
+                            <label for="store_address">Địa chỉ</label>
+                            <input type="text" class="form-control" id="store_address" name="store_address" value="{{ settings.get('store_address', '') }}" data-group="store">
+                        </div>
+                        <div class="form-group">
+                            <label for="currency">Tiền tệ</label>
+                            <select class="form-control" id="currency" name="currency" data-group="store">
+                                <option value="VND" {% if settings.get('currency')=='VND' %}selected{% endif %}>VND (Đồng Việt Nam)</option>
+                                <option value="USD" {% if settings.get('currency')=='USD' %}selected{% endif %}>USD (Đô la Mỹ)</option>
+                            </select>
+                        </div>
+
+                        {% elif section_key == 'appearance' %}
+                        <div class="form-group">
+                            <label for="theme">Theme</label>
+                            <select class="form-control" id="theme" name="theme" data-group="appearance">
+                                <option value="light">Sáng</option>
+                                <option value="dark">Tối</option>
+                                <option value="system">Theo hệ thống</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="language">Ngôn ngữ</label>
+                            <select class="form-control" id="language" name="language" data-group="appearance">
+                                <option value="vi">Tiếng Việt</option>
+                                <option value="en">English</option>
+                            </select>
+                        </div>
+
+                        {% elif section_key == 'system' %}
+                        <div class="form-group">
+                            <label for="backup_frequency">Tần suất sao lưu</label>
+                            <select class="form-control" id="backup_frequency" name="backup_frequency" data-group="system">
+                                <option value="daily" {% if settings.get('backup_frequency')=='daily' %}selected{% endif %}>Hằng ngày</option>
+                                <option value="weekly" {% if settings.get('backup_frequency')=='weekly' %}selected{% endif %}>Hằng tuần</option>
+                                <option value="manual" {% if settings.get('backup_frequency')=='manual' %}selected{% endif %}>Chỉ thủ công</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="keep_images_days">Giữ ảnh đã tải lên (ngày)</label>
+                            <input type="number" class="form-control" id="keep_images_days" name="keep_images_days" value="{{ settings.get('keep_images_days', '30') }}" data-group="system">
+                            <small class="form-help">Ảnh cũ hơn mốc này sẽ tự động bị xóa để tiết kiệm dung lượng.</small>
+                        </div>
+                        {% endif %}
+                    </form>
+                </div>
+            </section>
+        </div>
+
+        <div>
+            <section class="card" style="background: var(--bg-page); border-style: dashed;">
+                <div class="card__body">
+                    <h3 class="card__title" style="font-size: 14px; font-weight: 600;">
+                        <i class="fa-solid fa-info-circle" style="color: var(--brand-primary);"></i>
+                        Về mục này
+                    </h3>
+                    <p style="color: var(--text-secondary); line-height: 1.5; font-size: 13px; margin: 0;">
+                        Thay đổi sẽ được tự động lưu một cách bảo mật ngay khi bạn rời khỏi trường nhập liệu. Không cần phải nhấn nút lưu.
+                    </p>
+                </div>
+            </section>
+        </div>
+    </div>
 </div>
+
 {% endblock %}

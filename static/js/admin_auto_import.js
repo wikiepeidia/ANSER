@@ -18,82 +18,122 @@ function renderAutomationsTable() {
     const tbody = document.getElementById('automationsTableBody');
     if (automations.length === 0) {
         tbody.innerHTML = `
-            <tr>
-                <td colspan="6" class="text-center">
-                    Chưa có quy tự động nào. Nhấn "Tạo quy tự động" để bắt đầu.
-                </td>
-            </tr>`;
+            <tr><td colspan="6">
+                <div class="empty-state empty-state--compact">
+                    <div class="empty-state__icon"><i class="fa-solid fa-robot"></i></div>
+                    <p class="empty-state__title">Chưa có quy tắc tự động</p>
+                    <p class="empty-state__description">Nhấn "Tạo quy tắc" ở góc trên hoặc chọn một mẫu bên dưới.</p>
+                </div>
+            </td></tr>`;
         return;
     }
 
-    tbody.innerHTML = automations.map(auto => `
+    tbody.innerHTML = automations.map(auto => {
+        const isActive = auto.status === 'active';
+        const actions = [
+            { label: 'Sửa', icon: 'fa-solid fa-pen', action: 'editAutomation' },
+            { divider: true },
+            { label: isActive ? 'Tạm dừng' : 'Kích hoạt', icon: isActive ? 'fa-solid fa-pause' : 'fa-solid fa-play', action: 'toggleStatusFromRow' },
+            { divider: true },
+            { label: 'Xóa', icon: 'fa-solid fa-trash', action: 'deleteAutomation', danger: true },
+        ];
+        return `
         <tr>
-            <td><strong>${auto.name}</strong></td>
+            <td><strong>${banleUI.escapeHtml(auto.name)}</strong></td>
             <td>${formatType(auto.type)}</td>
             <td>
-                <div class="form-check form-switch">
-                    <input class="form-check-input" type="checkbox" 
-                        ${auto.status === 'active' ? 'checked' : ''} 
+                <div class="form-check form-switch" title="${auto.status === 'active' ? 'Đang bật' : 'Đang tắt'}">
+                    <input class="form-check-input" type="checkbox" aria-label="Bật/tắt quy tự động"
+                        ${isActive ? 'checked' : ''}
                         onchange="toggleStatus(${auto.id}, this.checked)">
-                    <label class="form-check-label" id="status-label-${auto.id}">${auto.status}</label>
                 </div>
             </td>
-            <td>${auto.last_run ? new Date(auto.last_run).toLocaleString() : 'Chưa chạy'}</td>
-            <td><small class="text-muted font-monospace">${formatConfig(auto.type, auto.config)}</small></td>
-            <td>
-                <button class="btn btn-sm btn-primary me-1" onclick="editAutomation(${auto.id})">
-                    <i class="fas fa-edit"></i>
-                </button>
-                <button class="btn btn-sm btn-danger" onclick="deleteAutomation(${auto.id})">
-                    <i class="fas fa-trash"></i>
-                </button>
-            </td>
+            <td>${auto.last_run ? banleUI.formatDateTimeVN(auto.last_run) : '—'}</td>
+            <td>${formatConfig(auto.type, auto.config)}</td>
+            <td class="table__actions">${banleUI.renderRowActions(auto.id, actions)}</td>
         </tr>
-    `).join('');
+    `;
+    }).join('');
+
+    banleUI.bindRowActions(tbody);
+}
+
+function toggleStatusFromRow(id) {
+    const auto = automations.find((a) => String(a.id) === String(id));
+    if (!auto) return;
+    const newStatus = auto.status === 'active' ? false : true;
+    toggleStatus(id, newStatus);
 }
 
 function updateStats() {
     const activeCount = automations.filter(a => a.status === 'active').length;
     document.getElementById('activeAutomations').textContent = activeCount;
-    
-    // Mock completed runs for now, or calculate if we had run history
-    // document.getElementById('completedRuns').textContent = '0'; 
-    
+
     const lastRun = automations
         .filter(a => a.last_run)
         .sort((a, b) => new Date(b.last_run) - new Date(a.last_run))[0];
-        
-    document.getElementById('lastRun').textContent = lastRun ? new Date(lastRun.last_run).toLocaleString() : 'None';
+
+    document.getElementById('lastRun').textContent = lastRun ? banleUI.formatDateTimeVN(lastRun.last_run) : '—';
 }
 
 function formatType(type) {
-    const types = {
-        'low_stock': '<span class="badge bg-warning text-dark">Tồn kho thấp</span>',
-        'scheduled': '<span class="badge bg-info">Theo lịch</span>',
-        'smart_forecast': '<span class="badge bg-primary">Dự báo AI</span>'
+    const tones = {
+        'low_stock': 'orange',
+        'scheduled': 'blue',
+        'smart_forecast': 'purple',
+        'report': 'green',
+        'integration': 'red',
     };
-    return types[type] || type;
+    const labels = {
+        'low_stock': 'Tồn kho thấp',
+        'scheduled': 'Theo lịch',
+        'smart_forecast': 'Dự báo AI',
+        'report': 'Báo cáo',
+        'integration': 'Tích hợp',
+    };
+    const label = labels[type] || type;
+    const tone = tones[type] || 'gray';
+    return banleUI.statusPill(label, tone);
 }
 
 function formatConfig(type, config) {
-    try {
-        const c = typeof config === 'string' ? JSON.parse(config) : config;
-        if (type === 'low_stock') {
-            return `Ngưỡng: < ${c.threshold}, Đặt: ${c.reorder_quantity}`;
-        } else if (type === 'scheduled') {
-            return `${c.frequency} lúc ${c.time} (${c.day || 'Tất cả'})`;
-        } else if (type === 'smart_forecast') {
-            return `Nhìn trước: ${c.look_ahead_days} ngày`;
-        }
-        return JSON.stringify(c).substring(0, 30) + '...';
-    } catch (e) {
-        return String(config);
+    let c = config;
+    if (typeof c === 'string') {
+        try { c = JSON.parse(c); } catch (e) { return banleUI.escapeHtml(String(config)); }
     }
+    if (!c || typeof c !== 'object') return banleUI.escapeHtml(String(config || '—'));
+
+    const entries = Object.entries(c);
+    if (type === 'low_stock') {
+        const thr = c.threshold !== undefined ? c.threshold : '—';
+        const qty = c.reorder_quantity !== undefined ? c.reorder_quantity : '—';
+        const scope = c.product_id && c.product_id !== 'all' ? ` (SP: ${c.product_id})` : ' (Tất cả SP)';
+        return `<span class="table__json" title="threshold: ${thr}, reorder: ${qty}">Ngưỡng &lt; ${thr} • Đặt ${qty}${scope}</span>`;
+    } else if (type === 'scheduled') {
+        const parts = [];
+        if (c.frequency) parts.push(c.frequency);
+        if (c.time) parts.push(`lúc ${c.time}`);
+        if (c.day) parts.push(`(${c.day})`);
+        return `<span class="table__json" title="${banleUI.escapeHtml(JSON.stringify(c))}">${parts.join(' ') || banleUI.escapeHtml(JSON.stringify(c))}</span>`;
+    } else if (type === 'smart_forecast') {
+        return `<span class="table__json" title="${banleUI.escapeHtml(JSON.stringify(c))}">Nhìn trước: ${c.look_ahead_days || '—'} ngày${c.auto_approve ? ' • Tự duyệt' : ''}</span>`;
+    }
+
+    // Generic fallback: render as a compact key:value pill (never raw JSON)
+    const summary = entries
+        .slice(0, 3)
+        .map(([k, v]) => {
+            const vs = typeof v === 'object' ? JSON.stringify(v) : String(v);
+            return `<span class="table__json-key">${banleUI.escapeHtml(k)}</span>: ${banleUI.escapeHtml(vs.length > 20 ? vs.slice(0, 20) + '…' : vs)}`;
+        })
+        .join(' • ');
+    const more = entries.length > 3 ? ` <span class="text-muted">+${entries.length - 3}</span>` : '';
+    return `<span class="table__json" title="${banleUI.escapeHtml(JSON.stringify(c))}">${summary}${more}</span>`;
 }
 
 window.useTemplate = function(type) {
     currentEditId = null;
-    const modal = new bootstrap.Modal(document.getElementById('automationModal'));
+    openModal('automationModal');
     
     // Reset form
     document.getElementById('automationForm').reset();
@@ -112,16 +152,13 @@ window.useTemplate = function(type) {
     } else if (type === 'scheduled') {
         nameInput.value = 'Nhập hàng theo lịch hàng tuần';
     }
-    
-    modal.show();
 };
 
 window.openAddAutomationModal = function() {
     currentEditId = null;
     document.getElementById('automationForm').reset();
-    const modal = new bootstrap.Modal(document.getElementById('automationModal'));
+    openModal('automationModal');
     updateConfigUI();
-    modal.show();
 };
 
 window.editAutomation = function(id) {
@@ -129,7 +166,7 @@ window.editAutomation = function(id) {
     const auto = automations.find(a => a.id === id);
     if (!auto) return;
     
-    const modal = new bootstrap.Modal(document.getElementById('automationModal'));
+    openModal('automationModal');
     
     // Fill form
     document.querySelector('input[name="name"]').value = auto.name;
@@ -153,8 +190,6 @@ window.editAutomation = function(id) {
         document.getElementById('cfgLookAhead').value = config.look_ahead_days || 30;
         document.getElementById('cfgAutoApprove').value = config.auto_approve ? 'true' : 'false';
     }
-    
-    modal.show();
 };
 
 // New form-based UI switcher (replaces JSON template system)
@@ -251,7 +286,7 @@ window.submitAutomation = async function() {
         try {
             JSON.parse(data.config);
         } catch (e) {
-            alert('Cấu hình JSON không hợp lệ');
+            banleUI.showAlert('error', 'Cấu hình JSON không hợp lệ');
             return;
         }
     }
@@ -276,16 +311,16 @@ window.submitAutomation = async function() {
 
         const result = await response.json();
         if (result.success) {
-            bootstrap.Modal.getInstance(document.getElementById('automationModal')).hide();
+            closeModal('automationModal');
             form.reset();
             currentEditId = null;
             loadAutomations();
-            alert(currentEditId ? 'Cập nhật quy tự động thành công' : 'Tạo quy tự động thành công');
+            banleUI.showAlert('success', currentEditId ? 'Cập nhật quy tự động thành công' : 'Tạo quy tự động thành công');
         } else {
-            alert(result.message);
+            banleUI.showAlert('error', result.message);
         }
     } catch (error) {
-        alert('Lỗi: ' + error.message);
+        banleUI.showAlert('error', 'Lỗi: ' + error.message);
     }
 };
 
@@ -299,16 +334,13 @@ window.toggleStatus = async function(id, isActive) {
             },
             body: JSON.stringify({ status: isActive ? 'active' : 'inactive' })
         });
-        
+
         const result = await response.json();
         if (result.success) {
-            // Update label
-            const label = document.getElementById(`status-label-${id}`);
-            if (label) label.textContent = isActive ? 'active' : 'inactive';
+            // No label to update — status is shown via the toggle switch only
             updateStats();
         } else {
-            alert('Failed to update status: ' + result.message);
-            // Revert checkbox
+            banleUI.showAlert('error', 'Không cập nhật được trạng thái: ' + result.message);
             loadAutomations();
         }
     } catch (error) {
@@ -318,7 +350,7 @@ window.toggleStatus = async function(id, isActive) {
 };
 
 window.deleteAutomation = async function(id) {
-    if (!confirm('Are you sure you want to delete this automation?')) return;
+    if (!confirm('Bạn có chắc muốn xóa quy tắc này?')) return;
 
     try {
         const response = await fetch(`/api/automations/${id}`, {
@@ -330,12 +362,13 @@ window.deleteAutomation = async function(id) {
 
         const result = await response.json();
         if (result.success) {
+            banleUI.showAlert('success', 'Đã xóa quy tắc');
             loadAutomations();
         } else {
-            alert(result.message);
+            banleUI.showAlert('error', result.message);
         }
     } catch (error) {
-        alert('Error: ' + error.message);
+        banleUI.showAlert('error', 'Lỗi: ' + error.message);
     }
 };
 

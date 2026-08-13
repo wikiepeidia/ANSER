@@ -121,7 +121,7 @@ function renderTransactions() {
 }
 
 function openTopupModal() {
-    new bootstrap.Modal(document.getElementById('topupModal')).show();
+    openModal('topupModal');
 }
 
 async function submitTopup() {
@@ -146,7 +146,7 @@ async function submitTopup() {
 
         const data = await response.json();
         if (data.success) {
-            bootstrap.Modal.getInstance(document.getElementById('topupModal')).hide();
+            closeModal('topupModal');
             showNotification(data.message || 'Top-up request submitted. Admin will confirm shortly.', 'success');
             loadWalletDashboard();
         } else {
@@ -268,10 +268,9 @@ window.loadWalletDashboard = loadWalletDashboard;
 
 // Admin withdraw functions
 function openWithdrawModal() {
-    const modal = new bootstrap.Modal(document.getElementById('withdrawModal'));
+    openModal('withdrawModal');
     const balance = walletState.wallet?.balance || 0;
     document.getElementById('withdrawAvailableBalance').textContent = formatCurrency(balance);
-    modal.show();
 }
 
 async function submitWithdraw() {
@@ -314,7 +313,7 @@ async function submitWithdraw() {
         const data = await response.json();
         if (data.success) {
             showNotification('Withdrawal request submitted successfully! Funds will be transferred in 1-2 business days.', 'success');
-            bootstrap.Modal.getInstance(document.getElementById('withdrawModal')).hide();
+            closeModal('withdrawModal');
             loadWalletDashboard();
         } else {
             showNotification(data.message || 'Unable to withdraw funds', 'error');

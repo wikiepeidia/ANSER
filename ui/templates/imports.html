@@ -2,463 +2,272 @@
 
 {% block title %}Quản lý nhập hàng - {{ project_name }}{% endblock %}
 
-{% block styles %}
-{{ super() }}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/admin_imports.css') }}">
-<style>
-    /* ── Page-specific styles (shared tokens now in saas-tokens.css) ── */
-
-    /* Headers */
-    .border-bottom {
-        border-bottom: 1px solid var(--border-soft) !important;
-        margin-bottom: 32px !important;
-        padding-bottom: 16px !important;
-    }
-    h1.h2 { 
-        font-size: 1.5rem; font-weight: 700; letter-spacing: -0.02em; 
-        color: var(--gray-900); display: flex; align-items: center; gap: 12px;
-    }
-    h1.h2 i { color: var(--gray-500); font-size: 1.25rem; }
-
-    /* Buttons */
-    .btn { 
-        border-radius: 8px; font-weight: 500; font-size: 0.875rem; 
-        padding: 8px 16px; border: 1px solid transparent; 
-        box-shadow: var(--shadow-md); transition: all 0.2s ease;
-        display: inline-flex; align-items: center; gap: 8px;
-    }
-    .btn i { font-size: 0.85rem; }
-    .btn:hover { transform: translateY(-1px); box-shadow: var(--shadow-md); }
-    
-    .btn-primary { background-color: var(--primary) !important; color: #fff !important; }
-    .btn-primary:hover { background-color: var(--primary-dark) !important; }
-    
-    .btn-success { background-color: var(--success) !important; color: #fff !important; }
-    .btn-success:hover { background-color: #059669 !important; }
-
-    .btn-info { background-color: var(--accent-info) !important; color: #fff !important; }
-    .btn-info:hover { background-color: #2563EB !important; }
-
-    .btn-warning { background-color: var(--warning) !important; color: #fff !important; }
-    .btn-warning:hover { background-color: #D97706 !important; }
-    
-    .btn-secondary, .btn-outline-secondary { 
-        background-color: #fff !important; color: var(--gray-900) !important; 
-        border-color: var(--border-soft) !important; box-shadow: var(--shadow-md) !important;
-    }
-    .btn-secondary:hover, .btn-outline-secondary:hover { background-color: #F9FAFB !important; }
-
-    /* Stat Cards */
-    .saas-stat-card {
-        background: var(--surface-100) !important;
-        border: 1px solid var(--border-soft) !important;
-        border-radius: 12px !important;
-        box-shadow: var(--shadow-md) !important;
-        padding: 24px; transition: all 0.2s ease; height: 100%;
-    }
-    .saas-stat-card:hover { border-color: #D1D5DB !important; box-shadow: var(--shadow-md) !important; transform: translateY(-2px); }
-    .saas-stat-card .card-body { padding: 0 !important; }
-    .saas-stat-card .card-title {
-        font-size: 0.875rem; font-weight: 600; color: var(--gray-500); 
-        text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px;
-    }
-    .saas-stat-card h2 {
-        font-size: 2.25rem; font-weight: 700; color: var(--gray-900); margin: 0; line-height: 1; letter-spacing: -0.02em;
-    }
-
-    /* Main Content Card (Table Container) */
-    .card:not(.saas-stat-card) {
-        background: var(--surface-100) !important;
-        border: 1px solid var(--border-soft) !important;
-        border-radius: 12px !important;
-        box-shadow: var(--shadow-md) !important;
-        overflow: hidden;
-    }
-    .card:not(.saas-stat-card) > .card-body { padding: 0; }
-    .card:not(.saas-stat-card) > .card-body > .card-title {
-        padding: 20px 24px; margin: 0; border-bottom: 1px solid var(--border-soft);
-        font-size: 1rem; font-weight: 600; color: var(--gray-900); background: #fff;
-    }
-
-    /* Table Styling */
-    .table { margin-bottom: 0; }
-    .table th { 
-        background-color: #F9FAFB; color: var(--gray-500); font-size: 0.75rem; 
-        text-transform: uppercase; letter-spacing: 0.05em; padding: 12px 24px; 
-        border-bottom: 1px solid var(--border-soft); font-weight: 600; border-top: none;
-    }
-    .table td { 
-        padding: 16px 24px; vertical-align: middle; border-bottom: 1px solid var(--border-soft); 
-        color: var(--gray-900); font-size: 0.875rem; 
-    }
-    .table-hover tbody tr:hover { background-color: #F9FAFB; }
-    .table tbody tr:last-child td { border-bottom: none; }
-
-    /* Modals */
-    .modal-content { 
-        border-radius: 16px; border: 1px solid var(--border-soft); 
-        box-shadow: var(--shadow-lg); overflow: hidden; background: var(--surface-100);
-    }
-    .modal-header { 
-        background-color: var(--surface-100); border-bottom: 1px solid var(--border-soft); 
-        padding: 20px 24px; 
-    }
-    .modal-title { font-weight: 700; color: var(--gray-900); font-size: 1.1rem; display: flex; align-items: center; gap: 8px;}
-    .modal-body { padding: 24px; }
-    .modal-footer { 
-        background-color: #F9FAFB; border-top: 1px solid var(--border-soft); 
-        padding: 16px 24px; 
-    }
-    
-    /* Form Inputs */
-    .form-control, .form-select { 
-        border-radius: 8px; border: 1px solid #D1D5DB; padding: 10px 14px; 
-        font-size: 0.9rem; box-shadow: inset 0 1px 2px rgba(0,0,0,0.02); transition: all 0.2s;
-    }
-    .form-control:focus, .form-select:focus { 
-        border-color: var(--primary); box-shadow: 0 0 0 3px rgba(0, 49, 82, 0.2); outline: none;
-    }
-    .form-label { font-weight: 500; color: var(--gray-900); font-size: 0.875rem; margin-bottom: 6px; }
-
-    /* Success Modal Overrides */
-    #successModal .modal-dialog { z-index: 9999; }
-    #successModal .modal-backdrop { z-index: 9998; }
-    #successModal { z-index: 9999 !important; }
-    #successModal .modal-content { background: #ffffff; text-align: center; border-radius: 24px; padding: 10px;}
-</style>
-{% endblock %}
-
-{% block scripts %}
-{{ super() }}
-<script src="{{ url_for('static', filename='js/admin_imports.js') }}" defer></script>
-
-{% endblock %}
-
 {% block content %}
-<div class="app-layout">
-    {% include 'components/sidebar.html' %}
 
-    <main class="app-content main-content imports-page">
-        <div
-            class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-            <h1 class="h2"><i class="fas fa-arrow-down"></i> <span data-i18n="imports.title">Quản lý nhập hàng</span></h1>
-            <div>
-                <button class="btn btn-warning me-2"
-                    onclick="window.location.href='{{ url_for('pages.se_auto_import') }}'" aria-label="Nhập tự động">
-                    <i class="fas fa-bolt"></i> <span data-i18n="imports.autoImport">Nhập tự động</span>
-                </button>
-                <button class="btn btn-info me-2" data-bs-toggle="modal" data-bs-target="#ocrImportModal" aria-label="OCR hóa đơn">
-                    <i class="fas fa-magic"></i> <span data-i18n="imports.ocrInvoice">OCR hóa đơn</span>
-                </button>
-                <button class="btn btn-success me-2" data-bs-toggle="modal" data-bs-target="#excelImportModal" aria-label="Nhập từ Excel">
-                    <i class="fas fa-file-excel"></i> <span data-i18n="products.importExcel">Nhập từ Excel</span>
-                </button>
-                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createImportModal">
-                    <i class="fas fa-plus"></i> <span data-i18n="imports.createImport">Tạo phiếu nhập</span>
-                </button>
-            </div>
-        </div>
-
-        <div class="row mb-4">
-            <div class="col-md-3">
-                <div class="card saas-stat-card">
-                    <div class="card-body">
-                        <h5 class="card-title" data-i18n="imports.totalImports">Tổng phiếu nhập</h5>
-                        <h2 id="totalImports">0</h2>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card saas-stat-card">
-                    <div class="card-body">
-                        <h5 class="card-title" data-i18n="imports.completed">Đã hoàn thành</h5>
-                        <h2 id="completedImports">0</h2>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card saas-stat-card">
-                    <div class="card-body">
-                        <h5 class="card-title" data-i18n="imports.totalValue">Tổng giá trị</h5>
-                        <h2 id="totalAmount">0 VND</h2>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="card">
-            <div class="card-body">
-                <h5 class="card-title" data-i18n="imports.listTitle">Danh sách phiếu nhập</h5>
-                <div class="table-responsive">
-                    <table class="table table-hover">
-                        <thead>
-                            <tr>
-                                <th data-i18n="imports.colCode">Mã phiếu</th>
-                                <th data-i18n="imports.colSupplier">Nhà cung cấp</th>
-                                <th data-i18n="imports.colTotal">Tổng tiền</th>
-                                <th data-i18n="common.status">Trạng thái</th>
-                                <th data-i18n="imports.colDate">Ngày nhập</th>
-                                <th data-i18n="customers.colNotes">Ghi chú</th>
-                                <th data-i18n="common.actions">Thao tác</th>
-                            </tr>
-                        </thead>
-                        <tbody id="importsTableBody">
-                            <tr>
-                                <td colspan="7" class="text-center">
-                                    <div class="spinner-border" role="status"></div>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </main>
+<!-- Content header -->
+<div class="content__header">
+    <div>
+        <p class="content__subtitle">
+            <a href="{{ url_for('pages.dashboard') }}" style="color: var(--brand-primary); text-decoration: none;">Dashboard</a>
+            <span class="mx-2">›</span>
+            <span>Nhập hàng</span>
+        </p>
+        <h1 class="content__title">
+            <i class="fa-solid fa-arrow-down"></i>
+            Quản lý nhập hàng
+        </h1>
+    </div>
+    <div class="content__actions">
+        <a href="{{ url_for('pages.se_auto_import') }}" class="btn btn--outline">
+            <i class="fa-solid fa-bolt"></i> Nhập tự động
+        </a>
+        <button class="btn btn--outline" type="button" onclick="openModal('ocrImportModal')">
+            <i class="fa-solid fa-magic"></i> OCR hóa đơn
+        </button>
+        <button class="btn btn--success" type="button" onclick="openModal('excelImportModal')">
+            <i class="fa-solid fa-file-excel"></i> Nhập từ Excel
+        </button>
+        <button class="btn btn--primary" type="button" onclick="openModal('createImportModal')">
+            <i class="fa-solid fa-plus"></i> Tạo phiếu nhập
+        </button>
+    </div>
 </div>
 
-<!-- Modal: Tạo phiếu nhập -->
-<div class="modal fade" id="createImportModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" data-i18n="imports.createImportTitle">Tạo phiếu nhập hàng</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+<!-- Stats -->
+<section class="dashboard-stats">
+    <div class="stats-grid stats-grid--3">
+        <div class="stat-card">
+            <div class="stat-card__header">
+                <span>Tổng phiếu nhập</span>
+                <div class="stat-card__icon stat-card__icon--blue">
+                    <i class="fa-solid fa-truck-ramp-box"></i>
+                </div>
             </div>
-            <div class="modal-body">
-                <form id="createImportForm">
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <label class="form-label" data-i18n="imports.supplierName">Tên nhà cung cấp</label>
-                            <input type="text" class="form-control" name="supplier_name" required>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label" data-i18n="customers.colNotes">Ghi chú</label>
-                            <input type="text" class="form-control" name="notes">
-                        </div>
-                    </div>
+            <div class="stat-card__value" id="totalImports">0</div>
+            <span class="stat-card__pill stat-card__pill--blue">Tổng cộng</span>
+        </div>
 
-                    <hr>
-                    <h6 data-i18n="sale.colProduct" style="font-weight: 600; margin-bottom: 12px;">Sản phẩm</h6>
-                    <div class="table-responsive mb-3" style="border: 1px solid var(--border-soft); border-radius: 8px;">
-                        <table class="table" id="importItemsTable">
-                            <thead>
-                                <tr>
-                                    <th data-i18n="sale.colProduct">Sản phẩm</th>
-                                    <th width="150" data-i18n="imports.qty">Số lượng</th>
-                                    <th width="200" data-i18n="imports.unitPrice">Đơn giá</th>
-                                    <th width="50"></th>
-                                </tr>
-                            </thead>
-                            <tbody id="importItemsBody">
-                                <!-- Sản phẩm sẽ được thêm tại đây -->
-                            </tbody>
-                        </table>
+        <div class="stat-card">
+            <div class="stat-card__header">
+                <span>Đã hoàn thành</span>
+                <div class="stat-card__icon stat-card__icon--green">
+                    <i class="fa-solid fa-check"></i>
+                </div>
+            </div>
+            <div class="stat-card__value" id="completedImports">0</div>
+            <span class="stat-card__pill stat-card__pill--green">Hoàn thành</span>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-card__header">
+                <span>Tổng giá trị</span>
+                <div class="stat-card__icon stat-card__icon--orange">
+                    <i class="fa-solid fa-coins"></i>
+                </div>
+            </div>
+            <div class="stat-card__value stat-card__value--compact" id="totalAmount">0 ₫</div>
+            <span class="stat-card__pill stat-card__pill--orange">Tổng tiền</span>
+        </div>
+    </div>
+</section>
+
+<!-- Imports table -->
+<section class="card">
+    <div class="card__header">
+        <h3 class="card__title">
+            <i class="fa-solid fa-list"></i>
+            Danh sách phiếu nhập
+        </h3>
+    </div>
+    <div class="card__body" style="padding: 0;">
+        <div class="table-wrapper">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Mã phiếu</th>
+                        <th>Nhà cung cấp</th>
+                        <th>Tổng tiền</th>
+                        <th>Trạng thái</th>
+                        <th>Ngày nhập</th>
+                        <th>Ghi chú</th>
+                        <th>Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody id="importsTableBody">
+                    <tr>
+                        <td colspan="7" style="text-align: center; padding: 40px;">
+                            <i class="fa-solid fa-spinner fa-spin"></i> Đang tải...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
+<!-- Modal: Tạo phiếu nhập -->
+<div class="modal" id="createImportModal">
+    <div class="modal__overlay" onclick="closeModal('createImportModal')"></div>
+    <div class="modal__content modal__content--lg">
+        <div class="modal__header">
+            <h2>Tạo phiếu nhập hàng</h2>
+            <button type="button" class="modal__close" onclick="closeModal('createImportModal')" aria-label="Đóng">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        <div class="modal__body">
+            <form id="createImportForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="supplierName">Tên nhà cung cấp</label>
+                        <input type="text" class="form-control" name="supplier_name" required>
                     </div>
-                    <button type="button" class="btn btn-secondary btn-sm" onclick="addImportItemRow()">
-                        <i class="fas fa-plus"></i> <span data-i18n="products.addProduct">Thêm sản phẩm</span>
+                    <div class="form-group">
+                        <label for="notes">Ghi chú</label>
+                        <input type="text" class="form-control" name="notes">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Sản phẩm nhập</label>
+                    <div id="importItemsList">
+                        <p style="color: var(--text-secondary); text-align: center; padding: 16px;">Chưa có sản phẩm nào. Click "Thêm sản phẩm" để bắt đầu.</p>
+                    </div>
+                    <button type="button" class="btn btn--outline btn--sm" onclick="addImportItem()">
+                        <i class="fa-solid fa-plus"></i> Thêm sản phẩm
                     </button>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-i18n="common.close">Đóng</button>
-                <button type="button" class="btn btn-primary" onclick="submitImport()" data-i18n="imports.createImport">Tạo phiếu nhập</button>
-            </div>
+                </div>
+            </form>
+        </div>
+        <div class="modal__footer">
+            <button type="button" class="btn btn--outline" onclick="closeModal('createImportModal')">Hủy</button>
+            <button type="button" class="btn btn--primary" onclick="saveImport()">
+                <i class="fa-solid fa-check"></i> Tạo phiếu nhập
+            </button>
         </div>
     </div>
 </div>
 
 <!-- Modal: Xem phiếu nhập -->
-<div class="modal fade" id="viewImportModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" data-i18n="imports.detailsTitle">Chi tiết phiếu nhập</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
-            </div>
-            <div class="modal-body">
-                <div class="row mb-3">
-                    <div class="col-md-6" style="line-height: 1.8;">
-                        <strong data-i18n="imports.codeLabel">Mã:</strong> <span id="viewImportCode"></span><br>
-                        <strong data-i18n="imports.supplierLabel">Nhà cung cấp:</strong> <span id="viewImportSupplier"></span><br>
-                        <strong data-i18n="sale.dateLabel">Ngày:</strong> <span id="viewImportDate"></span>
-                    </div>
-                    <div class="col-md-6 text-end" style="line-height: 1.8;">
-                        <strong data-i18n="imports.statusLabel">Trạng thái:</strong> <span id="viewImportStatus"></span><br>
-                        <strong data-i18n="imports.totalLabel">Tổng tiền:</strong> <span id="viewImportTotal" class="h5 text-primary"></span>
-                    </div>
+<div class="modal" id="viewImportModal">
+    <div class="modal__overlay" onclick="closeModal('viewImportModal')"></div>
+    <div class="modal__content modal__content--lg">
+        <div class="modal__header">
+            <h2>Chi tiết phiếu nhập</h2>
+            <button type="button" class="modal__close" onclick="closeModal('viewImportModal')" aria-label="Đóng">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        <div class="modal__body">
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Mã phiếu</label>
+                    <p id="viewImportCode" style="font-weight: 600; color: var(--text-primary);">—</p>
                 </div>
-                <div class="mb-4">
-                    <strong data-i18n="imports.notesLabel">Ghi chú:</strong> <span id="viewImportNotes"></span>
-                </div>
-
-                <div class="table-responsive" style="border: 1px solid var(--border-soft); border-radius: 8px;">
-                    <table class="table table-striped">
-                        <thead>
-                            <tr>
-                                <th data-i18n="imports.colProductCode">Mã sản phẩm</th>
-                                <th data-i18n="products.colName">Tên sản phẩm</th>
-                                <th class="text-end" data-i18n="imports.qty">Số lượng</th>
-                                <th class="text-end" data-i18n="imports.unitPrice">Đơn giá</th>
-                                <th class="text-end" data-i18n="imports.subtotal">Thành tiền</th>
-                            </tr>
-                        </thead>
-                        <tbody id="viewImportItemsBody"></tbody>
-                    </table>
+                <div class="form-group">
+                    <label>Nhà cung cấp</label>
+                    <p id="viewImportSupplier" style="font-weight: 600;">—</p>
                 </div>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Tổng tiền</label>
+                    <p id="viewImportTotal" style="font-weight: 600; color: var(--brand-primary);">—</p>
+                </div>
+                <div class="form-group">
+                    <label>Trạng thái</label>
+                    <p id="viewImportStatus">—</p>
+                </div>
             </div>
+            <div id="viewImportItems" class="table-wrapper"></div>
+        </div>
+        <div class="modal__footer">
+            <button type="button" class="btn btn--outline" onclick="closeModal('viewImportModal')">Đóng</button>
         </div>
     </div>
 </div>
 
 <!-- Modal: OCR hóa đơn -->
-<div class="modal fade" id="ocrImportModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title"><i class="fas fa-robot"></i> <span data-i18n="imports.ocrInvoice">OCR hóa đơn</span></h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+<div class="modal" id="ocrImportModal">
+    <div class="modal__overlay" onclick="closeModal('ocrImportModal')"></div>
+    <div class="modal__content">
+        <div class="modal__header">
+            <h2><i class="fa-solid fa-magic"></i> OCR hóa đơn</h2>
+            <button type="button" class="modal__close" onclick="closeModal('ocrImportModal')" aria-label="Đóng">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        <div class="modal__body">
+            <div class="file-input" onclick="document.getElementById('ocrFileInput').click()" style="padding: 40px;">
+                <i class="fa-solid fa-cloud-upload-alt" style="font-size: 48px; color: var(--brand-light);"></i>
+                <p style="margin: 12px 0 4px;">Tải lên hóa đơn để AI tự động nhận diện</p>
+                <p style="color: var(--text-muted); font-size: 12px;">Chấp nhận: .jpg, .png, .pdf</p>
+                <input type="file" id="ocrFileInput" accept="image/*,.pdf" style="display: none;">
             </div>
-            <div class="modal-body">
-                <div class="alert alert-info" style="background: #EEF2FF; border-color: #C7D2FE; color: #4338CA;">
-                    Tải lên ảnh hóa đơn (JPG, PNG) để tự động trích xuất sản phẩm và số lượng bằng mô hình Deep Learning của chúng tôi.
-                </div>
-
-                <form id="ocrImportForm">
-                    <div class="mb-3">
-                        <label class="form-label" data-i18n="imports.invoiceImage">Ảnh hóa đơn</label>
-                        <input type="file" class="form-control" id="ocrFile" accept="image/*" required>
-                    </div>
-                    <div class="text-center" id="ocrLoading" style="display:none;">
-                        <div class="progress mb-2" style="height: 25px;">
-                            <div id="ocrProgressBar" class="progress-bar progress-bar-striped progress-bar-animated bg-primary"
-                                role="progressbar" style="width: 0%">0%</div>
-                        </div>
-                        <p id="ocrStatusText" class="small mt-1 text-center font-monospace"
-                            style="min-height: 1.5em; transition: color 0.3s;">Đang khởi tạo...</p>
-                    </div>
-                    <div id="ocrResult" style="display:none;">
-                        <h6 style="font-weight: 600; margin-bottom: 12px;">Dữ liệu trích xuất <small class="text-muted">(có thể chỉnh sửa)</small>:</h6>
-                        <div class="table-responsive" style="border: 1px solid var(--border-soft); border-radius: 8px;">
-                            <table class="table table-sm">
-                                <thead>
-                                    <tr>
-                                        <th>Sản phẩm</th>
-                                        <th width="80">SL</th>
-                                        <th width="100">Giá</th>
-                                        <th width="100">Tổng</th>
-                                        <th width="40"></th>
-                                    </tr>
-                                </thead>
-                                <tbody id="ocrItemsBody"></tbody>
-                            </table>
-                        </div>
-                        <div class="alert alert-warning small mt-3" style="background: #FFFBEB; border-color: #FDE68A; color: #B45309;">
-                            <i class="fas fa-info-circle"></i> Vui lòng kiểm tra và chỉnh sửa dữ liệu trích xuất trước khi lưu. Chọn sản phẩm có sẵn từ dropdown hoặc tạo mới.
-                        </div>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
-                <button type="button" class="btn btn-primary" id="btnSaveOcrImport" disabled>Tạo phiếu nhập</button>
-            </div>
+            <div id="ocrResult" style="display: none; margin-top: 16px;"></div>
+        </div>
+        <div class="modal__footer">
+            <button type="button" class="btn btn--outline" onclick="closeModal('ocrImportModal')">Đóng</button>
+            <button type="button" class="btn btn--primary" onclick="processOCR()" id="ocrProcessBtn" disabled>
+                <i class="fa-solid fa-magic"></i> Xử lý
+            </button>
         </div>
     </div>
 </div>
 
 <!-- Modal: Nhập từ Excel -->
-<div class="modal fade" id="excelImportModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title"><i class="fas fa-file-excel text-success me-2"></i> <span data-i18n="products.importExcel">Nhập từ Excel</span></h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+<div class="modal" id="excelImportModal">
+    <div class="modal__overlay" onclick="closeModal('excelImportModal')"></div>
+    <div class="modal__content modal__content--lg">
+        <div class="modal__header">
+            <h2><i class="fa-solid fa-file-excel" style="color: var(--status-success);"></i> Nhập từ Excel</h2>
+            <button type="button" class="modal__close" onclick="closeModal('excelImportModal')" aria-label="Đóng">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        <div class="modal__body">
+            <div class="file-input" onclick="document.getElementById('importExcelInput').click()" style="padding: 40px;">
+                <i class="fa-solid fa-cloud-upload-alt" style="font-size: 48px; color: var(--brand-light);"></i>
+                <p style="margin: 12px 0 4px;">Chọn file Excel</p>
+                <p style="color: var(--text-muted); font-size: 12px;">.xlsx, .xls</p>
+                <input type="file" id="importExcelInput" accept=".xlsx,.xls" style="display: none;">
             </div>
-            <div class="modal-body">
-                <div class="alert alert-info" style="background: #EEF2FF; border-color: #C7D2FE; color: #4338CA;">
-                    <i class="fas fa-info-circle"></i> Tải lên file Excel (.xlsx) chứa dữ liệu nhập hàng.
-                    <a href="javascript:downloadExcelTemplate()" class="alert-link" style="color: #4F46E5;"><i class="fas fa-download"></i> Tải template mẫu</a>
-                </div>
-
-                <form id="excelImportForm">
-                    <div class="mb-3">
-                        <label class="form-label" data-i18n="imports.supplierName">Tên nhà cung cấp</label>
-                        <input type="text" class="form-control" name="supplier_name" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label" data-i18n="customers.colNotes">Ghi chú</label>
-                        <textarea class="form-control" name="notes" rows="2"></textarea>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label" data-i18n="imports.excelFile">File Excel</label>
-                        <div class="input-group">
-                            <input type="file" class="form-control" id="excelFile" accept=".xlsx,.xls" required>
-                            <button type="button" class="btn btn-outline-secondary" id="btnClearExcelFile">
-                                <i class="fas fa-times"></i>
-                            </button>
-                        </div>
-                        <small class="text-muted mt-1 d-block">Định dạng hỗ trợ: Excel (.xlsx, .xls)</small>
-                    </div>
-
-                    <div id="excelLoading" style="display:none;">
-                        <div class="progress mb-2" style="height: 25px;">
-                            <div id="excelProgressBar" class="progress-bar progress-bar-striped progress-bar-animated bg-success"
-                                role="progressbar" style="width: 50%">Đang xử lý...</div>
-                        </div>
-                    </div>
-
-                    <div id="excelPreview" style="display:none;">
-                        <h6 style="font-weight: 600; margin-bottom: 12px;">Xem trước dữ liệu <small class="text-muted">(có thể chỉnh sửa)</small>:</h6>
-                        <div class="table-responsive" style="border: 1px solid var(--border-soft); border-radius: 8px;">
-                            <table class="table table-sm">
-                                <thead>
-                                    <tr>
-                                        <th>Mã sản phẩm</th>
-                                        <th>Tên sản phẩm</th>
-                                        <th width="80">Số lượng</th>
-                                        <th width="120">Đơn giá</th>
-                                        <th width="40"></th>
-                                    </tr>
-                                </thead>
-                                <tbody id="excelItemsBody"></tbody>
-                            </table>
-                        </div>
-                        <div id="excelWarnings" class="alert alert-warning small mt-3" style="display:none; background: #FFFBEB; border-color: #FDE68A; color: #B45309;"></div>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
-                <button type="button" class="btn btn-primary" id="btnUploadExcel" onclick="submitExcelImport()" disabled>
-                    <i class="fas fa-upload"></i> <span data-i18n="imports.uploadAndCreate">Tải lên & Tạo phiếu nhập</span>
-                </button>
-            </div>
+            <div id="importExcelPreview" style="display: none; margin-top: 16px;"></div>
+        </div>
+        <div class="modal__footer">
+            <button type="button" class="btn btn--outline" onclick="closeModal('excelImportModal')">Hủy</button>
+            <button type="button" class="btn btn--primary" onclick="processExcelImport()" disabled>
+                <i class="fa-solid fa-upload"></i> Import
+            </button>
         </div>
     </div>
 </div>
 
 <!-- Modal: Thành công -->
-<div class="modal fade" id="successModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow-lg" style="padding: 20px;">
-            <div class="modal-body text-center py-5">
-                <div class="mb-4">
-                    <div style="font-size: 64px; color: #10B981;">
-                        <i class="fas fa-check-circle"></i>
-                    </div>
-                </div>
-                <h4 class="mb-3" style="color: #059669; font-weight: 700;"><strong data-i18n="imports.updateSuccess">Đã cập nhật sản phẩm thành công</strong></h4>
-                <p class="text-muted mb-4" id="successMessage" data-i18n="imports.stockUpdated">Các sản phẩm đã được nhập vào kho thành công</p>
-                <button type="button" class="btn btn-success btn-lg px-4" data-bs-dismiss="modal">
-                    <i class="fas fa-check"></i> <span data-i18n="common.close">Đóng</span>
-                </button>
-            </div>
+<div class="modal" id="successModal">
+    <div class="modal__overlay" onclick="closeModal('successModal')"></div>
+    <div class="modal__content modal__content--sm">
+        <div class="modal__body" style="text-align: center; padding: 40px 24px;">
+            <i class="fa-solid fa-check-circle" style="font-size: 64px; color: var(--status-success); margin-bottom: 16px;"></i>
+            <h3 style="color: var(--text-primary); margin-bottom: 8px;">Thành công!</h3>
+            <p id="successMessage" style="color: var(--text-secondary); margin-bottom: 24px;">Phiếu nhập đã được tạo.</p>
+            <button type="button" class="btn btn--primary" onclick="closeModal('successModal')">OK</button>
         </div>
     </div>
 </div>
 
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script src="{{ url_for('static', filename='js/admin_imports.js') }}" defer></script>
+<script>
+function openModal(id) {
+    var el = document.getElementById(id);
+    if (el) el.classList.add('active', 'show');
+}
+function closeModal(id) {
+    var el = document.getElementById(id);
+    if (el) el.classList.remove('active', 'show');
+}
+</script>
 {% endblock %}

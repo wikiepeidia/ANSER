@@ -8,7 +8,7 @@ async function loadManagers() {
         managersData = users.filter((u) => u.role === 'manager' || u.role === 'admin');
         renderManagersTable();
     } catch (error) {
-        showAlert('error', 'Không tải được danh sách: ' + error.message);
+        banleUI.showAlert('error', 'Không tải được danh sách: ' + error.message);
     }
 }
 
@@ -16,34 +16,44 @@ function renderManagersTable() {
     const tbody = document.getElementById('managersTableBody');
 
     if (managersData.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" class="text-center">Không tìm thấy quản lý</td></tr>';
+        tbody.innerHTML = `
+            <tr><td colspan="6">
+                <div class="empty-state empty-state--compact">
+                    <div class="empty-state__icon"><i class="fa-solid fa-users-gear"></i></div>
+                    <p class="empty-state__title">Chưa có Manager nào</p>
+                    <p class="empty-state__description">Nhấn "Thêm Manager" ở góc trên để tạo tài khoản quản lý mới.</p>
+                </div>
+            </td></tr>`;
         return;
     }
 
     tbody.innerHTML = managersData
         .map(
-            (manager) => `
+            (manager) => {
+                const isAdmin = manager.role === 'admin';
+                const actions = [];
+                if (!isAdmin) {
+                    actions.push({ label: 'Sửa', icon: 'fa-solid fa-pen', action: 'editManager' });
+                    actions.push({ divider: true });
+                    actions.push({ label: 'Xóa', icon: 'fa-solid fa-trash', action: 'removeManager', danger: true });
+                } else {
+                    actions.push({ label: 'Xem chi tiết', icon: 'fa-solid fa-eye', action: 'viewAdmin' });
+                }
+                return `
         <tr>
             <td>${manager.id}</td>
-            <td>${manager.name}</td>
-            <td>${manager.email}</td>
-            <td><span class="badge bg-${manager.role === 'admin' ? 'danger' : 'warning'}">${manager.role.toUpperCase()}</span></td>
-            <td>${new Date(manager.created_at).toLocaleDateString('en-US')}</td>
-            <td>
-                ${
-                    manager.role !== 'admin'
-                        ? `
-                    <button class="btn btn-sm btn-danger" onclick="removeManager(${manager.id}, '${manager.email}')">
-                        <i class="fas fa-trash"></i> Xóa
-                    </button>
-                `
-                        : '<span class="text-muted">Quản trị gốc</span>'
-                }
-            </td>
+            <td>${banleUI.escapeHtml(manager.name || '—')}</td>
+            <td>${banleUI.escapeHtml(manager.email)}</td>
+            <td>${banleUI.statusPill(manager.role.toUpperCase(), isAdmin ? 'red' : 'orange')}</td>
+            <td>${banleUI.formatDateVN(manager.created_at)}</td>
+            <td class="table__actions">${banleUI.renderRowActions(manager.id, actions)}</td>
         </tr>
-    `
+    `;
+            }
         )
         .join('');
+
+    banleUI.bindRowActions(tbody);
 }
 
 function openAddManagerModal() {
@@ -53,7 +63,7 @@ function openAddManagerModal() {
     document.getElementById('managerName').value = '';
     document.getElementById('managerPassword').value = '';
     document.getElementById('passwordGroup').style.display = 'block';
-    new bootstrap.Modal(document.getElementById('managerModal')).show();
+    openModal('managerModal');
 }
 
 async function saveManager() {
@@ -62,12 +72,12 @@ async function saveManager() {
     const password = document.getElementById('managerPassword').value;
 
     if (!email || !name) {
-        showAlert('error', 'Vui lòng điền tất cả các trường bắt buộc');
+        banleUI.showAlert('error', 'Vui lòng điền tất cả các trường bắt buộc');
         return;
     }
 
     if (!password) {
-        showAlert('error', 'Vui lòng nhập mật khẩu');
+        banleUI.showAlert('error', 'Vui lòng nhập mật khẩu');
         return;
     }
 
@@ -81,18 +91,20 @@ async function saveManager() {
         const data = await response.json();
 
         if (data.success) {
-            showAlert('success', 'Tạo quản lý thành công!');
-            bootstrap.Modal.getInstance(document.getElementById('managerModal')).hide();
+            banleUI.showAlert('success', 'Tạo quản lý thành công!');
+            closeModal('managerModal');
             loadManagers();
         } else {
-            showAlert('error', data.message);
+            banleUI.showAlert('error', data.message);
         }
     } catch (error) {
-        showAlert('error', 'Lỗi: ' + error.message);
+        banleUI.showAlert('error', 'Lỗi: ' + error.message);
     }
 }
 
-async function removeManager(managerId, email) {
+async function removeManager(managerId) {
+    const manager = managersData.find((m) => String(m.id) === String(managerId));
+    const email = manager ? manager.email : `#${managerId}`;
     if (!confirm(`Bạn có chắc chắn muốn xóa quản lý "${email}"?`)) return;
 
     try {
@@ -103,25 +115,33 @@ async function removeManager(managerId, email) {
         const data = await response.json();
 
         if (data.success) {
-            showAlert('success', 'Xóa quản lý thành công!');
+            banleUI.showAlert('success', 'Xóa quản lý thành công!');
             loadManagers();
         } else {
-            showAlert('error', data.message);
+            banleUI.showAlert('error', data.message);
         }
     } catch (error) {
-        showAlert('error', 'Lỗi: ' + error.message);
+        banleUI.showAlert('error', 'Lỗi: ' + error.message);
     }
 }
 
-function showAlert(type, message) {
-    const alertDiv = document.createElement('div');
-    alertDiv.className = `alert alert-${type === 'success' ? 'success' : 'danger'} alert-dismissible fade show`;
-    alertDiv.innerHTML = `
-        ${message}
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    `;
-    document.querySelector('main').insertBefore(alertDiv, document.querySelector('main').firstChild);
-    setTimeout(() => alertDiv.remove(), 5000);
+function editManager(managerId) {
+    const manager = managersData.find((m) => String(m.id) === String(managerId));
+    if (!manager) return;
+    document.getElementById('managerModalTitle').textContent = 'Sửa thông tin Manager';
+    document.getElementById('managerId').value = manager.id;
+    document.getElementById('managerEmail').value = manager.email;
+    document.getElementById('managerName').value = manager.name || '';
+    document.getElementById('managerPassword').value = '';
+    document.getElementById('passwordGroup').style.display = 'none';
+    openModal('managerModal');
+}
+
+function viewAdmin(managerId) {
+    const manager = managersData.find((m) => String(m.id) === String(managerId));
+    if (manager) {
+        banleUI.showAlert('info', `Admin: ${manager.name} (${manager.email})`);
+    }
 }
 
 document.addEventListener('DOMContentLoaded', loadManagers);

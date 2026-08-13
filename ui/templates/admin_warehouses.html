@@ -5,59 +5,68 @@
 {% block scripts %}
 {{ super() }}
 <script src="{{ url_for('static', filename='js/admin_warehouses.js') }}" defer></script>
+<script>
+// Simple modal helpers (since we removed Bootstrap)
+function openModal(id) {
+    var el = document.getElementById(id);
+    if (el) el.classList.add('active', 'show');
+}
+function closeModal(id) {
+    var el = document.getElementById(id);
+    if (el) el.classList.remove('active', 'show');
+}
+</script>
 {% endblock %}
 
 {% block content %}
-<div class="app-layout">
-    {% include 'components/sidebar.html' %}
-
-    <main class="app-content main-content">
-        <div
-            class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-            <h1 class="h2 page-title"><i class="fas fa-warehouse"></i><span data-i18n="adminWh.title">Quản lý Kho</span></h1>
-            <button class="btn btn-primary" onclick="openAddWarehouseModal()" aria-label="Thêm Kho">
-                <i class="fas fa-plus"></i> <span data-i18n="adminWh.addWarehouse">Thêm Kho</span>
-            </button>
-        </div>
-
-        <div class="row mb-3">
-            <div class="col-md-12">
-                <div class="alert alert-info">
-                    <i class="fas fa-info-circle"></i> <strong data-i18n="adminMgrs.note">Lưu ý:</strong> <span data-i18n="adminWh.noteText">Mỗi kho là 1 hồ sơ cảnh báo tồn kho độc
-                    lập (ngưỡng + kênh Discord riêng). Automation "Cảnh báo tồn kho thấp" trong n8n sẽ tự lặp qua các
-                    kho đang bật ở đây — không cần deploy nhiều bản workflow.</span>
-                </div>
-            </div>
-        </div>
-
-        <div class="card">
-            <div class="card-body">
-                <h5 class="card-title" data-i18n="adminWh.warehouseList">Danh sách Kho</h5>
-                <div class="table-responsive">
-                    <table class="table table-hover">
-                        <thead>
-                            <tr>
-                                <th data-i18n="sale.colId">ID</th>
-                                <th data-i18n="adminWh.warehouseName">Tên kho</th>
-                                <th data-i18n="adminWh.alertThreshold">Ngưỡng cảnh báo</th>
-                                <th data-i18n="adminWh.notificationEmail">Email nhận thông báo</th>
-                                <th data-i18n="common.status">Trạng thái</th>
-                                <th data-i18n="common.actions">Thao tác</th>
-                            </tr>
-                        </thead>
-                        <tbody id="warehousesTableBody">
-                            <tr>
-                                <td colspan="6" class="text-center">
-                                    <div class="spinner-border" role="status"></div>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </main>
+<!-- NOTE: Sidebar is included by base.html. Don't re-include it here —
+     duplicate <aside id="sidebar"> breaks all sidebar JS that uses
+     getElementById (selectors, event handlers, dropdowns, warehouse switcher). -->
+<div
+    class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2 page-title"><i class="fas fa-warehouse"></i><span data-i18n="adminWh.title">Quản lý Kho</span></h1>
+    <button class="btn btn-primary" onclick="openAddWarehouseModal()" aria-label="Thêm Kho">
+        <i class="fas fa-plus"></i> <span data-i18n="adminWh.addWarehouse">Thêm Kho</span>
+    </button>
 </div>
+
+<div class="row mb-3">
+    <div class="col-md-12">
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle"></i> <strong data-i18n="adminMgrs.note">Lưu ý:</strong> <span data-i18n="adminWh.noteText">Mỗi kho là 1 hồ sơ cảnh báo tồn kho độc
+            lập (ngưỡng + kênh Discord riêng). Automation "Cảnh báo tồn kho thấp" trong n8n sẽ tự lặp qua các
+            kho đang bật ở đây — không cần deploy nhiều bản workflow.</span>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <h5 class="card-title" data-i18n="adminWh.warehouseList">Danh sách Kho</h5>
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th data-i18n="sale.colId">ID</th>
+                        <th data-i18n="adminWh.warehouseName">Tên kho</th>
+                        <th data-i18n="adminWh.alertThreshold">Ngưỡng cảnh báo</th>
+                        <th data-i18n="adminWh.notificationEmail">Email nhận thông báo</th>
+                        <th data-i18n="common.status">Trạng thái</th>
+                        <th data-i18n="common.actions">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody id="warehousesTableBody">
+                    <tr>
+                        <td colspan="6" class="text-center">
+                            <div class="spinner-border" role="status"></div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
 
 <!-- Modal: Thêm/Sửa Kho -->
 <div class="modal fade" id="warehouseModal" tabindex="-1">
@@ -65,7 +74,9 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="warehouseModalTitle" data-i18n="adminWh.addWarehouse">Thêm Kho</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <button type="button" class="modal__close" onclick="closeModal('warehouseModal')" aria-label="Đóng">
+                    <i class="fas fa-xmark"></i>
+                </button>
             </div>
             <div class="modal-body">
                 <input type="hidden" id="warehouseId">
@@ -94,11 +105,9 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-i18n="common.cancel">Hủy</button>
+                <button type="button" class="btn btn-outline-secondary" onclick="closeModal('warehouseModal')" data-i18n="common.cancel">Hủy</button>
                 <button type="button" class="btn btn-primary" onclick="saveWarehouse()" data-i18n="common.save">Lưu</button>
             </div>
         </div>
     </div>
 </div>
-
-{% endblock %}

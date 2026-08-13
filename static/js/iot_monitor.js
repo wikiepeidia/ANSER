@@ -93,12 +93,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 const amount = ev.payload?.amount ? fmt(ev.payload.amount) : '—';
                 const payloadStr = JSON.stringify(ev.payload || {});
                 return `<tr>
-                    <td><span style="font-weight:600; color:#FF6B35;">#${ev.id}</span></td>
-                    <td>${ev.device_id}</td>
-                    <td><span class="iot-badge ${badgeClass(ev.event_type)}">${ev.event_type}</span></td>
+                    <td><span class="iot-event-id">#${ev.id}</span></td>
+                    <td>${banleUI.escapeHtml(ev.device_id || '—')}</td>
+                    <td><span class="iot-badge ${badgeClass(ev.event_type)}">${banleUI.escapeHtml(ev.event_type || '—')}</span></td>
                     <td>${amount}</td>
-                    <td><div class="iot-payload" title="${payloadStr.replace(/"/g, '&quot;')}">${payloadStr}</div></td>
-                    <td>${fmtDate(ev.created_at)}</td>
+                    <td><div class="iot-payload" title="${banleUI.escapeAttr(payloadStr)}">${banleUI.escapeHtml(payloadStr)}</div></td>
+                    <td>${banleUI.formatDateTimeVN(ev.created_at)}</td>
                 </tr>`;
             }).join('');
 

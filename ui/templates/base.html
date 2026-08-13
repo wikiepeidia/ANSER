@@ -1,56 +1,91 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="light" class="theme-ready">
+<html lang="vi" data-theme="light" class="theme-ready">
 
 <head>
-    <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-LDYH3WL3TN"></script>
-    <script>
-        window.dataLayer = window.dataLayer || [];
-        function gtag() { dataLayer.push(arguments); }
-        gtag('js', new Date());
-        gtag('config', 'G-LDYH3WL3TN');
-    </script>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="color-scheme" content="light">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light dark">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <!-- Content Security Policy -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; img-src 'self' data: https:; connect-src 'self' https://www.googletagmanager.com https://region1.google-analytics.com;">
-    <title>{% block title %}{{ project_name }} - Smart Management{% endblock %}</title>
-    
-    <!-- Theme: respect system preference -->
+    <title>{% block title %}{{ project_name }} - ANSER{% endblock %}</title>
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='img/favicon.svg') }}" />
+
+    <!-- Theme: respect system preference, allow saved preference -->
     <script>
-        // Respect system preference, but allow saved preference
-        const saved = localStorage.getItem('theme-preference');
-        if (saved) {
-            document.documentElement.setAttribute('data-theme', saved);
-        } else {
-            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-            document.documentElement.setAttribute('data-theme', prefersDark ? 'dark' : 'light');
-        }
+        (function() {
+            var saved = localStorage.getItem('theme-preference');
+            if (saved) {
+                document.documentElement.setAttribute('data-theme', saved);
+            } else {
+                var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                document.documentElement.setAttribute('data-theme', prefersDark ? 'dark' : 'light');
+            }
+        })();
     </script>
 
+    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" integrity="sha512-Fw7uLSfY7YTLi+AXV4Mva4LMPe3d6lPeEMOcnH8eHHdHs9ZxtJ/UaQTV5Us6U4VItni2xLfwXDwT5L1JMJfZ7vQ==" crossorigin="anonymous">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha512-4oDZLFKQ0V5evadBrNoP3ePiGpPsdCXOT0r77y1nDL9rNzTjfXU3LZ/E5PB0KQNjNx4zX+E2S3s2wL5Jv0tF0g==" crossorigin="anonymous">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/base_theme.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/saas-tokens.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/chat.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
 
-    <!-- Favicons & theme -->
-    <link rel="icon" href="{{ url_for('static', filename='img/favicon.svg') }}" type="image/svg+xml">
-    <link rel="shortcut icon" href="{{ url_for('static', filename='img/favicon.svg') }}">
-    <link rel="apple-touch-icon" href="{{ url_for('static', filename='img/favicon.svg') }}">
-    <meta name="theme-color" content="#F7F9FC">
+    <!-- ANSER layered CSS (san-xuat style) — load order matters:
+         variables → base → pages → components → forms → charts → notifications → responsive -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/variables.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}?v=1786600000">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/pages.css') }}?v=1786462500">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/forms.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/charts.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/notifications.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/chat.css') }}?v=1786461810">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/banle.css') }}?v=1786760000">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/sale.css') }}?v=1786830000">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}?v=1786690000">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/responsive.css') }}">
 
     {% block styles %}{% endblock %}
 </head>
 
-<body class="{% block body_class %}{% endblock %}" data-project-name="{{ project_name | e }}">
-    
+<body>
+
+    <!-- ============ SIDEBAR OVERLAY (mobile) ============ -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <div class="app">
+
+        <!-- ============ MOBILE TOPBAR ============ -->
+        <div class="mobile-topbar" id="mobileTopbar">
+            <span class="mobile-topbar__brand">
+                <i class="fa-solid fa-rocket"></i>
+                <span>ANSER</span>
+            </span>
+            <button class="mobile-sidebar-toggle" id="mobileSidebarToggle" aria-label="Mở menu">
+                <i class="fa-solid fa-bars"></i>
+            </button>
+        </div>
+
+        <!-- ============ SIDEBAR ============ -->
+        {% include 'components/sidebar.html' %}
+
+        <!-- ============ MAIN CONTENT ============ -->
+        <div class="main-wrapper" id="mainWrapper">
+            <!-- ============ HEADER ============ -->
+            {% include 'components/header.html' %}
+
+            <!-- ============ PAGE CONTENT SLOT ============ -->
+            <main class="content" id="pageContent">
+                {% block content %}{% endblock %}
+            </main>
+        </div>
+    </div>
+
+    <!-- ============ NOTIFICATION PANEL ============ -->
+    {% include 'components/notification_panel.html' %}
+
+    <!-- ============ USER PANEL ============ -->
+    {% include 'components/user_panel.html' %}
+
+    <!-- ============ FLASH MESSAGES ============ -->
     <div id="flash-message-root" aria-hidden="true" hidden>
         {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
@@ -60,25 +95,67 @@
         {% endif %}
         {% endwith %}
     </div>
-    {% block content %}{% endblock %}
 
+    <!-- ============ CHAT WIDGET (ban-le specific) ============ -->
     {% include 'components/chat_widget.html' %}
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" integrity="sha512-4oDZLFKQ0V5evadBrNoP3ePiGpPsdCXOT0r77y1nDL9rNzTjfXU3LZ/E5PB0KQNjNx4zX+E2S3s2wL5Jv0tF0g==" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js" integrity="sha512-N9dVBMrBVSdE9yD5TqM0xV2aA3W3WQZXgA04T9X8C9Jrlx1vFuNJmM4cNnLH5XzVLE6wZ/sD1pEN0H1f7N+8vA==" crossorigin="anonymous"></script>
+    <!-- ============ SCRIPTS ============ -->
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js" crossorigin="anonymous"></script>
     <script>
-        // Global runtime config exposed to all static scripts
         window.APP_CONFIG = window.APP_CONFIG || {
             projectName: "{{ project_name | e }}",
-            locale: "en-US",
-            currency: "VND"
+            locale: "vi-VN",
+            currency: "VND",
+            gatewayOrigin: "{{ project_config.GATEWAY_ORIGIN if project_config else '' }}"
         };
     </script>
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js" integrity="sha512-g8z5xHlBjiqm7LYuN0A4V8xC0aJj7mDr7Az/KBYQCbDyV12A5P4c2K1xJ7L/kGUNJv+NxKBhF2QN9X3bZVKE3N3A==" crossorigin="anonymous"></script>
-    <script defer src="{{ url_for('static', filename='js/i18n.js') }}"></script>
-    <script defer src="{{ url_for('static', filename='js/base_theme.js') }}"></script>
-    <script defer src="{{ url_for('static', filename='js/chat.js') }}"></script>
-    <script defer src="{{ url_for('static', filename='js/script.js') }}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" crossorigin="anonymous"></script>
+
+    <!-- Desktop sidebar collapse handler (inline để đảm bảo attach được)
+         Mobile/tablet dùng .sidebar.active (off-canvas drawer) — function này bỏ qua khi width <= 768
+         Single source of truth: there must be exactly ONE click handler on
+         #sidebarToggle. setupSidebar() in script.js deliberately omits one
+         (only restores saved state + syncs margin on resize). -->
+    <script>
+    function toggleDesktopSidebar(event) {
+        if (event) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+        if (window.innerWidth <= 768) return;
+
+        var sidebar = document.getElementById('sidebar');
+        if (!sidebar) return;
+
+        var isCollapsed = sidebar.classList.toggle('collapsed');
+        try { localStorage.setItem('sidebar-collapsed', isCollapsed ? 'true' : 'false'); } catch (e) {}
+
+        var icon = document.getElementById('sidebarToggleIcon');
+        if (icon) {
+            icon.classList.remove('fa-chevron-left', 'fa-chevron-right');
+            icon.classList.add(isCollapsed ? 'fa-chevron-right' : 'fa-chevron-left');
+        }
+
+        // Modern content shift: wait for sidebar width transition to complete,
+        // then read offsetWidth and set mainWrapper.marginLeft accordingly.
+        // Falls back to inline marginLeft if script.js hasn't loaded yet
+        // (50ms is invisible to users but lets deferred module attach).
+        setTimeout(function() {
+            if (window.syncMainWrapperAfterTransition) {
+                window.syncMainWrapperAfterTransition();
+            } else {
+                var mainWrapper = document.getElementById('mainWrapper');
+                if (mainWrapper) {
+                    mainWrapper.style.marginLeft = sidebar.offsetWidth + 'px';
+                }
+            }
+        }, 50);
+    }
+    </script>
+
+    <script defer src="{{ url_for('static', filename='js/banle_helpers.js') }}?v=1786650000"></script>
+    <script defer src="{{ url_for('static', filename='js/script.js') }}?v=1786860000"></script>
     {% block scripts %}{% endblock %}
 </body>
 

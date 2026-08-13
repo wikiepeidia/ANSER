@@ -265,14 +265,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
             tplGrid.innerHTML = d.templates.map(t => `
-                <div class="sc-tpl-card" tabindex="0" data-slug="${t.slug}" onclick="deployTemplate(this, '${t.slug}')">
-                    <div class="sc-tpl-icon" style="background:${t.color}">
-                        <i class="fas ${t.icon}"></i>
+                <div class="sc-tpl-card" tabindex="0" data-slug="${esc(t.slug)}" onclick="deployTemplate(this, '${esc(t.slug)}')">
+                    <div class="sc-tpl-icon" style="background:${esc(t.color)}">
+                        <i class="fas ${esc(t.icon)}"></i>
                     </div>
-                    <div>
+                    <div class="sc-tpl-body">
                         <div class="sc-tpl-name">${esc(t.label)}</div>
                         <div class="sc-tpl-desc">${esc(t.desc)}</div>
                     </div>
+                    <button type="button" class="sc-tpl-cta" onclick="event.stopPropagation(); deployTemplate(this.closest('.sc-tpl-card'), '${esc(t.slug)}')">
+                        <i class="fa-solid fa-plus"></i> Dùng
+                    </button>
                 </div>
             `).join('');
             enableDragScroll(tplGrid);
@@ -280,8 +283,8 @@ document.addEventListener('DOMContentLoaded', () => {
             updateTplNavState();
         } catch {
             tplGrid.innerHTML = `
-                <div class="sc-tpl-empty" style="color:#F44336;border-color:rgba(244,67,54,.3);">
-                    <i class="fas fa-triangle-exclamation" style="font-size:1.4rem;display:block;margin-bottom:8px;"></i>
+                <div class="sc-tpl-empty" style="color: var(--status-error, #dc2626); border-color: color-mix(in srgb, var(--status-error, #dc2626) 30%, transparent);">
+                    <i class="fa-solid fa-triangle-exclamation" style="font-size:1.4rem;display:block;margin-bottom:8px;"></i>
                     Không tải được mẫu. Bấm Làm mới để thử lại.
                 </div>`;
             updateTplNavState();

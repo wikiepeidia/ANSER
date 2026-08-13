@@ -17,12 +17,18 @@
 
     const getThemeColors = () => {
         const styles = getComputedStyle(document.documentElement);
+        // Use the actual CSS variables defined in variables.css.
+        // Previous version used --gray-900, --border-soft, --surface-200,
+        // --primary, --secondary — none of which exist — so the chart
+        // always fell back to the light-theme defaults and was invisible
+        // in dark mode.
         return {
-            text: styles.getPropertyValue('--gray-900').trim() || '#0f172a',
-            border: styles.getPropertyValue('--border-soft').trim() || 'rgba(15, 23, 42, 0.12)',
-            surfaceAlt: styles.getPropertyValue('--surface-200').trim() || '#f8fafc',
-            primary: styles.getPropertyValue('--primary').trim() || '#003152',
-            secondary: styles.getPropertyValue('--secondary').trim() || '#0077b6'
+            text: styles.getPropertyValue('--text-primary').trim() || '#003152',
+            textSecondary: styles.getPropertyValue('--text-secondary').trim() || '#64748b',
+            border: styles.getPropertyValue('--table-border').trim() || '#e5e7eb',
+            surfaceAlt: styles.getPropertyValue('--bg-page').trim() || '#f8fafc',
+            primary: styles.getPropertyValue('--brand-primary').trim() || '#003152',
+            secondary: styles.getPropertyValue('--brand-accent').trim() || '#0077b6'
         };
     };
 
@@ -401,9 +407,9 @@
                             <td><strong>${manager.name}</strong></td>
                             <td>${manager.email}</td>
                             <td><span class="badge bg-primary">${usersManaged} users</span></td>
-                            <td><span class="badge bg-info">${permissionsGranted} permissions</span></td>
+                            <td><span class="status-pill status-pill--blue">${permissionsGranted} permissions</span></td>
                             <td><strong style="color: #43e97b;">${formatCurrency(revenue)} VND</strong></td>
-                            <td><span class="badge bg-success">Active</span></td>
+                            <td><span class="status-pill status-pill--green">Active</span></td>
                         </tr>
                     `;
                 })

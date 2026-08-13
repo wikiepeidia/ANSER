@@ -2,154 +2,275 @@
 
 {% block title %}Dashboard quản trị - {{ project_name }}{% endblock %}
 
-{% block styles %}
-{{ super() }}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/admin_dashboard.css') }}">
-{% endblock %}
-
-{% block scripts %}
-{{ super() }}
-<script src="{{ url_for('static', filename='js/admin_dashboard.js') }}" defer></script>
-{% endblock %}
-
 {% block content %}
-<div class="app-layout">
-    {% include 'components/sidebar.html' %}
 
-    <main class="app-content main-content">
-        <div class="dashboard-header">
-            <div class="header-title">
-                <h1><i class="fas fa-crown"></i> <span data-i18n="adminDash.title">Dashboard quản trị</span></h1>
-                <p data-i18n="adminDash.welcome">Chào mừng bạn đến với dashboard quản trị</p>
+<!-- Admin welcome banner -->
+<div class="welcome-banner welcome-banner--admin">
+    <div class="welcome-banner__left">
+        <div class="welcome-banner__avatar welcome-banner__avatar--initial" style="background: var(--brand-light); color: var(--brand-primary);">
+            <i class="fa-solid fa-crown" style="font-size: 24px;"></i>
+        </div>
+        <div class="welcome-banner__text">
+            <h2 class="welcome-banner__title">Dashboard quản trị <span class="welcome-banner__wave">⚙️</span></h2>
+            <div class="welcome-banner__meta">
+                <span class="welcome-banner__date">
+                    <i class="fa-regular fa-calendar"></i>
+                    <span id="adminDate"></span>
+                </span>
+                <span class="welcome-banner__alert">
+                    <i class="fa-solid fa-shield-halved"></i>
+                    Quản lý nền tảng ANSER
+                </span>
             </div>
         </div>
+    </div>
+    <div class="welcome-banner__actions">
+        <a href="{{ url_for('pages.admin_analytics') }}" class="welcome-banner__btn">
+            <i class="fa-solid fa-chart-line"></i> Phân tích
+        </a>
+        <a href="{{ url_for('pages.admin_managers') }}" class="welcome-banner__btn">
+            <i class="fa-solid fa-user-tie"></i> Quản lý Manager
+        </a>
+    </div>
+</div>
 
-        <div class="row mb-4">
-            <div class="col-md-3">
-                <div class="stat-card bg-gradient-danger">
-                    <div class="stat-icon"><i class="fas fa-users"></i></div>
-                    <div class="stat-content">
-                        <div class="stat-number" id="totalUsers">0</div>
-                        <div class="stat-label" data-i18n="adminDash.viewers">Người xem</div>
-                    </div>
+<!-- Content header -->
+<div class="content__header">
+    <div>
+        <p class="content__subtitle">Admin Dashboard</p>
+        <h1 class="content__title">Tổng quan hệ thống</h1>
+    </div>
+    <div class="content__actions">
+        <button class="btn btn--outline" type="button" onclick="window.location.reload()">
+            <i class="fa-solid fa-rotate"></i> Làm mới
+        </button>
+        <a href="{{ url_for('pages.admin_analytics') }}" class="btn btn--primary">
+            <i class="fa-solid fa-chart-line"></i> Xem phân tích
+        </a>
+    </div>
+</div>
+
+<!-- Stats grid -->
+<section class="dashboard-stats">
+    <h2 class="section__title">
+        <i class="fa-solid fa-chart-pie"></i>
+        <span>Chỉ số hệ thống</span>
+    </h2>
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-card__header">
+                <span>Người dùng</span>
+                <div class="stat-card__icon stat-card__icon--red">
+                    <i class="fa-solid fa-users"></i>
                 </div>
             </div>
-            <div class="col-md-3">
-                <div class="stat-card bg-gradient-warning">
-                    <div class="stat-icon"><i class="fas fa-user-tie"></i></div>
-                    <div class="stat-content">
-                        <div class="stat-number" id="totalManagers">0</div>
-                        <div class="stat-label" data-i18n="common.role">Quản lý</div>
-                    </div>
+            <div class="stat-card__value" id="totalUsers">0</div>
+            <span class="stat-card__pill stat-card__pill--red">Tổng users</span>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-card__header">
+                <span>Quản lý</span>
+                <div class="stat-card__icon stat-card__icon--orange">
+                    <i class="fa-solid fa-user-tie"></i>
                 </div>
             </div>
-            <div class="col-md-3">
-                <div class="stat-card bg-gradient-primary">
-                    <div class="stat-icon"><i class="fas fa-box"></i></div>
-                    <div class="stat-content">
-                        <div class="stat-number" id="totalProducts">0</div>
-                        <div class="stat-label" data-i18n="sale.colProduct">Sản phẩm</div>
-                    </div>
+            <div class="stat-card__value" id="totalManagers">0</div>
+            <span class="stat-card__pill stat-card__pill--orange">Manager</span>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-card__header">
+                <span>Sản phẩm</span>
+                <div class="stat-card__icon stat-card__icon--blue">
+                    <i class="fa-solid fa-box"></i>
                 </div>
             </div>
-            <div class="col-md-3">
-                <div class="stat-card bg-gradient-success">
-                    <div class="stat-icon"><i class="fas fa-shopping-cart"></i></div>
-                    <div class="stat-content">
-                        <div class="stat-number" id="totalCustomers">0</div>
-                        <div class="stat-label" data-i18n="nav.customers">Khách hàng</div>
+            <div class="stat-card__value" id="totalProducts">0</div>
+            <span class="stat-card__pill stat-card__pill--blue">Trên hệ thống</span>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-card__header">
+                <span>Khách hàng</span>
+                <div class="stat-card__icon stat-card__icon--green">
+                    <i class="fa-solid fa-cart-shopping"></i>
+                </div>
+            </div>
+            <div class="stat-card__value" id="totalCustomers">0</div>
+            <span class="stat-card__pill stat-card__pill--green">Active</span>
+        </div>
+    </div>
+</section>
+
+<!-- Quick actions -->
+<section class="dashboard-actions">
+    <h2 class="section__title">
+        <i class="fa-solid fa-bolt"></i>
+        <span>Thao tác nhanh</span>
+    </h2>
+    <div class="action-grid">
+        <a href="{{ url_for('pages.admin_analytics') }}" class="action-card">
+            <div class="action-icon-wrapper">
+                <i class="fa-solid fa-chart-line"></i>
+            </div>
+            <div class="action-content">
+                <h4>Phân tích &amp; Báo cáo</h4>
+                <p>Xem doanh thu, lượng truy cập, lợi nhuận</p>
+            </div>
+            <div class="action-arrow"><i class="fa-solid fa-chevron-right"></i></div>
+        </a>
+
+        <a href="{{ url_for('pages.admin_roles') }}" class="action-card">
+            <div class="action-icon-wrapper action-icon-wrapper--purple">
+                <i class="fa-solid fa-user-shield"></i>
+            </div>
+            <div class="action-content">
+                <h4>Quản lý vai trò</h4>
+                <p>Nâng/hạ cấp tài khoản User ↔ Manager</p>
+            </div>
+            <div class="action-arrow"><i class="fa-solid fa-chevron-right"></i></div>
+        </a>
+
+        <a href="{{ url_for('pages.admin_managers') }}" class="action-card">
+            <div class="action-icon-wrapper action-icon-wrapper--green">
+                <i class="fa-solid fa-user-tie"></i>
+            </div>
+            <div class="action-content">
+                <h4>Quản lý Manager</h4>
+                <p>Tạo và quản lý tài khoản Manager</p>
+            </div>
+            <div class="action-arrow"><i class="fa-solid fa-chevron-right"></i></div>
+        </a>
+
+        <a href="{{ url_for('pages.admin_subscriptions') }}" class="action-card">
+            <div class="action-icon-wrapper action-icon-wrapper--orange">
+                <i class="fa-solid fa-credit-card"></i>
+            </div>
+            <div class="action-content">
+                <h4>Quản lý gói dịch vụ</h4>
+                <p>Gói subscription và thanh toán</p>
+            </div>
+            <div class="action-arrow"><i class="fa-solid fa-chevron-right"></i></div>
+        </a>
+    </div>
+</section>
+
+<!-- Recent activity -->
+<section class="dashboard-charts">
+    <div class="dashboard-charts__main">
+        <div class="chart-card chart-animated">
+            <div class="chart-card__header">
+                <h3>Hoạt động gần đây</h3>
+                <button class="chart-btn">Xem tất cả</button>
+            </div>
+            <div class="chart-card__body">
+                <div id="recentActivities">
+                    <div class="empty-state empty-state--compact">
+                        <i class="fa-solid fa-spinner fa-spin" style="font-size: 24px; color: var(--text-muted);"></i>
+                        <p class="empty-state__description" style="margin-top: 12px;">Đang tải...</p>
                     </div>
                 </div>
             </div>
         </div>
+    </div>
 
-        <div class="row mb-4">
-            <div class="col-12">
-                <h3 class="section-title"><i class="fas fa-bolt"></i> <span data-i18n="dashboard.quickActions">Thao tác nhanh</span></h3>
+    <div class="dashboard-charts__side">
+        <!-- System info -->
+        <div class="chart-card chart-animated">
+            <div class="chart-card__header">
+                <h3><i class="fa-solid fa-info-circle"></i> Thông tin hệ thống</h3>
             </div>
-            <div class="col-md-3">
-                <a class="action-card action-analytics" href="{{ url_for('pages.admin_analytics') }}">
-                    <div class="action-icon"><i class="fas fa-chart-line"></i></div>
-                    <div class="action-content">
-                        <h4 data-i18n="nav.analyticsReports">Phân tích &amp; Báo cáo</h4>
-                        <p data-i18n="adminDash.viewRevenueStats">Xem doanh thu, lượng truy cập, lợi nhuận</p>
+            <div class="chart-card__body">
+                <div class="iot-event-list">
+                    <div class="iot-event">
+                        <div class="iot-event__icon iot-event__icon--blue">
+                            <i class="fa-solid fa-code-branch"></i>
+                        </div>
+                        <div class="iot-event__content">
+                            <p class="iot-event__title">Phiên bản</p>
+                            <span class="iot-event__meta">v1.0.0</span>
+                        </div>
                     </div>
-                    <div class="action-arrow"><i class="fas fa-arrow-right"></i></div>
-                </a>
-            </div>
-            <div class="col-md-3">
-                <a class="action-card action-roles" href="{{ url_for('pages.admin_roles') }}">
-                    <div class="action-icon"><i class="fas fa-user-shield"></i></div>
-                    <div class="action-content">
-                        <h4 data-i18n="adminDash.manageRoles">Quản lý vai trò</h4>
-                        <p data-i18n="adminDash.manageRolesDesc">Nâng/hạ cấp tài khoản User ↔ Manager</p>
+                    <div class="iot-event">
+                        <div class="iot-event__icon iot-event__icon--green">
+                            <i class="fa-solid fa-database"></i>
+                        </div>
+                        <div class="iot-event__content">
+                            <p class="iot-event__title">Database</p>
+                            <span class="iot-event__meta">{{ db_type }}</span>
+                        </div>
                     </div>
-                    <div class="action-arrow"><i class="fas fa-arrow-right"></i></div>
-                </a>
-            </div>
-            <div class="col-md-3">
-                <a class="action-card action-managers" href="{{ url_for('pages.admin_managers') }}">
-                    <div class="action-icon"><i class="fas fa-user-tie"></i></div>
-                    <div class="action-content">
-                        <h4 data-i18n="adminDash.manageManagers">Quản lý quản lý</h4>
-                        <p data-i18n="adminDash.manageManagersDesc">Tạo và quản lý tài khoản Manager</p>
-                    </div>
-                    <div class="action-arrow"><i class="fas fa-arrow-right"></i></div>
-                </a>
-            </div>
-        </div>
-
-        <div class="row mb-4">
-            <div class="col-12">
-                <h3 class="section-title"><i class="fas fa-history"></i> <span data-i18n="adminDash.recentActivity">Hoạt động gần đây</span></h3>
-            </div>
-            <div class="col-12">
-                <div class="activity-card">
-                    <div class="activity-list" id="recentActivities">
-                        <div class="text-center py-5">
-                            <div class="spinner-border text-primary" role="status"></div>
+                    <div class="iot-event">
+                        <div class="iot-event__icon iot-event__icon--orange">
+                            <i class="fa-solid fa-clock"></i>
+                        </div>
+                        <div class="iot-event__content">
+                            <p class="iot-event__title">Thời gian hoạt động</p>
+                            <span class="iot-event__meta" id="systemUptime">--</span>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="row">
-            <div class="col-md-6">
-                <div class="info-card">
-                    <h4><i class="fas fa-info-circle"></i> <span data-i18n="adminDash.systemInfo">Thông tin hệ thống</span></h4>
-                    <div class="info-item">
-                        <span class="info-label" data-i18n="adminDash.version">Phiên bản:</span>
-                        <span class="info-value">v1.0.0</span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-label">Database:</span>
-                        <span class="info-value">{{ db_type }}</span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-label" data-i18n="adminDash.uptime">Thời gian hoạt động:</span>
-                        <span class="info-value" id="systemUptime">--</span>
-                    </div>
-                </div>
+        <!-- Security -->
+        <div class="chart-card chart-animated">
+            <div class="chart-card__header">
+                <h3><i class="fa-solid fa-shield-halved"></i> Bảo mật</h3>
             </div>
-            <div class="col-md-6">
-                <div class="info-card">
-                    <h4><i class="fas fa-shield-alt"></i> <span data-i18n="adminDash.security">Bảo mật</span></h4>
-                    <div class="info-item">
-                        <span class="info-label" data-i18n="adminDash.authentication">Xác thực:</span>
-                        <span class="info-value"><i class="fas fa-check-circle text-success"></i> <span data-i18n="adminDash.enabled">Đã bật</span></span>
+            <div class="chart-card__body">
+                <div class="iot-event-list">
+                    <div class="iot-event">
+                        <div class="iot-event__icon iot-event__icon--green">
+                            <i class="fa-solid fa-check"></i>
+                        </div>
+                        <div class="iot-event__content">
+                            <p class="iot-event__title">Xác thực</p>
+                            <span class="iot-event__meta">Đã bật (Flask-Login)</span>
+                        </div>
                     </div>
-                    <div class="info-item">
-                        <span class="info-label">HTTPS:</span>
-                        <span class="info-value"><i class="fas fa-times-circle text-warning"></i> <span data-i18n="adminDash.notEnabled">Chưa bật</span></span>
+                    <div class="iot-event">
+                        <div class="iot-event__icon iot-event__icon--orange">
+                            <i class="fa-solid fa-triangle-exclamation"></i>
+                        </div>
+                        <div class="iot-event__content">
+                            <p class="iot-event__title">HTTPS</p>
+                            <span class="iot-event__meta">Chưa bật (dev mode)</span>
+                        </div>
                     </div>
-                    <div class="info-item">
-                        <span class="info-label" data-i18n="adminDash.autoBackup">Tự động sao lưu:</span>
-                        <span class="info-value"><i class="fas fa-check-circle text-success"></i> <span data-i18n="adminDash.daily">Hằng ngày</span></span>
+                    <div class="iot-event">
+                        <div class="iot-event__icon iot-event__icon--green">
+                            <i class="fa-solid fa-clock-rotate-left"></i>
+                        </div>
+                        <div class="iot-event__content">
+                            <p class="iot-event__title">Tự động sao lưu</p>
+                            <span class="iot-event__meta">Hằng ngày</span>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-    </main>
-</div>
+    </div>
+</section>
+
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script src="{{ url_for('static', filename='js/admin_dashboard.js') }}" defer></script>
+<script>
+// Set current date in admin welcome banner
+(function() {
+    var el = document.getElementById('adminDate');
+    if (el) {
+        var d = new Date();
+        var days = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6'];
+        var day = days[d.getDay()];
+        var date = String(d.getDate()).padStart(2, '0');
+        var month = String(d.getMonth() + 1).padStart(2, '0');
+        el.textContent = day + ', ' + date + '/' + month + '/' + d.getFullYear();
+    }
+})();
+</script>
 {% endblock %}

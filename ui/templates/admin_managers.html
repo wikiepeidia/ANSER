@@ -2,97 +2,115 @@
 
 {% block title %}Quản lý Manager - Chủ sở hữu{% endblock %}
 
-{% block styles %}
-{{ super() }}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/admin_managers.css') }}">
+{% block content %}
+
+<!-- Content header -->
+<div class="content__header">
+    <div>
+        <p class="content__subtitle">Admin · Quản lý Manager</p>
+        <h1 class="content__title">
+            <i class="fa-solid fa-crown"></i>
+            Quản lý Manager
+        </h1>
+    </div>
+    <div class="content__actions">
+        <button class="btn btn--primary" type="button" onclick="openAddManagerModal()">
+            <i class="fa-solid fa-plus"></i> Thêm Manager
+        </button>
+    </div>
+</div>
+
+<!-- Info alert -->
+<div class="alert alert--info">
+    <i class="fa-solid fa-info-circle"></i>
+    <div class="alert__content">
+        <p class="alert__title">Lưu ý</p>
+        <p class="alert__message">Manager có thể cấp quyền cho người khác. Chỉ admin (Chủ sở hữu) mới có thể quản lý Manager.</p>
+    </div>
+</div>
+
+<!-- Managers table -->
+<section class="card">
+    <div class="card__header">
+        <h3 class="card__title">
+            <i class="fa-solid fa-users-gear"></i>
+            Danh sách Manager
+        </h3>
+    </div>
+    <div class="card__body" style="padding: 0;">
+        <div class="table-wrapper">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Tên</th>
+                        <th>Email</th>
+                        <th>Vai trò</th>
+                        <th>Ngày tạo</th>
+                        <th>Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody id="managersTableBody">
+                    <tr>
+                        <td colspan="6" style="padding: 0;">
+                            <div id="managersTableSkeleton"></div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
+<!-- Modal: Thêm/Sửa Manager -->
+<div class="modal" id="managerModal">
+    <div class="modal__overlay" onclick="closeModal('managerModal')"></div>
+    <div class="modal__content">
+        <div class="modal__header">
+            <h2 id="managerModalTitle">Thêm Manager</h2>
+            <button type="button" class="modal__close" onclick="closeModal('managerModal')" aria-label="Đóng">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        <div class="modal__body">
+            <input type="hidden" id="managerId">
+            <div class="form-group">
+                <label for="managerEmail">Email <span style="color: var(--status-error);">*</span></label>
+                <input type="email" class="form-control" id="managerEmail" required>
+            </div>
+            <div class="form-group">
+                <label for="managerName">Tên <span style="color: var(--status-error);">*</span></label>
+                <input type="text" class="form-control" id="managerName" required>
+            </div>
+            <div class="form-group" id="passwordGroup">
+                <label for="managerPassword">Mật khẩu <span style="color: var(--status-error);">*</span></label>
+                <input type="password" class="form-control" id="managerPassword">
+                <small class="form-help">Để trống nếu muốn giữ mật khẩu hiện tại</small>
+            </div>
+        </div>
+        <div class="modal__footer">
+            <button type="button" class="btn btn--outline" onclick="closeModal('managerModal')">Hủy</button>
+            <button type="button" class="btn btn--primary" onclick="saveManager()">
+                <i class="fa-solid fa-check"></i> Lưu
+            </button>
+        </div>
+    </div>
+</div>
+
 {% endblock %}
 
 {% block scripts %}
 {{ super() }}
 <script src="{{ url_for('static', filename='js/admin_managers.js') }}" defer></script>
-{% endblock %}
-
-{% block content %}
-<div class="app-layout">
-    {% include 'components/sidebar.html' %}
-
-    <main class="app-content main-content managers-page">
-        <div
-            class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-            <h1 class="h2 page-title"><i class="fas fa-crown"></i><span data-i18n="adminMgrs.title">Quản lý Manager</span></h1>
-            <button class="btn btn-primary" onclick="openAddManagerModal()" aria-label="Thêm Manager">
-                <i class="fas fa-plus"></i> <span data-i18n="adminMgrs.addManager">Thêm Manager</span>
-            </button>
-        </div>
-
-        <div class="row mb-3">
-            <div class="col-md-12">
-                <div class="alert alert-info">
-                    <i class="fas fa-info-circle"></i> <strong data-i18n="adminMgrs.note">Lưu ý:</strong> <span data-i18n="adminMgrs.noteText">Manager có thể cấp quyền cho người khác.
-                    Chỉ admin (Chủ sở hữu) mới có thể quản lý Manager.</span>
-                </div>
-            </div>
-        </div>
-
-        <div class="card">
-            <div class="card-body">
-                <h5 class="card-title" data-i18n="adminMgrs.managerList">Danh sách Manager</h5>
-                <div class="table-responsive">
-                    <table class="table table-hover">
-                        <thead>
-                            <tr>
-                                <th data-i18n="sale.colId">ID</th>
-                                <th data-i18n="common.name">Tên</th>
-                                <th data-i18n="common.email">Email</th>
-                                <th data-i18n="common.role">Vai trò</th>
-                                <th data-i18n="adminMgrs.createdDate">Ngày tạo</th>
-                                <th data-i18n="common.actions">Thao tác</th>
-                            </tr>
-                        </thead>
-                        <tbody id="managersTableBody">
-                            <tr>
-                                <td colspan="6" class="text-center">
-                                    <div class="spinner-border" role="status"></div>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </main>
-</div>
-
-<!-- Modal: Thêm/Sửa Manager -->
-<div class="modal fade managers-modal" id="managerModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="managerModalTitle" data-i18n="adminMgrs.addManager">Thêm Manager</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <input type="hidden" id="managerId">
-                <div class="mb-3">
-                    <label class="form-label"><span data-i18n="common.email">Email</span> <span class="text-danger">*</span></label>
-                    <input type="email" class="form-control" id="managerEmail" required>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label"><span data-i18n="common.name">Tên</span> <span class="text-danger">*</span></label>
-                    <input type="text" class="form-control" id="managerName" required>
-                </div>
-                <div class="mb-3" id="passwordGroup">
-                    <label class="form-label"><span data-i18n="adminMgrs.password">Mật khẩu</span> <span class="text-danger">*</span></label>
-                    <input type="password" class="form-control" id="managerPassword">
-                    <small class="text-muted" data-i18n="adminMgrs.leaveBlankPassword">Để trống nếu muốn giữ mật khẩu hiện tại</small>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-i18n="common.cancel">Hủy</button>
-                <button type="button" class="btn btn-primary" onclick="saveManager()" data-i18n="common.save">Lưu</button>
-            </div>
-        </div>
-    </div>
-</div>
-
+<script>
+// Simple modal helpers
+function openModal(id) {
+    var el = document.getElementById(id);
+    if (el) el.classList.add('active', 'show');
+}
+function closeModal(id) {
+    var el = document.getElementById(id);
+    if (el) el.classList.remove('active', 'show');
+}
+</script>
 {% endblock %}

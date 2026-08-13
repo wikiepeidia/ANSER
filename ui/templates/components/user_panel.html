@@ -1,0 +1,35 @@
+<!-- ============ USER PANEL ============ -->
+<div class="user-panel" id="userPanel">
+    <div class="user-panel__header">
+        {% if user.avatar %}
+        <img src="{{ user.avatar }}" alt="Avatar">
+        {% else %}
+        <div class="user-panel__avatar-initial">
+            {{ (user.first_name or user.name or user.email)[0]|upper }}
+        </div>
+        {% endif %}
+        <div class="user-panel__info">
+            <strong>{{ user.name or 'User' }}</strong>
+            <span>{{ user.role }}</span>
+        </div>
+    </div>
+    <div class="user-panel__body">
+        <a href="{{ url_for('pages.settings') }}" class="user-panel__item" data-page="settings">
+            <i class="fa-solid fa-user-pen"></i>
+            <span>Cài đặt tài khoản</span>
+        </a>
+        <a href="{{ url_for('wallet.wallet_dashboard') }}" class="user-panel__item" data-page="wallet">
+            <i class="fa-solid fa-wallet"></i>
+            <span>Ví &amp; Gói dịch vụ</span>
+        </a>
+        <div class="user-panel__divider"></div>
+        <a href="{{ project_config.GATEWAY_ORIGIN }}/choose-area" class="user-panel__item">
+            <i class="fa-solid fa-right-left"></i>
+            <span>Đổi mảng</span>
+        </a>
+        <a href="{{ url_for('main.logout') }}" class="user-panel__item user-panel__item--danger">
+            <i class="fa-solid fa-right-from-bracket"></i>
+            <span>Đăng xuất</span>
+        </a>
+    </div>
+</div>

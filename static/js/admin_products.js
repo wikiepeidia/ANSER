@@ -22,7 +22,6 @@ function renderProductsTable() {
 
     if (productsData.length === 0) {
         tbody.innerHTML = '<tr><td colspan="9" class="text-center">No products found</td></tr>';
-        syncProductsTableTheme();
         return;
     }
 
@@ -31,32 +30,39 @@ function renderProductsTable() {
             const imgCell = product.image_url
                 ? `<img src="${product.image_url}" alt="${product.name}" class="product-thumb" onerror="this.style.display='none'">`
                 : `<span class="text-muted" style="font-size:0.75rem">—</span>`;
+            const actions = [
+                { label: 'Dự báo nhu cầu', icon: 'fa-solid fa-chart-line', action: 'forecastProductFromRow' },
+                { divider: true },
+                { label: 'Sửa sản phẩm', icon: 'fa-solid fa-pen', action: 'editProduct' },
+                { divider: true },
+                { label: 'Xóa sản phẩm', icon: 'fa-solid fa-trash', action: 'deleteProduct', danger: true },
+            ];
             return `
         <tr>
             <td class="text-center">${imgCell}</td>
-            <td><strong>${product.code}</strong></td>
-            <td>${product.name}</td>
-            <td>${product.category || '-'}</td>
-            <td>${product.unit}</td>
-            <td>${Number(product.price).toLocaleString('en-US')} VND</td>
-            <td><span class="badge bg-${product.stock_quantity > 0 ? 'success' : 'danger'}">${product.stock_quantity}</span></td>
-            <td>${product.description || '-'}</td>
-            <td>
-                <button class="btn btn-sm btn-info" onclick="forecastProduct(${product.id}, '${product.name}')" title="Forecast Demand">
-                    <i class="fas fa-chart-line"></i>
-                </button>
-                <button class="btn btn-sm btn-warning" onclick="editProduct(${product.id})">
-                    <i class="fas fa-edit"></i>
-                </button>
-                <button class="btn btn-sm btn-danger" onclick="deleteProduct(${product.id}, '${product.code}')">
-                    <i class="fas fa-trash"></i>
-                </button>
-            </td>
+            <td><strong>${banleUI.escapeHtml(product.code)}</strong></td>
+            <td>${banleUI.escapeHtml(product.name)}</td>
+            <td>${banleUI.escapeHtml(product.category || '—')}</td>
+            <td>${banleUI.escapeHtml(product.unit || '—')}</td>
+            <td>${banleUI.formatVND(product.price)}</td>
+            <td>${banleUI.statusPill(String(product.stock_quantity || 0), product.stock_quantity > 0 ? 'green' : 'red')}</td>
+            <td>${banleUI.escapeHtml(product.description || '—')}</td>
+            <td class="table__actions">${banleUI.renderRowActions(product.id, actions)}</td>
         </tr>`;
         })
         .join('');
-    // Re-apply inline row backgrounds to the new table rows
-    syncProductsTableTheme();
+    // Bind 3-dot action menus (table theme handled by CSS-only in banle_helpers.js)
+    if (window.banleUI && window.banleUI.bindRowActions) {
+        window.banleUI.bindRowActions(tbody);
+    }
+}
+
+function forecastProductFromRow(productId) {
+    const row = document.querySelector(`#productsTableBody [data-row-id="${productId}"]`);
+    if (!row) return;
+    const tr = row.closest('tr');
+    const name = tr.querySelectorAll('td')[2]?.textContent.trim() || '';
+    forecastProduct(productId, name);
 }
 
 function openAddProductModal() {
@@ -74,7 +80,7 @@ function openAddProductModal() {
     document.getElementById('productDescription').value = '';
     document.getElementById('productImageUrl').value = '';
     document.getElementById('productImagePreview').classList.add('d-none');
-    new bootstrap.Modal(document.getElementById('productModal')).show();
+    openModal('productModal');
 }
 
 function editProduct(id) {
@@ -102,7 +108,7 @@ function editProduct(id) {
     } else {
         preview.classList.add('d-none');
     }
-    new bootstrap.Modal(document.getElementById('productModal')).show();
+    openModal('productModal');
 }
 
 async function saveProduct() {
@@ -143,7 +149,7 @@ async function saveProduct() {
 
             if (data.success) {
                 showAlert('success', editingId ? 'Update successful!' : 'Product added successfully!');
-            bootstrap.Modal.getInstance(document.getElementById('productModal')).hide();
+            closeModal('productModal');
             loadProducts();
         } else {
             showAlert('error', data.message);
@@ -176,10 +182,10 @@ async function deleteProduct(id, code) {
 
 function showAlert(type, message) {
     const alertDiv = document.createElement('div');
-    alertDiv.className = `alert alert-${type === 'success' ? 'success' : 'danger'} alert-dismissible fade show`;
+    alertDiv.className = `alert alert-${type === 'success' ? 'success' : 'danger'} `;
     alertDiv.innerHTML = `
         ${message}
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        <button type="button" class="btn-close" onclick="this.parentElement.remove()" aria-label="Close"></button>
     `;
     document.querySelector('main').insertBefore(alertDiv, document.querySelector('main').firstChild);
     setTimeout(() => alertDiv.remove(), 5000);
@@ -208,7 +214,7 @@ document.addEventListener('DOMContentLoaded', () => {
 function openImportExcelModal() {
     goBackToStep1();
     document.getElementById('importResult').classList.add('d-none');
-    new bootstrap.Modal(document.getElementById('importExcelModal')).show();
+    openModal('importExcelModal');
 }
 
 function initDropZone() {
@@ -407,7 +413,7 @@ function showImportResult(data) {
     box.classList.remove('d-none');
 
     if (!data.success) {
-        box.innerHTML = `<div class="alert alert-danger mb-0"><i class="fas fa-times-circle me-2"></i>${data.message}</div>`;
+        box.innerHTML = `<div class="alert alert--error mb-0"><i class="fas fa-times-circle me-2"></i>${data.message}</div>`;
         return;
     }
 
@@ -430,32 +436,20 @@ function showImportResult(data) {
     `;
 }
 
-// Fallback: apply inline table row backgrounds in case style overrides still force light backgrounds
-function syncProductsTableTheme() {
-    const table = document.querySelector('.products-page .table');
-    if (!table) return;
-    const styles = getComputedStyle(document.documentElement);
-    const bg = styles.getPropertyValue('--surface-100') || '#ffffff';
-    const altBg = styles.getPropertyValue('--surface-200') || '#f8fafc';
-    table.style.setProperty('background', bg.trim(), 'important');
-    [...table.querySelectorAll('tbody tr')].forEach((row, idx) => {
-        const color = (idx % 2 === 0) ? bg.trim() : altBg.trim();
-        row.style.setProperty('background', color, 'important');
-    });
-}
+// Table theme is handled by banle_helpers.js (CSS-only, see syncAllTablesTheme
+// there). The previous JS-based sync here was removed to avoid the same
+// race-condition bug that broke other tables: reading getComputedStyle()
+// from a MutationObserver fires BEFORE the browser re-evaluates CSS
+// variables, so values are stale and the table gets stuck in the previous
+// theme's colors. CSS-only (handled in app.css) is the most robust fix.
 
-const _prodThemeObserver = new MutationObserver((mutations) => {
-    const html = document.documentElement;
-    const changed = mutations.some(m => m.attributeName === 'data-theme');
-    if (changed) syncProductsTableTheme();
-});
-_prodThemeObserver.observe(document.documentElement, { attributes: true });
-document.addEventListener('DOMContentLoaded', syncProductsTableTheme);
-
-// Observe the tbody content so when rows are replaced dynamically we re-apply the inline theme styles
+// Note: the product table DOM is still observed for row changes below so
+// any per-row logic (search filter, action binding) continues to work —
+// but no inline `!important` styles are set here.
 const _productsTbodyObserver = new MutationObserver((mutations) => {
     const changed = mutations.some(m => (m.addedNodes && m.addedNodes.length) || (m.removedNodes && m.removedNodes.length));
-    if (changed) syncProductsTableTheme();
+    if (!changed) return;
+    // Future: hook for per-row post-processing. Theme is handled by CSS.
 });
 
 document.addEventListener('DOMContentLoaded', () => {

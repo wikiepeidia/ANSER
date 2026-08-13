@@ -2,255 +2,272 @@
 
 {% block title %}Phân tích & Báo cáo - Quản trị{% endblock %}
 
-{% block styles %}
-{{ super() }}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/admin_analytics.css') }}">
-{% endblock %}
-
 {% block scripts %}
 {{ super() }}
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" defer integrity="sha512-RAM9fG1j6cG1V8q9+GeZN7H4UEC4oZL3Snd0RgxF6p5yK9kTcLeQR/L9ZXj3C4o/BkQEEDhf+1aF0QPf6DqXg==" crossorigin="anonymous"></script>
-<script src="{{ url_for('static', filename='js/admin_analytics.js') }}" defer></script>
-
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" defer crossorigin="anonymous"></script>
+<script src="{{ url_for('static', filename='js/admin_analytics.js') }}?v=1786700000" defer></script>
 {% if analytics_data %}
 <script>
-    document.addEventListener('DOMContentLoaded', function () {
-        // Cập nhật lượt truy cập với dữ liệu GA4 thực
-        const totalVisitsEl = document.getElementById('totalVisits');
-        if (totalVisitsEl) {
-            totalVisitsEl.textContent = "{{ analytics_data.total_views }}";
-        }
-
-        // Log dữ liệu để debug
-        console.log("Đã tải dữ liệu GA4:", {{ analytics_data | tojson | safe }});
-    });
+document.addEventListener('DOMContentLoaded', function () {
+    var totalVisitsEl = document.getElementById('totalVisits');
+    if (totalVisitsEl) {
+        totalVisitsEl.textContent = "{{ analytics_data.total_views }}";
+    }
+    console.log("Đã tải dữ liệu GA4:", {{ analytics_data | tojson | safe }});
+});
 </script>
 {% endif %}
 {% endblock %}
 
 {% block content %}
-<div class="app-layout">
-    {% include 'components/sidebar.html' %}
 
-    <main class="app-content main-content">
-        <div
-            class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-            <h1 class="h2"><i class="fas fa-chart-line"></i> <span data-i18n="nav.analyticsReports">Phân tích &amp; Báo cáo</span></h1>
-            <div class="btn-toolbar mb-2 mb-md-0">
-                <select class="form-select" id="timeRangeFilter" aria-label="Chọn khoảng thời gian">
-                    <option value="today" data-i18n="analytics.today">Hôm nay</option>
-                    <option value="week" selected data-i18n="analytics.last7Days">7 ngày qua</option>
-                    <option value="month" data-i18n="analytics.last30Days">30 ngày qua</option>
-                    <option value="year" data-i18n="analytics.thisYear">Năm nay</option>
-                </select>
-            </div>
-        </div>
-
-        <!-- Realtime & Tổng quan -->
-        <div class="row mb-4">
-            <!-- Thẻ Realtime -->
-            <div class="col-lg-4 mb-4 mb-lg-0">
-                <div class="card h-100 shadow-sm border-0">
-                    <div class="card-body bg-primary text-white rounded">
-                        <h5 class="card-title mb-4" data-i18n="analytics.realtimeOverview">Tổng quan thời gian thực</h5>
-                        <div class="d-flex align-items-center justify-content-between mb-4">
-                            <div>
-                                <h2 class="display-4 fw-bold mb-0" id="realtimeUsers">0</h2>
-                                <p class="mb-0 opacity-75" data-i18n="analytics.usersLast30Min">Người dùng trong 30 phút qua</p>
-                            </div>
-                            <div class="realtime-pulse">
-                                <span class="pulse-ring"></span>
-                                <i class="fas fa-user-clock fa-2x"></i>
-                            </div>
-                        </div>
-                        <hr class="bg-white opacity-25">
-                        <div class="small opacity-75">
-                            <div class="d-flex justify-content-between mb-2">
-                                <span data-i18n="analytics.desktop">Desktop</span>
-                                <span id="deviceDesktop">0%</span>
-                            </div>
-                            <div class="d-flex justify-content-between">
-                                <span data-i18n="analytics.mobile">Mobile</span>
-                                <span id="deviceMobile">0%</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Tổng quan phân tích -->
-            <div class="col-lg-8">
-                <div class="card h-100 shadow-sm analytics-overview">
-                    <div class="card-body d-flex align-items-center">
-                        <div class="text-center w-100">
-                            <i class="fas fa-chart-line fa-3x text-primary mb-3"></i>
-                            <h5 class="card-title" data-i18n="analytics.dashboardTitle">Dashboard phân tích</h5>
-                            <p class="card-text text-muted" data-i18n="analytics.dashboardDesc">Theo dõi hiệu suất website với dữ liệu Google Analytics thời gian thực. Theo dõi mức độ tương tác của người dùng, nguồn truy cập và các chỉ số quan trọng để tối ưu kinh doanh.</p>
-                            <div class="analytics-controls">
-                                <div class="data-source-indicator">
-                                    <span class="badge bg-secondary" id="analyticsSourceBadge">Đang tải...</span>
-                                    <span class="data-source-label" data-i18n="analytics.dataSource">Nguồn dữ liệu</span>
-                                </div>
-                                <div class="control-buttons">
-                                    <button id="btnCheckTracking" class="btn-modern btn-modern--primary" type="button">
-                                        <i class="fas fa-sync-alt"></i>
-                                        <span data-i18n="common.refresh">Làm mới</span>
-                                    </button>
-                                    <button id="btnLoadMock" class="btn-modern btn-modern--warning" type="button">
-                                        <i class="fas fa-wifi"></i>
-                                        <span data-i18n="analytics.loadLiveData">Tải dữ liệu trực tiếp</span>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Lưới chỉ số chính -->
-        <div class="row mb-4 g-2">
-            <div class="col-md-3">
-                <div class="metric-card metric-card--users shadow-sm p-2 rounded" role="button" tabindex="0"
-                    data-action="toggle-dataset" data-dataset="Active Users" aria-label="Bật/tắt chuỗi Người dùng hoạt động">
-                    <div class="metric-icon"><i class="fas fa-users"></i></div>
-                    <div class="metric-label" data-i18n="analytics.totalUsers">TỔNG NGƯỜI DÙNG</div>
-                    <div class="metric-value" id="totalUsers">0</div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="metric-card metric-card--pageviews shadow-sm p-2 rounded" role="button" tabindex="0"
-                    data-action="toggle-dataset" data-dataset="Page Views" aria-label="Bật/tắt chuỗi Lượt xem trang">
-                    <div class="metric-icon"><i class="fas fa-eye"></i></div>
-                    <div class="metric-label" data-i18n="analytics.pageViews">LƯỢT XEM TRANG</div>
-                    <div class="metric-value" id="totalPageViews">0</div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="metric-card metric-card--engagement shadow-sm p-2 rounded" role="button" tabindex="0"
-                    data-action="show-info" data-info="avg_engagement" aria-label="Hiển thị thời lượng tương tác trung bình">
-                    <div class="metric-icon"><i class="fas fa-clock"></i></div>
-                    <div class="metric-label" data-i18n="analytics.avgEngagement">TƯƠNG TÁC TRUNG BÌNH</div>
-                    <div class="metric-value" id="avgTime">0p 0s</div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="metric-card metric-card--newusers shadow-sm p-2 rounded" role="button" tabindex="0"
-                    data-action="show-info" data-info="new_users" aria-label="Hiển thị người dùng mới">
-                    <div class="metric-icon"><i class="fas fa-user-plus"></i></div>
-                    <div class="metric-label" data-i18n="analytics.newUsers">NGƯỜI DÙNG MỚI</div>
-                    <div class="metric-value" id="newUsers">0</div>
-                </div>
-            </div>
-        </div>
-
-        <div class="analytics-tabs mb-3" role="tablist" aria-label="Mục phân tích">
-            <button class="tab-button active" data-target="chartsSection" data-chart="daily" role="tab"
-                aria-selected="true" data-i18n="analytics.usersAndViewsByDay">Người dùng &amp; Lượt xem theo ngày</button>
-            <button class="tab-button" data-target="topPagesSection" role="tab" aria-selected="false" data-i18n="analytics.topPages">Trang hàng đầu</button>
-            <button class="tab-button" data-target="managerSection" role="tab" aria-selected="false" data-i18n="analytics.managerPerformance">Hiệu suất Manager</button>
-            <button class="tab-button" data-target="customersSection" role="tab" aria-selected="false" data-i18n="analytics.top5VipCustomers">Top 5 khách hàng VIP</button>
-        </div>
-
-
-
-        <!-- Hàng biểu đồ -->
-        <section id="chartsSection" class="analytics-section">
-            <div class="row mb-4 align-items-stretch">
-                <div class="col-md-8">
-                    <div class="chart-card" data-chart="daily">
-                        <h5 class="card-title d-flex align-items-center justify-content-between"><span><i
-                                    class="fas fa-chart-area"></i> <span data-i18n="analytics.usersAndViewsByDay">Người dùng &amp; Lượt xem theo ngày</span></span></h5>
-                        <canvas id="dailyUsersChart" style="height:420px"></canvas>
-                    </div>
-                </div>
-                <div class="col-md-4 d-flex">
-                    <div class="chart-card chart-card--small flex-fill text-center" data-chart="traffic">
-                        <h5 class="card-title"><i class="fas fa-chart-pie"></i> <span data-i18n="analytics.trafficSources">Nguồn truy cập</span></h5>
-                        <div class="chart-wrapper d-flex align-items-center justify-content-center"
-                            style="min-height:280px;">
-                            <canvas id="trafficSourcesChart"
-                                style="height:260px; max-width:260px; width:100%;"></canvas>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Trang hàng đầu -->
-        <section id="topPagesSection" class="analytics-section">
-            <div class="row mb-4">
-                <div class="col-12">
-                    <div class="card">
-                        <div class="card-body">
-                            <h5 class="card-title"><i class="fas fa-file-alt"></i> <span data-i18n="analytics.topPages">Trang hàng đầu</span></h5>
-                            <div id="topPagesContainer">
-                                <div class="text-center py-3">
-                                    <div class="spinner-border" role="status"></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Bảng hiệu suất Manager -->
-        <section id="managerSection" class="analytics-section">
-            <div class="row mb-4">
-                <div class="col-12">
-                    <div class="card">
-                        <div class="card-body">
-                            <h5 class="card-title">
-                                <i class="fas fa-user-tie"></i> <span data-i18n="analytics.managerPerformance">Hiệu suất Manager</span>
-                            </h5>
-                            <div class="table-responsive">
-                                <table class="table table-hover">
-                                    <thead>
-                                        <tr>
-                                            <th data-i18n="common.role">Manager</th>
-                                            <th data-i18n="common.email">Email</th>
-                                            <th data-i18n="analytics.managedUsers">Người dùng quản lý</th>
-                                            <th data-i18n="analytics.assignedRole">Vai trò được gán</th>
-                                            <th data-i18n="analytics.managedRevenue">Doanh thu (quản lý)</th>
-                                            <th data-i18n="common.status">Trạng thái</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="managerPerformanceTable">
-                                        <tr>
-                                            <td colspan="6" class="text-center">
-                                                <div class="spinner-border" role="status"></div>
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Khách hàng hàng đầu -->
-        <section id="customersSection" class="analytics-section">
-            <div class="row mb-4">
-                <div class="col-md-12">
-                    <div class="card">
-                        <div class="card-body">
-                            <h5 class="card-title">
-                                <i class="fas fa-crown"></i> <span data-i18n="analytics.top5VipCustomers">Top 5 khách hàng VIP</span>
-                            </h5>
-                            <div id="topCustomers">
-                                <div class="text-center py-3">
-                                    <div class="spinner-border" role="status"></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-    </main>
+<!-- Content header -->
+<div class="content__header">
+    <div>
+        <p class="content__subtitle">Admin Analytics</p>
+        <h1 class="content__title">
+            <i class="fa-solid fa-chart-line"></i>
+            Phân tích &amp; Báo cáo
+        </h1>
+    </div>
+    <div class="content__actions">
+        <select class="form-control" id="timeRangeFilter" style="width: auto;">
+            <option value="today">Hôm nay</option>
+            <option value="week" selected>7 ngày qua</option>
+            <option value="month">30 ngày qua</option>
+            <option value="year">Năm nay</option>
+        </select>
+        <button id="btnCheckTracking" class="btn btn--outline" type="button">
+            <i class="fa-solid fa-rotate"></i> Làm mới
+        </button>
+    </div>
 </div>
+
+<!-- Realtime + Overview row -->
+<section class="dashboard-charts">
+    <!-- Realtime card (uses standard chart-card styling for theme consistency) -->
+    <div class="dashboard-charts__side">
+        <div class="chart-card chart-animated chart-card--realtime">
+            <div class="chart-card__header">
+                <h3>
+                    <i class="fa-solid fa-bolt"></i>
+                    Realtime
+                </h3>
+                <span class="badge badge--live">LIVE</span>
+            </div>
+            <div class="chart-card__body">
+                <div class="stat-card__value stat-card__value--realtime" id="realtimeUsers">0</div>
+                <p class="realtime-description">Người dùng trong 30 phút qua</p>
+                <hr class="realtime-divider">
+                <div class="iot-event-list realtime-devices">
+                    <div class="iot-event">
+                        <div class="iot-event__icon">
+                            <i class="fa-solid fa-desktop"></i>
+                        </div>
+                        <div class="iot-event__content">
+                            <p class="iot-event__title">Desktop</p>
+                            <span class="iot-event__meta" id="deviceDesktop">0%</span>
+                        </div>
+                    </div>
+                    <div class="iot-event">
+                        <div class="iot-event__icon">
+                            <i class="fa-solid fa-mobile"></i>
+                        </div>
+                        <div class="iot-event__content">
+                            <p class="iot-event__title">Mobile</p>
+                            <span class="iot-event__meta" id="deviceMobile">0%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Overview -->
+    <div class="dashboard-charts__main">
+        <div class="chart-card chart-animated">
+            <div class="chart-card__header">
+                <h3><i class="fa-solid fa-chart-line"></i> Tổng quan phân tích</h3>
+                <span class="badge" id="analyticsSourceBadge">Đang tải...</span>
+            </div>
+            <div class="chart-card__body" style="text-align: center; padding: 40px 20px;">
+                <i class="fa-solid fa-chart-area" style="font-size: 48px; color: var(--brand-light); margin-bottom: 16px;"></i>
+                <p style="color: var(--text-secondary); max-width: 600px; margin: 0 auto 20px;">
+                    Theo dõi hiệu suất website với dữ liệu Google Analytics thời gian thực. Theo dõi mức độ tương tác của người dùng, nguồn truy cập và các chỉ số quan trọng để tối ưu kinh doanh.
+                </p>
+                <button id="btnLoadMock" class="btn btn--primary" type="button">
+                    <i class="fa-solid fa-wifi"></i>
+                    Tải dữ liệu trực tiếp
+                </button>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Metric cards -->
+<section class="dashboard-stats">
+    <h2 class="section__title">
+        <i class="fa-solid fa-chart-bar"></i>
+        <span>Chỉ số chính</span>
+    </h2>
+    <div class="stats-grid">
+        <div class="stat-card" data-action="toggle-dataset" data-dataset="Active Users" role="button" tabindex="0" style="cursor: pointer;">
+            <div class="stat-card__header">
+                <span>Tổng người dùng</span>
+                <div class="stat-card__icon stat-card__icon--blue">
+                    <i class="fa-solid fa-users"></i>
+                </div>
+            </div>
+            <div class="stat-card__value" id="totalUsers">0</div>
+            <span class="stat-card__pill stat-card__pill--blue">Người dùng hoạt động</span>
+        </div>
+
+        <div class="stat-card" data-action="toggle-dataset" data-dataset="Page Views" role="button" tabindex="0" style="cursor: pointer;">
+            <div class="stat-card__header">
+                <span>Lượt xem trang</span>
+                <div class="stat-card__icon stat-card__icon--green">
+                    <i class="fa-solid fa-eye"></i>
+                </div>
+            </div>
+            <div class="stat-card__value" id="totalPageViews">0</div>
+            <span class="stat-card__pill stat-card__pill--green">Tổng pageviews</span>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-card__header">
+                <span>Tương tác trung bình</span>
+                <div class="stat-card__icon stat-card__icon--orange">
+                    <i class="fa-solid fa-clock"></i>
+                </div>
+            </div>
+            <div class="stat-card__value" id="avgTime">0p 0s</div>
+            <span class="stat-card__pill stat-card__pill--orange">Trung bình</span>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-card__header">
+                <span>Người dùng mới</span>
+                <div class="stat-card__icon stat-card__icon--purple">
+                    <i class="fa-solid fa-user-plus"></i>
+                </div>
+            </div>
+            <div class="stat-card__value" id="newUsers">0</div>
+            <span class="stat-card__pill">Mới trong kỳ</span>
+        </div>
+    </div>
+</section>
+
+<!-- Tabs -->
+<div class="tabs" role="tablist">
+    <button class="tabs__item active" data-target="chartsSection" data-chart="daily" role="tab">
+        <i class="fa-solid fa-chart-area"></i> Người dùng &amp; Lượt xem theo ngày
+    </button>
+    <button class="tabs__item" data-target="topPagesSection" role="tab">
+        <i class="fa-solid fa-file-alt"></i> Trang hàng đầu
+    </button>
+    <button class="tabs__item" data-target="managerSection" role="tab">
+        <i class="fa-solid fa-user-tie"></i> Hiệu suất Manager
+    </button>
+    <button class="tabs__item" data-target="customersSection" role="tab">
+        <i class="fa-solid fa-crown"></i> Top 5 khách hàng VIP
+    </button>
+</div>
+
+<!-- Charts section -->
+<section id="chartsSection" class="analytics-section">
+    <div class="dashboard-charts">
+        <div class="dashboard-charts__main">
+            <div class="chart-card chart-animated" data-chart="daily">
+                <div class="chart-card__header">
+                    <h3><i class="fa-solid fa-chart-area"></i> Người dùng &amp; Lượt xem theo ngày</h3>
+                </div>
+                <div class="chart-card__body">
+                    <div class="chart-container chart-container--lg">
+                        <canvas id="dailyUsersChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="dashboard-charts__side">
+            <div class="chart-card chart-animated" data-chart="traffic">
+                <div class="chart-card__header">
+                    <h3><i class="fa-solid fa-chart-pie"></i> Nguồn truy cập</h3>
+                </div>
+                <div class="chart-card__body" style="text-align: center;">
+                    <div class="chart-container">
+                        <canvas id="trafficSourcesChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Top pages -->
+<section id="topPagesSection" class="analytics-section" style="display: none;">
+    <div class="card">
+        <div class="card__header">
+            <h3 class="card__title"><i class="fa-solid fa-file-alt"></i> Trang hàng đầu</h3>
+        </div>
+        <div class="card__body">
+            <div id="topPagesContainer">
+                <div class="empty-state empty-state--compact">
+                    <i class="fa-solid fa-spinner fa-spin" style="font-size: 24px; color: var(--text-muted);"></i>
+                    <p class="empty-state__description" style="margin-top: 12px;">Đang tải...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Manager performance -->
+<section id="managerSection" class="analytics-section" style="display: none;">
+    <div class="card">
+        <div class="card__header">
+            <h3 class="card__title"><i class="fa-solid fa-user-tie"></i> Hiệu suất Manager</h3>
+        </div>
+        <div class="card__body">
+            <div class="table-wrapper">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Manager</th>
+                            <th>Email</th>
+                            <th>Người dùng quản lý</th>
+                            <th>Vai trò được gán</th>
+                            <th>Doanh thu (quản lý)</th>
+                            <th>Trạng thái</th>
+                        </tr>
+                    </thead>
+                    <tbody id="managerPerformanceTable">
+                        <tr>
+                            <td colspan="6" style="padding: 0;">
+                                <div id="managerPerformanceSkeleton"></div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Top customers -->
+<section id="customersSection" class="analytics-section" style="display: none;">
+    <div class="card">
+        <div class="card__header">
+            <h3 class="card__title"><i class="fa-solid fa-crown"></i> Top 5 khách hàng VIP</h3>
+        </div>
+        <div class="card__body">
+            <div id="topCustomers">
+                <div class="empty-state empty-state--compact">
+                    <i class="fa-solid fa-spinner fa-spin" style="font-size: 24px; color: var(--text-muted);"></i>
+                    <p class="empty-state__description" style="margin-top: 12px;">Đang tải...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
 {% endblock %}

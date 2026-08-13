@@ -2,261 +2,269 @@
 
 {% block title %}SE - Tự động nhập hàng - {{ project_name }}{% endblock %}
 
-{% block styles %}
-{{ super() }}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/admin_auto_import.css') }}">
-<style>
-    /* ── Page-specific styles (shared tokens now in saas-tokens.css) ── */
+{% block content %}
 
-    .border-bottom { border-bottom: 1px solid var(--border-soft) !important; margin-bottom: 32px !important; padding-bottom: 16px !important; }
-    h1.h2 { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.02em; color: var(--gray-900); display: flex; align-items: center; gap: 12px; margin:0;}
-    h1.h2 i { color: var(--gray-500); font-size: 1.25rem; }
+<!-- Content header -->
+<div class="content__header">
+    <div>
+        <p class="content__subtitle">
+            <a href="{{ url_for('pages.workspace') }}" style="color: var(--brand-primary); text-decoration: none;">Workspace</a>
+            <span class="mx-2">›</span>
+            <span>Tự động nhập hàng</span>
+        </p>
+        <h1 class="content__title">
+            <i class="fa-solid fa-rotate"></i>
+            Tự động nhập hàng
+        </h1>
+    </div>
+    <div class="content__actions">
+        <button class="btn btn--primary" type="button" onclick="openAddAutomationModal()">
+            <i class="fa-solid fa-plus"></i> Tạo quy tự động
+        </button>
+    </div>
+</div>
 
-    .btn { border-radius: 8px; font-weight: 500; font-size: 0.875rem; padding: 8px 16px; border: 1px solid transparent; box-shadow: var(--shadow-md); transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 8px; }
-    .btn-primary { background-color: var(--primary) !important; color: #fff !important; }
-    .btn-primary:hover { background-color: #4F46E5 !important; transform: translateY(-1px); box-shadow: var(--shadow-md); }
-    .btn-secondary { background-color: #fff !important; color: var(--gray-900) !important; border-color: var(--border-soft) !important; }
+<!-- Info alert -->
+<div class="alert alert--info">
+    <i class="fa-solid fa-magic"></i>
+    <div class="alert__content">
+        <p class="alert__title">Tính năng</p>
+        <p class="alert__message">Thiết lập các kịch bản tự động để tự nhập hàng khi tồn kho sản phẩm thấp hơn ngưỡng hoặc theo lịch cố định.</p>
+    </div>
+</div>
 
-    .alert-info { background-color: #EEF2FF; border-color: #C7D2FE; color: #4338CA; border-radius: 12px; padding: 16px 20px; font-size: 0.9rem; margin-bottom: 24px;}
+<!-- Stats -->
+<section class="dashboard-stats">
+    <div class="stats-grid stats-grid--3">
+        <div class="stat-card">
+            <div class="stat-card__header">
+                <span>Quy tự động đang chạy</span>
+                <div class="stat-card__icon stat-card__icon--blue">
+                    <i class="fa-solid fa-robot"></i>
+                </div>
+            </div>
+            <div class="stat-card__value" id="activeAutomations">0</div>
+            <span class="stat-card__pill stat-card__pill--blue">Đang active</span>
+        </div>
 
-    .saas-stat-card { background: var(--surface-100) !important; border: 1px solid var(--border-soft) !important; border-radius: 12px !important; box-shadow: var(--shadow-md) !important; padding: 24px; transition: all 0.2s ease; height: 100%; }
-    .saas-stat-card:hover { border-color: #D1D5DB !important; box-shadow: var(--shadow-md) !important; transform: translateY(-2px); }
-    .saas-stat-card .card-body { padding: 0 !important; }
-    .saas-stat-card h5 { font-size: 0.875rem; font-weight: 600; color: var(--gray-500) !important; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px; }
-    .saas-stat-card h2, .saas-stat-card #lastRun { font-size: 2rem; font-weight: 700; color: var(--gray-900) !important; margin: 0; line-height: 1; letter-spacing: -0.02em; }
+        <div class="stat-card">
+            <div class="stat-card__header">
+                <span>Hoàn thành</span>
+                <div class="stat-card__icon stat-card__icon--green">
+                    <i class="fa-solid fa-check-circle"></i>
+                </div>
+            </div>
+            <div class="stat-card__value" id="completedRuns">0</div>
+            <span class="stat-card__pill stat-card__pill--green">Tổng lần chạy</span>
+        </div>
 
-    .card:not(.saas-stat-card):not(.saas-action-card) { background: var(--surface-100) !important; border: 1px solid var(--border-soft) !important; border-radius: 12px !important; box-shadow: var(--shadow-md) !important; overflow: hidden; margin-bottom: 24px;}
-    .card:not(.saas-stat-card) > .card-body { padding: 0; }
-    .card-title, .card-header { padding: 20px 24px; margin: 0; border-bottom: 1px solid var(--border-soft); font-size: 1rem; font-weight: 600; color: var(--gray-900); background: #fff !important; display: flex; align-items: center; gap: 8px;}
-    .card-title i, .card-header i { color: var(--gray-500); }
-    .card-body-inner { padding: 24px; }
+        <div class="stat-card">
+            <div class="stat-card__header">
+                <span>Lần chạy gần nhất</span>
+                <div class="stat-card__icon stat-card__icon--orange">
+                    <i class="fa-solid fa-clock"></i>
+                </div>
+            </div>
+            <div class="stat-card__value stat-card__value--compact" id="lastRun">—</div>
+            <span class="stat-card__pill stat-card__pill--orange">Lần cuối</span>
+        </div>
+    </div>
+</section>
 
-    .table { margin-bottom: 0; }
-    .table th { background-color: #F9FAFB; color: var(--gray-500); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; padding: 12px 24px; border-bottom: 1px solid var(--border-soft); font-weight: 600; }
-    .table td { padding: 16px 24px; vertical-align: middle; border-bottom: 1px solid var(--border-soft); color: var(--gray-900); font-size: 0.875rem; }
+<!-- Rules list -->
+<section class="card" style="margin-bottom: var(--space-5);">
+    <div class="card__header">
+        <h3 class="card__title">
+            <i class="fa-solid fa-list-ul"></i>
+            Danh sách quy tự động
+        </h3>
+    </div>
+    <div class="card__body" style="padding: 0;">
+        <div class="table-wrapper">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Tên</th>
+                        <th>Loại</th>
+                        <th>Trạng thái</th>
+                        <th>Lần chạy gần nhất</th>
+                        <th>Cấu hình</th>
+                        <th>Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody id="automationsTableBody">
+                    <tr>
+                        <td colspan="6" style="text-align: center; padding: 40px; color: var(--text-secondary);">
+                            Chưa có quy tự động nào. Nhấn "Tạo quy tự động" để bắt đầu.
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
 
-    .saas-action-card { display: flex; flex-direction: column; padding: 20px; background: var(--surface-100); border: 1px solid var(--border-soft); border-radius: 12px; box-shadow: var(--shadow-md); transition: all 0.2s ease; text-align: left; height: 100%;}
-    .saas-action-card:hover { border-color: var(--primary); box-shadow: var(--shadow-md); transform: translateY(-2px); }
-    .saas-action-card h6 { font-size: 0.95rem; font-weight: 600; color: var(--gray-900); margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
-    .saas-action-card h6 i { color: var(--primary); }
-    .saas-action-card p { font-size: 0.85rem; color: var(--gray-500); line-height: 1.5; margin-bottom: 16px; flex-grow: 1;}
-    .saas-action-card .btn { width: 100%; justify-content: center; background: #EEF2FF !important; color: var(--primary) !important; border: none; box-shadow: none;}
-    .saas-action-card:hover .btn { background: var(--primary) !important; color: #fff !important; }
+<!-- Suggestions -->
+<section class="card">
+    <div class="card__header">
+        <h3 class="card__title">
+            <i class="fa-solid fa-lightbulb"></i>
+            Gợi ý quy tự động
+        </h3>
+    </div>
+    <div class="card__body">
+        <div class="action-grid">
+            <div class="action-card" style="cursor: default;">
+                <div class="action-icon-wrapper action-icon-wrapper--orange">
+                    <i class="fa-solid fa-warehouse"></i>
+                </div>
+                <div class="action-content">
+                    <h4>Tự nhập khi tồn kho thấp</h4>
+                    <p>Tự động tạo đơn nhập khi tồn kho sản phẩm thấp hơn ngưỡng.</p>
+                </div>
+                <button class="btn btn--primary btn--sm" type="button" onclick="useTemplate('low_stock')">
+                    <i class="fa-solid fa-plus"></i> Dùng mẫu
+                </button>
+            </div>
 
-    .modal-content { border-radius: 16px; border: 1px solid var(--border-soft); }
-    .modal-header, .modal-body, .modal-footer { border-color: var(--border-soft); }
-    .form-control, .form-select { border-radius: 8px; border: 1px solid #D1D5DB; padding: 10px 14px; font-size: 0.9rem; }
-    .form-control:focus, .form-select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(0, 49, 82, 0.2); }
-</style>
+            <div class="action-card" style="cursor: default;">
+                <div class="action-icon-wrapper action-icon-wrapper--purple">
+                    <i class="fa-solid fa-calendar"></i>
+                </div>
+                <div class="action-content">
+                    <h4>Nhập theo lịch</h4>
+                    <p>Tự động nhập theo lịch: hằng ngày, hằng tuần, hằng tháng.</p>
+                </div>
+                <button class="btn btn--primary btn--sm" type="button" onclick="useTemplate('scheduled')">
+                    <i class="fa-solid fa-plus"></i> Dùng mẫu
+                </button>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Modal: Add Automation -->
+<div class="modal" id="automationModal">
+    <div class="modal__overlay" onclick="closeModal('automationModal')"></div>
+    <div class="modal__content modal__content--lg">
+        <div class="modal__header">
+            <h2>Tạo quy tự động mới</h2>
+            <button type="button" class="modal__close" onclick="closeModal('automationModal')" aria-label="Đóng">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        <div class="modal__body">
+            <form id="automationForm">
+                <div class="form-group">
+                    <label for="name">Tên quy tự động <span style="color: var(--status-error);">*</span></label>
+                    <input type="text" class="form-control" name="name" required placeholder="VD: Tự nhập khi hết hàng">
+                </div>
+                <div class="form-group">
+                    <label for="type">Loại quy tự động</label>
+                    <select class="form-control" name="type" id="automationTypeSelect" onchange="updateConfigUI()">
+                        <option value="low_stock">Kích hoạt khi tồn kho thấp</option>
+                        <option value="scheduled">Nhập theo lịch</option>
+                        <option value="smart_forecast">Dự báo thông minh (AI)</option>
+                    </select>
+                </div>
+
+                <div id="configLowStock" class="config-section">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="cfgThreshold">Ngưỡng tồn kho</label>
+                            <input type="number" class="form-control" id="cfgThreshold" value="10" min="1">
+                            <small class="form-help">Kích hoạt khi tồn kho thấp hơn con số này</small>
+                        </div>
+                        <div class="form-group">
+                            <label for="cfgReorderQty">Số lượng đặt thêm</label>
+                            <input type="number" class="form-control" id="cfgReorderQty" value="50" min="1">
+                            <small class="form-help">Số đơn vị cần đặt thêm</small>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="cfgProductScope">Áp dụng cho sản phẩm</label>
+                        <select class="form-control" id="cfgProductScope">
+                            <option value="all">Tất cả sản phẩm</option>
+                            <option value="category">Theo danh mục</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div id="configScheduled" class="config-section" style="display: none;">
+                    <div class="form-row form-row--3">
+                        <div class="form-group">
+                            <label for="cfgFrequency">Tần suất</label>
+                            <select class="form-control" id="cfgFrequency">
+                                <option value="daily">Hằng ngày</option>
+                                <option value="weekly" selected>Hằng tuần</option>
+                                <option value="monthly">Hằng tháng</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="cfgDay">Thứ</label>
+                            <select class="form-control" id="cfgDay">
+                                <option value="monday">Thứ 2</option>
+                                <option value="tuesday">Thứ 3</option>
+                                <option value="wednesday">Thứ 4</option>
+                                <option value="thursday">Thứ 5</option>
+                                <option value="friday">Thứ 6</option>
+                                <option value="saturday">Thứ 7</option>
+                                <option value="sunday">Chủ nhật</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="cfgTime">Giờ</label>
+                            <input type="time" class="form-control" id="cfgTime" value="09:00">
+                        </div>
+                    </div>
+                </div>
+
+                <div id="configForecast" class="config-section" style="display: none;">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="cfgLookAhead">Số ngày dự báo</label>
+                            <input type="number" class="form-control" id="cfgLookAhead" value="30" min="7" max="90">
+                            <small class="form-help">Dự báo trước bao nhiêu ngày</small>
+                        </div>
+                        <div class="form-group">
+                            <label for="cfgAutoApprove">Tự động duyệt đơn</label>
+                            <select class="form-control" id="cfgAutoApprove">
+                                <option value="false">Không - Duyệt trước</option>
+                                <option value="true">Có - Tự tạo đơn</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-check form-check--block" style="margin-top: var(--space-4);">
+                    <input type="checkbox" class="form-check" name="active" id="automationActive" checked>
+                    <label for="automationActive">Kích hoạt ngay</label>
+                </div>
+            </form>
+        </div>
+        <div class="modal__footer">
+            <button type="button" class="btn btn--outline" onclick="closeModal('automationModal')">Hủy</button>
+            <button type="button" class="btn btn--primary" onclick="submitAutomation()">
+                <i class="fa-solid fa-check"></i> Lưu quy tự động
+            </button>
+        </div>
+    </div>
+</div>
+
 {% endblock %}
 
 {% block scripts %}
 {{ super() }}
-<script src="{{ url_for('static', filename='js/admin_auto_import.js') }}" defer></script>
-
-{% endblock %}
-
-{% block content %}
-<div class="app-layout">
-    {% include 'components/sidebar.html' %}
-
-    <main class="app-content main-content auto-import-page">
-        <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-            <h1 class="h2"><i class="fas fa-sync-alt"></i> <span data-i18n="seAuto.title">SE - Tự động nhập hàng</span></h1>
-            <button class="btn btn-primary" onclick="openAddAutomationModal()" aria-label="Tạo quy trình tự động">
-                <i class="fas fa-plus"></i> <span data-i18n="seAuto.createRule">Tạo quy tự động</span>
-            </button>
-        </div>
-
-        <div class="alert alert-info">
-            <i class="fas fa-magic"></i> <strong data-i18n="seAuto.featureLabel">Tính năng:</strong> <span data-i18n="seAuto.featureDesc">Thiết lập các kịch bản tự động để tự nhập hàng khi tồn kho sản phẩm thấp hơn ngưỡng hoặc theo lịch cố định.</span>
-        </div>
-
-        <div class="row mb-4">
-            <div class="col-md-4">
-                <div class="card saas-stat-card">
-                    <div class="card-body">
-                        <h5 class="card-title"><i class="fas fa-robot"></i> <span data-i18n="seAuto.activeRules">Quy tự động đang chạy</span></h5>
-                        <h2 id="activeAutomations">0</h2>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="card saas-stat-card">
-                    <div class="card-body">
-                        <h5 class="card-title"><i class="fas fa-check-circle"></i> <span data-i18n="imports.completed">Hoàn thành</span></h5>
-                        <h2 id="completedRuns">0</h2>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="card saas-stat-card">
-                    <div class="card-body">
-                        <h5 class="card-title"><i class="fas fa-clock"></i> <span data-i18n="seAuto.lastRun">Lần chạy gần nhất</span></h5>
-                        <h2 id="lastRun" data-i18n="seAuto.none" style="font-size: 1.5rem; color: var(--gray-500) !important; font-weight: 500;">Chưa có</h2>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="card mb-4">
-            <div class="card-header">
-                <h5 class="card-title"><i class="fas fa-list-ul"></i> <span data-i18n="seAuto.ruleList">Danh sách quy tự động</span></h5>
-            </div>
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-hover">
-                        <thead>
-                            <tr>
-                                <th data-i18n="common.name">Tên</th>
-                                <th data-i18n="wallet.colType">Loại</th>
-                                <th data-i18n="common.status">Trạng thái</th>
-                                <th data-i18n="seAuto.lastRun">Lần chạy gần nhất</th>
-                                <th data-i18n="seAuto.config">Cấu hình</th>
-                                <th data-i18n="common.actions">Thao tác</th>
-                            </tr>
-                        </thead>
-                        <tbody id="automationsTableBody">
-                            <tr>
-                                <td colspan="6" class="text-center text-muted py-4">
-                                    <span data-i18n="seAuto.emptyState">Chưa có quy tự động nào. Nhấn "Tạo quy tự động" để bắt đầu.</span>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-        <div class="card mb-4">
-            <div class="card-header">
-                <h5 class="card-title"><i class="fas fa-lightbulb"></i> <span data-i18n="seAuto.suggestions">Gợi ý quy tự động</span></h5>
-            </div>
-            <div class="card-body card-body-inner">
-                <div class="row g-3">
-                    <div class="col-md-6">
-                        <div class="saas-action-card">
-                            <h6><i class="fas fa-warehouse"></i> <span data-i18n="seAuto.lowStockTitle">Tự nhập khi tồn kho thấp</span></h6>
-                            <p data-i18n="seAuto.lowStockDesc">Tự động tạo đơn nhập khi tồn kho sản phẩm thấp hơn ngưỡng.</p>
-                            <button class="btn btn-sm" onclick="useTemplate('low_stock')"><i class="fas fa-plus"></i> <span data-i18n="seAuto.useTemplate">Dùng mẫu</span></button>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="saas-action-card">
-                            <h6><i class="fas fa-calendar-alt"></i> <span data-i18n="seAuto.scheduledTitle">Nhập theo lịch</span></h6>
-                            <p data-i18n="seAuto.scheduledDesc">Tự động nhập theo lịch: hằng ngày, hằng tuần, hằng tháng.</p>
-                            <button class="btn btn-sm" onclick="useTemplate('scheduled')"><i class="fas fa-plus"></i> <span data-i18n="seAuto.useTemplate">Dùng mẫu</span></button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </main>
-</div>
-
-<!-- Modal: Add Automation -->
-<div class="modal fade" id="automationModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" data-i18n="seAuto.createNewRule">Tạo quy tự động mới</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <form id="automationForm">
-                    <div class="mb-3">
-                        <label class="form-label"><span data-i18n="seAuto.ruleName">Tên quy tự động</span> <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" name="name" required placeholder="VD: Tự nhập khi hết hàng">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label" data-i18n="seAuto.ruleType">Loại quy tự động</label>
-                        <select class="form-select" name="type" id="automationTypeSelect" onchange="updateConfigUI()">
-                            <option value="low_stock">Kích hoạt khi tồn kho thấp</option>
-                            <option value="scheduled">Nhập theo lịch</option>
-                            <option value="smart_forecast">Dự báo thông minh (AI)</option>
-                        </select>
-                    </div>
-
-                    <!-- Dynamic Config UI based on type -->
-                    <div id="configLowStock" class="config-section">
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Ngưỡng tồn kho</label>
-                                <input type="number" class="form-control" id="cfgThreshold" value="10" min="1">
-                                <div class="form-text mt-1">Kích hoạt khi tồn kho thấp hơn con số này</div>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Số lượng đặt thêm</label>
-                                <input type="number" class="form-control" id="cfgReorderQty" value="50" min="1">
-                                <div class="form-text mt-1">Số đơn vị cần đặt thêm</div>
-                            </div>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Áp dụng cho sản phẩm</label>
-                            <select class="form-select" id="cfgProductScope">
-                                <option value="all">Tất cả sản phẩm</option>
-                                <option value="category">Theo danh mục</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div id="configScheduled" class="config-section" style="display:none;">
-                        <div class="row">
-                            <div class="col-md-4 mb-3">
-                                <label class="form-label">Tần suất</label>
-                                <select class="form-select" id="cfgFrequency">
-                                    <option value="daily">Hằng ngày</option>
-                                    <option value="weekly" selected>Hằng tuần</option>
-                                    <option value="monthly">Hằng tháng</option>
-                                </select>
-                            </div>
-                            <div class="col-md-4 mb-3">
-                                <label class="form-label">Thứ</label>
-                                <select class="form-select" id="cfgDay">
-                                    <option value="monday">Thứ 2</option>
-                                    <option value="tuesday">Thứ 3</option>
-                                    <option value="wednesday">Thứ 4</option>
-                                    <option value="thursday">Thứ 5</option>
-                                    <option value="friday">Thứ 6</option>
-                                    <option value="saturday">Thứ 7</option>
-                                    <option value="sunday">Chủ nhật</option>
-                                </select>
-                            </div>
-                            <div class="col-md-4 mb-3">
-                                <label class="form-label">Giờ</label>
-                                <input type="time" class="form-control" id="cfgTime" value="09:00">
-                            </div>
-                        </div>
-                    </div>
-
-                    <div id="configForecast" class="config-section" style="display:none;">
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Số ngày dự báo</label>
-                                <input type="number" class="form-control" id="cfgLookAhead" value="30" min="7" max="90">
-                                <div class="form-text mt-1">Dự báo trước bao nhiêu ngày</div>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Tự động duyệt đơn</label>
-                                <select class="form-select" id="cfgAutoApprove">
-                                    <option value="false">Không - Duyệt trước</option>
-                                    <option value="true">Có - Tự tạo đơn</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="mb-3 form-check mt-3">
-                        <input type="checkbox" class="form-check-input" name="active" id="automationActive" checked>
-                        <label class="form-check-label" for="automationActive" data-i18n="seAuto.activateNow">Kích hoạt ngay</label>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-i18n="common.cancel">Hủy</button>
-                <button type="button" class="btn btn-primary" onclick="submitAutomation()" data-i18n="seAuto.saveRule">Lưu quy tự động</button>
-            </div>
-        </div>
-    </div>
-</div>
+<script src="{{ url_for('static', filename='js/admin_auto_import.js') }}?v=1786670000" defer></script>
+<script>
+// Simple modal helpers
+function openModal(id) {
+    var el = document.getElementById(id);
+    if (el) el.classList.add('active', 'show');
+}
+function closeModal(id) {
+    var el = document.getElementById(id);
+    if (el) el.classList.remove('active', 'show');
+}
+</script>
 {% endblock %}

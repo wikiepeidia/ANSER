@@ -1,0 +1,448 @@
+/* ============================================
+   APP.CSS — TEXT VISIBILITY ENFORCEMENT
+   Loaded AFTER banle.css, components.css, etc.
+   This file pins explicit text-colors on key
+   surfaces so contrast is guaranteed in both
+   light and dark themes, regardless of what
+   inline styles or template variables do.
+   ============================================ */
+
+/* ---- Cards: text must inherit from --text-primary ---- */
+.card,
+.card-body,
+.card__body,
+.card__header,
+.card__title {
+  color: var(--text-primary);
+}
+.card__title {
+  color: var(--text-primary);
+}
+
+/* ---- Tables: explicit color cascade (high contrast in both themes) ---- */
+.table,
+.table-wrapper,
+.table th,
+.table td,
+.table tbody tr,
+.table thead tr {
+  color: var(--text-primary);
+}
+.table thead {
+  background: var(--bg-soft, #f8fafc);
+}
+.table thead th {
+  color: var(--text-secondary, #475569) !important;
+  background: var(--bg-soft, #f8fafc) !important;
+  border-color: var(--table-border, #e2e8f0) !important;
+  font-weight: 700 !important;
+}
+.table tbody td {
+  color: var(--text-primary) !important;
+  border-color: var(--table-border, #e2e8f0) !important;
+}
+
+/* Light theme: make sure cells stay dark on white card */
+:root .table tbody td {
+  color: #003152 !important; /* explicit navy */
+}
+
+/* Dark theme: pure white text + slate-200 headers for max contrast.
+   These win over inline `style.setProperty(..., 'important')` because
+   they are loaded AFTER banle_helpers.js runs. */
+[data-theme="dark"] .table,
+[data-theme="dark"] .table-wrapper,
+[data-theme="dark"] .table th,
+[data-theme="dark"] .table td,
+[data-theme="dark"] .table tbody tr,
+[data-theme="dark"] .table thead tr {
+  color: #ffffff !important;
+}
+[data-theme="dark"] .table thead {
+  background: #1B1F2A !important;
+}
+[data-theme="dark"] .table thead th {
+  background: #1B1F2A !important;
+  color: #e2e8f0 !important; /* slate-200 — high contrast for headers */
+  border-color: #2E3448 !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  font-size: 0.75rem !important;
+  letter-spacing: 0.05em !important;
+}
+[data-theme="dark"] .table tbody {
+  background: #252A38 !important;
+}
+[data-theme="dark"] .table tbody tr {
+  background: #252A38 !important;
+}
+[data-theme="dark"] .table tbody tr:hover {
+  background: #2E3448 !important;
+}
+[data-theme="dark"] .table tbody td {
+  color: #ffffff !important; /* pure white — max contrast */
+  border-color: #2E3448 !important;
+}
+
+/* ---- Sidebar: text always light because sidebar is always dark ---- */
+.sidebar,
+.sidebar__nav,
+.sidebar__footer,
+.sidebar-user,
+.sidebar-user__name,
+.sidebar-user__role,
+.sidebar-user__arrow,
+.sidebar-user-menu,
+.sidebar-user-menu__item,
+.sidebar-user-menu__item i {
+  color: inherit;
+}
+.sidebar-user {
+  color: var(--sidebar-text, #ffffff);
+}
+.sidebar-user__name {
+  color: var(--sidebar-text, #ffffff);
+}
+.sidebar-user__role {
+  color: var(--sidebar-item-color, rgba(255, 255, 255, 0.75));
+}
+.sidebar-user__arrow {
+  color: var(--sidebar-item-color, rgba(255, 255, 255, 0.6));
+}
+.sidebar-user-menu__item {
+  color: var(--text-primary, #0f172a);
+}
+[data-theme="dark"] .sidebar-user-menu__item {
+  color: #f1f5f9;
+}
+
+/* ---- Form labels: explicit color so they don't go dim ---- */
+.form-label,
+label,
+.form-group label,
+legend {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+/* ---- Form help text: muted but readable in both themes ---- */
+.form-help,
+.form-text,
+.text-muted {
+  color: var(--text-muted);
+}
+[data-theme="dark"] .form-help,
+[data-theme="dark"] .form-text,
+[data-theme="dark"] .text-muted {
+  color: #94a3b8 !important;
+}
+
+/* ---- Modal body text ---- */
+.modal__body,
+.modal__content,
+.modal-body {
+  color: var(--text-primary);
+}
+.modal__body p,
+.modal-body p {
+  color: var(--text-primary);
+}
+.modal__body .text-muted,
+.modal-body .text-muted {
+  color: var(--text-muted);
+}
+
+/* ---- Stat cards: ensure subtitle pill is readable ---- */
+.stat-card__pill {
+  color: inherit;
+}
+[data-theme="dark"] .stat-card__pill {
+  color: #cbd5e1;
+}
+
+/* ---- Action grid cards: title and description must read ---- */
+.action-content h4,
+.action-content p {
+  color: var(--text-primary);
+}
+.action-content p {
+  color: var(--text-secondary);
+}
+[data-theme="dark"] .action-content p {
+  color: #cbd5e1;
+}
+
+/* ---- Welcome banner: text on dark gradient ---- */
+.welcome-banner,
+.welcome-banner__title,
+.welcome-banner__meta,
+.welcome-banner__date,
+.welcome-banner__alert,
+.welcome-banner__btn {
+  color: #ffffff;
+}
+.welcome-banner__btn {
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+/* ---- Page header ---- */
+.content__title,
+.content__subtitle,
+.content__actions {
+  color: var(--text-primary);
+}
+.content__subtitle a {
+  color: var(--brand-primary);
+}
+
+/* ---- Chart card ---- */
+.chart-card,
+.chart-card__body,
+.chart-card__header h3 {
+  color: var(--text-primary);
+}
+
+/* ---- Realtime card (Analytics page): same look as other chart-cards,
+   with extra spacing and accent for the large stat value. ---- */
+.chart-card--realtime .chart-card__body {
+  padding: 20px 0;
+}
+.stat-card__value--realtime {
+  font-size: 48px;
+  font-weight: 800;
+  color: var(--text-primary);
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+.realtime-description {
+  margin: 8px 0 16px;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+}
+.realtime-divider {
+  border: none;
+  border-top: 1px solid var(--table-border, #e5e7eb);
+  margin: 16px 0;
+}
+.realtime-devices {
+  gap: 8px;
+}
+.badge--live {
+  background: #dc2626;
+  color: #ffffff;
+  font-size: 0.65rem;
+  letter-spacing: 0.05em;
+  padding: 2px 8px;
+  border-radius: 4px;
+  animation: pulse-live 2s ease-in-out infinite;
+}
+@keyframes pulse-live {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.65; }
+}
+
+/* ---- Alert text ---- */
+.alert,
+.alert p,
+.alert__title,
+.alert__message,
+.alert__content {
+  color: inherit;
+}
+[data-theme="dark"] .alert {
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+[data-theme="dark"] .alert--info {
+  background: rgba(59, 130, 246, 0.12) !important;
+  color: #93c5fd !important;
+}
+[data-theme="dark"] .alert--success {
+  background: rgba(16, 185, 129, 0.12) !important;
+  color: #6ee7b7 !important;
+}
+[data-theme="dark"] .alert--error {
+  background: rgba(239, 68, 68, 0.12) !important;
+  color: #fca5a5 !important;
+}
+[data-theme="dark"] .alert--warning {
+  background: rgba(245, 158, 11, 0.12) !important;
+  color: #fcd34d !important;
+}
+
+/* ---- Empty state ---- */
+.empty-state,
+.empty-state__title,
+.empty-state__description {
+  color: var(--text-secondary);
+}
+.empty-state__title {
+  color: var(--text-primary);
+}
+
+/* ---- Settings nav ---- */
+.settings-nav__item {
+  color: var(--text-primary);
+}
+[data-theme="dark"] .settings-nav__item {
+  color: #cbd5e1;
+}
+.settings-nav__item--active {
+  color: var(--brand-primary);
+  background: var(--bg-soft, #f1f5f9);
+}
+[data-theme="dark"] .settings-nav__item--active {
+  background: rgba(253, 191, 45, 0.12);
+}
+
+/* ---- Tabs ---- */
+.tabs__item {
+  color: var(--text-secondary);
+}
+.tabs__item.active {
+  color: var(--brand-primary);
+}
+[data-theme="dark"] .tabs__item {
+  color: #cbd5e1;
+}
+
+/* ---- Row actions 3-dot menu (open state in dark) ---- */
+[data-theme="dark"] .row-actions__menu {
+  background: #1E2025;
+  border-color: #2E3448;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+[data-theme="dark"] .row-actions__item {
+  color: #f1f5f9;
+}
+[data-theme="dark"] .row-actions__item:hover {
+  background: #2E3448;
+}
+[data-theme="dark"] .row-actions__item i {
+  color: #94a3b8;
+}
+
+/* ---- Search input ---- */
+.search-input input {
+  color: var(--text-primary);
+  background: var(--bg-card, #ffffff);
+}
+.search-input input::placeholder {
+  color: var(--text-muted);
+}
+[data-theme="dark"] .search-input input {
+  background: #1E2025;
+  border-color: #2E3448;
+  color: #f1f5f9;
+}
+
+/* ---- Status pill: explicit tones in dark theme ---- */
+[data-theme="dark"] .status-pill--green { background: rgba(74, 222, 128, 0.15) !important; color: #86efac !important; }
+[data-theme="dark"] .status-pill--red { background: rgba(248, 113, 113, 0.15) !important; color: #fca5a5 !important; }
+[data-theme="dark"] .status-pill--orange { background: rgba(251, 191, 36, 0.15) !important; color: #fcd34d !important; }
+[data-theme="dark"] .status-pill--blue { background: rgba(59, 130, 246, 0.18) !important; color: #93c5fd !important; }
+[data-theme="dark"] .status-pill--purple { background: rgba(196, 181, 253, 0.15) !important; color: #c4b5fd !important; }
+[data-theme="dark"] .status-pill--gray { background: rgba(148, 163, 184, 0.15) !important; color: #cbd5e1 !important; }
+
+/* ---- Skeleton: dark mode colors ---- */
+[data-theme="dark"] .skeleton {
+  background: linear-gradient(
+    90deg,
+    #2E3448 0%,
+    #3a4256 50%,
+    #2E3448 100%
+  );
+  background-size: 200% 100%;
+}
+
+/* ---- Empty state icon ---- */
+[data-theme="dark"] .empty-state__icon {
+  background: #2E3448;
+  color: #94a3b8;
+}
+
+/* ---- Banle helpers (skeleton) row borders ---- */
+[data-theme="dark"] .skeleton-row + .skeleton-row {
+  border-top-color: #2E3448;
+}
+
+/* ---- Table __json pill in dark ---- */
+[data-theme="dark"] .table__json {
+  background: #2E3448;
+  color: #cbd5e1;
+}
+[data-theme="dark"] .table__json-key {
+  color: #fcd34d;
+}
+
+/* ---- Sidebar-warehouse select ---- */
+.sidebar-warehouse__label {
+  color: var(--sidebar-item-color, rgba(255, 255, 255, 0.75));
+}
+.sidebar-warehouse__select {
+  color: var(--text-primary, #0f172a);
+  background: var(--bg-card, #ffffff);
+}
+[data-theme="dark"] .sidebar-warehouse__select {
+  background: #1E2025;
+  color: #f1f5f9;
+  border-color: #2E3448;
+}
+
+/* ---- Force visibility on hover for sc-tpl-card ---- */
+[data-theme="dark"] .sc-tpl-card {
+  background: #1E2025;
+  border-color: #2E3448;
+}
+[data-theme="dark"] .sc-tpl-name {
+  color: #f1f5f9;
+}
+[data-theme="dark"] .sc-tpl-desc {
+  color: #94a3b8;
+}
+[data-theme="dark"] .sc-tpl-icon {
+  background: rgba(253, 191, 45, 0.12) !important;
+  color: #FDBF2D !important;
+}
+
+/* ---- Chat widget in dark ---- */
+[data-theme="dark"] .ai-chat-window {
+  background: #1E2025;
+  color: #f1f5f9;
+  border: 1px solid #3A4150;
+}
+[data-theme="dark"] .ai-chat-toggle {
+  background: #FDBF2D !important;
+  color: #1B1F2A !important;
+}
+[data-theme="dark"] .ai-chat-title {
+  color: #F5F5F5 !important;
+}
+[data-theme="dark"] .ai-chat-header {
+  border-bottom-color: #3A4150 !important;
+}
+[data-theme="dark"] .ai-chat-input-wrapper {
+  border-top-color: #3A4150 !important;
+}
+[data-theme="dark"] .ai-input-bar {
+  background: #16191F !important;
+  border-color: #3A4150 !important;
+}
+[data-theme="dark"] .ai-chat-messages {
+  background: #1E2025 !important;
+}
+[data-theme="dark"] .ai-message-bot {
+  background: #2E3448 !important;
+  color: #F5F5F5 !important;
+}
+[data-theme="dark"] .ai-message-user {
+  background: #FDBF2D !important;
+  color: #1B1F2A !important;
+}
+[data-theme="dark"] #ai-chat-input {
+  color: #F5F5F5 !important;
+}
+[data-theme="dark"] .send-btn {
+  background: #FDBF2D !important;
+  color: #1B1F2A !important;
+}

@@ -1,6 +1,12 @@
 // Admin Subscription Management - Clean and Functional
 
 document.addEventListener('DOMContentLoaded', () => {
+    // Render skeletons immediately so users see structure, not blank/loading
+    const mgrSkel = document.getElementById('managersTableSkeleton');
+    if (mgrSkel) mgrSkel.innerHTML = banleUI.renderTableSkeleton(5, 4);
+    const txSkel = document.getElementById('transactionsTableSkeleton');
+    if (txSkel) txSkel.innerHTML = banleUI.renderTableSkeleton(4, 3);
+
     loadManagers();
     loadTransactions();
     loadAvailableUsers();
@@ -50,74 +56,97 @@ function renderManagersTable(managers) {
 
     if (managers.length === 0) {
         tbody.innerHTML = `
-            <tr>
-                <td colspan="7" class="text-center py-4">
-                    <i class="fas fa-inbox fa-2x text-muted mb-2 d-block"></i>
-                    <p class="text-muted">No managers found</p>
-                </td>
-            </tr>`;
+            <tr><td colspan="7">
+                <div class="empty-state empty-state--compact">
+                    <div class="empty-state__icon"><i class="fa-solid fa-user-tie"></i></div>
+                    <p class="empty-state__title">Chưa có Manager đang hoạt động</p>
+                    <p class="empty-state__description">Nhấn "Thêm Manager" ở góc trên để bắt đầu.</p>
+                </div>
+            </td></tr>`;
         return;
     }
 
     tbody.innerHTML = managers.map(manager => {
         const sub = manager.subscription;
         let startDate, expiryDate, daysLeft, plan;
-        
+
         if (sub) {
-            startDate = new Date(sub.start_date);
-            expiryDate = new Date(sub.end_date);
-            daysLeft = Math.ceil((expiryDate - new Date()) / (1000 * 60 * 60 * 24));
+            startDate = banleUI.formatDateVN(sub.start_date);
+            expiryDate = banleUI.formatDateVN(sub.end_date);
+            const exp = new Date(sub.end_date);
+            daysLeft = isNaN(exp.getTime()) ? 0 : Math.ceil((exp - new Date()) / (1000 * 60 * 60 * 24));
             plan = sub.subscription_type.charAt(0).toUpperCase() + sub.subscription_type.slice(1);
         } else {
-            // Fallback if no subscription found
-            startDate = new Date();
-            expiryDate = new Date();
+            startDate = '—';
+            expiryDate = '—';
             daysLeft = 0;
-            plan = 'Unknown';
+            plan = 'Chưa có gói';
         }
-        
+
         let statusBadge = '';
         let statusClass = '';
-        
+
         if (daysLeft < 0) {
-            statusBadge = '<span class="badge bg-danger">Expired</span>';
-            statusClass = 'table-danger';
+            statusBadge = banleUI.statusPill('Hết hạn', 'red');
+            statusClass = '';
         } else if (daysLeft <= 7) {
-            statusBadge = '<span class="badge bg-warning text-dark">Expiring Soon</span>';
+            statusBadge = banleUI.statusPill(`Sắp hết hạn (${daysLeft} ngày)`, 'orange');
             statusClass = '';
         } else {
-            statusBadge = '<span class="badge bg-success">Active</span>';
+            statusBadge = banleUI.statusPill('Đang dùng', 'green');
         }
+
+        const actions = [
+            { label: 'Gia hạn', icon: 'fa-solid fa-calendar-plus', action: 'openExtendFromRow' },
+            { divider: true },
+            { label: 'Thu hồi quyền', icon: 'fa-solid fa-user-times', action: 'revokeFromRow', danger: true },
+        ];
 
         return `
             <tr class="${statusClass}">
                 <td>
                     <div class="d-flex align-items-center">
-                        <div class="avatar-circle me-2">${manager.name.charAt(0).toUpperCase()}</div>
-                        <strong>${manager.name}</strong>
+                        <div class="avatar-circle me-2">${(manager.name || '?').charAt(0).toUpperCase()}</div>
+                        <strong>${banleUI.escapeHtml(manager.name)}</strong>
                     </div>
                 </td>
-                <td>${manager.email}</td>
-                <td><span class="badge bg-primary">${plan}</span></td>
-                <td>${startDate.toLocaleDateString()}</td>
+                <td>${banleUI.escapeHtml(manager.email)}</td>
+                <td>${banleUI.statusPill(plan, 'blue')}</td>
+                <td>${startDate}</td>
                 <td>
-                    ${expiryDate.toLocaleDateString()}
-                    <br><small class="text-muted">${daysLeft} days left</small>
+                    ${expiryDate}
+                    <br><small class="text-muted">${daysLeft} ngày còn lại</small>
                 </td>
                 <td>${statusBadge}</td>
-                <td>
-                    <div class="btn-group btn-group-sm">
-                        <button class="btn btn-outline-primary" onclick="openExtendModal(${manager.id}, '${manager.name.replace(/'/g, "\\'")}', '${expiryDate.toLocaleDateString()}')" title="Extend">
-                            <i class="fas fa-calendar-plus"></i>
-                        </button>
-                        <button class="btn btn-outline-danger" onclick="revokeManager(${manager.id}, '${manager.name.replace(/'/g, "\\'")}', '${manager.email.replace(/'/g, "\\'")}')" title="Revoke">
-                            <i class="fas fa-user-times"></i>
-                        </button>
-                    </div>
-                </td>
+                <td class="table__actions">${banleUI.renderRowActions(manager.id, actions)}</td>
             </tr>
         `;
     }).join('');
+
+    banleUI.bindRowActions(tbody);
+}
+
+function openExtendFromRow(managerId) {
+    const tbody = document.getElementById('managersTable');
+    if (!tbody) return;
+    // Use the global managersData if available, otherwise fetch from row
+    const row = tbody.querySelector(`[data-row-id="${managerId}"]`);
+    if (!row) return;
+    const tr = row.closest('tr');
+    const name = tr.querySelector('strong')?.textContent || '';
+    const expiryText = tr.querySelectorAll('td')[4]?.textContent.trim().split('\n')[0] || '';
+    openExtendModal(managerId, name, expiryText);
+}
+
+function revokeFromRow(managerId) {
+    const tbody = document.getElementById('managersTable');
+    if (!tbody) return;
+    const row = tbody.querySelector(`[data-row-id="${managerId}"]`);
+    if (!row) return;
+    const tr = row.closest('tr');
+    const name = tr.querySelector('strong')?.textContent || '';
+    const email = tr.querySelectorAll('td')[1]?.textContent.trim() || '';
+    revokeManager(managerId, name, email);
 }
 
 // Update statistics
@@ -159,21 +188,32 @@ function renderTransactionsTable(transactions) {
     const tbody = document.getElementById('transactionsTable');
     if (!tbody) return;
 
+    if (transactions.length === 0) {
+        tbody.innerHTML = `
+            <tr><td colspan="6">
+                <div class="empty-state empty-state--compact">
+                    <div class="empty-state__icon"><i class="fa-solid fa-receipt"></i></div>
+                    <p class="empty-state__title">Chưa có giao dịch nào</p>
+                    <p class="empty-state__description">Các giao dịch thanh toán sẽ hiển thị tại đây.</p>
+                </div>
+            </td></tr>`;
+        return;
+    }
+
     tbody.innerHTML = transactions.slice(0, 15).map(tx => {
-        const statusBadge = tx.status === 'Completed' ? 
-            '<span class="badge bg-success">Completed</span>' :
-            tx.status === 'Pending' ?
-            '<span class="badge bg-warning text-dark">Pending</span>' :
-            '<span class="badge bg-danger">Failed</span>';
+        const statusTone = tx.status === 'Completed' || tx.status === 'Hoàn thành' ? 'green'
+            : tx.status === 'Pending' || tx.status === 'Đang chờ' ? 'orange'
+            : 'red';
+        const statusLabel = tx.status || 'Không rõ';
 
         return `
             <tr>
-                <td>${new Date(tx.created_at || tx.payment_date).toLocaleDateString()}</td>
-                <td>${tx.user_name}</td>
-                <td>${tx.plan_type || tx.subscription_type || 'N/A'}</td>
-                <td><strong>${formatCurrency(tx.amount)} VND</strong></td>
-                <td>${tx.payment_method || 'N/A'}</td>
-                <td>${statusBadge}</td>
+                <td>${banleUI.formatDateVN(tx.created_at || tx.payment_date)}</td>
+                <td>${banleUI.escapeHtml(tx.user_name || '—')}</td>
+                <td>${banleUI.escapeHtml(tx.plan_type || tx.subscription_type || '—')}</td>
+                <td><strong>${banleUI.formatVND(tx.amount)}</strong></td>
+                <td>${banleUI.escapeHtml(tx.payment_method || '—')}</td>
+                <td>${banleUI.statusPill(statusLabel, statusTone)}</td>
             </tr>
         `;
     }).join('');
@@ -183,6 +223,8 @@ function renderTransactionsTable(transactions) {
 function renderMockTransactions() {
     const tbody = document.getElementById('transactionsTable');
     if (!tbody) return;
+    const skel = document.getElementById('transactionsTableSkeleton');
+    if (skel) skel.innerHTML = '';
 
     const mockTx = [
         { date: '2025-12-26', manager: 'Manager User', plan: 'Quarterly', amount: 1200000, method: 'Bank Transfer', status: 'Completed' },
@@ -192,16 +234,19 @@ function renderMockTransactions() {
         { date: '2025-12-22', manager: 'Sarah Lee', plan: 'Quarterly', amount: 1200000, method: 'Bank Transfer', status: 'Completed' }
     ];
 
-    tbody.innerHTML = mockTx.map(tx => `
+    tbody.innerHTML = mockTx.map(tx => {
+        const tone = tx.status === 'Completed' ? 'green' : 'orange';
+        return `
         <tr>
-            <td>${tx.date}</td>
-            <td>${tx.manager}</td>
-            <td>${tx.plan}</td>
-            <td><strong>${formatCurrency(tx.amount)} VND</strong></td>
-            <td>${tx.method}</td>
-            <td><span class="badge bg-${tx.status === 'Completed' ? 'success' : 'warning text-dark'}">${tx.status}</span></td>
+            <td>${banleUI.formatDateVN(tx.date)}</td>
+            <td>${banleUI.escapeHtml(tx.manager)}</td>
+            <td>${banleUI.escapeHtml(tx.plan)}</td>
+            <td><strong>${banleUI.formatVND(tx.amount)}</strong></td>
+            <td>${banleUI.escapeHtml(tx.method)}</td>
+            <td>${banleUI.statusPill(tx.status, tone)}</td>
         </tr>
-    `).join('');
+    `;
+    }).join('');
 }
 
 // Load available users for modal
@@ -240,14 +285,14 @@ async function createManager() {
     confirmBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Creating...';
 
     try {
-        // 1. Update user role
-        const roleResponse = await fetch(`/api/admin/users/${userId}`, {
-            method: 'PUT',
-            headers: { 
+        // 1. Update user role to manager (use existing promote endpoint)
+        const roleResponse = await fetch('/api/admin/users/promote', {
+            method: 'POST',
+            headers: {
                 'Content-Type': 'application/json',
                 'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
             },
-            body: JSON.stringify({ role: 'manager' }),
+            body: JSON.stringify({ user_id: parseInt(userId, 10), role: 'manager' }),
             credentials: 'same-origin'
         });
 
@@ -270,7 +315,7 @@ async function createManager() {
         if (!subResponse.ok) throw new Error('Failed to create subscription');
 
         showNotification('success', 'Manager created successfully!');
-        bootstrap.Modal.getInstance(document.getElementById('addManagerModal')).hide();
+        closeModal('addManagerModal');
         
         setTimeout(() => loadManagers(), 500);
     } catch (error) {
@@ -288,8 +333,7 @@ function openExtendModal(userId, userName, currentExpiry) {
     document.getElementById('extendUserName').value = userName;
     document.getElementById('currentExpiry').value = currentExpiry;
     
-    const modal = new bootstrap.Modal(document.getElementById('extendModal'));
-    modal.show();
+    openModal('extendModal');
 }
 
 // Process subscription extension
@@ -327,7 +371,7 @@ async function processExtension() {
 
         if (data.success) {
             showNotification('success', data.message || 'Subscription extended successfully!');
-            bootstrap.Modal.getInstance(document.getElementById('extendModal')).hide();
+            closeModal('extendModal');
             setTimeout(() => loadManagers(), 500);
         } else {
             showNotification('error', data.message || 'Failed to extend subscription');
@@ -394,9 +438,9 @@ document.getElementById('filterTransactions')?.addEventListener('change', (e) =>
     });
 });
 
-// Utility: Format currency
+// Utility: Format currency (kept for backward-compat with other code in this file)
 function formatCurrency(amount) {
-    return new Intl.NumberFormat('vi-VN').format(amount);
+    return banleUI.formatVND(amount).replace(' ₫', '');
 }
 
 // Utility: Show notification
@@ -405,10 +449,10 @@ function showNotification(type, message) {
     const icon = type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle';
     
     const alertHtml = `
-        <div class="alert ${alertClass} alert-dismissible fade show position-fixed shadow-lg" 
+        <div class="alert ${alertClass}  position-fixed shadow-lg" 
              style="top: 80px; right: 20px; z-index: 9999; min-width: 320px; max-width: 400px;">
             <i class="fas fa-${icon} me-2"></i>${message}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            <button type="button" class="btn-close" onclick="this.parentElement.remove()" aria-label="Close"></button>
         </div>
     `;
     
@@ -456,7 +500,7 @@ function renderSubscriptionsTable(subscriptions) {
             } else if (daysLeft <= 7) {
                 statusBadge = `<span class="badge badge-expiring">Expires in ${daysLeft} days</span>`;
             } else {
-                statusBadge = `<span class="badge bg-success">Active (${daysLeft} days)</span>`;
+                statusBadge = `<span class="status-pill status-pill--green">Active (${daysLeft} days)</span>`;
             }
 
             const planNames = {
@@ -473,11 +517,11 @@ function renderSubscriptionsTable(subscriptions) {
 
             return `
             <tr>
-                <td><strong>${sub.user_name}</strong></td>
-                <td>${sub.user_email}</td>
-                <td><span class="badge bg-primary">${planNames[sub.subscription_type] || sub.subscription_type}</span></td>
-                <td>${new Date(sub.start_date).toLocaleDateString('en-US')}</td>
-                <td>${endDate.toLocaleDateString('en-US')}</td>
+                <td><strong>${banleUI.escapeHtml(sub.user_name)}</strong></td>
+                <td>${banleUI.escapeHtml(sub.user_email)}</td>
+                <td><span class="badge bg-primary">${banleUI.escapeHtml(planNames[sub.subscription_type] || sub.subscription_type)}</span></td>
+                <td>${banleUI.formatDateVN(sub.start_date)}</td>
+                <td>${banleUI.formatDateVN(sub.end_date)}</td>
                 <td>${statusBadge}</td>
                 <td>
                     <div class="form-check form-switch">
@@ -520,12 +564,12 @@ function renderPaymentHistory(history) {
 
             return `
             <tr>
-                <td>${new Date(payment.payment_date).toLocaleDateString('en-US')}</td>
-                <td>${payment.user_name}</td>
-                <td>${planNames[payment.subscription_type] || payment.subscription_type}</td>
-                <td><strong>${payment.amount.toLocaleString('en-US')} VND</strong></td>
-                <td>${payment.payment_method || 'N/A'}</td>
-                <td><span class="badge ${localizeStatus(payment.status).cls}">${localizeStatus(payment.status).label}</span></td>
+                <td>${banleUI.formatDateVN(payment.payment_date)}</td>
+                <td>${banleUI.escapeHtml(payment.user_name || '—')}</td>
+                <td>${banleUI.escapeHtml(planNames[payment.subscription_type] || payment.subscription_type || '—')}</td>
+                <td><strong>${banleUI.formatVND(payment.amount)}</strong></td>
+                <td>${banleUI.escapeHtml(payment.payment_method || '—')}</td>
+                <td>${banleUI.statusPill(localizeStatus(payment.status).label, localizeStatus(payment.status).tone)}</td>
             </tr>
         `;
         })
@@ -537,7 +581,7 @@ function openExtendModal(userId, userName) {
     if (!modalEl) return;
     document.getElementById('extendUserId').value = userId;
     document.getElementById('extendUserName').value = userName;
-    new bootstrap.Modal(modalEl).show();
+    openModal(modalEl.id);
 }
 
 async function processExtension() {
@@ -567,7 +611,7 @@ async function processExtension() {
             showAlert('success', '✅ Extension successful!');
             const modalEl = document.getElementById('extendModal');
             if (modalEl) {
-                const modalInstance = bootstrap.Modal.getInstance(modalEl);
+                const modalInstance = null;
                 if (modalInstance) modalInstance.hide();
             }
             loadSubscriptions();
@@ -611,7 +655,7 @@ function showAlert(type, message) {
         return;
     }
     const alertDiv = document.createElement('div');
-    alertDiv.className = `alert alert-${type === 'success' ? 'success' : 'danger'} alert-dismissible fade show`;
+    alertDiv.className = `alert alert-${type === 'success' ? 'success' : 'danger'} `;
     alertDiv.style.position = 'fixed';
     alertDiv.style.top = '20px';
     alertDiv.style.right = '20px';
@@ -619,7 +663,7 @@ function showAlert(type, message) {
     alertDiv.style.minWidth = '300px';
     alertDiv.innerHTML = `
         ${message}
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        <button type="button" class="btn-close" onclick="this.parentElement.remove()" aria-label="Close"></button>
     `;
     document.body.appendChild(alertDiv);
     setTimeout(() => alertDiv.remove(), 5000);
@@ -629,15 +673,15 @@ function localizeStatus(status) {
     const s = String(status || '').toLowerCase();
     switch (s) {
         case 'pending':
-            return { label: 'Pending', cls: 'bg-warning text-dark' };
+            return { label: 'Đang chờ', cls: 'bg-warning text-dark', tone: 'orange' };
         case 'completed':
-            return { label: 'Completed', cls: 'bg-success' };
+            return { label: 'Hoàn thành', cls: 'bg-success', tone: 'green' };
         case 'rejected':
-            return { label: 'Rejected', cls: 'bg-danger' };
+            return { label: 'Bị từ chối', cls: 'bg-danger', tone: 'red' };
         case 'expired':
-            return { label: 'Expired', cls: 'bg-secondary' };
+            return { label: 'Hết hạn', cls: 'bg-secondary', tone: 'gray' };
         default:
-            return { label: status || '—', cls: 'bg-light text-dark' };
+            return { label: status || '—', cls: 'bg-light text-dark', tone: 'gray' };
     }
 }
 

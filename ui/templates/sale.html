@@ -1,258 +1,255 @@
 {% extends "base.html" %}
 {% block title %}Điểm bán hàng - {{ project_name }}{% endblock %}
 
-{% block styles %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/sale.css') }}">
-<style>
-    /* ── Page-specific styles (shared tokens now in saas-tokens.css) ── */
-
-    /* Left Panel (Products) */
-    .left-panel { background-color: var(--body-bg) !important; }
-    .search-section .input-group-text, .search-section .form-control {
-        background-color: var(--surface-100); border-color: var(--border-soft); 
-        padding-top: 14px; padding-bottom: 14px; font-size: 1rem; box-shadow: var(--shadow-md);
-    }
-    .search-section .form-control:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(0, 49, 82, 0.2); }
-    
-    .section-title { font-size: 1.1rem; font-weight: 700; color: var(--gray-900); letter-spacing: -0.02em; }
-
-    /* Right Panel (Cart) */
-    .right-panel { 
-        background: var(--surface-100) !important; border-left: 1px solid var(--border-soft) !important; 
-        box-shadow: -4px 0 20px rgba(0,0,0,0.03) !important; z-index: 10;
-    }
-    .cart-header { background: var(--surface-100); border-bottom: 1px solid var(--border-soft) !important; padding: 20px !important;}
-    .cart-header h5 { font-size: 1.1rem; font-weight: 700; margin: 0; color: var(--gray-900);}
-    .badge.bg-primary { background: #EEF2FF !important; color: var(--primary) !important; font-weight: 600; border: 1px solid #C7D2FE; padding: 6px 12px; }
-
-    .cart-table th { background: #F9FAFB; color: var(--gray-500); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; padding: 12px 16px; border-bottom: 1px solid var(--border-soft); font-weight: 600; }
-    .cart-table td { padding: 16px; vertical-align: middle; border-bottom: 1px solid var(--border-soft); color: var(--gray-900); font-size: 0.9rem; }
-    
-    .payment-section { background: #F9FAFB; border-top: 1px solid var(--border-soft) !important; padding: 24px !important;}
-    
-    /* Payment Buttons */
-    .btn-outline-primary { border-color: var(--border-soft); color: var(--gray-900); background: #fff; font-weight: 500;}
-    .btn-outline-primary:hover { background: #F9FAFB; border-color: #D1D5DB; color: var(--gray-900); }
-    .btn-check:checked + .btn-outline-primary { background-color: #EEF2FF !important; color: var(--primary) !important; border-color: var(--primary) !important; box-shadow: var(--shadow-md);}
-
-    .btn-primary { background-color: var(--primary) !important; color: #fff !important; border: none; box-shadow: var(--shadow-md); }
-    .btn-primary:hover { background-color: #4F46E5 !important; transform: translateY(-1px); box-shadow: var(--shadow-md); }
-    
-    /* Modals */
-    .modal-content { border-radius: 16px; border: 1px solid var(--border-soft); box-shadow: var(--shadow-lg); background: var(--surface-100); }
-    .modal-header { border-bottom: 1px solid var(--border-soft); padding: 20px 24px; }
-    .modal-title { font-weight: 700; color: var(--gray-900); font-size: 1.1rem; }
-</style>
-{% endblock %}
-
 {% block content %}
 <div class="sale-container">
-    <div class="row h-100 g-0">
-        <!-- Bên trái: Tìm kiếm & lưới sản phẩm -->
-        <div class="col-md-7 col-lg-8 d-flex flex-column p-4 left-panel">
-            <div class="d-flex align-items-center mb-4">
-                <a href="{{ url_for('pages.workspace') }}" class="btn btn-outline-secondary me-3" style="border-radius: 8px; font-weight: 500; border: 1px solid #E5E7EB; background: #fff; color: #111827;" aria-label="Quay lại">
-                    <i class="fas fa-arrow-left"></i> <span data-i18n="sale.back">Quay lại</span>
-                </a>
-                <h4 class="mb-0 me-auto" style="font-weight: 800; letter-spacing: -0.02em;" data-i18n="sale.title">Điểm bán hàng</h4>
-                <button class="btn btn-primary" onclick="showHistory()" style="border-radius: 8px;" aria-label="Lịch sử bán hàng">
-                    <i class="fas fa-history"></i> <span data-i18n="sale.history">Lịch sử</span>
-                </button>
-            </div>
-            <div class="search-section mb-4">
-                <div class="input-group input-group-lg" style="border-radius: 12px; overflow: hidden;">
-                    <span class="input-group-text search-icon border-end-0"><i class="fas fa-search" style="color: #9CA3AF;"></i></span>
-                    <input type="text" id="productSearch" class="form-control border-start-0 ps-0"
-                        placeholder="Tìm sản phẩm (quét mã vạch hoặc gõ tên)..." autocomplete="off" data-i18n-placeholder="sale.searchPlaceholder" aria-label="Tìm sản phẩm">
-                </div>
-                <div id="searchResults" class="search-results-dropdown shadow-lg" style="display: none; border-radius: 12px; border: 1px solid #E5E7EB; margin-top: 8px;"></div>
-            </div>
+    <!-- Left Pane: Products -->
+    <div class="sale-container__products">
+        <!-- Breadcrumb -->
+        <nav class="sale-breadcrumb" aria-label="breadcrumb">
+            <a href="{{ url_for('pages.workspace') }}">Bán Lẻ</a>
+            <i class="fa-solid fa-chevron-right sale-breadcrumb__sep"></i>
+            <span class="sale-breadcrumb__current">Bán hàng</span>
+        </nav>
 
-            <div class="products-grid-container flex-grow-1">
-                <h5 class="mb-4 section-title"><i class="fas fa-box-open me-2" style="color: var(--primary);"></i><span data-i18n="sale.suggested">Gợi ý sản phẩm</span></h5>
-                <div id="productSuggestions" class="row row-cols-2 row-cols-md-3 row-cols-xl-4 g-4">
-                    <!-- Sản phẩm ngẫu nhiên sẽ được tải tại đây -->
-                </div>
-            </div>
+        <!-- Header -->
+        <div class="sale-header">
+            <a href="{{ url_for('pages.workspace') }}" class="btn btn--outline sale-header__back" aria-label="Quay lại">
+                <i class="fa-solid fa-arrow-left"></i> Quay lại
+            </a>
+            <h2 class="sale-header__title">Điểm bán hàng</h2>
+            <button class="btn btn--outline sale-header__history" type="button" onclick="window.showHistory && window.showHistory()">
+                <i class="fa-solid fa-clock-rotate-left"></i> Lịch sử
+            </button>
         </div>
 
-        <!-- Bên phải: Giỏ hàng & thanh toán -->
-        <div class="col-md-5 col-lg-4 d-flex flex-column right-panel">
-            <div class="cart-header">
-                <div class="d-flex justify-content-between align-items-center">
-                    <h5><i class="fas fa-shopping-bag me-2" style="color: #6B7280;"></i><span data-i18n="sale.currentOrder">Đơn hàng hiện tại</span></h5>
-                    <span class="badge bg-primary rounded-pill" id="cartItemCount">0 sản phẩm</span>
-                </div>
+        <!-- Stats strip (today's sales summary) -->
+        <div class="sale-stats" id="saleStats" aria-label="Thống kê hôm nay">
+            <span class="sale-stats__item">
+                <i class="fa-regular fa-clock"></i>
+                <span id="saleStatsTime">--:--</span>
+            </span>
+            <span class="sale-stats__sep">·</span>
+            <span class="sale-stats__item">
+                <i class="fa-solid fa-receipt"></i>
+                Hôm nay: <strong id="saleStatsCount">0</strong> đơn
+            </span>
+            <span class="sale-stats__sep">·</span>
+            <span class="sale-stats__item">
+                <strong id="saleStatsAmount">0 ₫</strong>
+            </span>
+        </div>
+
+        <!-- Search -->
+        <div class="sale-search">
+            <i class="fa-solid fa-magnifying-glass sale-search__icon"></i>
+            <input type="text" id="productSearch" placeholder="Tìm sản phẩm (quét mã vạch hoặc gõ tên)..." autocomplete="off">
+        </div>
+        <div id="searchResults" class="search-results" style="display: none;"></div>
+
+        <!-- Product suggestions -->
+        <section>
+            <h3 class="sale-section__title">
+                <i class="fa-solid fa-box-open"></i>
+                <span>Gợi ý sản phẩm</span>
+            </h3>
+            <div id="productSuggestions" class="sale-product-grid">
+                <!-- Product cards rendered by sale.js renderSuggestions() -->
+            </div>
+        </section>
+    </div>
+
+    <!-- Right Pane: Cart -->
+    <div class="sale-container__cart">
+        <div class="sale-cart">
+            <!-- Cart header -->
+            <div class="sale-cart__header">
+                <h3 class="sale-cart__title">
+                    <i class="fa-solid fa-shopping-bag"></i>
+                    Đơn hàng hiện tại
+                </h3>
+                <span class="sale-cart__count" id="cartItemCount">0</span>
             </div>
 
-            <div class="cart-items flex-grow-1 p-0 overflow-auto" id="cartItemsContainer">
-                <div class="text-center text-muted mt-5 pt-5 empty-cart-msg">
-                    <i class="fas fa-shopping-basket fa-3x mb-3" style="color: #E5E7EB;"></i>
-                    <p style="font-weight: 600; color: #4B5563; font-size: 1.1rem; margin-bottom: 4px;" data-i18n="sale.cartEmpty">Giỏ hàng đang trống</p>
-                    <small style="color: #9CA3AF;" data-i18n="sale.cartEmptyHint">Tìm sản phẩm để bắt đầu bán</small>
+            <!-- Cart items (scrollable) -->
+            <div class="sale-cart__items" id="cartItemsContainer">
+                <!-- Empty state (shown when cart is empty) -->
+                <div class="sale-cart__empty" id="emptyCartMsg">
+                    <div class="sale-cart__empty-icon-wrap">
+                        <i class="fa-solid fa-basket-shopping"></i>
+                    </div>
+                    <p class="sale-cart__empty-title">Bắt đầu bán hàng</p>
+                    <p class="sale-cart__empty-desc">Tìm sản phẩm ở khung bên cạnh hoặc chọn gợi ý bên dưới</p>
+                    <button type="button" class="sale-cart__empty-cta" onclick="document.getElementById('productSearch').focus()">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        Tìm sản phẩm
+                    </button>
+                    <div class="sale-cart__empty-suggestions">
+                        <span class="sale-cart__empty-label">Phổ biến:</span>
+                        <button type="button" class="sale-cart__empty-suggestion" data-suggestion="Nước">Nước</button>
+                        <button type="button" class="sale-cart__empty-suggestion" data-suggestion="Bánh">Bánh</button>
+                        <button type="button" class="sale-cart__empty-suggestion" data-suggestion="Coca">Coca</button>
+                        <button type="button" class="sale-cart__empty-suggestion" data-suggestion="Snack">Snack</button>
+                    </div>
                 </div>
-                <table class="table table-hover mb-0 cart-table" style="display: none;">
-                    <thead class="sticky-top">
+
+                <!-- Cart items list (rendered by sale.js) -->
+                <div class="sale-cart__items-list" id="cartItemsList" style="display: none;"></div>
+
+                <!-- Legacy table (hidden, kept for backward compat with sale.js updateCartUI) -->
+                <table class="table" id="cartTable" style="display: none;">
+                    <thead>
                         <tr>
-                            <th scope="col" width="45%" data-i18n="sale.colProduct">Sản phẩm</th>
-                            <th scope="col" width="20%" class="text-center" data-i18n="sale.colQty">SL</th>
-                            <th scope="col" width="25%" class="text-end" data-i18n="sale.colPrice">Giá</th>
-                            <th scope="col" width="10%"></th>
+                            <th>Sản phẩm</th>
+                            <th class="text-center">SL</th>
+                            <th class="text-right">Giá</th>
+                            <th></th>
                         </tr>
                     </thead>
-                    <tbody id="cartTableBody">
-                    </tbody>
+                    <tbody id="cartTableBody"></tbody>
                 </table>
             </div>
 
-            <div class="payment-section">
-                <div class="d-flex justify-content-between mb-3 align-items-center">
-                    <span class="h6 mb-0 text-muted text-uppercase" style="letter-spacing: 0.05em;" data-i18n="sale.total">Tổng cộng</span>
-                    <span class="h3 mb-0 fw-bold text-dark" id="grandTotal">0 ₫</span>
-                </div>
+            <!-- Payment section: mini-bar (always visible) + expandable details -->
+            <!-- Mini-bar (64px) — shows Tổng cộng + chevron, click to expand -->
+            <div class="sale-cart__minibar">
+                <button type="button" class="sale-cart__minibar-trigger" id="paymentMinibarTrigger" aria-expanded="false" aria-controls="paymentDetails">
+                    <div class="sale-cart__minibar-left">
+                        <i class="fa-solid fa-receipt"></i>
+                        <span class="sale-cart__minibar-count" id="cartItemCountMini">0</span>
+                        <span class="sale-cart__minibar-label">Tổng cộng</span>
+                    </div>
+                    <div class="sale-cart__minibar-right">
+                        <span class="sale-cart__minibar-total" id="grandTotal" data-value="0">0 ₫</span>
+                        <i class="fa-solid fa-chevron-up sale-cart__minibar-chevron" id="paymentMinibarChevron"></i>
+                    </div>
+                </button>
+            </div>
 
-                <div class="mb-4">
-                    <label for="customerGiven" class="form-label small text-muted text-uppercase fw-bold" data-i18n="sale.customerGiven">Khách đưa</label>
-                    <div class="input-group">
-                        <input type="number" class="form-control form-control-lg text-end fw-bold" id="customerGiven"
-                            placeholder="0" style="border-radius: 8px 0 0 8px; border-color: #D1D5DB;">
-                        <span class="input-group-text" style="background: #fff; border-color: #D1D5DB; border-radius: 0 8px 8px 0; color: #6B7280;">₫</span>
+            <!-- Expandable details (hidden by default) -->
+            <div class="sale-cart__details" id="paymentDetails" hidden>
+                <div class="sale-cart__details-inner">
+                    <!-- Customer given -->
+                    <div class="sale-cart__row">
+                        <label class="sale-cart__row-label" for="customerGiven">Khách đưa</label>
+                        <div class="sale-cart__input-group">
+                            <input type="number" id="customerGiven" placeholder="0" inputmode="numeric">
+                            <span class="sale-cart__input-suffix">₫</span>
+                        </div>
+                        <!-- Quick amount chips (P0) -->
+                        <div class="sale-quick-amount" id="quickAmountChips">
+                            <button type="button" class="sale-quick-amount__chip" data-amount="50000">50K</button>
+                            <button type="button" class="sale-quick-amount__chip" data-amount="100000">100K</button>
+                            <button type="button" class="sale-quick-amount__chip" data-amount="200000">200K</button>
+                            <button type="button" class="sale-quick-amount__chip" data-amount="500000">500K</button>
+                            <button type="button" class="sale-quick-amount__chip sale-quick-amount__chip--full" data-amount="full" id="quickAmountFull" disabled>Đủ</button>
+                        </div>
+                    </div>
+
+                    <!-- Refund -->
+                    <div class="sale-cart__refund">
+                        <span class="sale-cart__refund-label">Tiền thừa</span>
+                        <span class="sale-cart__refund-value" id="refundAmount">0 ₫</span>
+                    </div>
+
+                    <!-- Payment method -->
+                    <div class="sale-cart__row">
+                        <span class="sale-cart__row-label">Phương thức thanh toán</span>
+                        <div class="sale-payment-method">
+                            <div class="sale-payment-method__option">
+                                <input type="radio" name="paymentMethod" value="Cash" id="payCash" checked>
+                                <label for="payCash">
+                                    <i class="fa-solid fa-money-bill-wave"></i>
+                                    <span>Tiền mặt</span>
+                                </label>
+                            </div>
+                            <div class="sale-payment-method__option">
+                                <input type="radio" name="paymentMethod" value="Card" id="payCard">
+                                <label for="payCard">
+                                    <i class="fa-solid fa-credit-card"></i>
+                                    <span>Thẻ</span>
+                                </label>
+                            </div>
+                            <div class="sale-payment-method__option">
+                                <input type="radio" name="paymentMethod" value="Transfer" id="payTransfer">
+                                <label for="payTransfer">
+                                    <i class="fa-solid fa-building-columns"></i>
+                                    <span>C.Khoản</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="sale-cart__actions">
+                        <button type="button" class="sale-cart__btn-complete" id="btnCompleteSale" disabled>
+                            <i class="fa-solid fa-check-circle"></i>
+                            <span>HOÀN TẤT BÁN HÀNG</span>
+                        </button>
+                        <button type="button" class="sale-cart__btn-clear" id="btnClearCart">
+                            <i class="fa-solid fa-trash"></i>
+                            <span>Xóa giỏ hàng</span>
+                        </button>
                     </div>
                 </div>
-
-                <div class="d-flex justify-content-between mb-4 align-items-center">
-                    <span class="h6 mb-0 text-muted text-uppercase" style="letter-spacing: 0.05em;" data-i18n="sale.change">Tiền thừa</span>
-                    <span class="h4 mb-0 fw-bold" style="color: #10B981;" id="refundAmount">0 ₫</span>
-                </div>
-
-                <div class="mb-4">
-                    <label class="form-label small text-muted text-uppercase fw-bold" data-i18n="sale.paymentMethod">Phương thức thanh toán</label>
-                    <div class="btn-group w-100" role="group">
-                        <input type="radio" class="btn-check" name="paymentMethod" id="payCash" value="Cash" checked>
-                        <label class="btn btn-outline-primary py-2" for="payCash">
-                            <i class="fas fa-money-bill-wave d-block mb-1"></i> <span data-i18n="sale.cash">Tiền mặt</span>
-                        </label>
-
-                        <input type="radio" class="btn-check" name="paymentMethod" id="payCard" value="Card">
-                        <label class="btn btn-outline-primary py-2" for="payCard">
-                            <i class="fas fa-credit-card d-block mb-1"></i> <span data-i18n="sale.card">Thẻ</span>
-                        </label>
-
-                        <input type="radio" class="btn-check" name="paymentMethod" id="payTransfer" value="Transfer">
-                        <label class="btn btn-outline-primary py-2" for="payTransfer">
-                            <i class="fas fa-university d-block mb-1"></i> <span data-i18n="sale.transfer">C.Khoản</span>
-                        </label>
-                    </div>
-                </div>
-
-                <div class="d-grid gap-3">
-                    <button class="btn btn-primary btn-lg py-3 fw-bold" id="btnCompleteSale" disabled style="border-radius: 12px; font-size: 1.1rem; box-shadow: 0 4px 12px rgba(0, 49, 82, 0.3);">
-                        <i class="fas fa-check-circle me-2"></i> <span data-i18n="sale.completeSale">HOÀN TẤT BÁN HÀNG</span>
-                    </button>
-                    <button class="btn btn-outline-danger py-2" id="btnClearCart" style="border-radius: 8px; border-color: #FECACA; color: #EF4444; background: transparent;">
-                        <i class="fas fa-trash-alt me-2"></i> <span data-i18n="sale.clearCart">Xóa giỏ hàng</span>
-                    </button>
-                </div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Modals Remain Untouched Structurally, Styled via the Root CSS Blocks -->
-<div class="modal fade" id="receiptModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-sm modal-dialog-centered">
-        <div class="modal-content" style="border-radius: 20px; padding: 10px;">
-            <div class="modal-body text-center p-4">
-                <div class="display-1 text-success mb-3"><i class="fas fa-check-circle" style="color: #10B981;"></i></div>
-                <h4 class="mb-3" style="font-weight: 700; color: #111827;" data-i18n="sale.saleSuccess">Bán hàng thành công!</h4>
-                <p class="text-muted mb-4" data-i18n="sale.saleSaved">Giao dịch đã được lưu vào hệ thống.</p>
-                <button type="button" class="btn btn-primary w-100 py-2" data-bs-dismiss="modal" data-i18n="sale.sellMore">Tiếp tục bán hàng</button>
-            </div>
+<!-- Modal: Receipt -->
+<div class="modal modal__content--sm" id="receiptModal">
+    <div class="modal__overlay" onclick="closeModal('receiptModal')"></div>
+    <div class="modal__content">
+        <div class="modal__body" style="text-align: center; padding: 32px;">
+            <i class="fa-solid fa-check-circle" style="font-size: 64px; color: var(--status-success); margin-bottom: 16px;"></i>
+            <h3 style="color: var(--text-primary); margin-bottom: 8px;">Bán hàng thành công!</h3>
+            <p style="color: var(--text-secondary); margin-bottom: 24px;">Giao dịch đã được lưu vào hệ thống.</p>
+            <button type="button" class="btn btn--primary btn--block" onclick="closeModal('receiptModal')">Tiếp tục bán hàng</button>
         </div>
     </div>
 </div>
 
-<div class="modal fade" id="historyModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title"><i class="fas fa-history me-2 text-muted"></i><span data-i18n="sale.salesHistory">Lịch sử bán hàng</span></h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
-            </div>
-            <div class="modal-body p-0">
-                <div class="p-3 border-bottom d-flex gap-2 history-toolbar" style="background: #F9FAFB;">
-                    <div class="input-group">
-                        <span class="input-group-text bg-white"><i class="fas fa-search text-muted"></i></span>
-                        <input type="text" id="historySearchInput" class="form-control border-start-0 ps-0"
-                            placeholder="Tìm theo mã hoặc phương thức thanh toán..." data-i18n-placeholder="sale.searchHistoryPlaceholder" aria-label="Tìm lịch sử bán hàng">
-                    </div>
-                    <button class="btn btn-outline-secondary" onclick="refreshHistory()" style="background: white !important;" aria-label="Làm mới lịch sử">
-                        <i class="fas fa-sync-alt"></i>
-                    </button>
-                </div>
-                <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
-                    <table class="table table-hover mb-0 cart-table" id="historyTable">
-                        <thead class="sticky-top" style="top: 0; z-index: 10;">
-                            <tr>
-                                <th data-i18n="sale.colId">ID</th>
-                                <th data-i18n="sale.colDate">Ngày</th>
-                                <th data-i18n="sale.colPayment">Thanh toán</th>
-                                <th class="text-center" data-i18n="sale.colProduct">Sản phẩm</th>
-                                <th class="text-end" data-i18n="sale.colAmount">Số tiền</th>
-                                <th class="text-center" style="width: 100px;" data-i18n="sale.colAction">Thao tác</th>
-                            </tr>
-                        </thead>
-                        <tbody id="historyTableBody">
-                            <tr>
-                                <td colspan="6" class="text-center py-4 text-muted" data-i18n="common.loading">Đang tải...</td>
-                            </tr>
-                        </tbody>
-                    </table>
+<!-- Modal: History -->
+<div class="modal" id="historyModal">
+    <div class="modal__overlay" onclick="closeModal('historyModal')"></div>
+    <div class="modal__content modal__content--lg">
+        <div class="modal__header">
+            <h2>
+                <i class="fa-solid fa-clock-rotate-left"></i>
+                Lịch sử bán hàng
+            </h2>
+            <button type="button" class="modal__close" onclick="closeModal('historyModal')" aria-label="Đóng">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        <div class="modal__body">
+            <div id="historyContent">
+                <div class="empty-state">
+                    <i class="fa-solid fa-spinner fa-spin"></i>
+                    <p>Đang tải...</p>
                 </div>
             </div>
+        </div>
+        <div class="modal__footer">
+            <button type="button" class="btn btn--outline" onclick="closeModal('historyModal')">Đóng</button>
         </div>
     </div>
 </div>
 
-<div class="modal fade" id="saleDetailsModal" tabindex="-1" aria-hidden="true" style="z-index: 1060;">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title"><span data-i18n="sale.saleDetails">Chi tiết đơn bán</span> #<span id="detailSaleId"></span></h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
-            </div>
-            <div class="modal-body">
-                <div class="mb-4 d-flex justify-content-between align-items-center p-3 rounded" style="background: #F3F4F6; border: 1px solid #E5E7EB;">
-                    <span style="font-size: 0.9rem; color: #4B5563;"><strong style="color: #111827;" data-i18n="sale.dateLabel">Ngày:</strong> <span id="detailSaleDate"></span></span>
-                    <span style="font-size: 0.9rem; color: #4B5563;"><strong style="color: #111827;" data-i18n="sale.methodLabel">Phương thức:</strong> <span id="detailSaleMethod" class="badge" style="background: #E5E7EB; color: #374151;"></span></span>
-                </div>
-                <div id="detailError" class="alert alert-danger d-none my-2"></div>
-                <div class="table-responsive" style="border: 1px solid #E5E7EB; border-radius: 8px;">
-                    <table class="table table-sm mb-0 cart-table">
-                        <thead style="background: #F9FAFB;">
-                            <tr>
-                                <th data-i18n="sale.colProduct">Sản phẩm</th>
-                                <th class="text-center" data-i18n="sale.colQty">SL</th>
-                                <th class="text-end" data-i18n="sale.colPrice">Giá</th>
-                                <th class="text-end" data-i18n="sale.colSubtotal">Tổng</th>
-                            </tr>
-                        </thead>
-                        <tbody id="detailItemsBody"></tbody>
-                        <tfoot class="fw-bold" style="background: #F9FAFB;">
-                            <tr>
-                                <td colspan="3" class="text-end py-3" data-i18n="sale.grandTotal">Tổng cộng:</td>
-                                <td class="text-end py-3 text-primary" id="detailSaleTotal" style="font-size: 1.1rem;"></td>
-                            </tr>
-                        </tfoot>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
 {% endblock %}
 
 {% block scripts %}
-<script src="{{ url_for('static', filename='js/sale.js') }}"></script>
-
+{{ super() }}
+<script src="{{ url_for('static', filename='js/sale.js') }}?v=1786850000" defer></script>
+<script>
+function openModal(id) {
+    var el = document.getElementById(id);
+    if (el) el.classList.add('active', 'show');
+}
+function closeModal(id) {
+    var el = document.getElementById(id);
+    if (el) el.classList.remove('active', 'show');
+}
+</script>
 {% endblock %}

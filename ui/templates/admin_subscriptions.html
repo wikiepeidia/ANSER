@@ -2,239 +2,264 @@
 
 {% block title %}Quản lý gói dịch vụ - Admin{% endblock %}
 
-{% block styles %}
-{{ super() }}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/admin_subscriptions.css') }}">
-{% endblock %}
-
-{% block scripts %}
-{{ super() }}
-<script src="{{ url_for('static', filename='js/admin_subscriptions.js') }}" defer></script>
-{% endblock %}
-
 {% block content %}
-<div class="app-layout">
-    {% include 'components/sidebar.html' %}
 
-    <main class="app-content main-content subscriptions-page">
-        <!-- Header -->
-        <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4 border-bottom">
-            <h1 class="h2"><i class="fas fa-crown"></i> <span data-i18n="nav.manageSubscriptions">Quản lý gói dịch vụ</span></h1>
-            <div class="btn-toolbar">
-                <button class="btn btn-modern btn-modern--primary me-2" onclick="loadManagers()">
-                    <i class="fas fa-sync-alt"></i> <span data-i18n="common.refresh">Làm mới</span>
-                </button>
-                <button class="btn btn-modern btn-modern--success" data-bs-toggle="modal" data-bs-target="#addManagerModal">
-                    <i class="fas fa-user-plus"></i> <span data-i18n="adminMgrs.addManager">Thêm Manager</span>
-                </button>
-            </div>
-        </div>
-
-        <!-- Tổng quan thống kê -->
-        <div class="row g-3 mb-4">
-            <div class="col-md-3">
-                <div class="stat-card stat-card--purple">
-                    <div class="stat-icon"><i class="fas fa-users"></i></div>
-                    <div class="stat-content">
-                        <div class="stat-label" data-i18n="adminSubs.totalManagers">Tổng Manager</div>
-                        <div class="stat-value" id="totalManagers">0</div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="stat-card stat-card--green">
-                    <div class="stat-icon"><i class="fas fa-check-circle"></i></div>
-                    <div class="stat-content">
-                        <div class="stat-label" data-i18n="adminSubs.activeSubs">Gói đang hoạt động</div>
-                        <div class="stat-value" id="activeSubscriptions">0</div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="stat-card stat-card--orange">
-                    <div class="stat-icon"><i class="fas fa-exclamation-triangle"></i></div>
-                    <div class="stat-content">
-                        <div class="stat-label" data-i18n="adminSubs.expiringSoon">Sắp hết hạn</div>
-                        <div class="stat-value" id="expiringSoon">0</div>
-                        <div class="stat-sublabel" data-i18n="adminSubs.next7Days">7 ngày tới</div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="stat-card stat-card--blue">
-                    <div class="stat-icon"><i class="fas fa-dollar-sign"></i></div>
-                    <div class="stat-content">
-                        <div class="stat-label" data-i18n="adminSubs.monthlyRevenue">Doanh thu tháng</div>
-                        <div class="stat-value" id="monthlyRevenue">0 VND</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Bảng Manager đang hoạt động -->
-        <div class="card mb-4 shadow-sm">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h5 class="card-title mb-0"><i class="fas fa-user-tie"></i> <span data-i18n="adminSubs.activeManagerAccounts">Tài khoản Manager đang hoạt động</span></h5>
-                    <div class="input-group" style="max-width: 300px;">
-                        <input type="text" class="form-control form-control-sm" id="searchManager" placeholder="Tìm Manager..." data-i18n-placeholder="adminSubs.searchManager">
-                        <button class="btn btn-outline-secondary btn-sm" aria-label="Tìm Manager"><i class="fas fa-search"></i></button>
-                    </div>
-                </div>
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle">
-                        <thead>
-                            <tr>
-                                <th data-i18n="common.role">Manager</th>
-                                <th data-i18n="common.email">Email</th>
-                                <th data-i18n="adminSubs.plan">Gói</th>
-                                <th data-i18n="adminSubs.startDate">Ngày bắt đầu</th>
-                                <th data-i18n="adminSubs.expiryDate">Ngày hết hạn</th>
-                                <th data-i18n="common.status">Trạng thái</th>
-                                <th data-i18n="common.actions">Thao tác</th>
-                            </tr>
-                        </thead>
-                        <tbody id="managersTable">
-                            <tr>
-                                <td colspan="7" class="text-center py-4">
-                                    <div class="spinner-border text-primary" role="status"></div>
-                                    <p class="text-muted mt-2" data-i18n="adminSubs.loadingManagers">Đang tải danh sách Manager...</p>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-        <!-- Lịch sử thanh toán -->
-        <div class="card shadow-sm">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h5 class="card-title mb-0"><i class="fas fa-history"></i> <span data-i18n="adminSubs.recentTransactions">Giao dịch gần đây</span></h5>
-                    <select class="form-select form-select-sm" style="max-width: 200px;" id="filterTransactions">
-                        <option value="all" data-i18n="adminSubs.allTransactions">Tất cả giao dịch</option>
-                        <option value="completed" data-i18n="imports.completed">Đã hoàn thành</option>
-                        <option value="pending" data-i18n="adminSubs.pending">Đang chờ</option>
-                        <option value="failed" data-i18n="adminSubs.failed">Thất bại</option>
-                    </select>
-                </div>
-                <div class="table-responsive">
-                    <table class="table table-sm">
-                        <thead>
-                            <tr>
-                                <th data-i18n="sale.colDate">Ngày</th>
-                                <th data-i18n="common.role">Manager</th>
-                                <th data-i18n="adminSubs.plan">Gói</th>
-                                <th data-i18n="wallet.colAmount">Số tiền</th>
-                                <th data-i18n="sale.methodLabel">Phương thức</th>
-                                <th data-i18n="common.status">Trạng thái</th>
-                            </tr>
-                        </thead>
-                        <tbody id="transactionsTable">
-                            <tr>
-                                <td colspan="6" class="text-center py-3">
-                                    <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </main>
+<!-- Content header -->
+<div class="content__header">
+    <div>
+        <p class="content__subtitle">Admin Subscriptions</p>
+        <h1 class="content__title">
+            <i class="fa-solid fa-crown"></i>
+            Quản lý gói dịch vụ
+        </h1>
+    </div>
+    <div class="content__actions">
+        <button class="btn btn--outline" type="button" onclick="loadManagers()">
+            <i class="fa-solid fa-rotate"></i> Làm mới
+        </button>
+        <button class="btn btn--primary" type="button" onclick="openAddManagerModal()">
+            <i class="fa-solid fa-user-plus"></i> Thêm Manager
+        </button>
+    </div>
 </div>
 
+<!-- Stats overview -->
+<section class="dashboard-stats">
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-card__header">
+                <span>Tổng Manager</span>
+                <div class="stat-card__icon stat-card__icon--purple">
+                    <i class="fa-solid fa-users"></i>
+                </div>
+            </div>
+            <div class="stat-card__value" id="totalManagers">0</div>
+            <span class="stat-card__pill">Tổng số</span>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-card__header">
+                <span>Gói đang hoạt động</span>
+                <div class="stat-card__icon stat-card__icon--green">
+                    <i class="fa-solid fa-check-circle"></i>
+                </div>
+            </div>
+            <div class="stat-card__value" id="activeSubscriptions">0</div>
+            <span class="stat-card__pill stat-card__pill--green">Đang active</span>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-card__header">
+                <span>Sắp hết hạn</span>
+                <div class="stat-card__icon stat-card__icon--orange">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                </div>
+            </div>
+            <div class="stat-card__value" id="expiringSoon">0</div>
+            <span class="stat-card__pill stat-card__pill--orange">7 ngày tới</span>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-card__header">
+                <span>Doanh thu tháng</span>
+                <div class="stat-card__icon stat-card__icon--blue">
+                    <i class="fa-solid fa-dollar-sign"></i>
+                </div>
+            </div>
+            <div class="stat-card__value stat-card__value--compact" id="monthlyRevenue">0 ₫</div>
+            <span class="stat-card__pill stat-card__pill--blue">Tháng này</span>
+        </div>
+    </div>
+</section>
+
+<!-- Active managers table -->
+<section class="card" style="margin-bottom: var(--space-5);">
+    <div class="card__header">
+        <h3 class="card__title">
+            <i class="fa-solid fa-user-tie"></i>
+            Tài khoản Manager đang hoạt động
+        </h3>
+        <div class="search-input">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" id="searchManager" placeholder="Tìm Manager...">
+        </div>
+    </div>
+    <div class="card__body" style="padding: 0;">
+        <div class="table-wrapper">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Manager</th>
+                        <th>Email</th>
+                        <th>Gói</th>
+                        <th>Ngày bắt đầu</th>
+                        <th>Ngày hết hạn</th>
+                        <th>Trạng thái</th>
+                        <th>Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody id="managersTable">
+                    <tr>
+                        <td colspan="7" style="padding: 0;">
+                            <div id="managersTableSkeleton"></div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
+<!-- Recent transactions -->
+<section class="card">
+    <div class="card__header">
+        <h3 class="card__title">
+            <i class="fa-solid fa-clock-rotate-left"></i>
+            Giao dịch gần đây
+        </h3>
+        <select class="form-control" id="filterTransactions" style="width: auto; min-width: 200px;">
+            <option value="all">Tất cả giao dịch</option>
+            <option value="completed">Đã hoàn thành</option>
+            <option value="pending">Đang chờ</option>
+            <option value="failed">Thất bại</option>
+        </select>
+    </div>
+    <div class="card__body" style="padding: 0;">
+        <div class="table-wrapper">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Ngày</th>
+                        <th>Manager</th>
+                        <th>Gói</th>
+                        <th>Số tiền</th>
+                        <th>Phương thức</th>
+                        <th>Trạng thái</th>
+                    </tr>
+                </thead>
+                <tbody id="transactionsTable">
+                    <tr>
+                        <td colspan="6" style="padding: 0;">
+                            <div id="transactionsTableSkeleton"></div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
 <!-- Modal: Thêm Manager -->
-<div class="modal fade" id="addManagerModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title"><i class="fas fa-user-plus"></i> <span data-i18n="adminSubs.addNewManager">Thêm Manager mới</span></h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+<div class="modal" id="addManagerModal">
+    <div class="modal__overlay" onclick="closeModal('addManagerModal')"></div>
+    <div class="modal__content">
+        <div class="modal__header">
+            <h2><i class="fa-solid fa-user-plus"></i> Thêm Manager mới</h2>
+            <button type="button" class="modal__close" onclick="closeModal('addManagerModal')" aria-label="Đóng">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        <div class="modal__body">
+            <div class="form-group">
+                <label for="selectUser">Chọn người dùng <span style="color: var(--status-error);">*</span></label>
+                <select class="form-control" id="selectUser">
+                    <option value="">-- Chọn người dùng --</option>
+                </select>
+                <small class="form-help">Chỉ hiện các user chưa phải manager</small>
             </div>
-            <div class="modal-body">
-                <div class="mb-3">
-                    <label class="form-label"><span data-i18n="adminSubs.chooseUser">Chọn người dùng</span> <span class="text-danger">*</span></label>
-                    <select class="form-select" id="selectUser">
-                        <option value="" data-i18n="adminSubs.chooseUserOption">-- Chọn người dùng --</option>
-                    </select>
-                    <small class="text-muted" data-i18n="adminSubs.onlyNonManagerUsers">Chỉ hiện các user chưa phải manager</small>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label"><span data-i18n="adminSubs.servicePlan">Gói dịch vụ</span> <span class="text-danger">*</span></label>
-                    <select class="form-select" id="selectPlan">
-                        <option value="trial">Dùng thử - Miễn phí (30 ngày)</option>
-                        <option value="monthly">Hàng tháng - 500.000 VND (30 ngày)</option>
-                        <option value="quarterly" selected>Hàng quý - 1.200.000 VND (90 ngày)</option>
-                        <option value="yearly">Hàng năm - 4.000.000 VND (365 ngày)</option>
-                    </select>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label" data-i18n="sale.paymentMethod">Phương thức thanh toán</label>
-                    <select class="form-select" id="paymentMethod">
-                        <option value="bank_transfer">Chuyển khoản ngân hàng</option>
-                        <option value="cash">Tiền mặt</option>
-                        <option value="momo">MoMo</option>
-                        <option value="vnpay">VNPay</option>
-                        <option value="admin_grant" data-i18n="adminSubs.adminGrantFree">Admin cấp miễn phí</option>
-                    </select>
-                </div>
+            <div class="form-group">
+                <label for="selectPlan">Gói dịch vụ <span style="color: var(--status-error);">*</span></label>
+                <select class="form-control" id="selectPlan">
+                    <option value="trial">Dùng thử - Miễn phí (30 ngày)</option>
+                    <option value="monthly">Hàng tháng - 500.000 VND (30 ngày)</option>
+                    <option value="quarterly" selected>Hàng quý - 1.200.000 VND (90 ngày)</option>
+                    <option value="yearly">Hàng năm - 4.000.000 VND (365 ngày)</option>
+                </select>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-i18n="common.cancel">Hủy</button>
-                <button type="button" class="btn btn-success" onclick="createManager()">
-                    <i class="fas fa-check"></i> <span data-i18n="adminSubs.createManager">Tạo Manager</span>
-                </button>
+            <div class="form-group">
+                <label for="paymentMethod">Phương thức thanh toán</label>
+                <select class="form-control" id="paymentMethod">
+                    <option value="bank_transfer">Chuyển khoản ngân hàng</option>
+                    <option value="cash">Tiền mặt</option>
+                    <option value="momo">MoMo</option>
+                    <option value="vnpay">VNPay</option>
+                    <option value="admin_grant">Admin cấp miễn phí</option>
+                </select>
             </div>
+        </div>
+        <div class="modal__footer">
+            <button type="button" class="btn btn--outline" onclick="closeModal('addManagerModal')">Hủy</button>
+            <button type="button" class="btn btn--success" onclick="createManager()">
+                <i class="fa-solid fa-check"></i> Tạo Manager
+            </button>
         </div>
     </div>
 </div>
 
 <!-- Modal: Gia hạn gói -->
-<div class="modal fade" id="extendModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title"><i class="fas fa-calendar-plus"></i> <span data-i18n="adminSubs.extendPlan">Gia hạn gói dịch vụ</span></h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+<div class="modal" id="extendModal">
+    <div class="modal__overlay" onclick="closeModal('extendModal')"></div>
+    <div class="modal__content">
+        <div class="modal__header">
+            <h2><i class="fa-solid fa-calendar-plus"></i> Gia hạn gói dịch vụ</h2>
+            <button type="button" class="modal__close" onclick="closeModal('extendModal')" aria-label="Đóng">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        <div class="modal__body">
+            <input type="hidden" id="extendUserId">
+            <div class="form-group">
+                <label>Manager</label>
+                <input type="text" class="form-control" id="extendUserName" readonly>
             </div>
-            <div class="modal-body">
-                <input type="hidden" id="extendUserId">
-                <div class="mb-3">
-                    <label class="form-label" data-i18n="common.role">Manager</label>
-                    <input type="text" class="form-control" id="extendUserName" readonly>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label" data-i18n="adminSubs.currentExpiry">Ngày hết hạn hiện tại</label>
-                    <input type="text" class="form-control" id="currentExpiry" readonly>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label"><span data-i18n="adminSubs.renewalPlan">Gói gia hạn</span> <span class="text-danger">*</span></label>
-                    <select class="form-select" id="extendPlan">
-                        <option value="monthly">Hàng tháng - 500.000 VND (+ 30 ngày)</option>
-                        <option value="quarterly" selected>Hàng quý - 1.200.000 VND (+ 90 ngày)</option>
-                        <option value="yearly">Hàng năm - 4.000.000 VND (+ 365 ngày)</option>
-                    </select>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label" data-i18n="sale.paymentMethod">Phương thức thanh toán</label>
-                    <select class="form-select" id="extendPaymentMethod">
-                        <option value="bank_transfer">Chuyển khoản ngân hàng</option>
-                        <option value="cash">Tiền mặt</option>
-                        <option value="momo">MoMo</option>
-                        <option value="vnpay">VNPay</option>
-                    </select>
-                </div>
+            <div class="form-group">
+                <label>Ngày hết hạn hiện tại</label>
+                <input type="text" class="form-control" id="currentExpiry" readonly>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-i18n="common.cancel">Hủy</button>
-                <button type="button" class="btn btn-primary" onclick="processExtension()">
-                    <i class="fas fa-check"></i> <span data-i18n="adminSubs.extendPlanBtn">Gia hạn gói</span>
-                </button>
+            <div class="form-group">
+                <label for="extendPlan">Gói gia hạn <span style="color: var(--status-error);">*</span></label>
+                <select class="form-control" id="extendPlan">
+                    <option value="monthly">Hàng tháng - 500.000 VND (+ 30 ngày)</option>
+                    <option value="quarterly" selected>Hàng quý - 1.200.000 VND (+ 90 ngày)</option>
+                    <option value="yearly">Hàng năm - 4.000.000 VND (+ 365 ngày)</option>
+                </select>
             </div>
+            <div class="form-group">
+                <label for="extendPaymentMethod">Phương thức thanh toán</label>
+                <select class="form-control" id="extendPaymentMethod">
+                    <option value="bank_transfer">Chuyển khoản ngân hàng</option>
+                    <option value="cash">Tiền mặt</option>
+                    <option value="momo">MoMo</option>
+                    <option value="vnpay">VNPay</option>
+                </select>
+            </div>
+        </div>
+        <div class="modal__footer">
+            <button type="button" class="btn btn--outline" onclick="closeModal('extendModal')">Hủy</button>
+            <button type="button" class="btn btn--primary" onclick="processExtension()">
+                <i class="fa-solid fa-check"></i> Gia hạn gói
+            </button>
         </div>
     </div>
 </div>
 
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script src="{{ url_for('static', filename='js/admin_subscriptions.js') }}" defer></script>
+<script>
+// Simple modal helpers (since we removed Bootstrap)
+function openModal(id) {
+    var el = document.getElementById(id);
+    if (el) el.classList.add('active', 'show');
+}
+function closeModal(id) {
+    var el = document.getElementById(id);
+    if (el) el.classList.remove('active', 'show');
+}
+function openAddManagerModal() {
+    openModal('addManagerModal');
+}
+</script>
 {% endblock %}

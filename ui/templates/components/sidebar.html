@@ -1,188 +1,289 @@
-<!-- Top bar chỉ hiện trên mobile (<=768px) — chứa hamburger để mở sidebar,
-     đẩy lên trên cùng và căn phải để không che nội dung trang. -->
-<header class="mobile-topbar" id="mobile-topbar">
-    <span class="mobile-topbar__brand">ANSER</span>
-    <button id="mobile-sidebar-toggle" class="mobile-sidebar-toggle" aria-label="Toggle Menu">
-        <i class="fas fa-bars"></i>
-    </button>
-</header>
-<div id="sidebar-overlay" class="sidebar-overlay"></div>
-
-<nav class="modern-sidebar" id="main-sidebar">
-    <div class="sidebar-brand">
-        <div class="brand-icon">
-            <i class="fas fa-rocket"></i>
+<!-- ============ SIDEBAR ============ -->
+<aside class="sidebar" id="sidebar">
+    <!-- Logo -->
+    <div class="sidebar__logo">
+        <div class="sidebar__logo-left">
+            <i class="fa-solid fa-rocket"></i>
+            <span class="sidebar__logo-text">ANSER</span>
         </div>
-        <div class="brand-text">
-            <h3>ANSER</h3>
-        </div>
-        <button id="sidebar-collapse-toggle" class="sidebar-collapse-btn" aria-label="Toggle sidebar">
-            <i class="fas fa-chevron-left" id="sidebar-collapse-icon"></i>
+        <button class="sidebar__toggle" id="sidebarToggle" onclick="toggleDesktopSidebar(event)" title="Thu gọn/Mở rộng sidebar" aria-label="Toggle sidebar">
+            <i class="fa-solid fa-chevron-left" id="sidebarToggleIcon"></i>
         </button>
     </div>
 
-    <div class="sidebar-scroll">
-    <a class="sidebar-user" href="{{ url_for('pages.settings') }}">
-        <div class="sidebar-user__avatar">
-            {% if user.avatar %}
-            <img src="{{ user.avatar }}" alt="Avatar">
-            {% else %}
-            {{ ((user.first_name or user.name or user.email) if user.first_name or user.name else user.email)[0]|upper
-            }}
-            {% endif %}
-        </div>
-        <div class="sidebar-user__info">
-            <span class="sidebar-user__name">{{ user.name or 'User' }}</span>
-            <span class="role-badge role-{{ user.role }}" style="text-transform: uppercase;">{{ user.role }}</span>
-        </div>
-    </a>
-
-    <!-- Cửa hàng đang thao tác — mọi role đều cần chọn để dữ liệu nhập/xuất/bán hàng/dashboard tách riêng theo cửa hàng -->
-    <div class="warehouse-switcher" style="padding: 10px 16px; border-bottom: 1px solid rgba(255,255,255,.08);">
-        <label for="activeWarehouseSelect"
-            style="display:block; font-size:.72rem; text-transform:uppercase; opacity:.6; margin-bottom:4px;">
-            <i class="fas fa-store"></i> <span data-i18n="nav.activeWarehouse">Cửa hàng đang thao tác</span>
-        </label>
-        <select id="activeWarehouseSelect" class="form-select form-select-sm"
-            style="width:100%; font-size:.82rem;">
-            <option value="" data-i18n="common.loading">Đang tải...</option>
-        </select>
+    <!-- Search palette -->
+    <div class="sidebar__search">
+        <i class="fa-solid fa-magnifying-glass sidebar__search-icon" aria-hidden="true"></i>
+        <input
+            type="text"
+            id="sidebarSearch"
+            class="sidebar__search-input"
+            placeholder="Tìm nhanh..."
+            autocomplete="off"
+            spellcheck="false"
+            aria-label="Tìm nhanh menu"
+        />
+        <button class="sidebar__search-clear" id="sidebarSearchClear" aria-label="Xóa" hidden>
+            <i class="fa-solid fa-xmark"></i>
+        </button>
     </div>
-    <script>
-        (function () {
-            const select = document.getElementById('activeWarehouseSelect');
-            if (!select) return;
+    <div class="sidebar__search-status" id="sidebarSearchStatus" hidden>Không tìm thấy</div>
 
-            fetch('/api/warehouses')
-                .then((r) => r.json())
-                .then((d) => {
-                    if (!d.success) return;
-                    const opts = ['<option value="">Tất cả cửa hàng (gộp)</option>']
-                        .concat(d.warehouses.map((w) =>
-                            `<option value="${w.id}" ${String(w.id) === String(d.active_warehouse_id) ? 'selected' : ''}>${w.name}</option>`
-                        ));
-                    select.innerHTML = opts.join('');
-                })
-                .catch(() => { select.innerHTML = '<option value="">Không tải được danh sách</option>'; });
+    <!-- Nav -->
+    <nav class="sidebar__nav" id="sidebarNav">
 
-            select.addEventListener('change', () => {
-                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
-                fetch('/api/session/active-warehouse', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
-                    body: JSON.stringify({ warehouse_id: select.value || null }),
-                })
-                    .then((r) => r.json())
-                    .then(() => window.location.reload())
-                    .catch(() => window.location.reload());
-            });
-        })();
-    </script>
-
-    <div class="menu-container">
-        <!-- Admin Section: System Administration -->
-        {% if user.role == 'admin' %}
-        <div class="menu-section">
-            <div class="section-title">
-                <i class="fas fa-crown"></i>
-                <span data-i18n="nav.platformAdmin">Quản trị nền tảng</span>
-            </div>
-            <a class="menu-item" href="{{ url_for('pages.admin_dashboard') }}" data-tooltip="Bảng điều khiển quản trị" data-i18n-tooltip="nav.adminDashboard">
-                <i class="fas fa-tachometer-alt menu-icon"></i>
-                <span class="menu-label" data-i18n="nav.adminDashboard">Bảng điều khiển quản trị</span>
-            </a>
-            <a class="menu-item" href="{{ url_for('pages.admin_analytics') }}" data-tooltip="Phân tích &amp; Báo cáo" data-i18n-tooltip="nav.analyticsReports">
-                <i class="fas fa-chart-line menu-icon"></i>
-                <span class="menu-label" data-i18n="nav.analyticsReports">Phân tích &amp; Báo cáo</span>
-            </a>
-            <a class="menu-item" href="{{ url_for('pages.admin_subscriptions') }}" data-tooltip="Quản lý gói dịch vụ" data-i18n-tooltip="nav.manageSubscriptions">
-                <i class="fas fa-credit-card menu-icon"></i>
-                <span class="menu-label" data-i18n="nav.manageSubscriptions">Quản lý gói dịch vụ</span>
-            </a>
-        </div>
-        {% endif %}
-
-        <!-- Main Menu: Dành cho Manager/Admin -->
-        {% if user.role in ['admin', 'manager'] %}
-        <div class="menu-section">
-            <div class="section-title">
-                <i class="fas fa-store"></i>
-                <span data-i18n="nav.myStoreManagement">Quản lý cửa hàng</span>
-            </div>
-            <a class="menu-item" href="{{ url_for('pages.dashboard') }}" data-tooltip="Bảng điều khiển cửa hàng" data-i18n-tooltip="nav.storeDashboard">
-                <i class="fas fa-chart-pie menu-icon"></i>
-                <span class="menu-label" data-i18n="nav.storeDashboard">Bảng điều khiển cửa hàng</span>
-            </a>
-            <a class="menu-item" href="{{ url_for('pages.admin_warehouses') }}" data-tooltip="Quản lý kho hàng" data-i18n-tooltip="nav.manageWarehouses">
-                <i class="fas fa-warehouse menu-icon"></i>
-                <span class="menu-label" data-i18n="nav.manageWarehouses">Quản lý kho hàng</span>
-            </a>
-            <a class="menu-item" href="{{ url_for('pages.create_user_account') }}" data-tooltip="Quản lý nhân viên" data-i18n-tooltip="nav.manageEmployees">
-                <i class="fas fa-users-cog menu-icon"></i>
-                <span class="menu-label" data-i18n="nav.manageEmployees">Quản lý nhân viên</span>
-            </a>
-            {% if user.role != 'admin' %}
-            <a class="menu-item" href="{{ url_for('wallet.wallet_dashboard') }}" data-tooltip="Ví &amp; Gói dịch vụ" data-i18n-tooltip="nav.walletPlans">
-                <i class="fas fa-wallet menu-icon"></i>
-                <span class="menu-label" data-i18n="nav.walletPlans">Ví &amp; Gói dịch vụ</span>
-            </a>
-            {% endif %}
-        </div>
-        {% endif %}
-
-        <!-- User Menu: Basic features -->
-        {% if user.role == 'user' %}
-        <div class="menu-section">
-            <div class="section-title">
-                <i class="fas fa-store"></i>
-                <span data-i18n="nav.businessManagement">Quản lý kinh doanh</span>
-            </div>
-            <a class="menu-item" href="{{ url_for('pages.dashboard') }}" data-tooltip="Doanh thu hôm nay" data-i18n-tooltip="nav.todayRevenue">
-                <i class="fas fa-chart-pie menu-icon"></i>
-                <span class="menu-label" data-i18n="nav.todayRevenue">Doanh thu hôm nay</span>
-            </a>
-            <a class="menu-item" href="{{ url_for('pages.customers') }}" data-tooltip="Khách hàng" data-i18n-tooltip="nav.customers">
-                <i class="fas fa-users menu-icon"></i>
-                <span class="menu-label" data-i18n="nav.customers">Khách hàng</span>
-            </a>
-        </div>
-        {% endif %}
-
-        <!-- Workspace -->
-        <div class="menu-section">
-            <div class="section-title">
-                <i class="fas fa-rocket"></i>
-                <span data-i18n="nav.workspace">Không gian làm việc</span>
-            </div>
-            <a class="menu-item" href="{{ url_for('pages.workspace') }}" data-tooltip="Trung tâm không gian làm việc" data-i18n-tooltip="nav.workspaceHub">
-                <i class="fas fa-paint-brush menu-icon"></i>
-                <span class="menu-label" data-i18n="nav.workspaceHub">Trung tâm không gian làm việc</span>
-            </a>
-            <a class="menu-item" href="{{ url_for('pages.scenarios') }}" data-tooltip="Quy trình n8n" data-i18n-tooltip="nav.n8nWorkflows">
-                <i class="fas fa-project-diagram menu-icon"></i>
-                <span class="menu-label" data-i18n="nav.n8nWorkflows">Quy trình n8n</span>
-            </a>
-            <a class="menu-item" href="{{ url_for('pages.iot_monitor') }}" data-tooltip="Giám sát IoT" data-i18n-tooltip="nav.iotMonitor">
-                <i class="fas fa-cash-register menu-icon"></i>
-                <span class="menu-label" data-i18n="nav.iotMonitor">Giám sát IoT</span>
-            </a>
-            <a class="menu-item" href="{{ url_for('pages.settings') }}" data-tooltip="Cài đặt" data-i18n-tooltip="nav.settings">
-                <i class="fas fa-cog menu-icon"></i>
-                <span class="menu-label" data-i18n="nav.settings">Cài đặt</span>
-            </a>
-            <a class="menu-item" href="{{ project_config.GATEWAY_ORIGIN }}/choose-area" data-tooltip="Đổi mảng" data-i18n-tooltip="nav.switchArea">
-                <i class="fas fa-right-left menu-icon"></i>
-                <span class="menu-label" data-i18n="nav.switchArea">Đổi mảng</span>
-            </a>
-        </div>
-    </div>
-    </div>
-
-    <!-- Logout — pinned to the bottom of the sidebar, outside the scroll area -->
-    <div class="menu-footer">
-        <a class="logout-button" href="{{ url_for('main.logout') }}" data-tooltip="Đăng xuất" data-i18n-tooltip="nav.logout">
-            <i class="fas fa-sign-out-alt"></i>
-            <span class="logout-label" data-i18n="nav.logout">Đăng xuất</span>
+        <!-- Dashboard chính -->
+        <a href="{{ url_for('pages.dashboard') }}" class="sidebar__item" data-page="dashboard" data-search-text="dashboard tong quan home">
+            <i class="fa-solid fa-house"></i>
+            <span data-i18n="nav.dashboard">Dashboard</span>
         </a>
+
+        {% if user.role in ['admin', 'manager'] %}
+        <!-- Quản lý cửa hàng -->
+        <div class="sidebar__group" data-group="store">
+            <button class="sidebar__item sidebar__item--has-sub" data-sub="store-sub" aria-expanded="false" data-search-text="quan ly cua hang store management">
+                <i class="fa-solid fa-store"></i>
+                <span data-i18n="nav.storeManagement">Quản lý cửa hàng</span>
+                <i class="fa-solid fa-chevron-down sidebar__chevron"></i>
+            </button>
+            <ul class="sidebar__submenu" id="store-sub">
+                <li>
+                    <a href="{{ url_for('pages.products') }}" class="sidebar__submenu-item" data-page="products" data-search-text="san pham product hang hoa">
+                        <i class="fa-solid fa-box sidebar__submenu-icon"></i>
+                        <span data-i18n="nav.products">Sản phẩm</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('pages.customers') }}" class="sidebar__submenu-item" data-page="customers" data-search-text="khach hang customer client">
+                        <i class="fa-solid fa-users sidebar__submenu-icon"></i>
+                        <span data-i18n="nav.customers">Khách hàng</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('pages.imports') }}" class="sidebar__submenu-item" data-page="imports" data-search-text="nhap hang import">
+                        <i class="fa-solid fa-truck-ramp-box sidebar__submenu-icon"></i>
+                        <span data-i18n="nav.imports">Nhập hàng</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('pages.exports') }}" class="sidebar__submenu-item" data-page="exports" data-search-text="xuat hang export">
+                        <i class="fa-solid fa-truck-fast sidebar__submenu-icon"></i>
+                        <span data-i18n="nav.exports">Xuất hàng</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('sales.sale_page') }}" class="sidebar__submenu-item" data-page="sale" data-search-text="ban hang sale pos">
+                        <i class="fa-solid fa-cash-register sidebar__submenu-icon"></i>
+                        <span data-i18n="nav.sale">Bán hàng</span>
+                    </a>
+                </li>
+                {% if user.role != 'admin' %}
+                <li>
+                    <a href="{{ url_for('wallet.wallet_dashboard') }}" class="sidebar__submenu-item" data-page="wallet" data-search-text="vi goi dich vu wallet subscription">
+                        <i class="fa-solid fa-wallet sidebar__submenu-icon"></i>
+                        <span data-i18n="nav.wallet">Ví &amp; Gói dịch vụ</span>
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </div>
+        {% endif %}
+
+        <!-- Không gian làm việc (Workflow) -->
+        <div class="sidebar__group" data-group="workspace">
+            <button class="sidebar__item sidebar__item--has-sub" data-sub="workspace-sub" aria-expanded="false" data-search-text="khong gian lam viec workspace workflow">
+                <i class="fa-solid fa-rocket"></i>
+                <span data-i18n="nav.workspace">Không gian làm việc</span>
+                <i class="fa-solid fa-chevron-down sidebar__chevron"></i>
+            </button>
+            <ul class="sidebar__submenu" id="workspace-sub">
+                <li>
+                    <a href="{{ url_for('pages.workspace') }}" class="sidebar__submenu-item" data-page="workspace" data-search-text="trung tam workspace hub">
+                        <i class="fa-solid fa-paint-brush sidebar__submenu-icon"></i>
+                        <span data-i18n="nav.workspaceHub">Trung tâm workspace</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('pages.scenarios') }}" class="sidebar__submenu-item" data-page="scenarios" data-search-text="quy trinh n8n workflow automation">
+                        <i class="fa-solid fa-project-diagram sidebar__submenu-icon"></i>
+                        <span data-i18n="nav.scenarios">Quy trình (n8n)</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('pages.iot_monitor') }}" class="sidebar__submenu-item" data-page="iot_monitor" data-search-text="giam sat iot monitor sensor">
+                        <i class="fa-solid fa-satellite-dish sidebar__submenu-icon"></i>
+                        <span data-i18n="nav.iotMonitor">Giám sát IoT</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('pages.se_auto_import') }}" class="sidebar__submenu-item" data-page="se_auto_import" data-search-text="tu dong nhap hang auto import schedule">
+                        <i class="fa-solid fa-clock-rotate-left sidebar__submenu-icon"></i>
+                        <span data-i18n="nav.autoImport">Tự động nhập hàng</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('pages.se_reports') }}" class="sidebar__submenu-item" data-page="se_reports" data-search-text="bao cao dinh ky report scheduled">
+                        <i class="fa-solid fa-file-lines sidebar__submenu-icon"></i>
+                        <span data-i18n="nav.scheduledReports">Báo cáo định kỳ</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        {% if user.role == 'admin' %}
+        <!-- Quản trị nền tảng -->
+        <div class="sidebar__group" data-group="admin">
+            <button class="sidebar__item sidebar__item--has-sub" data-sub="admin-sub" aria-expanded="false" data-search-text="quan tri nen tang admin platform">
+                <i class="fa-solid fa-crown"></i>
+                <span data-i18n="nav.platformAdmin">Quản trị nền tảng</span>
+                <i class="fa-solid fa-chevron-down sidebar__chevron"></i>
+            </button>
+            <ul class="sidebar__submenu" id="admin-sub">
+                <li>
+                    <a href="{{ url_for('pages.admin_dashboard') }}" class="sidebar__submenu-item" data-page="admin_dashboard" data-search-text="bang dieu khien quan tri admin dashboard">
+                        <i class="fa-solid fa-tachometer-alt sidebar__submenu-icon"></i>
+                        <span data-i18n="nav.adminDashboard">Bảng điều khiển quản trị</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('pages.admin_analytics') }}" class="sidebar__submenu-item" data-page="admin_analytics" data-search-text="phan tich bao cao analytics">
+                        <i class="fa-solid fa-chart-line sidebar__submenu-icon"></i>
+                        <span data-i18n="nav.adminAnalytics">Phân tích &amp; Báo cáo</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('pages.admin_warehouses') }}" class="sidebar__submenu-item" data-page="admin_warehouses" data-search-text="quan ly kho hang warehouse">
+                        <i class="fa-solid fa-warehouse sidebar__submenu-icon"></i>
+                        <span data-i18n="nav.adminWarehouses">Quản lý kho hàng</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('pages.admin_managers') }}" class="sidebar__submenu-item" data-page="admin_managers" data-search-text="quan ly manager nhan vien staff">
+                        <i class="fa-solid fa-user-tie sidebar__submenu-icon"></i>
+                        <span data-i18n="nav.adminManagers">Quản lý Manager</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('pages.admin_roles') }}" class="sidebar__submenu-item" data-page="admin_roles" data-search-text="phan quyen role permission">
+                        <i class="fa-solid fa-user-shield sidebar__submenu-icon"></i>
+                        <span data-i18n="nav.adminRoles">Phân quyền</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('pages.admin_subscriptions') }}" class="sidebar__submenu-item" data-page="admin_subscriptions" data-search-text="quan ly goi dich vu subscription plan">
+                        <i class="fa-solid fa-credit-card sidebar__submenu-icon"></i>
+                        <span data-i18n="nav.adminSubscriptions">Quản lý gói dịch vụ</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+        {% endif %}
+
+        <!-- Cài đặt -->
+        <a href="{{ url_for('pages.settings') }}" class="sidebar__item" data-page="settings" data-search-text="cai dat settings cau hinh config">
+            <i class="fa-solid fa-gear"></i>
+            <span data-i18n="nav.settings">Cài đặt</span>
+        </a>
+
+    </nav>
+
+    <!-- Sidebar footer (user card + warehouse + logout) -->
+    <div class="sidebar__footer">
+        <!-- Warehouse switcher (compact: icon + inline select + caret) -->
+        <div class="sidebar-warehouse">
+            <i class="fa-solid fa-store sidebar-warehouse__icon" aria-hidden="true"></i>
+            <select id="activeWarehouseSelect" class="sidebar-warehouse__select" aria-busy="true" aria-label="Cửa hàng đang thao tác">
+                <option value="">Đang tải...</option>
+            </select>
+            <i class="fa-solid fa-chevron-down sidebar-warehouse__caret" aria-hidden="true"></i>
+        </div>
+
+        <!-- User card -->
+        <div class="sidebar-user" id="sidebarUserCard" title="{{ user.name or 'User' }}">
+            {% if user.avatar %}
+            <img class="sidebar-user__avatar" src="{{ user.avatar }}" alt="Avatar">
+            {% else %}
+            <div class="sidebar-user__avatar sidebar-user__avatar--initial">
+                {{ (user.first_name or user.name or user.email)[0]|upper }}
+            </div>
+            {% endif %}
+            <div class="sidebar-user__info">
+                <span class="sidebar-user__name" title="{{ user.name or 'User' }}">{{ user.name or 'User' }}</span>
+                <span class="sidebar-user__role">
+                    <span class="sidebar-user__status-dot" aria-label="Online"></span>
+                    <span>Đang online · {{ user.role }}</span>
+                </span>
+            </div>
+        </div>
+
+        <!-- User dropdown menu -->
+        <div class="sidebar-user-menu" id="sidebarUserMenu">
+            <a href="{{ url_for('pages.settings') }}" class="sidebar-user-menu__item" data-page="settings">
+                <i class="fa-solid fa-user-pen"></i> <span data-i18n="user.accountSettings">Cài đặt tài khoản</span>
+            </a>
+            <a href="{{ url_for('wallet.wallet_dashboard') }}" class="sidebar-user-menu__item" data-page="wallet">
+                <i class="fa-solid fa-wallet"></i> <span data-i18n="user.wallet">Ví &amp; Gói dịch vụ</span>
+            </a>
+            <div class="sidebar-user-menu__divider"></div>
+            <a href="{{ project_config.GATEWAY_ORIGIN }}/choose-area" class="sidebar-user-menu__item">
+                <i class="fa-solid fa-right-left"></i> <span data-i18n="user.switchArea">Đổi mảng</span>
+            </a>
+            <a href="{{ url_for('main.logout') }}" class="sidebar-user-menu__item sidebar-user-menu__item--danger">
+                <i class="fa-solid fa-right-from-bracket"></i> <span data-i18n="user.logout">Đăng xuất</span>
+            </a>
+        </div>
     </div>
-</nav>
+</aside>
+
+<script>
+(function() {
+    // Warehouse switcher — load with graceful fallback so users never see a stuck "Đang tải..."
+    var select = document.getElementById('activeWarehouseSelect');
+    if (!select) return;
+
+    // Add a 1-second fallback so the select is never stuck in "Đang tải..."
+    // (3s felt broken to users; 1s is invisible but still gives the API time)
+    var timeoutId = setTimeout(function() {
+        if (select.options.length <= 1 && (select.options[0] && /Đang tải|Đang tải/.test(select.options[0].textContent))) {
+            select.innerHTML = '<option value="">Tất cả cửa hàng (mặc định)</option>';
+            select.removeAttribute('aria-busy');
+        }
+    }, 1000);
+
+    fetch('/api/warehouses', { credentials: 'same-origin' })
+        .then(function(r) { return r.json(); })
+        .then(function(d) {
+            clearTimeout(timeoutId);
+            if (!d || !d.success) {
+                select.innerHTML = '<option value="">Tất cả cửa hàng (mặc định)</option>';
+                select.removeAttribute('aria-busy');
+                return;
+            }
+            var opts = ['<option value="">Tất cả cửa hàng (gộp)</option>']
+                .concat((d.warehouses || []).map(function(w) {
+                    return '<option value="' + w.id + '" ' +
+                        (String(w.id) === String(d.active_warehouse_id) ? 'selected' : '') + '>' +
+                        banleUI.escapeHtml(w.name) + '</option>';
+                }));
+            select.innerHTML = opts.join('');
+            select.removeAttribute('aria-busy');
+        })
+        .catch(function() {
+            clearTimeout(timeoutId);
+            select.innerHTML = '<option value="">Tất cả cửa hàng (mặc định)</option>';
+            select.removeAttribute('aria-busy');
+        });
+
+    select.addEventListener('change', function() {
+        var csrf = document.querySelector('meta[name="csrf-token"]');
+        var csrfToken = csrf ? csrf.getAttribute('content') : '';
+        fetch('/api/session/active-warehouse', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+            body: JSON.stringify({ warehouse_id: select.value || null })
+        })
+        .then(function() { window.location.reload(); })
+        .catch(function() { window.location.reload(); });
+    });
+})();
+</script>

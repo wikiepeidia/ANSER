@@ -345,5 +345,8 @@ if __name__ == '__main__':
         db_manager.init_database()
     threading.Thread(target=run_n8n, daemon=True).start()
     port = int(os.environ.get('PORT', 5002))
+    # Auto-reload templates (no need to restart Flask for HTML changes)
+    app.jinja_env.auto_reload = True
+    app.config['TEMPLATES_AUTO_RELOAD'] = True
     app.run(host='127.0.0.1', port=port, debug=False, use_reloader=False,
             load_dotenv=False, threaded=True)

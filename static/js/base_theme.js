@@ -68,7 +68,7 @@ window.handleSessionExpired = function() {
 
     // Create and show a modal
     const modalHtml = `
-        <div class="modal fade" id="sessionExpiredModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="sessionExpiredLabel" aria-hidden="true" style="z-index: 10000;">
+        <div class="modal" id="sessionExpiredModal" tabindex="-1" aria-labelledby="sessionExpiredLabel" style="z-index: 10000;">
             <div class="modal-dialog modal-dialog-centered">
                 <div class="modal-content">
                     <div class="modal-header bg-danger text-white">
@@ -90,15 +90,12 @@ window.handleSessionExpired = function() {
     modalContainer.innerHTML = modalHtml;
     document.body.appendChild(modalContainer);
 
-    // Try to use Bootstrap modal if available
-    if (window.bootstrap && window.bootstrap.Modal) {
-        const modal = new bootstrap.Modal(document.getElementById('sessionExpiredModal'));
-        modal.show();
-    } else {
-        // Fallback if bootstrap JS isn't loaded (unlikely in this app but good practice)
-        alert('Session expired. Please log in again.');
+    // Use our modal API
+    openModal('sessionExpiredModal');
+    // Note: if session expired, redirect after a short delay
+    setTimeout(function() {
         window.location.href = '/auth/signin';
-    }
+    }, 5000);
 };
 
 // Periodically check session status (keepalive/notify) to warn users

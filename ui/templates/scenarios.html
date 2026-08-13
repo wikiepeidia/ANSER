@@ -1,117 +1,86 @@
 {% extends "base.html" %}
 
 {% block title %}Quy trình tự động hoá{% endblock %}
-{% block body_class %}scenarios-page{% endblock %}
-
-{% block styles %}
-{{ super() }}
-<link rel="stylesheet" href="/static/css/scenarios.css">
-<link rel="stylesheet" href="/static/css/scenarios_n8n.css">
-<style>
-    /* ── Page-specific styles (shared tokens now in saas-tokens.css) ── */
-    
-    .content-header { border-bottom: 1px solid var(--border-soft) !important; margin-bottom: 32px !important; padding-bottom: 24px !important; }
-    .content-title { font-size: 1.8rem !important; font-weight: 700 !important; letter-spacing: -0.02em !important; color: var(--gray-900) !important; }
-    .nav-breadcrumb { color: var(--gray-500) !important; font-size: 0.85rem !important; font-weight: 600 !important; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px;}
-    .nav-breadcrumb a { color: var(--primary) !important; text-decoration: none; }
-
-    /* Button Overrides */
-    .create-btn { background-color: var(--primary) !important; color: #fff !important; border-radius: 8px !important; font-weight: 500 !important; border: none !important; box-shadow: var(--shadow-md) !important; transition: all 0.2s ease !important; }
-    .create-btn:hover { background-color: #4F46E5 !important; transform: translateY(-1px); box-shadow: var(--shadow-md) !important; }
-    .btn-secondary { background-color: #fff !important; color: var(--gray-900) !important; border: 1px solid var(--border-soft) !important; border-radius: 8px !important; font-weight: 500 !important; box-shadow: var(--shadow-md) !important; transition: all 0.2s ease !important; }
-    .btn-secondary:hover { background-color: #F9FAFB !important; transform: translateY(-1px); }
-
-    /* JS Injected Card Overrides */
-    .sc-card, .sc-tpl-card { 
-        background: var(--surface-100) !important; border: 1px solid var(--border-soft) !important; 
-        border-radius: 12px !important; box-shadow: var(--shadow-md) !important; transition: all 0.2s ease !important;
-        color: var(--gray-900) !important;
-    }
-    .sc-card:hover, .sc-tpl-card:hover { border-color: var(--primary) !important; box-shadow: var(--shadow-md) !important; transform: translateY(-2px) !important; }
-    
-    .sc-card-title, .sc-tpl-title { color: var(--gray-900) !important; font-weight: 600 !important; font-size: 1.1rem !important;}
-    .sc-card-desc, .sc-tpl-desc { color: var(--gray-500) !important; font-size: 0.9rem !important; }
-    
-    .scenario-templates-panel { background: #EEF2FF !important; border: 1px solid #C7D2FE !important; border-radius: 12px !important; margin-bottom: 32px !important;}
-    .scenario-templates-label { color: var(--primary) !important; font-weight: 600 !important; }
-
-    /* Empty State */
-    .empty-state { background: var(--surface-100) !important; border: 1px dashed #D1D5DB !important; border-radius: 12px !important; padding: 48px 24px !important; text-align: center; }
-    .empty-icon i { color: #D1D5DB !important; font-size: 3rem !important; }
-    .empty-title { color: var(--gray-900) !important; font-weight: 600 !important; margin-top: 16px !important;}
-    .empty-description { color: var(--gray-500) !important; }
-
-    /* Status Pill */
-    .sc-status { background: #F3F4F6 !important; border: 1px solid var(--border-soft) !important; color: var(--gray-900) !important; border-radius: 100px !important; padding: 6px 14px !important; font-size: 0.85rem !important; font-weight: 500 !important; }
-</style>
-{% endblock %}
 
 {% block content %}
-<div class="scenario-container">
-    {% include 'components/sidebar.html' %}
 
-    <div class="main-content">
-        <div class="content-header" style="flex-wrap:wrap;">
-            <div style="flex:1; min-width:200px;">
-                <div class="nav-breadcrumb">
-                    <a href="/workspace" class="nav-link" data-i18n="nav.workspace">Workspace</a>
-                    <span class="mx-2">&rsaquo;</span>
-                    <span data-i18n="scenarios.automation">Automation</span>
-                </div>
-                <h1 class="content-title" style="margin-bottom:12px;" data-i18n="scenarios.automationWorkflows">Automation Workflows</h1>
-                <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
-                    <span class="sc-status" id="n8nStatus">
-                        <span class="sc-status-dot"></span>
-                        <span id="n8nStatusText">Đang kết nối...</span>
-                    </span>
-                    <button class="btn-secondary" onclick="toggleTemplates()">
-                        <i class="fas fa-magic me-1"></i> <span data-i18n="scenarios.templates">Templates</span>
-                    </button>
-                    <button class="create-btn" onclick="refreshAll()">
-                        <i class="fas fa-sync-alt me-1"></i> <span data-i18n="common.refresh">Refresh</span>
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Templates panel -->
-        <div id="tplPanel" class="scenario-templates-panel">
-            <div class="scenario-templates-label">
-                <span data-i18n="scenarios.workflowTemplatesHint">Workflow Templates — click để deploy vào hệ thống</span>
-            </div>
-            <div class="sc-tpl-viewport">
-                <button class="sc-tpl-nav prev" data-tpl-dir="prev" aria-label="Cuộn trái"><i class="fas fa-chevron-left"></i></button>
-                <div class="sc-tpl-grid" id="tplGrid">
-                    <div class="sc-tpl-loading" style="color: var(--gray-500); font-weight: 500;">Đang tải templates...</div>
-                </div>
-                <button class="sc-tpl-nav next" data-tpl-dir="next" aria-label="Cuộn phải"><i class="fas fa-chevron-right"></i></button>
-            </div>
-        </div>
-
-        <!-- Workflows -->
-        <div class="content-area">
-            <div id="wfLoading" class="sc-loading" style="color: var(--gray-500); font-weight: 500; padding: 40px;">
-                <i class="fas fa-spinner fa-spin me-2" style="color: var(--primary);"></i> Đang tải workflows...
-            </div>
-            <div id="wfEmpty" class="empty-state" style="display:none;">
-                <div class="empty-icon"><i class="fas fa-project-diagram"></i></div>
-                <h3 class="empty-title" data-i18n="scenarios.noWorkflows">Chưa có workflow nào</h3>
-                <p class="empty-description" data-i18n="scenarios.deployToStart">Deploy một template có sẵn để bắt đầu tự động hóa.</p>
-                <div class="empty-actions mt-4">
-                    <button class="create-btn px-4 py-2" onclick="toggleTemplates()">
-                        <i class="fas fa-magic me-2"></i> <span data-i18n="scenarios.viewTemplates">Xem Templates</span>
-                    </button>
-                </div>
-            </div>
-            <div id="wfGrid" class="scenarios-grid" style="display:none;"></div>
+<!-- Content header -->
+<div class="content__header">
+    <div>
+        <p class="content__subtitle">
+            <a href="{{ url_for('pages.workspace') }}" style="color: var(--brand-primary); text-decoration: none;">Workspace</a>
+            <span class="mx-2">›</span>
+            <span>Automation</span>
+        </p>
+        <h1 class="content__title">Automation Workflows</h1>
+        <div class="flex items-center gap-3 mt-3" style="flex-wrap: wrap;">
+            <span class="badge badge--blue" id="n8nStatus">
+                <span class="badge__dot"></span>
+                <span id="n8nStatusText">Đang kết nối...</span>
+            </span>
+            <button class="btn btn--outline" type="button" onclick="toggleTemplates()">
+                <i class="fa-solid fa-magic"></i> Templates
+            </button>
+            <button class="btn btn--primary" type="button" onclick="refreshAll()">
+                <i class="fa-solid fa-rotate"></i> Refresh
+            </button>
         </div>
     </div>
 </div>
 
-<div class="sc-toast" id="scToast"></div>
+<!-- Templates panel -->
+<div id="tplPanel" class="card" style="background: var(--stat-blue-bg); border-color: var(--brand-light); margin-bottom: var(--space-5);">
+    <div class="card__body">
+        <p class="content__subtitle" style="color: var(--brand-primary); margin-bottom: var(--space-3);">
+            <i class="fa-solid fa-magic"></i> Workflow Templates — click để deploy vào hệ thống
+        </p>
+        <div class="flex items-center gap-3" style="flex-wrap: wrap;">
+            <button class="btn btn--ghost btn--sm" data-tpl-dir="prev" aria-label="Cuộn trái">
+                <i class="fa-solid fa-chevron-left"></i>
+            </button>
+            <div class="flex-1" id="tplGrid">
+                <div class="empty-state" style="padding: 30px 20px">
+                    <i class="fa-solid fa-spinner fa-spin"></i>
+                    <p>Đang tải templates...</p>
+                </div>
+            </div>
+            <button class="btn btn--ghost btn--sm" data-tpl-dir="next" aria-label="Cuộn phải">
+                <i class="fa-solid fa-chevron-right"></i>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Workflows -->
+<section class="card">
+    <div class="card__header">
+        <h3 class="card__title">
+            <i class="fa-solid fa-project-diagram"></i>
+            Workflows của tôi
+        </h3>
+    </div>
+    <div class="card__body">
+        <div id="wfLoading" class="empty-state" style="padding: 40px 20px">
+            <i class="fa-solid fa-spinner fa-spin"></i>
+            <p>Đang tải workflows...</p>
+        </div>
+
+        <div id="wfEmpty" class="empty-state" style="display: none;">
+            <i class="fa-solid fa-project-diagram"></i>
+            <h3>Chưa có workflow nào</h3>
+            <p>Deploy một template có sẵn để bắt đầu tự động hóa.</p>
+            <button class="btn btn--primary" type="button" onclick="toggleTemplates()">
+                <i class="fa-solid fa-magic"></i> Xem Templates
+            </button>
+        </div>
+
+        <div id="wfGrid" class="workspace-grid" style="display: none;"></div>
+    </div>
+</section>
+
 {% endblock %}
 
 {% block scripts %}
 {{ super() }}
-<script src="/static/js/scenarios_n8n.js"></script>
+<script src="{{ url_for('static', filename='js/scenarios_n8n.js') }}" defer></script>
 {% endblock %}

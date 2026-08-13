@@ -1,739 +1,442 @@
+// Global state
 let importsData = [];
 let products = [];
 
+// ===== Data loading =====
 async function loadImports() {
     try {
-        const response = await fetch('/api/imports');
+        const response = await fetch('/api/imports', { credentials: 'same-origin' });
         const data = await response.json();
-
         if (data.success) {
-            importsData = data.imports;
+            importsData = data.imports || [];
             renderImportsTable();
             updateStats();
         } else {
-            showAlert('error', 'Error loading data');
+            showAlert('error', data.message || 'Lỗi tải dữ liệu');
         }
     } catch (error) {
-        showAlert('error', 'Error: ' + error.message);
+        showAlert('error', 'Lỗi: ' + error.message);
     }
 }
 
 async function loadProducts() {
     try {
-        const response = await fetch('/api/products');
+        const response = await fetch('/api/products', { credentials: 'same-origin' });
         const data = await response.json();
         if (data.success) {
-            products = data.products;
+            products = data.products || [];
         }
     } catch (error) {
         console.error('Error loading products:', error);
     }
 }
 
+// ===== Rendering =====
 function renderImportsTable() {
     const tbody = document.getElementById('importsTableBody');
+    if (!tbody) return;
 
     if (importsData.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" class="text-center">No import orders found</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 40px; color: var(--text-secondary);">Chưa có phiếu nhập nào</td></tr>';
         return;
     }
 
-    tbody.innerHTML = importsData.map(imp => `
+    tbody.innerHTML = importsData.map(imp => {
+        const isCompleted = imp.status === 'completed';
+        const actions = [
+            { label: 'Xem chi tiết', icon: 'fa-solid fa-eye', action: 'viewImport' },
+        ];
+        return `
         <tr>
-            <td><strong>${imp.code}</strong></td>
-            <td>${imp.supplier_name || '-'}</td>
-            <td class="text-end"><strong>${Number(imp.total_amount).toLocaleString('en-US')} VND</strong></td>
-            <td><span class="badge bg-${imp.status === 'completed' ? 'success' : 'warning'}">${imp.status === 'completed' ? 'Completed' : 'Processing'}</span></td>
-            <td>${new Date(imp.created_at).toLocaleDateString('en-US')}</td>
-            <td>${imp.notes || '-'}</td>
-            <td>
-                <button class="btn btn-sm btn-info" onclick="viewImport(${imp.id})">
-                    <i class="fas fa-eye"></i>
-                </button>
-            </td>
+            <td><strong>${banleUI.escapeHtml(imp.code)}</strong></td>
+            <td>${banleUI.escapeHtml(imp.supplier_name || '—')}</td>
+            <td class="text-end"><strong>${banleUI.formatVND(imp.total_amount)}</strong></td>
+            <td>${banleUI.statusPill(isCompleted ? 'Hoàn thành' : 'Đang xử lý', isCompleted ? 'green' : 'orange')}</td>
+            <td>${banleUI.formatDateVN(imp.created_at)}</td>
+            <td>${banleUI.escapeHtml(imp.notes || '—')}</td>
+            <td class="table__actions">${banleUI.renderRowActions(imp.id, actions)}</td>
         </tr>
-    `).join('');
+    `;
+    }).join('');
+
+    if (window.banleUI && window.banleUI.bindRowActions) {
+        banleUI.bindRowActions(tbody);
+    }
 }
 
 function updateStats() {
-    document.getElementById('totalImports').textContent = importsData.length;
-    const completed = importsData.filter(i => i.status === 'completed').length;
-    document.getElementById('completedImports').textContent = completed;
-
-    const total = importsData.reduce((sum, i) => sum + Number(i.total_amount), 0);
-    document.getElementById('totalAmount').textContent = total.toLocaleString('en-US') + ' VND';
+    const totalEl = document.getElementById('totalImports');
+    const completedEl = document.getElementById('completedImports');
+    const amountEl = document.getElementById('totalAmount');
+    if (totalEl) totalEl.textContent = importsData.length;
+    if (completedEl) completedEl.textContent = importsData.filter(i => i.status === 'completed').length;
+    if (amountEl) {
+        const total = importsData.reduce((sum, i) => sum + Number(i.total_amount || 0), 0);
+        amountEl.textContent = total.toLocaleString('en-US') + ' VND';
+    }
 }
 
+// ===== Create import (modal) =====
+function addImportItem() {
+    const list = document.getElementById('importItemsList');
+    if (!list) return;
+
+    // Clear placeholder if present
+    const placeholder = list.querySelector('p.placeholder, p[style*="text-muted"]');
+    if (placeholder) placeholder.remove();
+
+    const productOptions = (products || []).map(p =>
+        `<option value="${p.id}" data-price="${p.price || 0}">${escapeHtml(p.code)} - ${escapeHtml(p.name)}</option>`
+    ).join('');
+
+    const row = document.createElement('div');
+    row.className = 'import-item-row';
+    row.style.cssText = 'display: grid; grid-template-columns: 2fr 100px 120px 40px; gap: 8px; margin-bottom: 8px; align-items: center;';
+    row.innerHTML = `
+        <select class="form-select form-select-sm" name="product_id" required onchange="updatePrice(this)">
+            <option value="">Chọn sản phẩm</option>
+            ${productOptions}
+        </select>
+        <input type="number" class="form-control form-control-sm" name="quantity" value="1" min="1" required>
+        <input type="number" class="form-control form-control-sm" name="unit_price" value="0" min="0" required>
+        <button type="button" class="btn btn--danger btn--sm" onclick="this.closest('.import-item-row').remove()" aria-label="Xóa">
+            <i class="fa-solid fa-times"></i>
+        </button>
+    `;
+    list.appendChild(row);
+}
+
+function updatePrice(select) {
+    const opt = select.options[select.selectedIndex];
+    const price = opt?.dataset?.price;
+    if (!price) return;
+    const row = select.closest('.import-item-row');
+    const priceInput = row?.querySelector('[name="unit_price"]');
+    if (priceInput && (!priceInput.value || priceInput.value === '0')) {
+        priceInput.value = price;
+    }
+}
+
+async function saveImport() {
+    const form = document.getElementById('createImportForm');
+    if (!form) return;
+    if (!form.checkValidity()) { form.reportValidity(); return; }
+
+    const supplier_name = form.querySelector('[name="supplier_name"]')?.value?.trim() || '';
+    const notes = form.querySelector('[name="notes"]')?.value?.trim() || '';
+
+    const items = [];
+    document.querySelectorAll('#importItemsList .import-item-row').forEach(row => {
+        const productId = row.querySelector('[name="product_id"]')?.value;
+        const quantity = row.querySelector('[name="quantity"]')?.value;
+        const unitPrice = row.querySelector('[name="unit_price"]')?.value;
+        if (productId && quantity && unitPrice !== '') {
+            items.push({
+                product_id: parseInt(productId, 10),
+                quantity: parseFloat(quantity),
+                unit_price: parseFloat(unitPrice)
+            });
+        }
+    });
+
+    if (items.length === 0) {
+        showAlert('warning', 'Vui lòng thêm ít nhất một sản phẩm');
+        return;
+    }
+
+    const submitBtn = form.closest('.modal')?.querySelector('.btn--primary');
+    const originalText = submitBtn?.innerHTML;
+    if (submitBtn) { submitBtn.disabled = true; submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang lưu...'; }
+
+    try {
+        const response = await fetch('/api/imports', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('meta[name="csrf-token"]')?.content || ''
+            },
+            credentials: 'same-origin',
+            body: JSON.stringify({ supplier_name, notes, items })
+        });
+        const data = await response.json();
+
+        if (data.success) {
+            closeModal('createImportModal');
+            form.reset();
+            const list = document.getElementById('importItemsList');
+            if (list) list.innerHTML = '<p style="color: var(--text-secondary); text-align: center; padding: 16px;">Chưa có sản phẩm nào. Click "Thêm sản phẩm" để bắt đầu.</p>';
+            await loadImports();
+
+            const successMessage = document.getElementById('successMessage');
+            if (successMessage) successMessage.textContent = buildImportSuccessMessage(data, items.length, supplier_name, null);
+            openModal('successModal');
+        } else {
+            showAlert('error', data.message || 'Lỗi tạo phiếu nhập');
+        }
+    } catch (error) {
+        showAlert('error', 'Lỗi: ' + error.message);
+    } finally {
+        if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = originalText; }
+    }
+}
+
+// ===== View import =====
+async function viewImport(id) {
+    try {
+        const response = await fetch(`/api/imports/${id}`, { credentials: 'same-origin' });
+        const data = await response.json();
+        if (!data.success) { showAlert('error', data.message); return; }
+
+        const t = data.transaction;
+        setText('viewImportCode', t?.code || '-');
+        setText('viewImportSupplier', t?.supplier_name || '-');
+        setText('viewImportDate', formatDateTime(t?.created_at));
+        setText('viewImportStatus', t?.status || '-');
+        setText('viewImportTotal', Number(t?.total_amount || 0).toLocaleString('en-US') + ' VND');
+
+        // Render items into the existing wrapper (HTML uses #viewImportItems)
+        const itemsContainer = document.getElementById('viewImportItems');
+        if (itemsContainer) {
+            const details = data.details || [];
+            if (details.length === 0) {
+                itemsContainer.innerHTML = '<p style="text-align: center; color: var(--text-secondary); padding: 16px;">Không có sản phẩm</p>';
+            } else {
+                itemsContainer.innerHTML = `
+                    <table class="table" style="margin: 0;">
+                        <thead>
+                            <tr>
+                                <th>Mã SP</th>
+                                <th>Tên SP</th>
+                                <th style="text-align: right;">SL</th>
+                                <th style="text-align: right;">Đơn giá</th>
+                                <th style="text-align: right;">Thành tiền</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${details.map(d => `
+                                <tr>
+                                    <td>${escapeHtml(d.product_code)}</td>
+                                    <td>${escapeHtml(d.product_name)}</td>
+                                    <td style="text-align: right;">${d.quantity}</td>
+                                    <td style="text-align: right;">${Number(d.unit_price).toLocaleString('en-US')}</td>
+                                    <td style="text-align: right;"><strong>${Number(d.total_price).toLocaleString('en-US')}</strong></td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+            }
+        }
+
+        openModal('viewImportModal');
+    } catch (error) {
+        showAlert('error', 'Lỗi: ' + error.message);
+    }
+}
+
+// ===== OCR import =====
+function processOCR() {
+    const fileInput = document.getElementById('ocrFileInput');
+    const file = fileInput?.files?.[0];
+    if (!file) { showAlert('warning', 'Vui lòng chọn file hóa đơn trước'); return; }
+
+    const btn = document.getElementById('ocrProcessBtn');
+    const originalText = btn?.innerHTML;
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang xử lý...'; }
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    fetch('/api/brain/ocr', {
+        method: 'POST',
+        body: formData,
+        headers: { 'X-CSRFToken': document.querySelector('meta[name="csrf-token"]')?.content || '' },
+        credentials: 'same-origin'
+    })
+    .then(r => r.json())
+    .then(ocrResult => {
+        if (!ocrResult.success) throw new Error(ocrResult.error || 'OCR thất bại');
+        const items = extractOcrItems(ocrResult.data || {});
+        if (items.length === 0) { showAlert('warning', 'Không nhận diện được sản phẩm nào từ hóa đơn'); return; }
+
+        const payload = {
+            supplier_name: ocrResult.data?.invoice?.vendor_name || ocrResult.data?.vendor_name || 'OCR Import',
+            notes: 'Nhập tự động qua OCR',
+            items
+        };
+        return fetch('/api/imports', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': document.querySelector('meta[name="csrf-token"]')?.content || '' },
+            credentials: 'same-origin',
+            body: JSON.stringify(payload)
+        });
+    })
+    .then(r => r?.json())
+    .then(importData => {
+        if (!importData) return;
+        if (importData.success) {
+            closeModal('ocrImportModal');
+            if (fileInput) fileInput.value = '';
+            loadImports();
+            const successMessage = document.getElementById('successMessage');
+            if (successMessage) successMessage.textContent = buildImportSuccessMessage(importData, 0, 'OCR Import', 'OCR');
+            openModal('successModal');
+        } else {
+            showAlert('error', importData.message || 'Lỗi tạo phiếu nhập');
+        }
+    })
+    .catch(error => showAlert('error', 'Lỗi OCR: ' + error.message))
+    .finally(() => {
+        if (btn) { btn.disabled = false; btn.innerHTML = originalText; }
+    });
+}
+
+function extractOcrItems(data) {
+    const raw = data?.products || data?.items || data?.invoice?.items || data?.invoice?.products || data?.data?.products || [];
+    return raw.map(item => ({
+        product_id: null,
+        product_name: item.product_name || item.name || item.product || '',
+        quantity: parseFloat(item.quantity || item.qty || item.count || 1),
+        unit_price: parseFloat(item.unit_price || item.unit || item.price || 0)
+    })).filter(i => i.product_name);
+}
+
+// ===== Excel import =====
+function processExcelImport() {
+    const fileInput = document.getElementById('importExcelInput');
+    const file = fileInput?.files?.[0];
+    if (!file) { showAlert('warning', 'Vui lòng chọn file Excel trước'); return; }
+
+    const btn = document.querySelector('button[onclick="processExcelImport()"]');
+    const originalText = btn?.innerHTML;
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang xử lý...'; }
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    fetch('/api/imports/upload/excel', {
+        method: 'POST',
+        body: formData,
+        headers: { 'X-CSRFToken': document.querySelector('meta[name="csrf-token"]')?.content || '' },
+        credentials: 'same-origin'
+    })
+    .then(r => r.json())
+    .then(parseData => {
+        if (!parseData.success) throw new Error(parseData.error || 'Lỗi đọc file Excel');
+        const items = (parseData.items || [])
+            .map(i => ({
+                product_code: (i.product_code || '').toString().trim(),
+                product_name: (i.product_name || '').toString().trim(),
+                quantity: parseFloat(i.quantity || 0),
+                unit_price: parseFloat(i.unit_price || 0)
+            }))
+            .filter(i => i.product_code && i.quantity > 0 && i.unit_price > 0);
+
+        if (items.length === 0) { showAlert('warning', 'File không có dòng sản phẩm hợp lệ (cần mã, số lượng > 0, đơn giá > 0)'); return null; }
+
+        return fetch('/api/imports', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': document.querySelector('meta[name="csrf-token"]')?.content || '' },
+            credentials: 'same-origin',
+            body: JSON.stringify({
+                supplier_name: 'Excel Import',
+                notes: 'Nhập từ file Excel',
+                items
+            })
+        });
+    })
+    .then(r => r?.json())
+    .then(importData => {
+        if (!importData) return;
+        if (importData.success) {
+            closeModal('excelImportModal');
+            if (fileInput) fileInput.value = '';
+            loadImports();
+            const successMessage = document.getElementById('successMessage');
+            if (successMessage) successMessage.textContent = buildImportSuccessMessage(importData, 0, 'Excel Import', 'Excel');
+            openModal('successModal');
+        } else {
+            showAlert('error', importData.message || 'Lỗi tạo phiếu nhập');
+        }
+    })
+    .catch(error => showAlert('error', 'Lỗi: ' + error.message))
+    .finally(() => {
+        if (btn) { btn.disabled = false; btn.innerHTML = originalText; }
+    });
+}
+
+function downloadExcelTemplate() {
+    window.location.href = '/api/imports/download/template';
+}
+
+// ===== Helpers =====
 function buildImportSuccessMessage(data, itemCount, supplierName, source) {
     const updated = data.products_updated || 0;
     const created = data.products_created || 0;
     const parts = [];
     if (updated > 0) parts.push(`${updated} sản phẩm cập nhật tồn kho`);
     if (created > 0) parts.push(`${created} sản phẩm mới được thêm`);
-    const summary = parts.length > 0 ? parts.join(', ') : `${itemCount} sản phẩm đã xử lý`;
+    const summary = parts.length > 0 ? parts.join(', ') : (itemCount > 0 ? `${itemCount} sản phẩm đã xử lý` : 'Phiếu nhập đã được tạo');
     return `${summary}${source ? ` (${source})` : ''}. Nhà cung cấp: ${supplierName || '-'}`;
 }
 
 function showAlert(type, message) {
     const alertDiv = document.createElement('div');
     const alertClass = type === 'success' ? 'success' : (type === 'warning' ? 'warning' : 'danger');
-    alertDiv.className = `alert alert-${alertClass} alert-dismissible fade show`;
-    alertDiv.style.position = 'fixed';
-    alertDiv.style.top = '20px';
-    alertDiv.style.right = '20px';
-    alertDiv.style.zIndex = '9999';
-    alertDiv.style.minWidth = '350px';
+    alertDiv.className = `alert alert-${alertClass}`;
+    alertDiv.style.cssText = 'position: fixed; top: 20px; right: 20px; z-index: 9999; min-width: 320px; max-width: 480px; padding: 12px 16px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);';
     alertDiv.innerHTML = `
-        <strong>${type === 'success' ? '✅ Thành công!' : '❌ Lỗi!'}</strong><br>
-        ${message}
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        <strong>${type === 'success' ? '✅ ' : type === 'warning' ? '⚠️ ' : '❌ '}</strong>
+        <span>${escapeHtml(message)}</span>
+        <button type="button" style="float: right; background: none; border: none; font-size: 18px; cursor: pointer; line-height: 1;" onclick="this.parentElement.remove()" aria-label="Đóng">&times;</button>
     `;
     document.body.appendChild(alertDiv);
-    console.log(`[${type.toUpperCase()}] ${message}`);
-    setTimeout(() => {
-        alertDiv.classList.remove('show');
-        setTimeout(() => alertDiv.remove(), 300);
-    }, 7000);
+    setTimeout(() => { alertDiv.style.opacity = '0'; setTimeout(() => alertDiv.remove(), 300); }, 5000);
 }
 
-// Create Import Logic
-function addImportItemRow() {
-    const tbody = document.getElementById('importItemsBody');
-    const row = document.createElement('tr');
-    
-    const productOptions = products.map(p => `<option value="${p.id}" data-price="${p.price}">${p.code} - ${p.name}</option>`).join('');
-    
-    row.innerHTML = `
-        <td>
-            <select class="form-select product-select" name="product_id" required onchange="updatePrice(this)">
-                <option value="">Select Product</option>
-                ${productOptions}
-            </select>
-        </td>
-        <td>
-            <input type="number" class="form-control" name="quantity" value="1" min="1" required>
-        </td>
-        <td>
-            <input type="number" class="form-control" name="unit_price" value="0" min="0" required>
-        </td>
-        <td>
-            <button type="button" class="btn btn-danger btn-sm" onclick="this.closest('tr').remove()">
-                <i class="fas fa-trash"></i>
-            </button>
-        </td>
-    `;
-    tbody.appendChild(row);
+function escapeHtml(s) {
+    if (s == null) return '';
+    return String(s)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
 }
 
-function updatePrice(select) {
-    // Optional: Auto-fill price if needed, but for imports usually user enters cost price
-    // const price = select.options[select.selectedIndex].dataset.price;
-    // const row = select.closest('tr');
-    // row.querySelector('[name="unit_price"]').value = price;
+function setText(id, value) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = value;
 }
 
-async function submitImport() {
-    const form = document.getElementById('createImportForm');
-    if (!form.checkValidity()) {
-        form.reportValidity();
-        return;
-    }
-
-    const supplier_name = form.querySelector('[name="supplier_name"]').value;
-    const notes = form.querySelector('[name="notes"]').value;
-    
-    const items = [];
-    form.querySelectorAll('#importItemsBody tr').forEach(row => {
-        items.push({
-            product_id: row.querySelector('[name="product_id"]').value,
-            quantity: row.querySelector('[name="quantity"]').value,
-            unit_price: row.querySelector('[name="unit_price"]').value
-        });
-    });
-
-    if (items.length === 0) {
-        alert('Please add at least one item');
-        return;
-    }
-
-    try {
-        const response = await fetch('/api/imports', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': document.querySelector('meta[name="csrf-token"]')?.content
-            },
-            body: JSON.stringify({ supplier_name, notes, items })
-        });
-        
-        const data = await response.json();
-        if (data.success) {
-            bootstrap.Modal.getInstance(document.getElementById('createImportModal')).hide();
-            form.reset();
-            document.getElementById('importItemsBody').innerHTML = '';
-            loadImports();
-            
-            // Show success modal
-            const successMessage = document.getElementById('successMessage');
-            successMessage.textContent = buildImportSuccessMessage(data, items.length, supplier_name, null);
-
-            const successModal = new bootstrap.Modal(document.getElementById('successModal'));
-            successModal.show();
-
-            // Auto-close after 5 seconds
-            setTimeout(() => {
-                successModal.hide();
-            }, 5000);
-        } else {
-            alert(data.message);
-        }
-    } catch (error) {
-        alert('Error: ' + error.message);
-    }
+function formatDate(iso) {
+    if (!iso) return '—';
+    return banleUI.formatDateVN(iso);
 }
 
-async function viewImport(id) {
-    try {
-        const response = await fetch(`/api/imports/${id}`);
-        const data = await response.json();
-        
-        if (data.success) {
-            const t = data.transaction;
-            document.getElementById('viewImportCode').textContent = t.code;
-            document.getElementById('viewImportSupplier').textContent = t.supplier_name;
-            document.getElementById('viewImportDate').textContent = new Date(t.created_at).toLocaleString();
-            document.getElementById('viewImportStatus').textContent = t.status;
-            document.getElementById('viewImportTotal').textContent = Number(t.total_amount).toLocaleString('en-US') + ' VND';
-            document.getElementById('viewImportNotes').textContent = t.notes || '-';
-            
-            const tbody = document.getElementById('viewImportItemsBody');
-            tbody.innerHTML = data.details.map(d => `
-                <tr>
-                    <td>${d.product_code}</td>
-                    <td>${d.product_name}</td>
-                    <td class="text-end">${d.quantity}</td>
-                    <td class="text-end">${Number(d.unit_price).toLocaleString('en-US')}</td>
-                    <td class="text-end">${Number(d.total_price).toLocaleString('en-US')}</td>
-                </tr>
-            `).join('');
-            
-            new bootstrap.Modal(document.getElementById('viewImportModal')).show();
-        } else {
-            alert(data.message);
-        }
-    } catch (error) {
-        alert('Error: ' + error.message);
-    }
+function formatDateTime(iso) {
+    if (!iso) return '—';
+    return banleUI.formatDateTimeVN(iso);
 }
 
+// ===== Init =====
 document.addEventListener('DOMContentLoaded', () => {
+    // Enable process buttons when files are selected
+    const ocrInput = document.getElementById('ocrFileInput');
+    if (ocrInput) {
+        ocrInput.addEventListener('change', () => {
+            const btn = document.getElementById('ocrProcessBtn');
+            if (btn) btn.disabled = !ocrInput.files?.[0];
+        });
+    }
+    const excelInput = document.getElementById('importExcelInput');
+    if (excelInput) {
+        excelInput.addEventListener('change', () => {
+            const btn = document.querySelector('button[onclick="processExcelImport()"]');
+            if (btn) btn.disabled = !excelInput.files?.[0];
+        });
+    }
+
     loadImports();
     loadProducts();
 });
-
-// OCR Import Logic
-document.addEventListener('DOMContentLoaded', function() {
-    const ocrFile = document.getElementById('ocrFile');
-    const ocrLoading = document.getElementById('ocrLoading');
-    const ocrResult = document.getElementById('ocrResult');
-    const ocrItemsBody = document.getElementById('ocrItemsBody');
-    const btnSaveOcrImport = document.getElementById('btnSaveOcrImport');
-    const ocrProgressBar = document.getElementById('ocrProgressBar');
-    const ocrStatusText = document.getElementById('ocrStatusText');
-    
-    let extractedData = null;
-
-    if (ocrFile) {
-        ocrFile.addEventListener('change', async function(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-
-            // Reset UI
-            ocrLoading.style.display = 'block';
-            ocrResult.style.display = 'none';
-            btnSaveOcrImport.disabled = true;
-            ocrItemsBody.innerHTML = '';
-
-            // Progress Bar Init
-            let progress = 0;
-            if (ocrProgressBar) {
-                ocrProgressBar.style.width = '0%';
-                ocrProgressBar.textContent = '0%';
-                ocrProgressBar.classList.remove('bg-success', 'bg-danger');
-                ocrProgressBar.classList.add('progress-bar-striped', 'progress-bar-animated');
-            }
-            if (ocrStatusText) ocrStatusText.textContent = 'Starting upload...';
-
-            // Simulation
-            const steps = [
-                { pct: 15, msg: 'Uploading invoice image...' },
-                { pct: 35, msg: 'Analyzing document layout...' },
-                { pct: 55, msg: 'Detecting tables and regions...' },
-                { pct: 75, msg: 'Running OCR text extraction...' },
-                { pct: 90, msg: 'Parsing product data...' }
-            ];
-            
-            let stepIndex = 0;
-            const progressInterval = setInterval(() => {
-                if (stepIndex < steps.length) {
-                    if (progress < steps[stepIndex].pct) {
-                        progress += Math.random() * 2;
-                    } else {
-                        stepIndex++;
-                    }
-                } else {
-                    if (progress < 95) progress += 0.2;
-                }
-                
-                if (ocrProgressBar) {
-                    const currentPct = Math.min(Math.round(progress), 99);
-                    ocrProgressBar.style.width = `${currentPct}%`;
-                    ocrProgressBar.textContent = `${currentPct}%`;
-                }
-                if (ocrStatusText && stepIndex < steps.length) {
-                    ocrStatusText.textContent = steps[stepIndex].msg;
-                }
-            }, 100);
-
-            const formData = new FormData();
-            formData.append('file', file);
-
-            try {
-                // Call our backend proxy which forwards to Brain's real /ocr endpoint
-                const response = await fetch('/api/brain/ocr', {
-                    method: 'POST',
-                    body: formData,
-                    headers: {
-                        'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
-                    }
-                });
-
-                const contentType = response.headers.get("content-type");
-                let result;
-                if (contentType && contentType.indexOf("application/json") !== -1) {
-                    result = await response.json();
-                } else {
-                    const text = await response.text();
-                    console.error("Server returned non-JSON:", text);
-                    // Extract title or body from HTML if possible for cleaner error
-                    const match = text.match(/<title>(.*?)<\/title>/);
-                    const errorTitle = match ? match[1] : "Server Error (Non-JSON response)";
-                    throw new Error(errorTitle + ". Check console for details.");
-                }
-
-                if (result.success) {
-                    if (ocrProgressBar) {
-                        ocrProgressBar.style.width = '100%';
-                        ocrProgressBar.textContent = '100%';
-                        ocrProgressBar.classList.remove('progress-bar-animated');
-                        ocrProgressBar.classList.add('bg-success');
-                    }
-                    if (ocrStatusText) ocrStatusText.textContent = 'Analysis Complete!';
-                    
-                    // Small delay to show 100%
-                    await new Promise(r => setTimeout(r, 500));
-
-                    extractedData = result.data;
-                    renderOcrPreview(extractedData);
-                    ocrResult.style.display = 'block';
-                    btnSaveOcrImport.disabled = false;
-                    ocrLoading.style.display = 'none';
-                } else {
-                    alert('OCR Failed: ' + (result.error || 'Unknown error'));
-                    ocrLoading.style.display = 'none';
-                }
-            } catch (error) {
-                console.error('OCR Error:', error);
-                alert('Error processing invoice: ' + error.message);
-                ocrLoading.style.display = 'none';
-            } finally {
-                clearInterval(progressInterval);
-                // Reset file input to allow re-uploading the same file if needed
-                ocrFile.value = ''; 
-            }
-        });
-    }
-
-    function _extractOcrItems(data) {
-        // Support multiple shapes returned by DL service
-        // Possible shapes:
-        // - data.products (array)
-        // - data.items (array)
-        // - data.invoice.items
-        // - data.data.products (when wrapped)
-        const items = data?.products || data?.items || data?.invoice?.items || data?.invoice?.products || data?.data?.products || [];
-        // Normalize fields to product_name, quantity, unit_price, total
-        return items.map(item => ({
-            product_name: item.product_name || item.name || item.product || item.product_name || '',
-            quantity: item.quantity || item.qty || item.count || 1,
-            unit_price: item.unit_price || item.unit || item.price || 0,
-            total: item.line_total || item.total || item.lineTotal || (item.unit_price && item.quantity ? item.unit_price * item.quantity : 0)
-        }));
-    }
-
-    function renderOcrPreview(data) {
-        const items = _extractOcrItems(data);
-        
-        if (items.length === 0) {
-            ocrItemsBody.innerHTML = '<tr><td colspan="5" class="text-center">No items detected</td></tr>';
-            return;
-        }
-
-        // Make products dropdown for matching
-        const productOptions = products.map(p => 
-            `<option value="${p.id}" data-name="${p.name}">${p.code} - ${p.name}</option>`
-        ).join('');
-
-        ocrItemsBody.innerHTML = items.map((item, idx) => `
-            <tr data-index="${idx}">
-                <td>
-                    <input type="text" class="form-control form-control-sm ocr-product-name" value="${item.product_name || ''}" placeholder="Product name">
-                </td>
-                <td>
-                    <input type="number" class="form-control form-control-sm" value="${item.quantity || 1}" min="1">
-                </td>
-                <td>
-                    <input type="number" class="form-control form-control-sm" value="${item.unit_price || 0}" min="0">
-                </td>
-                <td>
-                    <span class="item-total">${item.total || 0}</span>
-                </td>
-                <td>
-                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="this.closest('tr').remove()">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </td>
-            </tr>
-        `).join('');
-    }
-
-    if (btnSaveOcrImport) {
-        btnSaveOcrImport.addEventListener('click', async function() {
-            if (!extractedData) return;
-            
-            const rows = document.querySelectorAll('#ocrItemsBody tr');
-            const items = [];
-            
-            rows.forEach(row => {
-                const nameInput = row.querySelector('.ocr-product-name');
-                const qtyInput = row.querySelectorAll('input[type="number"]')[0];
-                const priceInput = row.querySelectorAll('input[type="number"]')[1];
-                
-                const productId = null;
-                const productName = nameInput ? nameInput.value.trim() || 'Unknown Product' : 'Unknown Product';
-                
-                items.push({
-                    product_id: productId,
-                    product_name: productName,
-                    quantity: parseFloat(qtyInput.value) || 0,
-                    unit_price: parseFloat(priceInput.value) || 0
-                });
-            });
-
-            if (items.length === 0) {
-                alert('No items to import');
-                return;
-            }
-
-            const payload = {
-                supplier_name: extractedData.invoice?.vendor_name || extractedData.vendor_name || 'OCR Import',
-                notes: 'Imported via OCR Smart Import',
-                items: items
-            };
-
-            try {
-                // Show loading state
-                const originalText = btnSaveOcrImport.innerHTML;
-                btnSaveOcrImport.disabled = true;
-                btnSaveOcrImport.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Saving...';
-
-                const response = await fetch('/api/imports', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
-                    },
-                    body: JSON.stringify(payload)
-                });
-                
-                const data = await response.json();
-                
-                if (data.success) {
-                    const modal = bootstrap.Modal.getInstance(document.getElementById('ocrImportModal'));
-                    modal.hide();
-                    loadImports(); // Reload table
-                    
-                    // Show success modal
-                    const successMessage = document.getElementById('successMessage');
-                    successMessage.textContent = buildImportSuccessMessage(data, items.length, payload.supplier_name, 'OCR');
-                    
-                    const successModal = new bootstrap.Modal(document.getElementById('successModal'));
-                    successModal.show();
-                    
-                    // Auto-close after 5 seconds
-                    setTimeout(() => {
-                        successModal.hide();
-                    }, 5000);
-                    
-                    // Reset OCR form
-                    if (ocrItemsBody) ocrItemsBody.innerHTML = '';
-                    if (ocrResult) ocrResult.style.display = 'none';
-                    if (ocrFile) ocrFile.value = '';
-                    extractedData = null;
-                } else {
-                    alert('Failed to create import: ' + data.message);
-                }
-            } catch (error) {
-                console.error('Import Error:', error);
-                alert('Error creating import: ' + error.message);
-            } finally {
-                btnSaveOcrImport.disabled = false;
-                btnSaveOcrImport.innerHTML = originalText;
-            }
-        });
-    }
-});
-
-// Excel Import Logic
-document.addEventListener('DOMContentLoaded', function() {
-    const excelFile = document.getElementById('excelFile');
-    const excelLoading = document.getElementById('excelLoading');
-    const excelPreview = document.getElementById('excelPreview');
-    const excelItemsBody = document.getElementById('excelItemsBody');
-    const btnUploadExcel = document.getElementById('btnUploadExcel');
-    const btnClearExcelFile = document.getElementById('btnClearExcelFile');
-    const excelWarnings = document.getElementById('excelWarnings');
-    
-    let parsedData = null;
-    
-    if (excelFile) {
-        excelFile.addEventListener('change', async function(e) {
-            const file = e.target.files[0];
-            if (!file) {
-                excelPreview.style.display = 'none';
-                btnUploadExcel.disabled = true;
-                parsedData = null;
-                return;
-            }
-            
-            // Show loading
-            excelLoading.style.display = 'block';
-            excelPreview.style.display = 'none';
-            btnUploadExcel.disabled = true;
-            
-            const formData = new FormData();
-            formData.append('file', file);
-            
-            try {
-                const response = await fetch('/api/imports/upload/excel', {
-                    method: 'POST',
-                    body: formData,
-                    headers: {
-                        'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
-                    }
-                });
-                
-                const data = await response.json();
-                
-                if (data.success) {
-                    parsedData = data.items;
-                    renderExcelPreview(data.items);
-                    excelPreview.style.display = 'block';
-                    btnUploadExcel.disabled = false;
-                    
-                    // Show warnings if any
-                    if (data.warnings && data.warnings.length > 0) {
-                        excelWarnings.innerHTML = '<strong>Warnings:</strong><br>' + data.warnings.join('<br>');
-                        excelWarnings.style.display = 'block';
-                    } else {
-                        excelWarnings.style.display = 'none';
-                    }
-                } else {
-                    alert('Error parsing Excel file: ' + data.error);
-                    excelFile.value = '';
-                    excelPreview.style.display = 'none';
-                    btnUploadExcel.disabled = true;
-                    parsedData = null;
-                }
-            } catch (error) {
-                console.error('Excel upload error:', error);
-                alert('Error uploading Excel file: ' + error.message);
-                excelFile.value = '';
-                excelPreview.style.display = 'none';
-                btnUploadExcel.disabled = true;
-                parsedData = null;
-            } finally {
-                excelLoading.style.display = 'none';
-            }
-        });
-    }
-    
-    if (btnClearExcelFile) {
-        btnClearExcelFile.addEventListener('click', function() {
-            excelFile.value = '';
-            excelPreview.style.display = 'none';
-            btnUploadExcel.disabled = true;
-            excelItemsBody.innerHTML = '';
-            excelWarnings.style.display = 'none';
-            parsedData = null;
-        });
-    }
-    
-    function renderExcelPreview(items) {
-        if (!items || items.length === 0) {
-            excelItemsBody.innerHTML = '<tr><td colspan="5" class="text-center">No items found</td></tr>';
-            return;
-        }
-        
-        excelItemsBody.innerHTML = items.map((item, idx) => `
-            <tr data-index="${idx}">
-                <td>
-                    <input type="text" class="form-control form-control-sm" value="${item.product_code || ''}" placeholder="Product code" data-field="product_code">
-                </td>
-                <td>
-                    <input type="text" class="form-control form-control-sm" value="${item.product_name || ''}" placeholder="Product name" data-field="product_name">
-                </td>
-                <td>
-                    <input type="number" class="form-control form-control-sm" value="${item.quantity || 0}" min="0" data-field="quantity">
-                </td>
-                <td>
-                    <input type="number" class="form-control form-control-sm" value="${item.unit_price || 0}" min="0" data-field="unit_price">
-                </td>
-                <td>
-                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="this.closest('tr').remove()">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </td>
-            </tr>
-        `).join('');
-    }
-});
-
-// Excel Import Submit Function
-async function submitExcelImport() {
-    console.log('📤 Submitting Excel import...');
-    const form = document.getElementById('excelImportForm');
-    if (!form.checkValidity()) {
-        form.reportValidity();
-        return;
-    }
-    
-    const supplier_name = form.querySelector('[name="supplier_name"]').value;
-    const notes = form.querySelector('[name="notes"]').value;
-    
-    // Collect edited data from preview table
-    const items = [];
-    document.querySelectorAll('#excelItemsBody tr').forEach(row => {
-        const product_code = row.querySelector('[data-field="product_code"]')?.value || '';
-        const product_name = row.querySelector('[data-field="product_name"]')?.value || '';
-        const quantity = parseFloat(row.querySelector('[data-field="quantity"]')?.value || 0);
-        const unit_price = parseFloat(row.querySelector('[data-field="unit_price"]')?.value || 0);
-        
-        if (product_code && quantity > 0 && unit_price > 0) {
-            items.push({ product_code, product_name, quantity, unit_price });
-        }
-    });
-    
-    console.log(`📦 Prepared ${items.length} items for import`, items);
-    
-    if (items.length === 0) {
-        showAlert('warning', 'Vui lòng đảm bảo ít nhất 1 sản phẩm có mã, số lượng và giá');
-        return;
-    }
-    
-    const btnUploadExcel = document.getElementById('btnUploadExcel');
-    const originalText = btnUploadExcel.innerHTML;
-    
-    try {
-        btnUploadExcel.disabled = true;
-        btnUploadExcel.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Đang tạo...';
-        
-        console.log('🔄 Calling API /api/imports...');
-        // Create import with the parsed items
-        const response = await fetch('/api/imports', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
-            },
-            body: JSON.stringify({ supplier_name, notes, items })
-        });
-        
-        console.log(`📡 API Response Status: ${response.status}`);
-        const data = await response.json();
-        console.log('📨 API Response Data:', data);
-        
-        if (data.success) {
-            console.log('✅ Import successful!');
-            // Hide modal
-            const modal = bootstrap.Modal.getInstance(document.getElementById('excelImportModal'));
-            modal.hide();
-            
-            // Reset form
-            form.reset();
-            document.getElementById('excelItemsBody').innerHTML = '';
-            document.getElementById('excelPreview').style.display = 'none';
-            document.getElementById('excelFile').value = '';
-            
-            // Reload imports table
-            loadImports();
-            
-            // Update success message
-            const successMessage = document.getElementById('successMessage');
-            successMessage.textContent = buildImportSuccessMessage(data, items.length, supplier_name, 'Excel');
-            
-            console.log('🎯 Opening success modal...');
-            
-            // Small delay then show modal
-            setTimeout(() => {
-                try {
-                    const successModalElement = document.getElementById('successModal');
-                    if (successModalElement) {
-                        // Force remove any previous instances
-                        const existingModal = bootstrap.Modal.getInstance(successModalElement);
-                        if (existingModal) existingModal.dispose();
-                        
-                        // Create and show new modal
-                        const successModal = new bootstrap.Modal(successModalElement, {
-                            backdrop: 'static',
-                            keyboard: false
-                        });
-                        successModal.show();
-                        console.log('✅ Modal shown successfully!');
-                        
-                        // Auto-close after 4 seconds
-                        setTimeout(() => {
-                            console.log('⏰ Auto-closing modal...');
-                            successModal.hide();
-                        }, 4000);
-                    } else {
-                        console.error('❌ Modal element not found');
-                        showAlert('success', `✨ Đã nhập thành công ${items.length} sản phẩm từ file Excel`);
-                    }
-                } catch (e) {
-                    console.error('❌ Error showing modal:', e);
-                    showAlert('success', `✨ Đã nhập thành công ${items.length} sản phẩm từ file Excel`);
-                }
-            }, 300);
-        } else {
-            console.error('❌ Import failed:', data.message);
-            showAlert('danger', 'Lỗi tạo import: ' + data.message);
-        }
-    } catch (error) {
-        console.error('🔴 Exception:', error);
-        showAlert('danger', 'Lỗi: ' + error.message);
-    } finally {
-        btnUploadExcel.disabled = false;
-        btnUploadExcel.innerHTML = originalText;
-    }
-}
-
-// Download Excel Template
-function downloadExcelTemplate() {
-    try {
-        window.location.href = '/api/imports/download/template';
-    } catch (error) {
-        alert('Error downloading template: ' + error.message);
-    }
-}
-

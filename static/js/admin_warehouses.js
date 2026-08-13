@@ -12,7 +12,7 @@ async function loadWarehouses() {
         warehousesData = data.warehouses || [];
         renderWarehousesTable();
     } catch (error) {
-        showAlert('error', 'Không tải được danh sách kho: ' + error.message);
+        banleUI.showAlert('error', 'Không tải được danh sách kho: ' + error.message);
     }
 }
 
@@ -20,31 +20,40 @@ function renderWarehousesTable() {
     const tbody = document.getElementById('warehousesTableBody');
 
     if (warehousesData.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" class="text-center">Chưa có kho nào</td></tr>';
+        tbody.innerHTML = `
+            <tr><td colspan="6">
+                <div class="empty-state empty-state--compact">
+                    <div class="empty-state__icon"><i class="fa-solid fa-warehouse"></i></div>
+                    <p class="empty-state__title">Chưa có kho nào</p>
+                    <p class="empty-state__description">Nhấn "Thêm Kho" ở góc trên để tạo kho đầu tiên.</p>
+                </div>
+            </td></tr>`;
         return;
     }
 
     tbody.innerHTML = warehousesData
         .map(
-            (w) => `
+            (w) => {
+                const actions = [
+                    { label: 'Sửa', icon: 'fa-solid fa-pen', action: 'openEditWarehouseModal' },
+                    { divider: true },
+                    { label: 'Xóa', icon: 'fa-solid fa-trash', action: 'removeWarehouse', danger: true },
+                ];
+                return `
         <tr>
             <td>${w.id}</td>
-            <td>${w.name}</td>
+            <td>${banleUI.escapeHtml(w.name)}</td>
             <td>${w.low_stock_threshold}</td>
-            <td>${w.notification_email ? w.notification_email : '<span class="text-muted">Chưa cấu hình</span>'}</td>
-            <td><span class="badge bg-${w.is_active ? 'success' : 'secondary'}">${w.is_active ? 'Đang bật' : 'Đã tắt'}</span></td>
-            <td>
-                <button class="btn btn-sm btn-secondary" onclick="openEditWarehouseModal(${w.id})">
-                    <i class="fas fa-edit"></i> Sửa
-                </button>
-                <button class="btn btn-sm btn-danger" onclick="removeWarehouse(${w.id}, '${w.name}')">
-                    <i class="fas fa-trash"></i> Xóa
-                </button>
-            </td>
+            <td>${w.notification_email ? banleUI.escapeHtml(w.notification_email) : '<span class="text-muted">Chưa cấu hình</span>'}</td>
+            <td>${banleUI.statusPill(w.is_active ? 'Đang bật' : 'Đã tắt', w.is_active ? 'green' : 'gray')}</td>
+            <td class="table__actions">${banleUI.renderRowActions(w.id, actions)}</td>
         </tr>
-    `
+    `;
+            }
         )
         .join('');
+
+    banleUI.bindRowActions(tbody);
 }
 
 function openAddWarehouseModal() {
@@ -55,11 +64,11 @@ function openAddWarehouseModal() {
     document.getElementById('warehouseNotificationEmail').value = '';
     document.getElementById('warehouseDiscordUrl').value = '';
     document.getElementById('warehouseActive').checked = true;
-    new bootstrap.Modal(document.getElementById('warehouseModal')).show();
+    openModal('warehouseModal');
 }
 
 function openEditWarehouseModal(id) {
-    const w = warehousesData.find((x) => x.id === id);
+    const w = warehousesData.find((x) => String(x.id) === String(id));
     if (!w) return;
     document.getElementById('warehouseModalTitle').textContent = 'Sửa Kho';
     document.getElementById('warehouseId').value = w.id;
@@ -68,7 +77,7 @@ function openEditWarehouseModal(id) {
     document.getElementById('warehouseNotificationEmail').value = w.notification_email || '';
     document.getElementById('warehouseDiscordUrl').value = w.discord_webhook_url || '';
     document.getElementById('warehouseActive').checked = w.is_active;
-    new bootstrap.Modal(document.getElementById('warehouseModal')).show();
+    openModal('warehouseModal');
 }
 
 async function saveWarehouse() {
@@ -80,7 +89,7 @@ async function saveWarehouse() {
     const is_active = document.getElementById('warehouseActive').checked;
 
     if (!name) {
-        showAlert('error', 'Vui lòng nhập tên kho');
+        banleUI.showAlert('error', 'Vui lòng nhập tên kho');
         return;
     }
 
@@ -95,18 +104,20 @@ async function saveWarehouse() {
         const data = await response.json();
 
         if (data.success) {
-            showAlert('success', data.message || 'Lưu kho thành công!');
-            bootstrap.Modal.getInstance(document.getElementById('warehouseModal')).hide();
+            banleUI.showAlert('success', data.message || 'Lưu kho thành công!');
+            closeModal('warehouseModal');
             loadWarehouses();
         } else {
-            showAlert('error', data.message);
+            banleUI.showAlert('error', data.message);
         }
     } catch (error) {
-        showAlert('error', 'Lỗi: ' + error.message);
+        banleUI.showAlert('error', 'Lỗi: ' + error.message);
     }
 }
 
-async function removeWarehouse(id, name) {
+async function removeWarehouse(id) {
+    const w = warehousesData.find((x) => String(x.id) === String(id));
+    const name = w ? w.name : `#${id}`;
     if (!confirm(`Bạn có chắc chắn muốn xóa kho "${name}"?`)) return;
 
     try {
@@ -117,25 +128,14 @@ async function removeWarehouse(id, name) {
         const data = await response.json();
 
         if (data.success) {
-            showAlert('success', 'Xóa kho thành công!');
+            banleUI.showAlert('success', 'Xóa kho thành công!');
             loadWarehouses();
         } else {
-            showAlert('error', data.message);
+            banleUI.showAlert('error', data.message);
         }
     } catch (error) {
-        showAlert('error', 'Lỗi: ' + error.message);
+        banleUI.showAlert('error', 'Lỗi: ' + error.message);
     }
-}
-
-function showAlert(type, message) {
-    const alertDiv = document.createElement('div');
-    alertDiv.className = `alert alert-${type === 'success' ? 'success' : 'danger'} alert-dismissible fade show`;
-    alertDiv.innerHTML = `
-        ${message}
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    `;
-    document.querySelector('main').insertBefore(alertDiv, document.querySelector('main').firstChild);
-    setTimeout(() => alertDiv.remove(), 5000);
 }
 
 document.addEventListener('DOMContentLoaded', loadWarehouses);

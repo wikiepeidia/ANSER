@@ -3,10 +3,527 @@
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', function () {
     initializeTheme();
+    setupSidebar();
+    setupMobileSidebar();
+    setupSubmenus();
+    setupSidebarSearch();
+    setupCollapsedClickToExpand();
+    setupHeader();
+    setupNotificationPanel();
+    setupUserPanel();
+    setupSidebarUserMenu();
+    setupToastContainer();
     setupFormHandlers();
     setupDemoAccounts();
     setupNotifications();
 });
+
+/* ==============================
+   SIDEBAR (collapse + persist)
+   ============================== */
+
+/**
+ * Sync main-wrapper's margin-left with the sidebar's actual rendered width.
+ * This is the most reliable way to make the page content shift when the
+ * sidebar expands/collapses — it reads the real offsetWidth (not hardcoded
+ * values) so it works regardless of which width the sidebar ends up at.
+ *
+ * On mobile (≤768px), the responsive.css rule with `!important` keeps
+ * main-wrapper at margin-left: 0 (sidebar is off-canvas overlay). This
+ * function bails early on mobile to avoid fighting that rule.
+ */
+function syncMainWrapperMargin() {
+    const sidebar = document.getElementById('sidebar');
+    const mainWrapper = document.getElementById('mainWrapper');
+    if (!sidebar || !mainWrapper) return;
+
+    // Mobile: let the responsive.css !important rule win
+    if (window.innerWidth <= 768) return;
+
+    // Desktop/tablet: match the sidebar's actual rendered width
+    const width = sidebar.offsetWidth;
+    mainWrapper.style.marginLeft = width + 'px';
+}
+
+/**
+ * Wait for the sidebar's width transition to complete, then sync the
+ * main-wrapper. This is critical because reading offsetWidth during the
+ * transition returns the OLD width, which would set the wrong margin
+ * (e.g. collapsing from 240→72 while reading 240 would leave the content
+ * at 240px margin, which is the REVERSE of what we want).
+ */
+function syncMainWrapperAfterTransition() {
+    const sidebar = document.getElementById('sidebar');
+    if (!sidebar) {
+        syncMainWrapperMargin();
+        return;
+    }
+    // Listen for the width transition to end
+    const onEnd = (e) => {
+        if (e.propertyName === 'width') {
+            sidebar.removeEventListener('transitionend', onEnd);
+            syncMainWrapperMargin();
+        }
+    };
+    sidebar.addEventListener('transitionend', onEnd);
+    // Fallback: if transitionend doesn't fire (e.g. transition removed),
+    // sync after 450ms (slightly longer than the 400ms transition)
+    setTimeout(() => {
+        sidebar.removeEventListener('transitionend', onEnd);
+        syncMainWrapperMargin();
+    }, 450);
+}
+
+// Expose to window so the inline `toggleDesktopSidebar` handler in
+// base.html can call the modern transition-aware sync. Inline scripts
+// run before deferred scripts, so we can't reference the function
+// directly — base.html does setTimeout(50) and falls back to inline
+// marginLeft if this isn't ready yet.
+window.syncMainWrapperAfterTransition = syncMainWrapperAfterTransition;
+
+function setupSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    if (!sidebar) return;
+
+    // Default expanded on every page load. We deliberately do NOT restore
+    // the collapsed state from localStorage — the user wants the sidebar
+    // to be expanded by default so layout has no awkward empty space.
+    // (The click handler in base.html still saves state to localStorage
+    // for future reference, but we ignore it on load.)
+    sidebar.classList.remove('collapsed');
+
+    // Sync on init (in case restore added .collapsed) — transition may not
+    // have started yet, so we can sync immediately
+    syncMainWrapperMargin();
+
+    // Sync on window resize (debounced) for viewport changes
+    let resizeTimer = null;
+    window.addEventListener('resize', () => {
+        if (resizeTimer) clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(syncMainWrapperMargin, 100);
+    });
+}
+
+/**
+ * Expand the sidebar (programmatic, used by click-to-expand on collapsed).
+ * Idempotent — safe to call when already expanded.
+ */
+function expandSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    if (!sidebar) return;
+    if (sidebar.classList.contains('collapsed')) {
+        sidebar.classList.remove('collapsed');
+        localStorage.setItem('sidebar-collapsed', 'false');
+        // Wait for sidebar width transition to complete, then sync margin
+        syncMainWrapperAfterTransition();
+    }
+}
+
+/**
+ * When the sidebar is collapsed, intercept clicks on any nav item and just expand
+ * the sidebar instead of navigating. This is the "click any icon to expand and
+ * choose" pattern — two clicks to navigate when collapsed.
+ *
+ * For group items, the existing setupSubmenus click handler will run after our
+ * capture-phase intercept and toggle the submenu open (since we let the event
+ * bubble by NOT calling stopPropagation).
+ */
+function setupCollapsedClickToExpand() {
+    const sidebar = document.getElementById('sidebar');
+    if (!sidebar) return;
+
+    // Use capture phase so we run before the specific item's bubble-phase listeners
+    sidebar.addEventListener('click', (e) => {
+        if (!sidebar.classList.contains('collapsed')) return;
+
+        // Only intercept nav items (skip toggle button, footer, search, etc.)
+        const item = e.target.closest('.sidebar__item, .sidebar__submenu-item');
+        if (!item) return;
+
+        // Sidebar is collapsed: expand instead of navigate
+        e.preventDefault();
+        expandSidebar();
+    }, true);
+}
+
+/* ==============================
+   MOBILE SIDEBAR DRAWER
+   ============================== */
+function setupMobileSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const toggle = document.getElementById('mobileSidebarToggle');
+    const overlay = document.getElementById("sidebarOverlay");
+    if (!sidebar || !toggle) return;
+
+    function open() {
+        sidebar.classList.add('active', 'mobile-open');
+        if (overlay) overlay.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function close() {
+        sidebar.classList.remove('active', 'mobile-open');
+        if (overlay) overlay.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+
+    toggle.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (sidebar.classList.contains('mobile-open')) {
+            close();
+        } else {
+            open();
+        }
+    });
+
+    if (overlay) {
+        overlay.addEventListener('click', close);
+    }
+
+    // Close on ESC
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && sidebar.classList.contains('mobile-open')) {
+            close();
+        }
+    });
+
+    // Close on window resize to desktop
+    let resizeTimer;
+    window.addEventListener('resize', () => {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(() => {
+            if (window.innerWidth > 1024) close();
+        }, 200);
+    });
+}
+
+/* ==============================
+   SUBMENU TOGGLE (groups)
+   ============================== */
+function setupSubmenus() {
+    // Each .sidebar__item--has-sub toggles its sibling .sidebar__submenu
+    document.querySelectorAll('.sidebar__item--has-sub').forEach((btn) => {
+        const subId = btn.dataset.sub;
+        if (!subId) return;
+        const sub = document.getElementById(subId);
+        if (!sub) return;
+        const group = btn.closest('.sidebar__group');
+
+        // Restore open state from localStorage
+        const openKey = `sidebar-group-${btn.closest('.sidebar__group')?.dataset.group}`;
+        if (openKey && localStorage.getItem(openKey) === 'true') {
+            group?.classList.add('open');
+            btn.setAttribute('aria-expanded', 'true');
+            group?.setAttribute('aria-expanded', 'true');
+        }
+
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (group) {
+                const wasOpen = group.classList.contains('open');
+
+                // Accordion: close all other groups first
+                document.querySelectorAll('.sidebar__group.open').forEach(otherGroup => {
+                    if (otherGroup !== group) {
+                        otherGroup.classList.remove('open');
+                        const otherBtn = otherGroup.querySelector('.sidebar__item--has-sub');
+                        const otherKey = `sidebar-group-${otherGroup.dataset.group}`;
+                        if (otherBtn) {
+                            otherBtn.setAttribute('aria-expanded', 'false');
+                            otherGroup.setAttribute('aria-expanded', 'false');
+                        }
+                        if (otherKey) localStorage.setItem(otherKey, 'false');
+                    }
+                });
+
+                // Toggle the clicked group
+                const isOpen = !wasOpen;
+                group.classList.toggle('open', isOpen);
+                btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+                group.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+                if (openKey) localStorage.setItem(openKey, isOpen);
+            }
+        });
+    });
+
+    // Auto-open the group containing the current page
+    const currentPath = window.location.pathname;
+    document.querySelectorAll('.sidebar__submenu-item').forEach((item) => {
+        if (item.getAttribute('href') === currentPath) {
+            const group = item.closest('.sidebar__group');
+            const btn = group?.querySelector('.sidebar__item--has-sub');
+            if (group && btn) {
+                group.classList.add('open');
+                btn.setAttribute('aria-expanded', 'true');
+                group.setAttribute('aria-expanded', 'true');
+                item.classList.add('active');
+            }
+        }
+    });
+}
+
+/* ==============================
+   SIDEBAR SEARCH (⌘K palette)
+   ============================== */
+function setupSidebarSearch() {
+    const input = document.getElementById('sidebarSearch');
+    const nav = document.getElementById('sidebarNav');
+    const status = document.getElementById('sidebarSearchStatus');
+    const clearBtn = document.getElementById('sidebarSearchClear');
+    if (!input || !nav) return;
+
+    // Normalize Vietnamese text for diacritic-insensitive search
+    const normalize = (s) => (s || '').toString()
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, ''); // strip combining diacritics
+
+    const applyFilter = (rawQuery) => {
+        const query = normalize(rawQuery.trim());
+        if (!query) {
+            // Clear filter: remove all --hidden classes + searching state
+            nav.classList.remove('searching');
+            nav.querySelectorAll('.sidebar__item--hidden, .sidebar__submenu-item--hidden, .sidebar__group--hidden')
+                .forEach(el => el.classList.remove('sidebar__item--hidden', 'sidebar__submenu-item--hidden', 'sidebar__group--hidden'));
+            if (status) status.hidden = true;
+            if (clearBtn) clearBtn.hidden = true;
+            return;
+        }
+
+        nav.classList.add('searching');
+        if (clearBtn) clearBtn.hidden = false;
+
+        let visibleCount = 0;
+
+        // Iterate top-level items + groups
+        nav.querySelectorAll(':scope > .sidebar__item, :scope > .sidebar__group').forEach(node => {
+            if (node.classList.contains('sidebar__group')) {
+                // Check if any submenu item matches
+                let groupMatch = false;
+                const subItems = node.querySelectorAll('.sidebar__submenu-item');
+                subItems.forEach(item => {
+                    const text = normalize(item.dataset.searchText || item.textContent);
+                    const match = text.includes(query);
+                    item.classList.toggle('sidebar__submenu-item--hidden', !match);
+                    if (match) {
+                        groupMatch = true;
+                        visibleCount++;
+                    }
+                });
+                // Also check the parent button itself
+                const parentBtn = node.querySelector('.sidebar__item--has-sub');
+                const parentText = normalize(parentBtn?.dataset.searchText || parentBtn?.textContent);
+                if (parentText.includes(query)) {
+                    // Show all children of this group too
+                    subItems.forEach(item => item.classList.remove('sidebar__submenu-item--hidden'));
+                    groupMatch = true;
+                }
+                node.classList.toggle('sidebar__group--hidden', !groupMatch);
+            } else {
+                // Standalone top-level item (Dashboard, Settings)
+                const text = normalize(node.dataset.searchText || node.textContent);
+                const match = text.includes(query);
+                node.classList.toggle('sidebar__item--hidden', !match);
+                if (match) visibleCount++;
+            }
+        });
+
+        if (status) status.hidden = visibleCount > 0;
+    };
+
+    // Live filter on input
+    input.addEventListener('input', (e) => applyFilter(e.target.value));
+
+    // Clear button
+    if (clearBtn) {
+        clearBtn.addEventListener('click', () => {
+            input.value = '';
+            applyFilter('');
+            input.focus();
+        });
+    }
+
+    // ⌘K / Ctrl+K to focus (global shortcut)
+    document.addEventListener('keydown', (e) => {
+        const isShortcut = (e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k';
+        if (isShortcut) {
+            e.preventDefault();
+            input.focus();
+            input.select();
+        }
+        // Escape to clear
+        if (e.key === 'Escape' && document.activeElement === input) {
+            input.value = '';
+            applyFilter('');
+            input.blur();
+        }
+    });
+}
+
+/* ==============================
+   HEADER (search + menu toggle)
+   ============================== */
+function setupHeader() {
+    // Mobile menu toggle inside header (alias for sidebar toggle)
+    const menuToggle = document.getElementById('menuToggle');
+    const mobileToggle = document.getElementById('mobileSidebarToggle');
+    if (menuToggle && mobileToggle) {
+        menuToggle.addEventListener('click', () => mobileToggle.click());
+    }
+
+    // Header theme toggle was removed — theme is now controlled from /settings.
+    // (See components/header.html and settings.html [data-theme-option] buttons.)
+
+    // Header search: simple debounced
+    const search = document.getElementById('headerSearch');
+    if (search) {
+        let timer;
+        search.addEventListener('input', (e) => {
+            clearTimeout(timer);
+            timer = setTimeout(() => {
+                const event = new CustomEvent('header-search', { detail: { query: e.target.value } });
+                window.dispatchEvent(event);
+            }, 300);
+        });
+    }
+}
+
+/* ==============================
+   NOTIFICATION PANEL
+   ============================== */
+function setupNotificationPanel() {
+    const btn = document.getElementById('notificationBtn');
+    const panel = document.getElementById('notiPanel');
+    if (!btn || !panel) return;
+
+    btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        // Close user panel if open
+        document.getElementById('userPanel')?.classList.remove('active');
+        panel.classList.toggle('active');
+    });
+
+    document.addEventListener('click', (e) => {
+        if (!panel.contains(e.target) && !btn.contains(e.target)) {
+            panel.classList.remove('active');
+        }
+    });
+
+    // Mark all read
+    panel.querySelector('[data-action="mark-all-read"]')?.addEventListener('click', () => {
+        panel.querySelectorAll('.noti-panel__item--unread').forEach((el) => {
+            el.classList.remove('noti-panel__item--unread');
+        });
+        const count = document.getElementById('notificationCount');
+        if (count) {
+            count.textContent = '0';
+            count.style.display = 'none';
+        }
+        const countText = document.getElementById('notiCountText');
+        if (countText) countText.textContent = 'Đã đọc tất cả';
+    });
+}
+
+/* ==============================
+   USER PANEL
+   ============================== */
+function setupUserPanel() {
+    const btn = document.getElementById("userAvatar");
+    const panel = document.getElementById('userPanel');
+    if (!btn || !panel) return;
+
+    btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        // Close noti panel if open
+        document.getElementById('notiPanel')?.classList.remove('active');
+        panel.classList.toggle('active');
+    });
+
+    document.addEventListener('click', (e) => {
+        if (!panel.contains(e.target) && !btn.contains(e.target)) {
+            panel.classList.remove('active');
+        }
+    });
+}
+
+/* ==============================
+   TOAST CONTAINER (auto-create)
+   ============================== */
+function setupToastContainer() {
+    if (document.getElementById('toast-container')) return;
+    const c = document.createElement('div');
+    c.id = 'toast-container';
+    c.className = 'toast-container';
+    document.body.appendChild(c);
+}
+
+/* ==============================
+   SIDEBAR USER MENU (toggle on click)
+   ============================== */
+function setupSidebarUserMenu() {
+    const card = document.getElementById('sidebarUserCard');
+    const menu = document.getElementById('sidebarUserMenu');
+    const sidebar = document.getElementById('sidebar');
+    if (!card || !menu) return;
+
+    card.addEventListener('click', (e) => {
+        e.stopPropagation();
+        // Close header user panel if open
+        document.getElementById('userPanel')?.classList.remove('active');
+
+        // When sidebar is collapsed, expand first so the user can see the
+        // user card (name + role) properly, then toggle the menu.
+        if (sidebar && sidebar.classList.contains('collapsed')) {
+            expandSidebar();
+            menu.classList.add('open');
+        } else {
+            menu.classList.toggle('open');
+        }
+    });
+
+    document.addEventListener('click', (e) => {
+        if (!menu.contains(e.target) && !card.contains(e.target)) {
+            menu.classList.remove('open');
+        }
+    });
+}
+
+function showToast(message, type = 'info', duration = 3500) {
+    const container = document.getElementById('toast-container');
+    if (!container) return;
+
+    const toast = document.createElement('div');
+    toast.className = `toast toast--${type}`;
+
+    const icons = {
+        success: 'fa-solid fa-check',
+        error: 'fa-solid fa-xmark',
+        warning: 'fa-solid fa-triangle-exclamation',
+        info: 'fa-solid fa-info',
+    };
+
+    toast.innerHTML = `
+        <div class="toast__icon"><i class="${icons[type] || icons.info}"></i></div>
+        <div class="toast__content">
+            <p class="toast__message">${message}</p>
+        </div>
+        <button class="toast__close" aria-label="Đóng"><i class="fa-solid fa-xmark"></i></button>
+    `;
+
+    container.appendChild(toast);
+
+    const dismiss = () => {
+        toast.classList.add('toast--leaving');
+        setTimeout(() => toast.remove(), 300);
+    };
+
+    toast.querySelector('.toast__close')?.addEventListener('click', dismiss);
+    if (duration > 0) setTimeout(dismiss, duration);
+}
+
+// Expose to window for ad-hoc use
+window.showToast = showToast;
 
 function initializeTheme() {
     const html = document.documentElement;
@@ -90,10 +607,7 @@ function initializeTheme() {
         document.body.classList.toggle('dark-mode', effectiveTheme === 'dark');
         toggles.forEach((button) => updateToggleButton(button, normalizedPreference, effectiveTheme));
         syncPreferenceControls(normalizedPreference);
-        // Ensure table inline styles (if any) are rebuilt when theme changes
-        if (typeof syncAllTablesTheme === 'function') {
-            syncAllTablesTheme();
-        }
+        // Table theme is handled CSS-only by banle_helpers.js (no JS call needed)
     };
 
     const setPreference = (nextPreference) => {
@@ -192,32 +706,10 @@ function initializeTheme() {
     applyTheme(currentPreference);
 }
 
-/* Re-apply inline table backgrounds if any JS set them earlier and were based on CSS variables.
-   This keeps tables consistent on dynamic theme changes. Prefer CSS variables but keep JS as a safe fallback.
-*/
-function syncAllTablesTheme() {
-    const rootStyles = getComputedStyle(document.documentElement);
-    const bg = rootStyles.getPropertyValue('--surface-100') || '#ffffff';
-    const alt = rootStyles.getPropertyValue('--surface-200') || '#f8fafc';
-    document.querySelectorAll('.table').forEach(table => {
-        // Only adjust if there is an inline style or the computed style is white (bootstrap default)
-        const computed = getComputedStyle(table).backgroundColor || '';
-        // Note: computed is an rgb() string - we can't easily compare hex; however we still reapply
-        // because CSS variables now control colors. If the site uses inline background=white we override with CSS var
-        table.style.setProperty('background', bg.trim(), 'important');
-        [...table.querySelectorAll('tbody tr')].forEach((row, idx) => {
-            const color = (idx % 2 === 0) ? bg.trim() : alt.trim();
-            row.style.setProperty('background', color, 'important');
-        });
-    });
-}
-
-// Observe DOM attribute changes to the html `data-theme` to refresh table inline styles
-const _themeAttrObserver = new MutationObserver((mutations) => {
-    const changed = mutations.some(m => m.attributeName === 'data-theme');
-    if (changed) syncAllTablesTheme();
-});
-_themeAttrObserver.observe(document.documentElement, { attributes: true });
+/* Table theme sync is handled by `banle_helpers.js` (CSS-only, see
+   syncAllTablesTheme there). The previous JS-based sync here was removed
+   because it used undefined CSS variables (--surface-100/200) and would
+   always fall back to light colors, breaking tables in dark mode. */
 
 /**
  * Form Handlers
@@ -537,51 +1029,6 @@ window.addEventListener('offline', function() {
 });
 
 /**
- * Desktop Sidebar Collapse Toggle
- * Persists collapsed state in localStorage.
- */
-document.addEventListener('DOMContentLoaded', function () {
-    const sidebar = document.getElementById('main-sidebar');
-    const collapseBtn = document.getElementById('sidebar-collapse-toggle');
-
-    if (!sidebar) return;
-
-    // Restore saved state
-    const savedCollapsed = localStorage.getItem('sidebar-collapsed') === 'true';
-    if (savedCollapsed) {
-        sidebar.classList.add('collapsed');
-        applyContentOffset(true);
-    }
-    syncCollapseIcon(savedCollapsed);
-
-    function toggleSidebar() {
-        const isCollapsed = sidebar.classList.toggle('collapsed');
-        localStorage.setItem('sidebar-collapsed', isCollapsed);
-        applyContentOffset(isCollapsed);
-        syncCollapseIcon(isCollapsed);
-    }
-
-    if (collapseBtn) collapseBtn.addEventListener('click', toggleSidebar);
-
-    function applyContentOffset(collapsed) {
-        document.querySelectorAll('.app-content, .main-content, .scenario-main, .permissions-main').forEach(function (el) {
-            if (collapsed) {
-                el.classList.add('sidebar-collapsed');
-            } else {
-                el.classList.remove('sidebar-collapsed');
-            }
-        });
-    }
-
-    function syncCollapseIcon(collapsed) {
-        const icon = document.getElementById('sidebar-collapse-icon');
-        if (!icon) return;
-        icon.classList.remove('fa-chevron-left', 'fa-chevron-right');
-        icon.classList.add(collapsed ? 'fa-chevron-right' : 'fa-chevron-left');
-    }
-});
-
-/**
  * Sidebar item tooltip (collapsed state only).
  * The sidebar scrolls its menu internally and uses backdrop-filter, both of
  * which clip any CSS ::after tooltip that pops outside its own box. Instead,
@@ -589,7 +1036,7 @@ document.addEventListener('DOMContentLoaded', function () {
  * with JS on hover, so it always escapes the sidebar's clipped/scrolled box.
  */
 document.addEventListener('DOMContentLoaded', function () {
-    const sidebar = document.getElementById('main-sidebar');
+    const sidebar = document.getElementById('sidebar');
     if (!sidebar) return;
 
     const items = sidebar.querySelectorAll('[data-tooltip]');
@@ -616,51 +1063,3 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 });
 
-/**
- * Mobile Sidebar Toggle
- */
-document.addEventListener('DOMContentLoaded', function() {
-    const mobileToggle = document.getElementById('mobile-sidebar-toggle');
-    // Support both modern-sidebar (dashboard) and legacy sidebar (scenarios)
-    const sidebar = document.querySelector('.modern-sidebar, .sidebar');
-    const overlay = document.getElementById('sidebar-overlay');
-
-    if (mobileToggle && sidebar && overlay) {
-        function toggleSidebar() {
-            sidebar.classList.toggle('open');
-            overlay.classList.toggle('active');
-            
-            // Update aria-expanded
-            const isOpen = sidebar.classList.contains('open');
-            mobileToggle.setAttribute('aria-expanded', isOpen);
-        }
-
-        mobileToggle.addEventListener('click', function(e) {
-            e.stopPropagation();
-            toggleSidebar();
-        });
-
-        overlay.addEventListener('click', function() {
-            toggleSidebar();
-        });
-
-        // Close sidebar when clicking a link (optional, good for UX)
-        const sidebarLinks = sidebar.querySelectorAll('a');
-        sidebarLinks.forEach(link => {
-            link.addEventListener('click', function() {
-                if (window.innerWidth <= 768) {
-                    sidebar.classList.remove('open');
-                    overlay.classList.remove('active');
-                }
-            });
-        });
-        
-        // Handle resize
-        window.addEventListener('resize', function() {
-            if (window.innerWidth > 768) {
-                sidebar.classList.remove('open');
-                overlay.classList.remove('active');
-            }
-        });
-    }
-});

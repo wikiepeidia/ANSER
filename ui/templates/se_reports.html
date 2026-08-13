@@ -2,229 +2,249 @@
 
 {% block title %}SE - Báo cáo doanh thu & chi phí - {{ project_name }}{% endblock %}
 
-{% block styles %}
-{{ super() }}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/admin_reports.css') }}">
-<style>
-    /* ── Page-specific styles (shared tokens now in saas-tokens.css) ── */
+{% block content %}
 
-    .border-bottom { border-bottom: 1px solid var(--border-soft) !important; margin-bottom: 32px !important; padding-bottom: 16px !important; }
-    h1.h2 { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.02em; color: var(--gray-900); display: flex; align-items: center; gap: 12px; margin:0;}
-    h1.h2 i { color: var(--gray-500); font-size: 1.25rem; }
+<!-- Content header -->
+<div class="content__header">
+    <div>
+        <p class="content__subtitle">
+            <a href="{{ url_for('pages.workspace') }}" style="color: var(--brand-primary); text-decoration: none;">Workspace</a>
+            <span class="mx-2">›</span>
+            <span>Báo cáo</span>
+        </p>
+        <h1 class="content__title">
+            <i class="fa-solid fa-file-invoice-dollar"></i>
+            Báo cáo doanh thu &amp; chi phí
+        </h1>
+    </div>
+    <div class="content__actions">
+        <button class="btn btn--primary" type="button" onclick="openScheduleReportModal()">
+            <i class="fa-solid fa-calendar-plus"></i> Lên lịch báo cáo
+        </button>
+    </div>
+</div>
 
-    .btn { border-radius: 8px; font-weight: 500; font-size: 0.875rem; padding: 8px 16px; border: 1px solid transparent; box-shadow: var(--shadow-md); transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 8px; }
-    .btn-primary { background-color: var(--primary) !important; color: #fff !important; }
-    .btn-primary:hover { background-color: #4F46E5 !important; transform: translateY(-1px); box-shadow: var(--shadow-md); }
-    .btn-secondary { background-color: #fff !important; color: var(--gray-900) !important; border-color: var(--border-soft) !important; }
+<!-- Stats -->
+<section class="dashboard-stats">
+    <div class="stats-grid stats-grid--4">
+        <div class="stat-card">
+            <div class="stat-card__header">
+                <span>Doanh thu (Tháng này)</span>
+                <div class="stat-card__icon stat-card__icon--green">
+                    <i class="fa-solid fa-arrow-trend-up"></i>
+                </div>
+            </div>
+            <div class="stat-card__value stat-card__value--compact" id="monthRevenue">0 ₫</div>
+            <span class="stat-card__pill stat-card__pill--green">Doanh thu</span>
+        </div>
 
-    .saas-stat-card { background: var(--surface-100) !important; border: 1px solid var(--border-soft) !important; border-radius: 12px !important; box-shadow: var(--shadow-md) !important; padding: 24px; transition: all 0.2s ease; height: 100%; }
-    .saas-stat-card:hover { border-color: #D1D5DB !important; box-shadow: var(--shadow-md) !important; transform: translateY(-2px); }
-    .saas-stat-card .card-body { padding: 0 !important; }
-    .saas-stat-card h6 { font-size: 0.875rem; font-weight: 600; color: var(--gray-500) !important; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px; }
-    .saas-stat-card h2 { font-size: 2rem; font-weight: 700; color: var(--gray-900) !important; margin: 0; line-height: 1; letter-spacing: -0.02em; }
+        <div class="stat-card">
+            <div class="stat-card__header">
+                <span>Chi phí (Tháng này)</span>
+                <div class="stat-card__icon stat-card__icon--red">
+                    <i class="fa-solid fa-arrow-trend-down"></i>
+                </div>
+            </div>
+            <div class="stat-card__value stat-card__value--compact" id="monthExpense">0 ₫</div>
+            <span class="stat-card__pill stat-card__pill--red">Chi phí</span>
+        </div>
 
-    .card:not(.saas-stat-card):not(.saas-action-card) { background: var(--surface-100) !important; border: 1px solid var(--border-soft) !important; border-radius: 12px !important; box-shadow: var(--shadow-md) !important; overflow: hidden; margin-bottom: 24px;}
-    .card:not(.saas-stat-card) > .card-body { padding: 0; }
-    .card-title, .card-header { padding: 20px 24px; margin: 0; border-bottom: 1px solid var(--border-soft); font-size: 1rem; font-weight: 600; color: var(--gray-900); background: #fff !important; display: flex; align-items: center; gap: 8px;}
-    .card-title i, .card-header i { color: var(--gray-500); }
-    .card-body-inner { padding: 24px; }
+        <div class="stat-card">
+            <div class="stat-card__header">
+                <span>Lợi nhuận</span>
+                <div class="stat-card__icon stat-card__icon--blue">
+                    <i class="fa-solid fa-sack-dollar"></i>
+                </div>
+            </div>
+            <div class="stat-card__value stat-card__value--compact" id="monthProfit">0 ₫</div>
+            <span class="stat-card__pill stat-card__pill--blue">Lợi nhuận</span>
+        </div>
 
-    .table { margin-bottom: 0; }
-    .table th { background-color: #F9FAFB; color: var(--gray-500); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; padding: 12px 24px; border-bottom: 1px solid var(--border-soft); font-weight: 600; }
-    .table td { padding: 16px 24px; vertical-align: middle; border-bottom: 1px solid var(--border-soft); color: var(--gray-900); font-size: 0.875rem; }
+        <div class="stat-card">
+            <div class="stat-card__header">
+                <span>Báo cáo đã gửi</span>
+                <div class="stat-card__icon stat-card__icon--orange">
+                    <i class="fa-solid fa-paper-plane"></i>
+                </div>
+            </div>
+            <div class="stat-card__value" id="reportsSent">0</div>
+            <span class="stat-card__pill stat-card__pill--orange">Tổng gửi</span>
+        </div>
+    </div>
+</section>
 
-    .saas-action-card { display: flex; flex-direction: column; padding: 20px; background: var(--surface-100); border: 1px solid var(--border-soft); border-radius: 12px; box-shadow: var(--shadow-md); transition: all 0.2s ease; text-align: left; height: 100%;}
-    .saas-action-card:hover { border-color: var(--primary); box-shadow: var(--shadow-md); transform: translateY(-2px); }
-    .saas-action-card h6 { font-size: 0.95rem; font-weight: 600; color: var(--gray-900); margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
-    .saas-action-card h6 i { color: var(--primary); }
-    .saas-action-card p { font-size: 0.85rem; color: var(--gray-500); line-height: 1.5; margin-bottom: 16px; flex-grow: 1;}
-    .saas-action-card .btn { width: 100%; justify-content: center; background: #EEF2FF !important; color: var(--primary) !important; border: none; box-shadow: none;}
-    .saas-action-card:hover .btn { background: var(--primary) !important; color: #fff !important; }
+<!-- Scheduled reports list -->
+<section class="card" style="margin-bottom: var(--space-5);">
+    <div class="card__header">
+        <h3 class="card__title">
+            <i class="fa-solid fa-calendar-check"></i>
+            Báo cáo đã lên lịch
+        </h3>
+    </div>
+    <div class="card__body" style="padding: 0;">
+        <div class="table-wrapper">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Tên báo cáo</th>
+                        <th>Loại</th>
+                        <th>Tần suất</th>
+                        <th>Kênh</th>
+                        <th>Trạng thái</th>
+                        <th>Lần gửi gần nhất</th>
+                        <th>Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody id="scheduledReportsBody">
+                    <tr>
+                        <td colspan="7" style="text-align: center; padding: 40px; color: var(--text-secondary);">
+                            Chưa có báo cáo đã lên lịch. Nhấn "Lên lịch báo cáo" để bắt đầu.
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
 
-    .modal-content { border-radius: 16px; border: 1px solid var(--border-soft); }
-    .modal-header, .modal-body, .modal-footer { border-color: var(--border-soft); }
-    .form-control, .form-select { border-radius: 8px; border: 1px solid #D1D5DB; padding: 10px 14px; font-size: 0.9rem; }
-    .form-control:focus, .form-select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(0, 49, 82, 0.2); }
-</style>
+<!-- Chart card -->
+<section class="card" style="margin-bottom: var(--space-5);">
+    <div class="card__header">
+        <h3 class="card__title">
+            <i class="fa-solid fa-chart-line"></i>
+            Biểu đồ doanh thu &amp; chi phí
+        </h3>
+    </div>
+    <div class="card__body">
+        <div class="chart-container chart-container--lg">
+            <canvas id="revenueChart"></canvas>
+        </div>
+        <p class="empty-state" style="padding: 20px; font-size: 13px;">
+            <i class="fa-solid fa-chart-bar"></i> Biểu đồ sẽ hiển thị khi có dữ liệu doanh thu và chi phí
+        </p>
+    </div>
+</section>
+
+<!-- Report templates -->
+<section class="card">
+    <div class="card__header">
+        <h3 class="card__title">
+            <i class="fa-solid fa-lightbulb"></i>
+            Mẫu báo cáo
+        </h3>
+    </div>
+    <div class="card__body">
+        <div class="action-grid">
+            <div class="action-card" style="cursor: default;">
+                <div class="action-icon-wrapper action-icon-wrapper--blue">
+                    <i class="fa-solid fa-calendar-day"></i>
+                </div>
+                <div class="action-content">
+                    <h4>Báo cáo hằng ngày</h4>
+                    <p>Tổng hợp doanh thu &amp; chi phí mỗi ngày, gửi lúc 18:00.</p>
+                </div>
+                <button class="btn btn--primary btn--sm" type="button" onclick="useReportTemplate('daily', 'Báo cáo hằng ngày')">
+                    <i class="fa-solid fa-plus"></i> Dùng mẫu
+                </button>
+            </div>
+
+            <div class="action-card" style="cursor: default;">
+                <div class="action-icon-wrapper action-icon-wrapper--orange">
+                    <i class="fa-solid fa-calendar-week"></i>
+                </div>
+                <div class="action-content">
+                    <h4>Báo cáo hằng tuần</h4>
+                    <p>Tóm tắt 7 ngày doanh thu &amp; chi phí, gửi mỗi Chủ nhật.</p>
+                </div>
+                <button class="btn btn--primary btn--sm" type="button" onclick="useReportTemplate('weekly', 'Báo cáo hằng tuần')">
+                    <i class="fa-solid fa-plus"></i> Dùng mẫu
+                </button>
+            </div>
+
+            <div class="action-card" style="cursor: default;">
+                <div class="action-icon-wrapper action-icon-wrapper--purple">
+                    <i class="fa-solid fa-calendar"></i>
+                </div>
+                <div class="action-content">
+                    <h4>Báo cáo hằng tháng</h4>
+                    <p>Báo cáo cuối tháng chi tiết, gửi vào ngày 1 hằng tháng.</p>
+                </div>
+                <button class="btn btn--primary btn--sm" type="button" onclick="useReportTemplate('monthly', 'Báo cáo hằng tháng')">
+                    <i class="fa-solid fa-plus"></i> Dùng mẫu
+                </button>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Schedule Report Modal -->
+<div class="modal" id="scheduleReportModal">
+    <div class="modal__overlay" onclick="closeModal('scheduleReportModal')"></div>
+    <div class="modal__content">
+        <div class="modal__header">
+            <h2>Lên lịch báo cáo mới</h2>
+            <button type="button" class="modal__close" onclick="closeModal('scheduleReportModal')" aria-label="Đóng">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        <div class="modal__body">
+            <form id="scheduleReportForm">
+                <div class="form-group">
+                    <label for="reportName">Tên báo cáo</label>
+                    <input type="text" class="form-control" name="name" required>
+                </div>
+                <div class="form-group">
+                    <label for="reportType">Loại báo cáo</label>
+                    <select class="form-control" name="report_type" required>
+                        <option value="revenue_expense">Tóm tắt doanh thu &amp; chi phí</option>
+                        <option value="inventory">Tình trạng tồn kho</option>
+                        <option value="customer_activity">Hoạt động khách hàng</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="frequency">Tần suất</label>
+                    <select class="form-control" name="frequency" required>
+                        <option value="daily">Hằng ngày</option>
+                        <option value="weekly">Hằng tuần</option>
+                        <option value="monthly">Hằng tháng</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="channel">Kênh gửi</label>
+                    <select class="form-control" name="channel" required>
+                        <option value="email">Email</option>
+                        <option value="slack">Slack</option>
+                        <option value="download">Lưu vào tệp</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="recipients">Người nhận (phân tách bằng dấu phẩy)</label>
+                    <input type="text" class="form-control" name="recipients" placeholder="email@example.com">
+                </div>
+            </form>
+        </div>
+        <div class="modal__footer">
+            <button type="button" class="btn btn--outline" onclick="closeModal('scheduleReportModal')">Đóng</button>
+            <button type="button" class="btn btn--primary" onclick="submitScheduleReport()">
+                <i class="fa-solid fa-check"></i> Lên lịch
+            </button>
+        </div>
+    </div>
+</div>
+
 {% endblock %}
 
 {% block scripts %}
 {{ super() }}
 <script src="{{ url_for('static', filename='js/admin_reports.js') }}" defer></script>
-
-{% endblock %}
-
-{% block content %}
-<div class="app-layout">
-    {% include 'components/sidebar.html' %}
-
-    <main class="app-content main-content reports-page">
-        <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-            <h1 class="h2"><i class="fas fa-file-invoice-dollar"></i> <span data-i18n="seReports.title">SE - Báo cáo doanh thu &amp; chi phí</span></h1>
-            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#scheduleReportModal" aria-label="Lên lịch báo cáo">
-                <i class="fas fa-calendar-plus"></i> <span data-i18n="seReports.scheduleReport">Lên lịch báo cáo</span>
-            </button>
-        </div>
-
-        <div class="row mb-4">
-            <div class="col-md-3">
-                <div class="card saas-stat-card">
-                    <div class="card-body">
-                        <h6 class="card-title" data-i18n="seReports.revenueThisMonth">Doanh thu (Tháng này)</h6>
-                        <h2 id="monthRevenue">0 VND</h2>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card saas-stat-card">
-                    <div class="card-body">
-                        <h6 class="card-title" data-i18n="seReports.expenseThisMonth">Chi phí (Tháng này)</h6>
-                        <h2 id="monthExpense">0 VND</h2>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card saas-stat-card">
-                    <div class="card-body">
-                        <h6 class="card-title" data-i18n="seReports.profit">Lợi nhuận</h6>
-                        <h2 id="monthProfit">0 VND</h2>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card saas-stat-card">
-                    <div class="card-body">
-                        <h6 class="card-title" data-i18n="seReports.reportsSent">Báo cáo đã gửi</h6>
-                        <h2 id="reportsSent">0</h2>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="card mb-4">
-            <div class="card-header">
-                <h5 class="card-title"><i class="fas fa-calendar-check"></i> <span data-i18n="seReports.scheduledReports">Báo cáo đã lên lịch</span></h5>
-            </div>
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-hover">
-                        <thead>
-                            <tr>
-                                <th data-i18n="seReports.reportName">Tên báo cáo</th>
-                                <th data-i18n="wallet.colType">Loại</th>
-                                <th data-i18n="seReports.frequency">Tần suất</th>
-                                <th data-i18n="seReports.channel">Kênh</th>
-                                <th data-i18n="common.status">Trạng thái</th>
-                                <th data-i18n="seReports.lastSent">Lần gửi gần nhất</th>
-                                <th data-i18n="common.actions">Thao tác</th>
-                            </tr>
-                        </thead>
-                        <tbody id="scheduledReportsBody">
-                            <tr>
-                                <td colspan="7" class="text-center text-muted py-4">
-                                    <span data-i18n="seReports.emptyState">Chưa có báo cáo đã lên lịch. Nhấn "Lên lịch báo cáo" để bắt đầu.</span>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-        <div class="card mb-4">
-            <div class="card-header">
-                <h5 class="card-title"><i class="fas fa-chart-line"></i> <span data-i18n="seReports.revenueExpenseChart">Biểu đồ doanh thu &amp; chi phí</span></h5>
-            </div>
-            <div class="card-body card-body-inner">
-                <canvas id="revenueChart" height="80"></canvas>
-                <p class="text-center text-muted mt-4 mb-0" style="font-size: 0.85rem;">
-                    <i class="fas fa-chart-bar me-1"></i> <span data-i18n="seReports.chartEmptyHint">Biểu đồ sẽ hiển thị khi có dữ liệu doanh thu và chi phí</span>
-                </p>
-            </div>
-        </div>
-
-        <div class="card mb-4">
-            <div class="card-header">
-                <h5 class="card-title"><i class="fas fa-lightbulb"></i> <span data-i18n="seReports.reportTemplates">Mẫu báo cáo</span></h5>
-            </div>
-            <div class="card-body card-body-inner">
-                <div class="row g-3">
-                    <div class="col-md-4">
-                        <div class="saas-action-card">
-                            <h6><i class="fas fa-calendar-day"></i> <span data-i18n="seReports.dailyReport">Báo cáo hằng ngày</span></h6>
-                            <p data-i18n="seReports.dailyReportDesc">Tổng hợp doanh thu &amp; chi phí mỗi ngày, gửi lúc 18:00.</p>
-                            <button class="btn btn-sm" onclick="alert('Mẫu: Báo cáo hằng ngày')"><i class="fas fa-plus"></i> Dùng mẫu</button>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="saas-action-card">
-                            <h6><i class="fas fa-calendar-week"></i> <span data-i18n="seReports.weeklyReport">Báo cáo hằng tuần</span></h6>
-                            <p data-i18n="seReports.weeklyReportDesc">Tóm tắt 7 ngày doanh thu &amp; chi phí, gửi mỗi Chủ nhật.</p>
-                            <button class="btn btn-sm" onclick="alert('Mẫu: Báo cáo hằng tuần')"><i class="fas fa-plus"></i> Dùng mẫu</button>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="saas-action-card">
-                            <h6><i class="fas fa-calendar-alt"></i> <span data-i18n="seReports.monthlyReport">Báo cáo hằng tháng</span></h6>
-                            <p data-i18n="seReports.monthlyReportDesc">Báo cáo cuối tháng chi tiết, gửi vào ngày 1 hằng tháng.</p>
-                            <button class="btn btn-sm" onclick="alert('Mẫu: Báo cáo hằng tháng')"><i class="fas fa-plus"></i> Dùng mẫu</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </main>
-</div>
-
-<!-- Schedule Report Modal -->
-<div class="modal fade" id="scheduleReportModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" data-i18n="seReports.newSchedule">Lên lịch báo cáo mới</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
-            </div>
-            <div class="modal-body">
-                <form id="scheduleReportForm">
-                    <div class="mb-3">
-                        <label class="form-label" data-i18n="seReports.reportName">Tên báo cáo</label>
-                        <input type="text" class="form-control" name="name" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label" data-i18n="seReports.reportType">Loại báo cáo</label>
-                        <select class="form-select" name="report_type" required>
-                            <option value="revenue_expense">Tóm tắt doanh thu & chi phí</option>
-                            <option value="inventory">Tình trạng tồn kho</option>
-                            <option value="customer_activity">Hoạt động khách hàng</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label" data-i18n="seReports.frequency">Tần suất</label>
-                        <select class="form-select" name="frequency" required>
-                            <option value="daily">Hằng ngày</option>
-                            <option value="weekly">Hằng tuần</option>
-                            <option value="monthly">Hằng tháng</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label" data-i18n="seReports.sendChannel">Kênh gửi</label>
-                        <select class="form-select" name="channel" required>
-                            <option value="email">Email</option>
-                            <option value="slack">Slack</option>
-                            <option value="download">Lưu vào tệp</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label" data-i18n="seReports.recipients">Người nhận (phân tách bằng dấu phẩy)</label>
-                        <input type="text" class="form-control" name="recipients" placeholder="email@example.com">
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-i18n="common.close">Đóng</button>
-                <button type="button" class="btn btn-primary" onclick="submitScheduleReport()" data-i18n="seReports.schedule">Lên lịch</button>
-            </div>
-        </div>
-    </div>
-</div>
+<script>
+function openModal(id) {
+    var el = document.getElementById(id);
+    if (el) el.classList.add('active', 'show');
+}
+function closeModal(id) {
+    var el = document.getElementById(id);
+    if (el) el.classList.remove('active', 'show');
+}
+</script>
 {% endblock %}

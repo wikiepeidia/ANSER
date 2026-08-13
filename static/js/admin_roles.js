@@ -12,7 +12,7 @@ async function loadUsers() {
         updateStatistics();
         renderUsersTable();
     } catch (error) {
-        showAlert('error', 'Failed to load users: ' + error.message);
+        banleUI.showAlert('error', 'Không tải được danh sách: ' + error.message);
     }
 }
 
@@ -29,12 +29,19 @@ function updateStatistics() {
 function filterByRole(role) {
     currentFilter = role;
 
-    document.querySelectorAll('#roleTabs .nav-link').forEach((link) => {
-        link.classList.remove('active');
+    document.querySelectorAll('#roleTabs .tabs__item').forEach((tab) => {
+        tab.classList.remove('active');
     });
-    document.querySelector(`#roleTabs .nav-link[data-role="${role}"]`).classList.add('active');
+    const activeTab = document.querySelector(`#roleTabs .tabs__item[data-role="${role}"]`);
+    if (activeTab) activeTab.classList.add('active');
 
     renderUsersTable();
+}
+
+function roleTone(role) {
+    if (role === 'admin') return 'red';
+    if (role === 'manager') return 'orange';
+    return 'blue';
 }
 
 function renderUsersTable() {
@@ -46,50 +53,48 @@ function renderUsersTable() {
     }
 
     if (filteredUsers.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" class="text-center">No accounts found</td></tr>';
+        tbody.innerHTML = `
+            <tr><td colspan="6">
+                <div class="empty-state empty-state--compact">
+                    <div class="empty-state__icon"><i class="fa-solid fa-users"></i></div>
+                    <p class="empty-state__title">Không có tài khoản</p>
+                    <p class="empty-state__description">Chưa có tài khoản nào thuộc vai trò này.</p>
+                </div>
+            </td></tr>`;
         return;
     }
 
     tbody.innerHTML = filteredUsers
         .map((user) => {
-            const badgeClass =
-                user.role === 'admin' ? 'bg-danger' : user.role === 'manager' ? 'bg-warning' : 'bg-primary';
-            const roleText = user.role.toUpperCase();
-
-            let actionButtons = '';
-
+            const actions = [];
             if (user.role === 'user') {
-                actionButtons = `
-                <button class="btn btn-action btn-success btn-sm" onclick="promoteToManager(${user.id}, '${user.email}')">
-                    <i class="fas fa-arrow-up"></i> Promote to Manager
-                </button>
-            `;
+                actions.push({ label: 'Nâng cấp lên Manager', icon: 'fa-solid fa-arrow-up', action: 'promoteToManager' });
             } else if (user.role === 'manager') {
-                actionButtons = `
-                <button class="btn btn-action btn-warning btn-sm" onclick="demoteToUser(${user.id}, '${user.email}')">
-                    <i class="fas fa-arrow-down"></i> Demote to User
-                </button>
-            `;
+                actions.push({ label: 'Hạ cấp xuống User', icon: 'fa-solid fa-arrow-down', action: 'demoteToUser' });
             } else {
-                actionButtons = '<span class="text-muted"><i class="fas fa-lock"></i> Cannot change</span>';
+                actions.push({ label: 'Quản trị viên gốc', icon: 'fa-solid fa-lock', action: '__noop' });
             }
 
             return `
             <tr>
                 <td>${user.id}</td>
-                <td>${user.name}</td>
-                <td>${user.email}</td>
-                <td><span class="badge ${badgeClass}">${roleText}</span></td>
-                <td>${new Date(user.created_at).toLocaleDateString('en-US')}</td>
-                <td>${actionButtons}</td>
+                <td>${banleUI.escapeHtml(user.name || '—')}</td>
+                <td>${banleUI.escapeHtml(user.email)}</td>
+                <td>${banleUI.statusPill(user.role.toUpperCase(), roleTone(user.role))}</td>
+                <td>${banleUI.formatDateVN(user.created_at)}</td>
+                <td class="table__actions">${banleUI.renderRowActions(user.id, actions)}</td>
             </tr>
         `;
         })
         .join('');
+
+    banleUI.bindRowActions(tbody);
 }
 
-async function promoteToManager(userId, email) {
-    if (!confirm(`Are you sure you want to promote "${email}" to Manager?\n\nManagers will be able to grant permissions to other users.`)) {
+async function promoteToManager(userId) {
+    const user = allUsers.find((u) => String(u.id) === String(userId));
+    const email = user ? user.email : `#${userId}`;
+    if (!confirm(`Bạn có chắc muốn nâng cấp "${email}" lên Manager?\n\nManager sẽ có quyền cấp quyền cho người khác.`)) {
         return;
     }
 
@@ -103,18 +108,20 @@ async function promoteToManager(userId, email) {
         const data = await response.json();
 
         if (data.success) {
-            showAlert('success', `✅ Promoted "${email}" to Manager successfully!`);
+            banleUI.showAlert('success', `Đã nâng cấp "${email}" lên Manager.`);
             loadUsers();
         } else {
-            showAlert('error', data.message || 'Upgrade failed');
+            banleUI.showAlert('error', data.message || 'Nâng cấp thất bại');
         }
     } catch (error) {
-        showAlert('error', 'Error: ' + error.message);
+        banleUI.showAlert('error', 'Lỗi: ' + error.message);
     }
 }
 
-async function demoteToUser(userId, email) {
-    if (!confirm(`Are you sure you want to demote "${email}" to User?\n\nManagers will lose permission to grant permissions to other users.`)) {
+async function demoteToUser(userId) {
+    const user = allUsers.find((u) => String(u.id) === String(userId));
+    const email = user ? user.email : `#${userId}`;
+    if (!confirm(`Bạn có chắc muốn hạ cấp "${email}" xuống User?\n\nManager sẽ mất quyền cấp quyền cho người khác.`)) {
         return;
     }
 
@@ -128,30 +135,16 @@ async function demoteToUser(userId, email) {
         const data = await response.json();
 
         if (data.success) {
-            showAlert('success', `✅ Demoted "${email}" to User successfully!`);
+            banleUI.showAlert('success', `Đã hạ cấp "${email}" xuống User.`);
             loadUsers();
         } else {
-            showAlert('error', data.message || 'Demotion failed');
+            banleUI.showAlert('error', data.message || 'Hạ cấp thất bại');
         }
     } catch (error) {
-        showAlert('error', 'Error: ' + error.message);
+        banleUI.showAlert('error', 'Lỗi: ' + error.message);
     }
 }
 
-function showAlert(type, message) {
-    const alertDiv = document.createElement('div');
-    alertDiv.className = `alert alert-${type === 'success' ? 'success' : 'danger'} alert-dismissible fade show`;
-    alertDiv.style.position = 'fixed';
-    alertDiv.style.top = '20px';
-    alertDiv.style.right = '20px';
-    alertDiv.style.zIndex = '9999';
-    alertDiv.style.minWidth = '300px';
-    alertDiv.innerHTML = `
-        ${message}
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    `;
-    document.body.appendChild(alertDiv);
-    setTimeout(() => alertDiv.remove(), 5000);
-}
+function __noop() { /* locked role — no action */ }
 
 document.addEventListener('DOMContentLoaded', loadUsers);

@@ -2,248 +2,279 @@
 
 {% block title %}Dashboard - {{ project_name }}{% endblock %}
 
-{% block styles %}
-{{ super() }}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/workspace_scenario.css') }}">
-<style>
-    /* ── Page-specific styles (shared tokens now in saas-tokens.css) ── */
+{% block content %}
 
-    /* 1. Layout Structure */
-    .scenario-main {
-        padding: 48px 5%; 
-        max-width: 1400px; 
-        margin: 0 auto;
-        margin-left: 260px; /* Adjust based on sidebar */
-        font-family: 'Inter', -apple-system, sans-serif;
-    }
+<!-- Welcome banner (san-xuat pattern) -->
+<div class="welcome-banner">
+    <div class="welcome-banner__left">
+        {% if user.avatar %}
+        <img class="welcome-banner__avatar" src="{{ user.avatar }}" alt="Avatar">
+        {% else %}
+        <div class="welcome-banner__avatar welcome-banner__avatar--initial">
+            {{ (user.first_name or user.name or user.email)[0]|upper }}
+        </div>
+        {% endif %}
+        <div class="welcome-banner__text">
+            <h2 class="welcome-banner__title">
+                Xin chào {{ user.name or user.email.split('@')[0] }} <span class="welcome-banner__wave">👋</span>
+            </h2>
+            <div class="welcome-banner__meta">
+                <span class="welcome-banner__date">
+                    <i class="fa-regular fa-calendar"></i>
+                    <span id="dashboardDate"></span>
+                </span>
+                <span class="welcome-banner__alert">
+                    <i class="fa-solid fa-bell"></i>
+                    Hôm nay có 5 cảnh báo cần xử lý
+                </span>
+            </div>
+        </div>
+    </div>
+    <div class="welcome-banner__actions">
+        <a href="{{ url_for('pages.scenarios') }}" class="welcome-banner__btn">
+            <i class="fa-solid fa-plus"></i> Dự án mới
+        </a>
+        <a href="{{ url_for('pages.customers') }}" class="welcome-banner__btn">
+            <i class="fa-solid fa-user-plus"></i> Thêm khách
+        </a>
+        <a href="{{ url_for('pages.products') }}" class="welcome-banner__btn">
+            <i class="fa-solid fa-box"></i> Sản phẩm
+        </a>
+    </div>
+</div>
 
-    /* 3. Header Redesign (Linear Style) */
-    .saas-header {
-        display: flex; justify-content: space-between; align-items: flex-end;
-        margin-bottom: 40px; padding-bottom: 24px;
-        border-bottom: 1px solid var(--border-soft);
-    }
-    .saas-eyebrow {
-        color: var(--gray-500); font-weight: 600; text-transform: uppercase;
-        font-size: 0.75rem; letter-spacing: 0.05em; margin-bottom: 8px;
-    }
-    .saas-header h2 { 
-        font-size: 2rem; font-weight: 700; letter-spacing: -0.02em; 
-        color: var(--gray-900); margin: 0; 
-    }
+<!-- Content header -->
+<div class="content__header">
+    <div>
+        <p class="content__subtitle">Dashboard Bán Lẻ</p>
+        <h1 class="content__title">Tổng quan hôm nay</h1>
+    </div>
+    <div class="content__actions">
+        <button class="btn btn--outline" type="button">
+            <i class="fa-solid fa-download"></i> Xuất báo cáo
+        </button>
+        <a href="{{ url_for('pages.scenarios') }}" class="btn btn--primary">
+            <i class="fa-solid fa-plus"></i> Dự án mới
+        </a>
+    </div>
+</div>
 
-    /* Primary CTA Button (Stripe Style) */
-    .btn-saas-primary {
-        background-color: var(--primary);
-        color: #ffffff !important; 
-        padding: 10px 20px; 
-        border-radius: 8px; 
-        font-size: 0.9rem;
-        font-weight: 500;
-        border: 1px solid transparent; 
-        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-        text-decoration: none; 
-        display: inline-flex; align-items: center; 
-        transition: all 0.2s ease;
-    }
-    .btn-saas-primary:hover { 
-        background-color: var(--primary-dark); 
-        transform: translateY(-1px);
-        box-shadow: 0 4px 6px -1px rgba(0, 49, 82, 0.2); 
-    }
-    .btn-saas-primary i { font-size: 0.8rem; }
+<!-- Stats grid -->
+<section class="dashboard-stats">
+    <h2 class="section__title">
+        <i class="fa-solid fa-chart-pie"></i>
+        <span>Tổng quan kinh doanh</span>
+    </h2>
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-card__header">
+                <span>Doanh thu hôm nay</span>
+                <div class="stat-card__icon stat-card__icon--blue">
+                    <i class="fa-solid fa-dollar-sign"></i>
+                </div>
+            </div>
+            <div class="stat-card__value" data-stat="today_revenue">—</div>
+            <div class="stat-card__meta">
+                <span class="stat-card__count" data-stat="today_sales_count">0 đơn</span>
+                <span class="stat-card__pill">Hôm nay</span>
+            </div>
+        </div>
 
-    /* 4. Section Titles */
-    .saas-section-title {
-        font-size: 1rem; font-weight: 600; color: var(--gray-900);
-        margin-bottom: 16px; display: flex; align-items: center; gap: 8px;
-        letter-spacing: -0.01em;
-    }
-    .saas-section-title i { color: var(--gray-500); font-size: 0.9rem; }
+        <div class="stat-card">
+            <div class="stat-card__header">
+                <span>Tổng doanh thu</span>
+                <div class="stat-card__icon stat-card__icon--green">
+                    <i class="fa-solid fa-chart-line"></i>
+                </div>
+            </div>
+            <div class="stat-card__value" data-stat="revenue">—</div>
+            <div class="stat-card__meta">
+                <span class="stat-card__count">Doanh thu tháng</span>
+                <span class="stat-card__pill stat-card__pill--green">Tháng này</span>
+            </div>
+        </div>
 
-    /* 5. Stat Cards (Crisp & White) */
-    .saas-stats-grid { 
-        display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); 
-        gap: 20px; margin-bottom: 48px; 
-    }
-    
-    .saas-stat-card {
-        background: var(--surface-100); 
-        border: 1px solid var(--border-soft); 
-        border-radius: 12px; 
-        padding: 24px; 
-        box-shadow: var(--shadow-md);
-        transition: all 0.2s ease;
-    }
-    .saas-stat-card:hover {
-        border-color: #D1D5DB;
-        box-shadow: var(--shadow-lg);
-        transform: translateY(-2px);
-    }
-    
-    .saas-stat-card p { 
-        font-size: 0.875rem; font-weight: 500; color: var(--gray-500); 
-        margin-bottom: 12px; display: flex; justify-content: space-between;
-    }
-    .saas-stat-card h3 { 
-        font-size: 2.25rem; font-weight: 700; color: var(--gray-900); 
-        margin: 0 0 12px 0; letter-spacing: -0.02em; line-height: 1; 
-    }
-    .saas-stat-pill { 
-        display: inline-block; padding: 2px 8px; 
-        background: #F3F4F6; border: 1px solid var(--border-soft);
-        border-radius: 6px; color: var(--gray-500); 
-        font-size: 0.75rem; font-weight: 500; 
-    }
+        <div class="stat-card">
+            <div class="stat-card__header">
+                <span>Đơn hàng mới</span>
+                <div class="stat-card__icon stat-card__icon--orange">
+                    <i class="fa-solid fa-cart-shopping"></i>
+                </div>
+            </div>
+            <div class="stat-card__value" data-stat="new_orders">0</div>
+            <div class="stat-card__meta">
+                <span class="stat-card__count" data-stat="new_orders_label">0 đơn</span>
+                <span class="stat-card__pill stat-card__pill--orange">Hôm nay</span>
+            </div>
+        </div>
 
-    /* 6. Quick Actions Grid */
-    .saas-actions-grid { 
-        display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; 
-    }
-    .saas-action-card {
-        display: flex; align-items: flex-start; gap: 16px; padding: 20px;
-        background: var(--surface-100); border: 1px solid var(--border-soft);
-        border-radius: 12px; box-shadow: var(--shadow-md);
-        text-decoration: none !important; color: inherit; cursor: pointer;
-        transition: all 0.2s ease;
-    }
-    .saas-action-card:hover {
-        border-color: var(--primary);
-        box-shadow: var(--shadow-lg);
-        transform: translateY(-2px);
-    }
-    
-    .action-icon-wrapper {
-        width: 40px; height: 40px; border-radius: 8px; 
-        background: #EEF2FF; /* Very light indigo */
-        color: var(--primary); 
-        display: flex; align-items: center; justify-content: center;
-        font-size: 1.1rem; flex-shrink: 0;
-    }
-    
-    .action-content { flex: 1; }
-    .action-content h4 { 
-        font-size: 0.95rem; font-weight: 600; color: var(--gray-900); 
-        margin: 0 0 4px 0; 
-    }
-    .action-content p { 
-        margin: 0; font-size: 0.85rem; color: var(--gray-500); line-height: 1.4;
-    }
-    
-    .action-arrow { 
-        color: #D1D5DB; font-size: 0.9rem; transition: all 0.2s; 
-        margin-top: 2px;
-    }
-    .saas-action-card:hover .action-arrow { 
-        color: var(--primary); transform: translateX(4px); 
-    }
+        <div class="stat-card">
+            <div class="stat-card__header">
+                <span>Đơn hoàn trả</span>
+                <div class="stat-card__icon stat-card__icon--red">
+                    <i class="fa-solid fa-rotate-left"></i>
+                </div>
+            </div>
+            <div class="stat-card__value" data-stat="pending_returns">0</div>
+            <div class="stat-card__meta">
+                <span class="stat-card__count">Đang xử lý</span>
+                <span class="stat-card__pill stat-card__pill--red">Đang chờ</span>
+            </div>
+        </div>
+    </div>
+</section>
 
-    @media (max-width: 992px) {
-        .scenario-main { margin-left: 0; padding: 32px 5%; }
-        .saas-header { flex-direction: column; align-items: flex-start; gap: 16px; }
-    }
-</style>
+<!-- Charts row -->
+<section class="dashboard-charts">
+    <div class="dashboard-charts__main">
+        <div class="chart-card chart-animated">
+            <div class="chart-card__header">
+                <h3>Doanh thu 7 ngày qua</h3>
+                <div class="chart-card__actions">
+                    <button class="chart-btn" data-range="7d">7N</button>
+                    <button class="chart-btn active" data-range="30d">30N</button>
+                    <button class="chart-btn" data-range="90d">90N</button>
+                </div>
+            </div>
+            <div class="chart-card__body">
+                <canvas id="revenueChart" height="240"></canvas>
+            </div>
+        </div>
+
+        <div class="chart-card chart-animated">
+            <div class="chart-card__header">
+                <h3>Sản phẩm bán chạy</h3>
+                <button class="chart-btn">Xem tất cả</button>
+            </div>
+            <div class="chart-card__body">
+                <div id="topProductsList" class="iot-event-list">
+                    <div class="empty-state" style="padding: 30px 20px">
+                        <i class="fa-solid fa-box-open"></i>
+                        <p>Đang tải...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="dashboard-charts__side">
+        <div class="chart-card chart-animated">
+            <div class="chart-card__header">
+                <h3>Cảnh báo</h3>
+            </div>
+            <div class="chart-card__body">
+                <div class="iot-event-list">
+                    <div class="iot-event">
+                        <div class="iot-event__icon iot-event__icon--red">
+                            <i class="fa-solid fa-triangle-exclamation"></i>
+                        </div>
+                        <div class="iot-event__content">
+                            <p class="iot-event__title">3 sản phẩm sắp hết hàng</p>
+                            <span class="iot-event__meta">Cần nhập thêm trong tuần này</span>
+                        </div>
+                    </div>
+                    <div class="iot-event">
+                        <div class="iot-event__icon iot-event__icon--orange">
+                            <i class="fa-solid fa-clock"></i>
+                        </div>
+                        <div class="iot-event__content">
+                            <p class="iot-event__title">Hạn sử dụng sắp tới</p>
+                            <span class="iot-event__meta">5 sản phẩm sắp hết HSD</span>
+                        </div>
+                    </div>
+                    <div class="iot-event">
+                        <div class="iot-event__icon iot-event__icon--blue">
+                            <i class="fa-solid fa-robot"></i>
+                        </div>
+                        <div class="iot-event__content">
+                            <p class="iot-event__title">Rule tự động thất bại</p>
+                            <span class="iot-event__meta">Lỗi nghiêm trọng</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Quick Actions -->
+<section class="dashboard-actions">
+    <h2 class="section__title">
+        <i class="fa-solid fa-bolt"></i>
+        <span>Thao tác nhanh</span>
+    </h2>
+    <div class="action-grid">
+        <a href="{{ url_for('pages.scenarios') }}" class="action-card">
+            <div class="action-icon-wrapper">
+                <i class="fa-solid fa-magic"></i>
+            </div>
+            <div class="action-content">
+                <h4>Quy trình mới</h4>
+                <p>Chọn template và triển khai tự động hóa.</p>
+            </div>
+            <div class="action-arrow">
+                <i class="fa-solid fa-chevron-right"></i>
+            </div>
+        </a>
+
+        <a href="{{ url_for('pages.products') }}" class="action-card">
+            <div class="action-icon-wrapper action-icon-wrapper--green">
+                <i class="fa-solid fa-box"></i>
+            </div>
+            <div class="action-content">
+                <h4>Sản phẩm</h4>
+                <p>Quản lý kho hàng và danh mục.</p>
+            </div>
+            <div class="action-arrow">
+                <i class="fa-solid fa-chevron-right"></i>
+            </div>
+        </a>
+
+        <a href="{{ url_for('pages.customers') }}" class="action-card">
+            <div class="action-icon-wrapper action-icon-wrapper--orange">
+                <i class="fa-solid fa-users"></i>
+            </div>
+            <div class="action-content">
+                <h4>Khách hàng</h4>
+                <p>Quản lý danh sách và lịch sử mua hàng.</p>
+            </div>
+            <div class="action-arrow">
+                <i class="fa-solid fa-chevron-right"></i>
+            </div>
+        </a>
+
+        <a href="{{ url_for('pages.settings') }}" class="action-card">
+            <div class="action-icon-wrapper action-icon-wrapper--purple">
+                <i class="fa-solid fa-sliders"></i>
+            </div>
+            <div class="action-content">
+                <h4>Cài đặt</h4>
+                <p>Cấu hình không gian làm việc của bạn.</p>
+            </div>
+            <div class="action-arrow">
+                <i class="fa-solid fa-chevron-right"></i>
+            </div>
+        </a>
+    </div>
+</section>
+
 {% endblock %}
 
 {% block scripts %}
 {{ super() }}
 <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
-{% endblock %}
-
-{% block content %}
-<div class="scenario-wrapper">
-    {% include 'components/sidebar.html' %}
-
-    <main class="scenario-main">
-        <!-- Header -->
-        <div class="saas-header">
-            <div>
-                <p class="saas-eyebrow" data-i18n="dashboard.title">Dashboard Bán Lẻ</p>
-                <h2><span data-i18n="dashboard.greeting">Xin chào</span>, {{ user.name or user.email.split('@')[0] }}</h2>
-            </div>
-            <div>
-                <a href="{{ url_for('pages.scenarios') }}" class="btn-saas-primary">
-                    <i class="fas fa-plus me-2"></i><span data-i18n="dashboard.newProject">Dự án mới</span>
-                </a>
-            </div>
-        </div>
-
-        <!-- Analytics -->
-        <div style="margin-bottom: 40px;">
-            <div class="saas-section-title">
-                <i class="fas fa-chart-pie"></i> <span data-i18n="dashboard.overview">Tổng quan kinh doanh</span>
-            </div>
-            <div class="saas-stats-grid">
-                <div class="saas-stat-card">
-                    <p><span data-i18n="dashboard.todayRevenue">Doanh thu hôm nay</span> <i class="fas fa-ellipsis-h" style="color: #D1D5DB; cursor: pointer;" role="button" aria-label="Tùy chọn"></i></p>
-                    <h3 data-stat="today_revenue">—</h3>
-                    <span class="saas-stat-pill" data-stat="today_sales_count">Hôm nay</span>
-                </div>
-                <div class="saas-stat-card">
-                    <p><span data-i18n="dashboard.totalRevenue">Tổng doanh thu</span> <i class="fas fa-ellipsis-h" style="color: #D1D5DB; cursor: pointer;" role="button" aria-label="Tùy chọn"></i></p>
-                    <h3 data-stat="revenue">—</h3>
-                    <span class="saas-stat-pill">Tháng này</span>
-                </div>
-                <div class="saas-stat-card">
-                    <p><span data-i18n="dashboard.newOrders">Đơn hàng mới</span> <i class="fas fa-ellipsis-h" style="color: #D1D5DB; cursor: pointer;" role="button" aria-label="Tùy chọn"></i></p>
-                    <h3 data-stat="new_orders">0</h3>
-                    <span class="saas-stat-pill">Hôm nay</span>
-                </div>
-                <div class="saas-stat-card">
-                    <p><span data-i18n="dashboard.returnOrders">Đơn hoàn trả</span> <i class="fas fa-ellipsis-h" style="color: #D1D5DB; cursor: pointer;" role="button" aria-label="Tùy chọn"></i></p>
-                    <h3 data-stat="pending_returns">0</h3>
-                    <span class="saas-stat-pill">Đang chờ</span>
-                </div>
-            </div>
-        </div>
-
-        <!-- Quick Actions -->
-        <div>
-            <div class="saas-section-title">
-                <i class="fas fa-bolt"></i> <span data-i18n="dashboard.quickActions">Thao tác nhanh</span>
-            </div>
-            <div class="saas-actions-grid">
-                <a href="{{ url_for('pages.scenarios') }}" class="saas-action-card">
-                    <div class="action-icon-wrapper">
-                        <i class="fas fa-magic"></i>
-                    </div>
-                    <div class="action-content">
-                        <h4 data-i18n="dashboard.newWorkflow">Quy trình mới</h4>
-                        <p data-i18n="dashboard.newWorkflowDesc">Chọn template và triển khai tự động hóa.</p>
-                    </div>
-                    <div class="action-arrow">
-                        <i class="fas fa-chevron-right"></i>
-                    </div>
-                </a>
-
-                <a href="{{ url_for('pages.scenarios') }}" class="saas-action-card">
-                    <div class="action-icon-wrapper">
-                        <i class="fas fa-project-diagram"></i>
-                    </div>
-                    <div class="action-content">
-                        <h4 data-i18n="dashboard.myScenarios">Kịch bản của tôi</h4>
-                        <p data-i18n="dashboard.myScenariosDesc">Quản lý các quy trình tự động đang có.</p>
-                    </div>
-                    <div class="action-arrow">
-                        <i class="fas fa-chevron-right"></i>
-                    </div>
-                </a>
-
-                <a href="{{ url_for('pages.settings') }}" class="saas-action-card">
-                    <div class="action-icon-wrapper">
-                        <i class="fas fa-sliders-h"></i>
-                    </div>
-                    <div class="action-content">
-                        <h4 data-i18n="dashboard.settings">Cài đặt</h4>
-                        <p data-i18n="dashboard.settingsDesc">Cấu hình không gian làm việc của bạn.</p>
-                    </div>
-                    <div class="action-arrow">
-                        <i class="fas fa-chevron-right"></i>
-                    </div>
-                </a>
-            </div>
-        </div>
-
-    </main>
-</div>
+<script>
+// Set current date in welcome banner
+(function() {
+    var el = document.getElementById('dashboardDate');
+    if (el) {
+        var d = new Date();
+        var days = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6'];
+        var day = days[d.getDay()];
+        var date = String(d.getDate()).padStart(2, '0');
+        var month = String(d.getMonth() + 1).padStart(2, '0');
+        el.textContent = day + ', ' + date + '/' + month + '/' + d.getFullYear();
+    }
+})();
+</script>
 {% endblock %}

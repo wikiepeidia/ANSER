@@ -65,7 +65,7 @@ function showProfileModal() {
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">Sửa hồ sơ</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    <button type="button" class="modal__close" onclick="closeModal('profileModal')" aria-label="Đóng"><i class="fa-solid fa-xmark"></i></button>
                 </div>
                 <div class="modal-body">
                     <form id="profileForm">
@@ -80,7 +80,7 @@ function showProfileModal() {
                     </form>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('profileModal')">Đóng</button>
                     <button type="button" class="btn btn-primary" onclick="saveProfile()">Lưu thay đổi</button>
                 </div>
             </div>
@@ -88,9 +88,8 @@ function showProfileModal() {
     </div>`;
     
     document.body.insertAdjacentHTML('beforeend', modalHtml);
-    const modal = new bootstrap.Modal(document.getElementById('profileModal'));
-    modal.show();
-    
+    openModal('profileModal');
+
     // Fetch current user data to populate form
     fetch('/api/session')
         .then(res => res.json())
@@ -100,10 +99,16 @@ function showProfileModal() {
                 document.querySelector('#profileForm [name="email"]').value = data.user.email || '';
             }
         });
-        
-    document.getElementById('profileModal').addEventListener('hidden.bs.modal', function () {
-        this.remove();
-    });
+
+    // Remove modal from DOM when user clicks close (no Bootstrap event, use click delegation)
+    const profileModalEl = document.getElementById('profileModal');
+    const cleanupProfileModal = (e) => {
+        if (e.target.classList && (e.target.classList.contains('modal__close') || e.target.closest('.modal__close'))) {
+            closeModal('profileModal');
+            setTimeout(() => profileModalEl.remove(), 200);
+        }
+    };
+    profileModalEl.addEventListener('click', cleanupProfileModal);
 }
 
 async function saveProfile() {
@@ -116,7 +121,7 @@ async function saveProfile() {
         });
         if (response.ok) {
             showNotification('Cập nhật hồ sơ thành công', 'success');
-            bootstrap.Modal.getInstance(document.getElementById('profileModal')).hide();
+            closeModal('profileModal');
             setTimeout(() => location.reload(), 1000);
         }
     } catch (e) {

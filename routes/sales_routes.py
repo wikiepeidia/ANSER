@@ -84,7 +84,7 @@ def _notify_unusual_transaction(conn, warehouse_id, total_amount, user_email):
 @sales_bp.route('/sale')
 @login_required
 def sale_page():
-    return render_template('sale.html')
+    return render_template('sale.html', user=current_user)
 
 
 @sales_bp.route('/api/products/search')

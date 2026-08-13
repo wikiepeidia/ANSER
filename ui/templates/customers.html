@@ -2,129 +2,119 @@
 
 {% block title %}Khách hàng{% endblock %}
 
-{% block styles %}
-{{ super() }}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/admin_customers.css') }}">
-<style>
-    /* ── Page-specific styles (shared tokens now in saas-tokens.css) ── */
+{% block content %}
 
-    .border-bottom { border-bottom: 1px solid var(--border-soft) !important; margin-bottom: 32px !important; padding-bottom: 16px !important; }
-    h1.h2 { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.02em; color: var(--gray-900); display: flex; align-items: center; gap: 12px; margin:0;}
-    h1.h2 i { color: var(--gray-500); font-size: 1.25rem; }
+<!-- Content header -->
+<div class="content__header">
+    <div>
+        <p class="content__subtitle">
+            <a href="{{ url_for('pages.dashboard') }}" style="color: var(--brand-primary); text-decoration: none;">Dashboard</a>
+            <span class="mx-2">›</span>
+            <span>Khách hàng</span>
+        </p>
+        <h1 class="content__title">
+            <i class="fa-solid fa-users"></i>
+            Quản lý khách hàng
+        </h1>
+    </div>
+    <div class="content__actions">
+        <button class="btn btn--primary" type="button" onclick="openAddCustomerModal()">
+            <i class="fa-solid fa-plus"></i> Thêm khách hàng
+        </button>
+    </div>
+</div>
 
-    .btn { border-radius: 8px; font-weight: 500; font-size: 0.875rem; padding: 8px 16px; border: 1px solid transparent; box-shadow: var(--shadow-md); transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 8px; }
-    .btn-primary { background-color: var(--primary) !important; color: #fff !important; }
-    .btn-primary:hover { background-color: #4F46E5 !important; transform: translateY(-1px); box-shadow: var(--shadow-md); }
-    .btn-secondary { background-color: #fff !important; color: var(--gray-900) !important; border-color: var(--border-soft) !important; }
+<!-- Customers table -->
+<section class="card">
+    <div class="card__body" style="padding: 0;">
+        <div class="table-wrapper">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Mã khách hàng</th>
+                        <th>Tên khách hàng</th>
+                        <th>Số điện thoại</th>
+                        <th>Email</th>
+                        <th>Địa chỉ</th>
+                        <th>Ghi chú</th>
+                        <th>Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody id="customersTableBody">
+                    <tr>
+                        <td colspan="7" style="text-align: center; padding: 40px;">
+                            <i class="fa-solid fa-spinner fa-spin"></i> Đang tải...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
 
-    .card { background: var(--surface-100) !important; border: 1px solid var(--border-soft) !important; border-radius: 12px !important; box-shadow: var(--shadow-md) !important; overflow: hidden; margin-bottom: 24px;}
-    .card-body { padding: 0; }
+<!-- Modal: Add/Edit Customer -->
+<div class="modal" id="customerModal">
+    <div class="modal__overlay" onclick="closeModal('customerModal')"></div>
+    <div class="modal__content modal__content--lg">
+        <div class="modal__header">
+            <h2 id="customerModalTitle">Thêm khách hàng</h2>
+            <button type="button" class="modal__close" onclick="closeModal('customerModal')" aria-label="Đóng">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        <div class="modal__body">
+            <input type="hidden" id="customerId">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="customerCode">Mã KH <span style="color: var(--status-error);">*</span></label>
+                    <input type="text" class="form-control" id="customerCode" required>
+                </div>
+                <div class="form-group">
+                    <label for="customerName">Tên khách hàng <span style="color: var(--status-error);">*</span></label>
+                    <input type="text" class="form-control" id="customerName" required>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="customerPhone">Số điện thoại</label>
+                    <input type="tel" class="form-control" id="customerPhone">
+                </div>
+                <div class="form-group">
+                    <label for="customerEmail">Email</label>
+                    <input type="email" class="form-control" id="customerEmail">
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="customerAddress">Địa chỉ</label>
+                <input type="text" class="form-control" id="customerAddress">
+            </div>
+            <div class="form-group">
+                <label for="customerNotes">Ghi chú</label>
+                <textarea class="form-control" id="customerNotes" rows="3"></textarea>
+            </div>
+        </div>
+        <div class="modal__footer">
+            <button type="button" class="btn btn--outline" onclick="closeModal('customerModal')">Hủy</button>
+            <button type="button" class="btn btn--primary" onclick="saveCustomer()">
+                <i class="fa-solid fa-check"></i> Lưu
+            </button>
+        </div>
+    </div>
+</div>
 
-    .table { margin-bottom: 0; }
-    .table th { background-color: #F9FAFB; color: var(--gray-500); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; padding: 12px 24px; border-bottom: 1px solid var(--border-soft); font-weight: 600; border-top: none;}
-    .table td { padding: 16px 24px; vertical-align: middle; border-bottom: 1px solid var(--border-soft); color: var(--gray-900); font-size: 0.875rem; }
-    .table-hover tbody tr:hover { background-color: #F9FAFB; }
-    .table tbody tr:last-child td { border-bottom: none; }
-
-    .modal-content { border-radius: 16px; border: 1px solid var(--border-soft); }
-    .modal-header, .modal-body, .modal-footer { border-color: var(--border-soft); }
-    .form-control { border-radius: 8px; border: 1px solid #D1D5DB; padding: 10px 14px; font-size: 0.9rem; }
-    .form-control:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(0, 49, 82, 0.2); }
-    .form-label { font-weight: 600; color: var(--gray-900); font-size: 0.875rem; margin-bottom: 8px; }
-</style>
 {% endblock %}
 
 {% block scripts %}
 {{ super() }}
 <script src="{{ url_for('static', filename='js/admin_customers.js') }}" defer></script>
-
-{% endblock %}
-
-{% block content %}
-<div class="app-layout">
-    {% include 'components/sidebar.html' %}
-
-    <main class="app-content main-content customers-page">
-        <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-            <h1 class="h2"><i class="fas fa-users"></i> <span data-i18n="customers.title">Quản lý khách hàng</span></h1>
-            <button class="btn btn-primary" onclick="openAddCustomerModal()">
-                <i class="fas fa-plus"></i> <span data-i18n="customers.addCustomer">Thêm khách hàng</span>
-            </button>
-        </div>
-
-        <div class="card">
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-hover">
-                        <thead>
-                            <tr>
-                                <th data-i18n="customers.colCode">Mã khách hàng</th>
-                                <th data-i18n="customers.colName">Tên khách hàng</th>
-                                <th data-i18n="customers.colPhone">Số điện thoại</th>
-                                <th data-i18n="common.email">Email</th>
-                                <th data-i18n="customers.colAddress">Địa chỉ</th>
-                                <th data-i18n="customers.colNotes">Ghi chú</th>
-                                <th data-i18n="common.actions">Thao tác</th>
-                            </tr>
-                        </thead>
-                        <tbody id="customersTableBody">
-                            <tr>
-                                <td colspan="7" class="text-center py-4">
-                                    <div class="spinner-border text-primary" role="status"></div>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </main>
-</div>
-
-<!-- Modal: Thêm/Sửa khách hàng -->
-<div class="modal fade" id="customerModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="customerModalTitle" style="font-weight: 700;" data-i18n="customers.addCustomer">Thêm khách hàng</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body p-4">
-                <input type="hidden" id="customerId">
-                <div class="row">
-                    <div class="col-md-6 mb-4">
-                        <label class="form-label"><span data-i18n="customers.codeLabel">Mã KH</span> <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" id="customerCode" required>
-                    </div>
-                    <div class="col-md-6 mb-4">
-                        <label class="form-label"><span data-i18n="customers.colName">Tên khách hàng</span> <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" id="customerName" required>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-6 mb-4">
-                        <label class="form-label" data-i18n="customers.colPhone">Số điện thoại</label>
-                        <input type="tel" class="form-control" id="customerPhone">
-                    </div>
-                    <div class="col-md-6 mb-4">
-                        <label class="form-label" data-i18n="common.email">Email</label>
-                        <input type="email" class="form-control" id="customerEmail">
-                    </div>
-                </div>
-                <div class="mb-4">
-                    <label class="form-label" data-i18n="customers.colAddress">Địa chỉ</label>
-                    <input type="text" class="form-control" id="customerAddress">
-                </div>
-                <div class="mb-2">
-                    <label class="form-label" data-i18n="customers.colNotes">Ghi chú</label>
-                    <textarea class="form-control" id="customerNotes" rows="3"></textarea>
-                </div>
-            </div>
-            <div class="modal-footer bg-light p-3">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-i18n="common.cancel">Hủy</button>
-                <button type="button" class="btn btn-primary" onclick="saveCustomer()" data-i18n="common.save">Lưu</button>
-            </div>
-        </div>
-    </div>
-</div>
+<script>
+function openModal(id) {
+    var el = document.getElementById(id);
+    if (el) el.classList.add('active', 'show');
+}
+function closeModal(id) {
+    var el = document.getElementById(id);
+    if (el) el.classList.remove('active', 'show');
+}
+</script>
 {% endblock %}

@@ -2,196 +2,160 @@
 
 {% block title %}Không gian làm việc - {{ project_name }}{% endblock %}
 
-{% block styles %}
-{{ super() }}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/workspace_scenario.css') }}">
-<style>
-    /* ── Page-specific styles (shared tokens now in saas-tokens.css) ── */
+{% block content %}
 
-    .scenario-main { padding: 40px 5%; max-width: 1400px; margin: 0 auto; margin-left: 280px; }
+<!-- Content header -->
+<div class="content__header">
+    <div>
+        <p class="content__subtitle">Workspace · {{ user.role|capitalize }}</p>
+        <h1 class="content__title">
+            <i class="fa-solid fa-rocket"></i>
+            Không gian làm việc
+        </h1>
+    </div>
+</div>
 
-    /* Remove the ugly white box wrapper from the old CSS */
-    .collection-block {
-        background: transparent !important; border: none !important;
-        box-shadow: none !important; padding: 0 !important; margin-bottom: 56px;
-    }
+{% if user.role in ['manager', 'admin'] %}
+<!-- Bảng điều khiển vận hành -->
+<section class="dashboard-actions">
+    <h2 class="section__title">
+        <i class="fa-solid fa-briefcase"></i>
+        <span>Quản lý kinh doanh</span>
+    </h2>
+    <div class="action-grid">
+        <button type="button" class="action-card" onclick="location.href='{{ url_for('pages.create_user_account') }}'">
+            <div class="action-icon-wrapper">
+                <i class="fa-solid fa-users"></i>
+            </div>
+            <div class="action-content">
+                <h4>Quản lý nhân viên</h4>
+                <p>Tạo và quản lý tài khoản nhân viên.</p>
+            </div>
+            <div class="action-arrow"><i class="fa-solid fa-chevron-right"></i></div>
+        </button>
 
-    /* Section Headers */
-    .collection-head { margin-bottom: 24px; border-bottom: 1px solid var(--border-soft); padding-bottom: 16px;}
-    .launch-eyebrow { color: var(--gray-500); font-weight: 600; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em; margin-bottom: 8px; }
-    .collection-head h3 { font-size: 1.5rem; font-weight: 700; color: var(--gray-900); margin: 0; letter-spacing: -0.02em; }
+        <button type="button" class="action-card" onclick="location.href='{{ url_for('sales.sale_page') }}'">
+            <div class="action-icon-wrapper action-icon-wrapper--green">
+                <i class="fa-solid fa-cash-register"></i>
+            </div>
+            <div class="action-content">
+                <h4>Bán hàng</h4>
+                <p>Bán sản phẩm, quản lý giỏ hàng và thanh toán.</p>
+            </div>
+            <div class="action-arrow"><i class="fa-solid fa-chevron-right"></i></div>
+        </button>
 
-    /* SaaS Actions Grid - TOP (3 columns for 6 items) */
-    .grid-3-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; }
-    
-    /* SaaS Actions Grid - BOTTOM (2 columns for 50/50 split) */
-    .grid-2-cols { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+        <button type="button" class="action-card" onclick="location.href='{{ url_for('pages.products') }}'">
+            <div class="action-icon-wrapper action-icon-wrapper--orange">
+                <i class="fa-solid fa-box"></i>
+            </div>
+            <div class="action-content">
+                <h4>Sản phẩm</h4>
+                <p>Quản lý danh mục, tồn kho và giá cả theo thời gian thực.</p>
+            </div>
+            <div class="action-arrow"><i class="fa-solid fa-chevron-right"></i></div>
+        </button>
 
-    .saas-action-card {
-        display: flex; align-items: flex-start; gap: 16px; padding: 24px;
-        background: var(--surface-100); border: 1px solid var(--border-soft);
-        border-radius: 12px; box-shadow: var(--shadow-md);
-        text-decoration: none !important; color: inherit; cursor: pointer;
-        transition: all 0.2s ease; text-align: left; width: 100%;
-    }
-    .saas-action-card:hover { border-color: var(--primary); box-shadow: var(--shadow-md); transform: translateY(-2px); }
-    
-    .action-icon-wrapper {
-        width: 44px; height: 44px; border-radius: 10px; flex-shrink: 0;
-        display: flex; align-items: center; justify-content: center; font-size: 1.2rem;
-    }
-    .icon-blue { background: #EEF2FF; color: var(--primary); }
-    .icon-green { background: #ECFDF5; color: var(--success); }
-    .icon-orange { background: #FFFBEB; color: var(--warning); }
-    .icon-purple { background: #FAF5FF; color: #8B5CF6; }
-    .icon-rose { background: #FFF1F2; color: #F43F5E; }
-    
-    .action-content { flex: 1; }
-    .action-content h4 { font-size: 1rem; font-weight: 600; color: var(--gray-900); margin: 0 0 6px 0; }
-    .action-content p { margin: 0; font-size: 0.875rem; color: var(--gray-500); line-height: 1.4; }
-    
-    .action-arrow { color: #D1D5DB; font-size: 1rem; transition: all 0.2s; margin-top: 2px; }
-    .saas-action-card:hover .action-arrow { color: var(--primary); transform: translateX(4px); }
+        <button type="button" class="action-card" onclick="location.href='{{ url_for('pages.imports') }}'">
+            <div class="action-icon-wrapper">
+                <i class="fa-solid fa-download"></i>
+            </div>
+            <div class="action-content">
+                <h4>Nhập hàng</h4>
+                <p>Ghi nhận lô hàng nhập, nhà cung cấp và cập nhật giá vốn.</p>
+            </div>
+            <div class="action-arrow"><i class="fa-solid fa-chevron-right"></i></div>
+        </button>
 
-    @media (max-width: 992px) { 
-        .scenario-main { margin-left: 0; padding: 32px 5%; } 
-        .grid-2-cols { grid-template-columns: 1fr; }
-    }
-</style>
+        <button type="button" class="action-card" onclick="location.href='{{ url_for('pages.exports') }}'">
+            <div class="action-icon-wrapper action-icon-wrapper--green">
+                <i class="fa-solid fa-upload"></i>
+            </div>
+            <div class="action-content">
+                <h4>Xuất hàng</h4>
+                <p>Theo dõi đơn hàng xuất, tìm kiếm giao dịch và hỗ trợ mua/bán.</p>
+            </div>
+            <div class="action-arrow"><i class="fa-solid fa-chevron-right"></i></div>
+        </button>
+
+        <button type="button" class="action-card" onclick="location.href='{{ url_for('pages.se_reports') }}'">
+            <div class="action-icon-wrapper action-icon-wrapper--red">
+                <i class="fa-solid fa-chart-pie"></i>
+            </div>
+            <div class="action-content">
+                <h4>Báo cáo &amp; Thống kê</h4>
+                <p>Theo dõi doanh thu, chi phí và phân tích hiệu suất kinh doanh.</p>
+            </div>
+            <div class="action-arrow"><i class="fa-solid fa-chevron-right"></i></div>
+        </button>
+    </div>
+</section>
+
+<!-- Tự động hóa thông minh -->
+<section class="dashboard-actions">
+    <h2 class="section__title">
+        <i class="fa-solid fa-robot"></i>
+        <span>Tự động hóa thông minh</span>
+    </h2>
+    <div class="action-grid">
+        <button type="button" class="action-card" onclick="location.href='{{ url_for('pages.se_auto_import') }}'">
+            <div class="action-icon-wrapper action-icon-wrapper--orange">
+                <i class="fa-solid fa-rotate"></i>
+            </div>
+            <div class="action-content">
+                <h4>Nhập hàng tự động</h4>
+                <p>Sử dụng bot tự động đặt hàng khi tồn kho thấp và đồng bộ kho.</p>
+            </div>
+            <div class="action-arrow"><i class="fa-solid fa-chevron-right"></i></div>
+        </button>
+
+        <button type="button" class="action-card" onclick="location.href='{{ url_for('pages.scenarios') }}'">
+            <div class="action-icon-wrapper action-icon-wrapper--purple">
+                <i class="fa-solid fa-project-diagram"></i>
+            </div>
+            <div class="action-content">
+                <h4>Xây dựng quy trình</h4>
+                <p>Chọn template và triển khai tự động hóa.</p>
+            </div>
+            <div class="action-arrow"><i class="fa-solid fa-chevron-right"></i></div>
+        </button>
+    </div>
+</section>
+
+{% else %}
+<!-- Nhân viên view -->
+<section class="dashboard-actions">
+    <h2 class="section__title">
+        <i class="fa-solid fa-user"></i>
+        <span>Truy cập nhân viên</span>
+    </h2>
+    <div class="action-grid">
+        <button type="button" class="action-card" onclick="location.href='{{ url_for('sales.sale_page') }}'">
+            <div class="action-icon-wrapper action-icon-wrapper--green">
+                <i class="fa-solid fa-cash-register"></i>
+            </div>
+            <div class="action-content">
+                <h4>Bán hàng</h4>
+                <p>Bán sản phẩm, quản lý giỏ hàng và thanh toán.</p>
+            </div>
+            <div class="action-arrow"><i class="fa-solid fa-chevron-right"></i></div>
+        </button>
+    </div>
+</section>
+{% endif %}
+
 {% endblock %}
 
 {% block scripts %}
 {{ super() }}
 <script>
-    function redirectToWallet(hash) {
-        let url = '/wallet';
-        if (hash) url += hash;
-        window.location.href = url;
-    }
+function redirectToWallet(hash) {
+    var url = '/wallet';
+    if (hash) url += hash;
+    window.location.href = url;
+}
 </script>
-{% if current_user.role in ['manager', 'admin'] %}
+{% if user.role in ['manager', 'admin'] %}
 <script src="{{ url_for('static', filename='js/wallet.js') }}" defer></script>
 {% endif %}
-{% endblock %}
-
-{% block content %}
-<div class="scenario-wrapper">
-    {% include 'components/sidebar.html' %}
-
-    <main class="scenario-main">
-        {% if current_user.role in ['manager', 'admin'] %}
-        <section class="collection-block">
-            <div class="collection-head">
-                <div>
-                    <p class="launch-eyebrow" data-i18n="ws.businessManagement">Quản lý kinh doanh</p>
-                    <h3 data-i18n="ws.operationsDashboard">Bảng điều khiển vận hành</h3>
-                </div>
-            </div>
-            
-            <!-- Using grid-3-cols to perfectly fit 6 items -->
-            <div class="grid-3-cols">
-                <button type="button" class="saas-action-card" onclick="location.href='{{ url_for('pages.create_user_account') }}'">
-                    <div class="action-icon-wrapper icon-blue"><i class="fas fa-users"></i></div>
-                    <div class="action-content">
-                        <h4 data-i18n="nav.manageEmployees">Quản lý nhân viên</h4>
-                        <p data-i18n="ws.manageEmployeesDesc">Tạo và quản lý tài khoản nhân viên.</p>
-                    </div>
-                    <div class="action-arrow"><i class="fas fa-chevron-right"></i></div>
-                </button>
-                <button type="button" class="saas-action-card" onclick="location.href='{{ url_for('sales.sale_page') }}'">
-                    <div class="action-icon-wrapper icon-green"><i class="fas fa-cash-register"></i></div>
-                    <div class="action-content">
-                        <h4 data-i18n="ws.sellProducts">Bán hàng</h4>
-                        <p data-i18n="ws.sellProductsDesc">Bán sản phẩm, quản lý giỏ hàng và thanh toán.</p>
-                    </div>
-                    <div class="action-arrow"><i class="fas fa-chevron-right"></i></div>
-                </button>
-                <button type="button" class="saas-action-card" onclick="location.href='{{ url_for('pages.products') }}'">
-                    <div class="action-icon-wrapper icon-orange"><i class="fas fa-box"></i></div>
-                    <div class="action-content">
-                        <h4 data-i18n="sale.colProduct">Sản phẩm</h4>
-                        <p data-i18n="ws.productsDesc">Quản lý danh mục, tồn kho và giá cả theo thời gian thực.</p>
-                    </div>
-                    <div class="action-arrow"><i class="fas fa-chevron-right"></i></div>
-                </button>
-                <button type="button" class="saas-action-card" onclick="location.href='{{ url_for('pages.imports') }}'">
-                    <div class="action-icon-wrapper icon-blue"><i class="fas fa-download"></i></div>
-                    <div class="action-content">
-                        <h4 data-i18n="ws.imports">Nhập hàng</h4>
-                        <p data-i18n="ws.importsDesc">Ghi nhận lô hàng nhập, nhà cung cấp và cập nhật giá vốn.</p>
-                    </div>
-                    <div class="action-arrow"><i class="fas fa-chevron-right"></i></div>
-                </button>
-                <button type="button" class="saas-action-card" onclick="location.href='{{ url_for('pages.exports') }}'">
-                    <div class="action-icon-wrapper icon-green"><i class="fas fa-upload"></i></div>
-                    <div class="action-content">
-                        <h4 data-i18n="ws.exports">Xuất hàng</h4>
-                        <p data-i18n="ws.exportsDesc">Theo dõi đơn hàng xuất, tìm kiếm giao dịch và hỗ trợ mua/bán.</p>
-                    </div>
-                    <div class="action-arrow"><i class="fas fa-chevron-right"></i></div>
-                </button>
-                
-                <!-- NEW 6TH CARD: Fixed the translation glitch by removing the data-i18n tags -->
-                <button type="button" class="saas-action-card" onclick="location.href='{{ url_for('pages.se_reports') }}'">
-                    <div class="action-icon-wrapper icon-rose"><i class="fas fa-chart-pie"></i></div>
-                    <div class="action-content">
-                        <h4>Báo cáo & Thống kê</h4>
-                        <p>Theo dõi doanh thu, chi phí và phân tích hiệu suất kinh doanh.</p>
-                    </div>
-                    <div class="action-arrow"><i class="fas fa-chevron-right"></i></div>
-                </button>
-            </div>
-        </section>
-
-        <section class="collection-block">
-            <div class="collection-head">
-                <div>
-                    <p class="launch-eyebrow" data-i18n="ws.smartAutomation">Tự động hóa thông minh</p>
-                    <h3 data-i18n="ws.scenariosAndAi">Kịch bản &amp; Tự động hóa AI</h3>
-                </div>
-            </div>
-            
-            <!-- Using grid-2-cols to span 50/50 beautifully across the screen -->
-            <div class="grid-2-cols">
-                <button type="button" class="saas-action-card" onclick="location.href='{{ url_for('pages.se_auto_import') }}'">
-                    <div class="action-icon-wrapper icon-orange"><i class="fas fa-sync-alt"></i></div>
-                    <div class="action-content">
-                        <h4 data-i18n="ws.autoImport">Nhập hàng tự động</h4>
-                        <p data-i18n="ws.autoImportDesc">Sử dụng bot tự động đặt hàng khi tồn kho thấp và đồng bộ kho.</p>
-                    </div>
-                    <div class="action-arrow"><i class="fas fa-chevron-right"></i></div>
-                </button>
-                <button type="button" class="saas-action-card" onclick="location.href='{{ url_for('pages.scenarios') }}'">
-                    <div class="action-icon-wrapper icon-purple"><i class="fas fa-project-diagram"></i></div>
-                    <div class="action-content">
-                        <h4 data-i18n="ws.buildWorkflow">Xây dựng quy trình</h4>
-                        <p data-i18n="dashboard.newWorkflowDesc">Chọn template và triển khai tự động hóa.</p>
-                    </div>
-                    <div class="action-arrow"><i class="fas fa-chevron-right"></i></div>
-                </button>
-            </div>
-        </section>
-
-        {% else %}
-        <section class="collection-block">
-            <div class="collection-head">
-                <div>
-                    <p class="launch-eyebrow" data-i18n="ws.staffAccess">Truy cập nhân viên</p>
-                    <h3 data-i18n="ws.staffDashboard">Bảng điều khiển nhân viên</h3>
-                </div>
-            </div>
-            <div class="grid-3-cols">
-                <button type="button" class="saas-action-card" onclick="location.href='{{ url_for('sales.sale_page') }}'">
-                    <div class="action-icon-wrapper icon-green"><i class="fas fa-cash-register"></i></div>
-                    <div class="action-content">
-                        <h4>Bán hàng</h4>
-                        <p>Bán sản phẩm, quản lý giỏ hàng và thanh toán.</p>
-                    </div>
-                    <div class="action-arrow"><i class="fas fa-chevron-right"></i></div>
-                </button>
-            </div>
-        </section>
-        {% endif %}
-    </main>
-</div>
 {% endblock %}

@@ -10,10 +10,10 @@ async function loadCustomers() {
             customersData = data.customers;
             renderCustomersTable();
         } else {
-            showAlert('error', 'Không tải được dữ liệu');
+            banleUI.showAlert('error', 'Không tải được dữ liệu');
         }
     } catch (error) {
-        showAlert('error', 'Lỗi: ' + error.message);
+        banleUI.showAlert('error', 'Lỗi: ' + error.message);
     }
 }
 
@@ -21,28 +21,39 @@ function renderCustomersTable() {
     const tbody = document.getElementById('customersTableBody');
 
     if (customersData.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" class="text-center">Không tìm thấy khách hàng</td></tr>';
+        tbody.innerHTML = `
+            <tr><td colspan="7">
+                <div class="empty-state empty-state--compact">
+                    <div class="empty-state__icon"><i class="fa-solid fa-users"></i></div>
+                    <p class="empty-state__title">Chưa có khách hàng</p>
+                    <p class="empty-state__description">Nhấn "Thêm khách hàng" ở góc trên để bắt đầu.</p>
+                </div>
+            </td></tr>`;
         return;
     }
 
-    tbody.innerHTML = customersData.map(customer => `
+    tbody.innerHTML = customersData.map(customer => {
+        const actions = [
+            { label: 'Sửa', icon: 'fa-solid fa-pen', action: 'editCustomer' },
+            { divider: true },
+            { label: 'Xóa', icon: 'fa-solid fa-trash', action: 'deleteCustomer', danger: true },
+        ];
+        return `
         <tr>
-            <td><strong>${customer.code}</strong></td>
-            <td>${customer.name}</td>
-            <td>${customer.phone || '-'}</td>
-            <td>${customer.email || '-'}</td>
-            <td>${customer.address || '-'}</td>
-            <td>${customer.notes || '-'}</td>
-            <td>
-                <button class="btn btn-sm btn-warning" onclick="editCustomer(${customer.id})">
-                    <i class="fas fa-edit"></i>
-                </button>
-                <button class="btn btn-sm btn-danger" onclick="deleteCustomer(${customer.id}, '${customer.code}')">
-                    <i class="fas fa-trash"></i>
-                </button>
-            </td>
+            <td><strong>${banleUI.escapeHtml(customer.code)}</strong></td>
+            <td>${banleUI.escapeHtml(customer.name)}</td>
+            <td>${banleUI.escapeHtml(customer.phone || '—')}</td>
+            <td>${banleUI.escapeHtml(customer.email || '—')}</td>
+            <td>${banleUI.escapeHtml(customer.address || '—')}</td>
+            <td>${banleUI.escapeHtml(customer.notes || '—')}</td>
+            <td class="table__actions">${banleUI.renderRowActions(customer.id, actions)}</td>
         </tr>
-    `).join('');
+    `;
+    }).join('');
+
+    if (window.banleUI && window.banleUI.bindRowActions) {
+        window.banleUI.bindRowActions(tbody);
+    }
 }
 
 function openAddCustomerModal() {
@@ -56,7 +67,7 @@ function openAddCustomerModal() {
     document.getElementById('customerEmail').value = '';
     document.getElementById('customerAddress').value = '';
     document.getElementById('customerNotes').value = '';
-    new bootstrap.Modal(document.getElementById('customerModal')).show();
+    openModal('customerModal');
 }
 
 function editCustomer(id) {
@@ -73,7 +84,7 @@ function editCustomer(id) {
     document.getElementById('customerEmail').value = customer.email || '';
     document.getElementById('customerAddress').value = customer.address || '';
     document.getElementById('customerNotes').value = customer.notes || '';
-    new bootstrap.Modal(document.getElementById('customerModal')).show();
+    openModal('customerModal');
 }
 
 async function saveCustomer() {
@@ -85,7 +96,7 @@ async function saveCustomer() {
     const notes = document.getElementById('customerNotes').value.trim();
 
     if (!code || !name) {
-        showAlert('error', 'Vui lòng điền các trường bắt buộc');
+        banleUI.showAlert('error', 'Vui lòng điền các trường bắt buộc');
         return;
     }
 
@@ -110,14 +121,14 @@ async function saveCustomer() {
         const data = await response.json();
 
         if (data.success) {
-            showAlert('success', editingId ? 'Cập nhật thành công!' : 'Thêm khách hàng thành công!');
-            bootstrap.Modal.getInstance(document.getElementById('customerModal')).hide();
+            banleUI.showAlert('success', editingId ? 'Cập nhật thành công!' : 'Thêm khách hàng thành công!');
+            closeModal('customerModal');
             loadCustomers();
         } else {
-            showAlert('error', data.message);
+            banleUI.showAlert('error', data.message);
         }
     } catch (error) {
-        showAlert('error', 'Lỗi: ' + error.message);
+        banleUI.showAlert('error', 'Lỗi: ' + error.message);
     }
 }
 
@@ -132,25 +143,15 @@ async function deleteCustomer(id, code) {
         const data = await response.json();
 
         if (data.success) {
-            showAlert('success', 'Xóa thành công!');
+            banleUI.showAlert('success', 'Xóa thành công!');
             loadCustomers();
         } else {
-            showAlert('error', data.message);
+            banleUI.showAlert('error', data.message);
         }
     } catch (error) {
-        showAlert('error', 'Lỗi: ' + error.message);
+        banleUI.showAlert('error', 'Lỗi: ' + error.message);
     }
 }
 
-function showAlert(type, message) {
-    const alertDiv = document.createElement('div');
-    alertDiv.className = `alert alert-${type === 'success' ? 'success' : 'danger'} alert-dismissible fade show`;
-    alertDiv.innerHTML = `
-        ${message}
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    `;
-    document.querySelector('main').insertBefore(alertDiv, document.querySelector('main').firstChild);
-    setTimeout(() => alertDiv.remove(), 5000);
-}
 
 document.addEventListener('DOMContentLoaded', loadCustomers);

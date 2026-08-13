@@ -2,163 +2,127 @@
 
 {% block title %}Tạo tài khoản nhân viên - {{ project_name }}{% endblock %}
 
-{% block styles %}
-{{ super() }}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/create_user.css') }}">
-<style>
-    /* ── Page-specific styles (shared tokens now in saas-tokens.css) ── */
+{% block content %}
 
-    .create-user-header { border-bottom: 1px solid var(--border-soft) !important; margin-bottom: 32px !important; padding-bottom: 16px !important; }
-    .create-user-header h1 { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.02em; color: var(--gray-900); margin:0 0 8px 0;}
-    .create-user-header p { color: var(--gray-500); font-size: 0.95rem; margin: 0;}
+<!-- Content header -->
+<div class="content__header">
+    <div>
+        <p class="content__subtitle">
+            <a href="{{ url_for('pages.dashboard') }}" style="color: var(--brand-primary); text-decoration: none;">Dashboard</a>
+            <span class="mx-2">›</span>
+            <span>Quản lý nhân viên</span>
+        </p>
+        <h1 class="content__title">
+            <i class="fa-solid fa-user-plus"></i>
+            Tạo tài khoản nhân viên
+        </h1>
+        <p style="color: var(--text-secondary); margin: 4px 0 0; font-size: 14px;">Tạo tài khoản nhân viên mới cho cửa hàng của bạn</p>
+    </div>
+</div>
 
-    /* Override Custom CSS Classes */
-    .create-user-card { 
-        background: var(--surface-100) !important; border: 1px solid var(--border-soft) !important; 
-        border-radius: 12px !important; box-shadow: var(--shadow-md) !important; padding: 32px !important; 
-    }
-    
-    .info-box { 
-        background: #EEF2FF !important; border: 1px solid #C7D2FE !important; 
-        color: #4338CA !important; border-radius: 8px; padding: 16px 20px !important; margin-bottom: 32px !important; 
-        font-size: 0.9rem;
-    }
-    .info-box i { margin-right: 8px; }
-    .info-box p { margin: 0; }
+<!-- Info alert -->
+<div class="alert alert--info">
+    <i class="fa-solid fa-info-circle"></i>
+    <div class="alert__content">
+        <p class="alert__title">Quyền của nhân viên</p>
+        <p class="alert__message">Truy cập tính năng cốt lõi (Sản phẩm, Nhập/Xuất) nhưng không thể quản lý hệ thống.</p>
+    </div>
+</div>
 
-    .form-section h3 { font-size: 1rem !important; font-weight: 600 !important; border-bottom: 1px solid var(--border-soft); padding-bottom: 12px; margin-bottom: 24px !important; color: var(--gray-900) !important;}
-    .form-group label { font-weight: 600 !important; color: var(--gray-900) !important; font-size: 0.875rem !important; margin-bottom: 8px !important; display: block;}
-    
-    input[type="email"], input[type="password"], input[type="text"], .search-input { 
-        width: 100%; border-radius: 8px !important; border: 1px solid #D1D5DB !important; padding: 10px 14px !important; font-size: 0.9rem !important; transition: all 0.2s; background: #fff !important; color: var(--gray-900) !important; box-shadow: inset 0 1px 2px rgba(0,0,0,0.02);
-    }
-    input[type="email"]:focus, input[type="password"]:focus, input[type="text"]:focus, .search-input:focus { 
-        border-color: var(--primary) !important; box-shadow: 0 0 0 3px rgba(0, 49, 82, 0.2) !important; outline: none;
-    }
+<!-- Two-column layout -->
+<div class="detail-page">
+    <!-- Left: Form -->
+    <div>
+        <section class="card">
+            <div class="card__body">
+                <h3 class="section__title">
+                    <i class="fa-solid fa-user"></i>
+                    <span>Thông tin cơ bản</span>
+                </h3>
 
-    .form-actions { margin-top: 32px !important; display: flex; gap: 12px; }
+                <form id="createUserForm" method="POST" action="/api/create-user" novalidate>
+                    <div class="form-group">
+                        <label for="email">Email <span style="color: var(--status-error);">*</span></label>
+                        <input type="email" class="form-control" id="email" name="email" required placeholder="user@example.com">
+                    </div>
 
-    .btn { border-radius: 8px; font-weight: 500; font-size: 0.875rem; padding: 10px 20px; border: 1px solid transparent; box-shadow: var(--shadow-md); transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 8px; cursor: pointer;}
-    .btn-primary { background-color: var(--primary) !important; color: #fff !important; }
-    .btn-primary:hover { background-color: #4F46E5 !important; transform: translateY(-1px); box-shadow: var(--shadow-md); }
-    .btn-secondary { background-color: #fff !important; color: var(--gray-900) !important; border-color: var(--border-soft) !important; }
-    .btn-secondary:hover { background-color: #F9FAFB !important; transform: translateY(-1px); }
+                    <div class="form-group">
+                        <label for="password">Mật khẩu <span style="color: var(--status-error);">*</span></label>
+                        <input type="password" class="form-control" id="password" name="password" required placeholder="Ít nhất 8 ký tự">
+                    </div>
 
-    /* Tables Override */
-    .user-table { width: 100%; border-collapse: collapse; margin-top: 16px;}
-    .user-table th { background: #F9FAFB !important; padding: 12px 24px !important; border-bottom: 1px solid var(--border-soft) !important; font-size: 0.75rem !important; text-transform: uppercase !important; color: var(--gray-500) !important; font-weight: 600 !important; text-align: left;}
-    .user-table td { padding: 16px 24px !important; border-bottom: 1px solid var(--border-soft) !important; font-size: 0.875rem !important; color: var(--gray-900) !important;}
-    .user-table tr:hover td { background-color: #F9FAFB !important; }
-</style>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="first_name">Họ</label>
+                            <input type="text" class="form-control" id="first_name" name="first_name" placeholder="Nguyễn Văn">
+                        </div>
+                        <div class="form-group">
+                            <label for="last_name">Tên</label>
+                            <input type="text" class="form-control" id="last_name" name="last_name" placeholder="A">
+                        </div>
+                    </div>
+
+                    <input type="hidden" name="role" value="employee">
+
+                    <div class="form-actions">
+                        <button type="button" class="btn btn--outline" onclick="window.history.back()">
+                            <i class="fa-solid fa-xmark"></i> Hủy
+                        </button>
+                        <button type="submit" class="btn btn--primary">
+                            <i class="fa-solid fa-check"></i> Tạo tài khoản
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </section>
+    </div>
+
+    <!-- Right: User list -->
+    <div>
+        <section class="card">
+            <div class="card__header">
+                <h3 class="card__title">
+                    <i class="fa-solid fa-users"></i>
+                    Danh sách nhân viên
+                </h3>
+                <button class="btn btn--outline btn--sm" type="button" onclick="loadUserList()">
+                    <i class="fa-solid fa-rotate"></i> Tải lại
+                </button>
+            </div>
+            <div class="card__body">
+                <div class="search-input" style="max-width: none; margin-bottom: 16px;">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="text" id="searchUser" placeholder="Tìm theo email hoặc tên...">
+                </div>
+
+                <div class="table-wrapper">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Email</th>
+                                <th>Họ tên</th>
+                                <th class="text-center">Vai trò</th>
+                                <th class="text-center">Trạng thái</th>
+                                <th class="text-center">Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody id="userListBody">
+                            <tr>
+                                <td colspan="5" style="text-align: center; padding: 40px;">
+                                    <i class="fa-solid fa-spinner fa-spin"></i> Đang tải danh sách...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </div>
+</div>
+
 {% endblock %}
 
 {% block scripts %}
 {{ super() }}
 <script src="{{ url_for('static', filename='js/create_user.js') }}" defer></script>
-
-{% endblock %}
-
-{% block content %}
-<div class="app-layout">
-    {% include 'components/sidebar.html' %}
-
-    <main class="app-content">
-        <header class="create-user-header">
-            <h1 data-i18n="createUser.title">Tạo tài khoản nhân viên</h1>
-            <p data-i18n="createUser.subtitle">Tạo tài khoản nhân viên mới cho cửa hàng của bạn</p>
-        </header>
-
-        <!-- Two-Column Grid Layout to eliminate white space -->
-        <div class="row g-4">
-            <!-- Left Column: Add User Form -->
-            <div class="col-lg-5 col-xl-4">
-                <div class="create-user-card h-100 mb-0">
-                    <div class="info-box">
-                        <p><i class="fas fa-info-circle"></i> <strong data-i18n="createUser.permTitle">Quyền của nhân viên:</strong> <span data-i18n="createUser.permDesc">Truy cập tính năng cốt lõi (Sản phẩm, Nhập/Xuất) nhưng không thể quản lý hệ thống.</span></p>
-                    </div>
-
-                    <form id="createUserForm" method="POST" action="/api/create-user" novalidate>
-                        <div class="form-section">
-                            <h3><i class="fas fa-user text-muted me-2"></i> <span data-i18n="createUser.basicInfo">Thông tin cơ bản</span></h3>
-
-                            <div class="form-group mb-4">
-                                <label for="email"><span data-i18n="common.email">Email</span> <span style="color: #ef4444;">*</span></label>
-                                <input type="email" id="email" name="email" required placeholder="user@example.com">
-                            </div>
-
-                            <div class="form-group mb-4">
-                                <label for="password"><span data-i18n="adminMgrs.password">Mật khẩu</span> <span style="color: #ef4444;">*</span></label>
-                                <input type="password" id="password" name="password" required
-                                    placeholder="Ít nhất 8 ký tự" data-i18n-placeholder="createUser.minChars">
-                            </div>
-
-                            <div class="row">
-                                <div class="form-group col-sm-6 mb-4">
-                                    <label for="first_name" data-i18n="createUser.lastName">Họ</label>
-                                    <input type="text" id="first_name" name="first_name" placeholder="Nguyễn Văn">
-                                </div>
-                                <div class="form-group col-sm-6 mb-4">
-                                    <label for="last_name" data-i18n="createUser.firstName">Tên</label>
-                                    <input type="text" id="last_name" name="last_name" placeholder="A">
-                                </div>
-                            </div>
-                        </div>
-
-                        <input type="hidden" name="role" value="employee">
-
-                        <div class="form-actions border-top pt-4">
-                            <button type="button" class="btn btn-secondary w-100 justify-content-center" onclick="window.history.back()">
-                                <i class="fas fa-times"></i> <span data-i18n="common.cancel">Hủy</span>
-                            </button>
-                            <button type="submit" class="btn btn-primary w-100 justify-content-center">
-                                <i class="fas fa-check"></i> <span data-i18n="createUser.createAccount">Tạo tài khoản</span>
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-
-            <!-- Right Column: User List Table -->
-            <div class="col-lg-7 col-xl-8">
-                <div class="create-user-card h-100 mb-0">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; border-bottom: 1px solid var(--border-soft); padding-bottom: 16px;">
-                        <h2 style="margin: 0; font-size: 1.1rem; font-weight: 700; color: var(--gray-900);"><i class="fas fa-users text-muted me-2"></i> <span data-i18n="createUser.employeeList">Danh sách nhân viên</span></h2>
-                        <button class="btn btn-secondary btn-sm" onclick="loadUserList()" aria-label="Tải lại danh sách">
-                            <i class="fas fa-sync-alt"></i> <span data-i18n="mgrPerm.reload">Tải lại</span>
-                        </button>
-                    </div>
-
-                    <div style="margin-bottom: 20px; max-width: 400px;">
-                        <div class="input-group">
-                            <span class="input-group-text bg-white border-end-0" style="border-color: #D1D5DB;"><i class="fas fa-search text-muted"></i></span>
-                            <input type="text" id="searchUser" class="search-input border-start-0 ps-0" placeholder="Tìm theo email hoặc tên..." data-i18n-placeholder="createUser.searchPlaceholder" style="box-shadow: none;" aria-label="Tìm nhân viên">
-                        </div>
-                    </div>
-
-                    <div style="overflow-x: auto; border: 1px solid var(--border-soft); border-radius: 8px;">
-                        <table class="user-table mb-0">
-                            <thead>
-                                <tr>
-                                    <th data-i18n="common.email">Email</th>
-                                    <th data-i18n="createUser.fullName">Họ tên</th>
-                                    <th class="text-center" data-i18n="common.role">Vai trò</th>
-                                    <th class="text-center" data-i18n="common.status">Trạng thái</th>
-                                    <th class="text-center" data-i18n="common.actions">Thao tác</th>
-                                </tr>
-                            </thead>
-                            <tbody id="userListBody">
-                                <tr>
-                                    <td colspan="5" class="text-center py-5 text-muted">
-                                        <i class="fas fa-spinner fa-spin mb-3" style="font-size: 1.5rem; color: var(--primary);"></i>
-                                        <p data-i18n="createUser.loadingList" class="mb-0">Đang tải danh sách...</p>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </main>
-</div>
 {% endblock %}

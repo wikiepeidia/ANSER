@@ -2,124 +2,118 @@
 
 {% block title %}Quản lý vai trò - Admin{% endblock %}
 
-{% block styles %}
-{{ super() }}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/admin_roles.css') }}">
+{% block content %}
+
+<!-- Content header -->
+<div class="content__header">
+    <div>
+        <p class="content__subtitle">Admin · Phân quyền</p>
+        <h1 class="content__title">
+            <i class="fa-solid fa-user-shield"></i>
+            Quản lý vai trò tài khoản
+        </h1>
+    </div>
+</div>
+
+<!-- Info alert -->
+<div class="alert alert--info">
+    <i class="fa-solid fa-info-circle"></i>
+    <div class="alert__content">
+        <p class="alert__title">Lưu ý</p>
+        <p class="alert__message">Chỉ Admin mới có thể nâng cấp User lên Manager hoặc hạ cấp Manager xuống User.</p>
+    </div>
+</div>
+
+<!-- Stats grid -->
+<section class="dashboard-stats">
+    <div class="stats-grid stats-grid--3">
+        <div class="stat-card">
+            <div class="stat-card__header">
+                <span>Admin</span>
+                <div class="stat-card__icon stat-card__icon--red">
+                    <i class="fa-solid fa-crown"></i>
+                </div>
+            </div>
+            <div class="stat-card__value" id="adminCount">0</div>
+            <span class="stat-card__pill stat-card__pill--red">Quản trị viên</span>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-card__header">
+                <span>Manager</span>
+                <div class="stat-card__icon stat-card__icon--orange">
+                    <i class="fa-solid fa-user-tie"></i>
+                </div>
+            </div>
+            <div class="stat-card__value" id="managerCount">0</div>
+            <span class="stat-card__pill stat-card__pill--orange">Quản lý</span>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-card__header">
+                <span>User</span>
+                <div class="stat-card__icon stat-card__icon--blue">
+                    <i class="fa-solid fa-users"></i>
+                </div>
+            </div>
+            <div class="stat-card__value" id="userCount">0</div>
+            <span class="stat-card__pill stat-card__pill--blue">Người dùng</span>
+        </div>
+    </div>
+</section>
+
+<!-- Filter tabs -->
+<div class="tabs" role="tablist" id="roleTabs">
+    <button class="tabs__item active" data-role="all" onclick="filterByRole('all'); return false;">
+        <i class="fa-solid fa-list"></i> Tất cả
+    </button>
+    <button class="tabs__item" data-role="user" onclick="filterByRole('user'); return false;">
+        <i class="fa-solid fa-user"></i> User
+    </button>
+    <button class="tabs__item" data-role="manager" onclick="filterByRole('manager'); return false;">
+        <i class="fa-solid fa-user-tie"></i> Manager
+    </button>
+    <button class="tabs__item" data-role="admin" onclick="filterByRole('admin'); return false;">
+        <i class="fa-solid fa-crown"></i> Admin
+    </button>
+</div>
+
+<!-- Users table -->
+<section class="card">
+    <div class="card__header">
+        <h3 class="card__title">
+            <i class="fa-solid fa-users"></i>
+            Danh sách tài khoản
+        </h3>
+    </div>
+    <div class="card__body" style="padding: 0;">
+        <div class="table-wrapper">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Tên</th>
+                        <th>Email</th>
+                        <th>Vai trò</th>
+                        <th>Ngày tạo</th>
+                        <th>Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody id="usersTableBody">
+                    <tr>
+                        <td colspan="6" style="padding: 0;">
+                            <div id="usersTableSkeleton"></div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
 {% endblock %}
 
 {% block scripts %}
 {{ super() }}
 <script src="{{ url_for('static', filename='js/admin_roles.js') }}" defer></script>
-{% endblock %}
-
-{% block content %}
-<div class="app-layout">
-    {% include 'components/sidebar.html' %}
-
-    <main class="app-content main-content roles-page">
-        <div
-            class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-            <h1 class="h2"><i class="fas fa-user-shield"></i> <span data-i18n="adminRoles.title">Quản lý vai trò tài khoản</span></h1>
-        </div>
-
-        <div class="row mb-3">
-            <div class="col-md-12">
-                <div class="alert alert-info">
-                    <i class="fas fa-info-circle"></i> <strong data-i18n="adminMgrs.note">Lưu ý:</strong> <span data-i18n="adminRoles.noteText">Chỉ Admin mới có thể nâng cấp User
-                    lên Manager hoặc hạ cấp Manager xuống User.</span>
-                </div>
-            </div>
-        </div>
-
-        <!-- Thẻ thống kê -->
-        <div class="row mb-4">
-            <div class="col-md-4">
-                <div class="stats-card bg-gradient-danger">
-                    <div class="stats-icon">
-                        <i class="fas fa-crown"></i>
-                    </div>
-                    <div class="stats-info">
-                        <div class="stats-number" id="adminCount">0</div>
-                        <div class="stats-label">Admin</div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="stats-card bg-gradient-warning">
-                    <div class="stats-icon">
-                        <i class="fas fa-user-tie"></i>
-                    </div>
-                    <div class="stats-info">
-                        <div class="stats-number" id="managerCount">0</div>
-                        <div class="stats-label">Manager</div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="stats-card bg-gradient-primary">
-                    <div class="stats-icon">
-                        <i class="fas fa-users"></i>
-                    </div>
-                    <div class="stats-info">
-                        <div class="stats-number" id="userCount">0</div>
-                        <div class="stats-label">User</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Tab lọc -->
-        <ul class="nav nav-tabs mb-3" id="roleTabs">
-            <li class="nav-item">
-                <a class="nav-link active" data-role="all" href="#" onclick="filterByRole('all'); return false;">
-                    <i class="fas fa-list"></i> <span data-i18n="adminRoles.all">Tất cả</span>
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" data-role="user" href="#" onclick="filterByRole('user'); return false;">
-                    <i class="fas fa-user"></i> User
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" data-role="manager" href="#" onclick="filterByRole('manager'); return false;">
-                    <i class="fas fa-user-tie"></i> Manager
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" data-role="admin" href="#" onclick="filterByRole('admin'); return false;">
-                    <i class="fas fa-crown"></i> Admin
-                </a>
-            </li>
-        </ul>
-
-        <!-- Bảng người dùng -->
-        <div class="card">
-            <div class="card-body">
-                <h5 class="card-title" data-i18n="adminRoles.accountList">Danh sách tài khoản</h5>
-                <div class="table-responsive">
-                    <table class="table table-hover">
-                        <thead>
-                            <tr>
-                                <th data-i18n="sale.colId">ID</th>
-                                <th data-i18n="common.name">Tên</th>
-                                <th data-i18n="common.email">Email</th>
-                                <th data-i18n="common.role">Vai trò</th>
-                                <th data-i18n="adminMgrs.createdDate">Ngày tạo</th>
-                                <th data-i18n="common.actions">Thao tác</th>
-                            </tr>
-                        </thead>
-                        <tbody id="usersTableBody">
-                            <tr>
-                                <td colspan="6" class="text-center">
-                                    <div class="spinner-border" role="status"></div>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </main>
-</div>
-
 {% endblock %}

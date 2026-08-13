@@ -2,212 +2,226 @@
 
 {% block title %}Sản phẩm{% endblock %}
 
-{% block styles %}
-{{ super() }}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/admin_products.css') }}">
-{% endblock %}
-
-{% block scripts %}
-{{ super() }}
-<script src="{{ url_for('static', filename='js/admin_products.js') }}" defer></script>
-{% endblock %}
-
 {% block content %}
-<div class="app-layout">
-    {% include 'components/sidebar.html' %}
 
-    <main class="app-content main-content products-page">
-        <div
-            class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-            <h1 class="h2"><i class="fas fa-box"></i> <span data-i18n="products.title">Quản lý sản phẩm</span></h1>
-            <div class="d-flex gap-2">
-                <button class="btn btn-success" onclick="openImportExcelModal()" aria-label="Nhập từ Excel">
-                    <i class="fas fa-file-excel"></i> <span data-i18n="products.importExcel">Nhập từ Excel</span>
-                </button>
-                <button class="btn btn-primary" onclick="openAddProductModal()" aria-label="Thêm sản phẩm">
-                    <i class="fas fa-plus"></i> <span data-i18n="products.addProduct">Thêm sản phẩm</span>
-                </button>
-            </div>
-        </div>
+<!-- Content header -->
+<div class="content__header">
+    <div>
+        <p class="content__subtitle">
+            <a href="{{ url_for('pages.dashboard') }}" style="color: var(--brand-primary); text-decoration: none;">Dashboard</a>
+            <span class="mx-2">›</span>
+            <span>Sản phẩm</span>
+        </p>
+        <h1 class="content__title">
+            <i class="fa-solid fa-box"></i>
+            Quản lý sản phẩm
+        </h1>
+    </div>
+    <div class="content__actions">
+        <button class="btn btn--success" type="button" onclick="openImportExcelModal()">
+            <i class="fa-solid fa-file-excel"></i> Nhập từ Excel
+        </button>
+        <button class="btn btn--primary" type="button" onclick="openAddProductModal()">
+            <i class="fa-solid fa-plus"></i> Thêm sản phẩm
+        </button>
+    </div>
+</div>
 
-        <div class="card">
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-hover" id="productsTable">
-                        <thead>
-                            <tr>
-                                <th data-i18n="products.colImage">Hình ảnh</th>
-                                <th>SKU</th>
-                                <th data-i18n="products.colName">Tên sản phẩm</th>
-                                <th data-i18n="products.colCategory">Danh mục</th>
-                                <th data-i18n="products.colUnit">Đơn vị</th>
-                                <th data-i18n="sale.colPrice">Giá</th>
-                                <th data-i18n="products.colStock">Tồn kho</th>
-                                <th data-i18n="products.colDescription">Mô tả</th>
-                                <th data-i18n="common.actions">Thao tác</th>
-                            </tr>
-                        </thead>
-                        <tbody id="productsTableBody">
-                            <tr>
-                                <td colspan="9" class="text-center">
-                                    <div class="spinner-border" role="status"></div>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+<!-- Products table -->
+<div class="products-page">
+<section class="card">
+    <div class="card__body" style="padding: 0;">
+        <div class="table-wrapper">
+            <table class="table" id="productsTable">
+                <thead>
+                    <tr>
+                        <th>Hình ảnh</th>
+                        <th>SKU</th>
+                        <th>Tên sản phẩm</th>
+                        <th>Danh mục</th>
+                        <th>Đơn vị</th>
+                        <th>Giá</th>
+                        <th>Tồn kho</th>
+                        <th>Mô tả</th>
+                        <th>Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody id="productsTableBody">
+                    <tr>
+                        <td colspan="9" style="text-align: center; padding: 40px;">
+                            <i class="fa-solid fa-spinner fa-spin"></i> Đang tải...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
-    </main>
+    </div>
+</section>
 </div>
 
 <!-- Modal: Import Excel -->
-<div class="modal fade products-modal" id="importExcelModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">
-                    <i class="fas fa-file-excel text-success me-2"></i>
-                    <span data-i18n="products.importFromExcel">Import sản phẩm từ Excel</span>
-                    <span id="importStepBadge" class="badge bg-secondary ms-2 fs-6" data-i18n="products.step1">Bước 1/2</span>
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-
-                <!-- ── BƯỚC 1: Chọn file ── -->
-                <div id="importStep1">
-                    <div id="dropZone" class="excel-drop-zone" onclick="document.getElementById('excelFileInput').click()">
-                        <div class="drop-zone-icon"><i class="fas fa-cloud-upload-alt"></i></div>
-                        <p class="drop-zone-text" data-i18n="products.dropZoneText">Kéo thả file vào đây hoặc <span class="text-primary">chọn file</span></p>
-                        <p class="drop-zone-hint" data-i18n="products.dropZoneHint">Chấp nhận: .xlsx, .xls — mọi cấu trúc cột</p>
-                        <input type="file" id="excelFileInput" accept=".xlsx,.xls" style="display:none">
-                    </div>
-                    <div id="selectedFileInfo" class="selected-file-info d-none">
-                        <i class="fas fa-file-excel text-success"></i>
-                        <span id="selectedFileName"></span>
-                        <button class="btn btn-sm btn-link text-danger p-0 ms-2" onclick="clearExcelFile()">
-                            <i class="fas fa-times"></i>
-                        </button>
-                    </div>
-                    <div class="mt-3 text-muted" style="font-size:0.82rem">
-                        <i class="fas fa-info-circle me-1"></i>
-                        <span data-i18n="products.autoMapHint">Hệ thống sẽ tự đọc tên cột và đề xuất mapping. Bạn xác nhận trước khi import.</span>
-                    </div>
+<div class="modal" id="importExcelModal">
+    <div class="modal__overlay" onclick="closeModal('importExcelModal')"></div>
+    <div class="modal__content modal__content--lg">
+        <div class="modal__header">
+            <h2>
+                <i class="fa-solid fa-file-excel" style="color: var(--status-success);"></i>
+                Import sản phẩm từ Excel
+                <span id="importStepBadge" class="badge badge--gray" style="margin-left: 12px;">Bước 1/2</span>
+            </h2>
+            <button type="button" class="modal__close" onclick="closeModal('importExcelModal')" aria-label="Đóng">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        <div class="modal__body">
+            <!-- Step 1: Choose file -->
+            <div id="importStep1">
+                <div class="file-input" onclick="document.getElementById('excelFileInput').click()" style="cursor: pointer; padding: 40px;">
+                    <i class="fa-solid fa-cloud-upload-alt" style="font-size: 48px; color: var(--brand-light);"></i>
+                    <p style="margin: 12px 0 4px;">Kéo thả file vào đây hoặc <span style="color: var(--brand-primary); font-weight: 600;">chọn file</span></p>
+                    <p style="color: var(--text-muted); font-size: 12px;">Chấp nhận: .xlsx, .xls — mọi cấu trúc cột</p>
+                    <input type="file" id="excelFileInput" accept=".xlsx,.xls" style="display:none">
                 </div>
-
-                <!-- ── BƯỚC 2: Xác nhận mapping cột ── -->
-                <div id="importStep2" class="d-none">
-                    <p class="mb-2 fw-semibold" data-i18n="products.confirmMapping">Hệ thống đã đọc file — xác nhận mỗi cột ứng với trường nào:</p>
-                    <div class="table-responsive">
-                        <table class="table table-sm table-bordered mb-0 guide-table" id="mappingTable">
-                            <thead>
-                                <tr>
-                                    <th style="width:35%" data-i18n="products.colFileColumn">Cột trong file</th>
-                                    <th style="width:30%" data-i18n="products.colSample">Ví dụ dữ liệu</th>
-                                    <th style="width:35%" data-i18n="products.colMapTo">Ánh xạ tới trường</th>
-                                </tr>
-                            </thead>
-                            <tbody id="mappingRows"></tbody>
-                        </table>
-                    </div>
-                    <small class="text-danger mt-1 d-block">
-                        <i class="fas fa-asterisk me-1"></i><span data-i18n="products.requiredNameCol">Bắt buộc phải chọn</span> <strong data-i18n="products.colName">Tên sản phẩm</strong> <span data-i18n="products.forAtLeastOneCol">cho ít nhất một cột.</span>
-                    </small>
-                </div>
-
-                <!-- Kết quả import -->
-                <div id="importResult" class="import-result d-none mt-3"></div>
-
-                <!-- Màn hình lỗi import -->
-                <div id="importError" class="d-none text-center py-4">
-                    <div class="import-error-icon mb-3">
-                        <i class="fas fa-times-circle"></i>
-                    </div>
-                    <h5 class="import-error-title mb-2" data-i18n="products.cannotImport">Không thể import file này</h5>
-                    <p id="importErrorMessage" class="import-error-message mb-4"></p>
-                    <button type="button" class="btn btn-outline-primary" onclick="goBackToStep1()">
-                        <i class="fas fa-redo me-2"></i><span data-i18n="products.chooseOtherFile">Chọn file khác</span>
+                <div id="selectedFileInfo" class="alert alert--info" style="display: none;">
+                    <i class="fa-solid fa-file-excel" style="color: var(--status-success);"></i>
+                    <span id="selectedFileName"></span>
+                    <button class="btn btn--ghost btn--sm" type="button" onclick="clearExcelFile()">
+                        <i class="fa-solid fa-xmark"></i>
                     </button>
                 </div>
+                <div class="form-help" style="margin-top: 12px;">
+                    <i class="fa-solid fa-info-circle"></i>
+                    Hệ thống sẽ tự đọc tên cột và đề xuất mapping. Bạn xác nhận trước khi import.
+                </div>
+            </div>
 
+            <!-- Step 2: Confirm column mapping -->
+            <div id="importStep2" style="display: none;">
+                <p style="font-weight: 600; margin-bottom: 12px;">Hệ thống đã đọc file — xác nhận mỗi cột ứng với trường nào:</p>
+                <div class="table-wrapper">
+                    <table class="table" id="mappingTable">
+                        <thead>
+                            <tr>
+                                <th style="width: 35%;">Cột trong file</th>
+                                <th style="width: 30%;">Ví dụ dữ liệu</th>
+                                <th style="width: 35%;">Ánh xạ tới trường</th>
+                            </tr>
+                        </thead>
+                        <tbody id="mappingRows"></tbody>
+                    </table>
+                </div>
+                <p style="color: var(--status-error); font-size: 12px; margin-top: 8px;">
+                    <i class="fa-solid fa-asterisk"></i> Bắt buộc phải chọn <strong>Tên sản phẩm</strong> cho ít nhất một cột.
+                </p>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-i18n="common.close">Đóng</button>
-                <button type="button" class="btn btn-outline-secondary d-none" id="btnBack" onclick="goBackToStep1()">
-                    <i class="fas fa-arrow-left me-1"></i><span data-i18n="sale.back">Quay lại</span>
-                </button>
-                <button type="button" class="btn btn-primary" id="btnNext" onclick="previewColumnMapping()" disabled>
-                    <span data-i18n="products.next">Tiếp theo</span> <i class="fas fa-arrow-right ms-1"></i>
-                </button>
-                <button type="button" class="btn btn-success d-none" id="btnImport" onclick="submitImportExcel()">
-                    <i class="fas fa-upload me-1"></i>Import
+
+            <!-- Import result -->
+            <div id="importResult" class="alert" style="display: none; margin-top: 16px;"></div>
+
+            <!-- Import error -->
+            <div id="importError" style="display: none; text-align: center; padding: 40px 20px;">
+                <i class="fa-solid fa-times-circle" style="font-size: 48px; color: var(--status-error); margin-bottom: 16px;"></i>
+                <h3 style="color: var(--text-primary); margin-bottom: 8px;">Không thể import file này</h3>
+                <p id="importErrorMessage" style="color: var(--text-secondary); margin-bottom: 24px;"></p>
+                <button type="button" class="btn btn--outline" onclick="goBackToStep1()">
+                    <i class="fa-solid fa-rotate-left"></i> Chọn file khác
                 </button>
             </div>
+        </div>
+        <div class="modal__footer">
+            <button type="button" class="btn btn--outline" onclick="closeModal('importExcelModal')">Đóng</button>
+            <button type="button" class="btn btn--outline" id="btnBack" style="display: none;" onclick="goBackToStep1()">
+                <i class="fa-solid fa-arrow-left"></i> Quay lại
+            </button>
+            <button type="button" class="btn btn--primary" id="btnNext" onclick="previewColumnMapping()" disabled>
+                Tiếp theo <i class="fa-solid fa-arrow-right"></i>
+            </button>
+            <button type="button" class="btn btn--success" id="btnImport" style="display: none;" onclick="submitImportExcel()">
+                <i class="fa-solid fa-upload"></i> Import
+            </button>
         </div>
     </div>
 </div>
 
 <!-- Modal: Add/Edit Product -->
-<div class="modal fade products-modal" id="productModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="productModalTitle" data-i18n="products.addProduct">Thêm sản phẩm</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <input type="hidden" id="productId">
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label"><span data-i18n="products.codeLabel">Mã SP</span> <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" id="productCode" required>
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label"><span data-i18n="products.colName">Tên sản phẩm</span> <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" id="productName" required>
-                    </div>
+<div class="modal" id="productModal">
+    <div class="modal__overlay" onclick="closeModal('productModal')"></div>
+    <div class="modal__content modal__content--lg">
+        <div class="modal__header">
+            <h2 id="productModalTitle">Thêm sản phẩm</h2>
+            <button type="button" class="modal__close" onclick="closeModal('productModal')" aria-label="Đóng">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        <div class="modal__body">
+            <input type="hidden" id="productId">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="productCode">Mã SP <span style="color: var(--status-error);">*</span></label>
+                    <input type="text" class="form-control" id="productCode" required>
                 </div>
-                <div class="row">
-                    <div class="col-md-4 mb-3">
-                        <label class="form-label" data-i18n="products.colCategory">Danh mục</label>
-                        <input type="text" class="form-control" id="productCategory">
-                    </div>
-                    <div class="col-md-4 mb-3">
-                        <label class="form-label" data-i18n="products.colUnit">Đơn vị</label>
-                        <input type="text" class="form-control" id="productUnit" value="cái">
-                    </div>
-                    <div class="col-md-4 mb-3">
-                        <label class="form-label" data-i18n="sale.colPrice">Giá</label>
-                        <input type="number" class="form-control" id="productPrice" min="0" value="0">
-                    </div>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label" data-i18n="products.stockQty">Số lượng tồn kho</label>
-                    <input type="number" class="form-control" id="productStock" min="0" value="0">
-                </div>
-                <div class="mb-3">
-                    <label class="form-label" data-i18n="products.expiryDate">Hạn sử dụng (nếu có)</label>
-                    <input type="date" class="form-control" id="productExpiryDate">
-                </div>
-                <div class="mb-3">
-                    <label class="form-label" data-i18n="products.colDescription">Mô tả</label>
-                    <textarea class="form-control" id="productDescription" rows="3"></textarea>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label" data-i18n="products.imageUrl">Hình ảnh (URL)</label>
-                    <input type="url" class="form-control" id="productImageUrl" placeholder="https://example.com/image.jpg">
-                    <div id="productImagePreview" class="mt-2 d-none">
-                        <img src="" alt="preview" class="product-img-preview rounded">
-                    </div>
+                <div class="form-group">
+                    <label for="productName">Tên sản phẩm <span style="color: var(--status-error);">*</span></label>
+                    <input type="text" class="form-control" id="productName" required>
                 </div>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-i18n="common.cancel">Hủy</button>
-                <button type="button" class="btn btn-primary" onclick="saveProduct()" data-i18n="common.save">Lưu</button>
+            <div class="form-row form-row--3">
+                <div class="form-group">
+                    <label for="productCategory">Danh mục</label>
+                    <input type="text" class="form-control" id="productCategory">
+                </div>
+                <div class="form-group">
+                    <label for="productUnit">Đơn vị</label>
+                    <input type="text" class="form-control" id="productUnit" value="cái">
+                </div>
+                <div class="form-group">
+                    <label for="productPrice">Giá</label>
+                    <input type="number" class="form-control" id="productPrice" min="0" value="0">
+                </div>
             </div>
+            <div class="form-group">
+                <label for="productStock">Số lượng tồn kho</label>
+                <input type="number" class="form-control" id="productStock" min="0" value="0">
+            </div>
+            <div class="form-group">
+                <label for="productExpiryDate">Hạn sử dụng (nếu có)</label>
+                <input type="date" class="form-control" id="productExpiryDate">
+            </div>
+            <div class="form-group">
+                <label for="productDescription">Mô tả</label>
+                <textarea class="form-control" id="productDescription" rows="3"></textarea>
+            </div>
+            <div class="form-group">
+                <label for="productImageUrl">Hình ảnh (URL)</label>
+                <input type="url" class="form-control" id="productImageUrl" placeholder="https://example.com/image.jpg">
+                <div id="productImagePreview" style="margin-top: 8px; display: none;">
+                    <img src="" alt="preview" style="max-width: 200px; border-radius: 8px;">
+                </div>
+            </div>
+        </div>
+        <div class="modal__footer">
+            <button type="button" class="btn btn--outline" onclick="closeModal('productModal')">Hủy</button>
+            <button type="button" class="btn btn--primary" onclick="saveProduct()">
+                <i class="fa-solid fa-check"></i> Lưu
+            </button>
         </div>
     </div>
 </div>
 
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script src="{{ url_for('static', filename='js/admin_products.js') }}?v=1786660000" defer></script>
+<script>
+// Simple modal helpers
+function openModal(id) {
+    var el = document.getElementById(id);
+    if (el) el.classList.add('active', 'show');
+}
+function closeModal(id) {
+    var el = document.getElementById(id);
+    if (el) el.classList.remove('active', 'show');
+}
+</script>
 {% endblock %}

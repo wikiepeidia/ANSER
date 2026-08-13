@@ -2,299 +2,205 @@
 
 {% block title %}Quản lý xuất hàng - {{ project_name }}{% endblock %}
 
-{% block styles %}
-{{ super() }}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/admin_exports.css') }}">
-<style>
-    /* ── Page-specific styles (shared tokens now in saas-tokens.css) ── */
+{% block content %}
 
-    /* Headers */
-    .border-bottom {
-        border-bottom: 1px solid var(--border-soft) !important;
-        margin-bottom: 32px !important;
-        padding-bottom: 16px !important;
-    }
-    h1.h2 { 
-        font-size: 1.5rem; font-weight: 700; letter-spacing: -0.02em; 
-        color: var(--gray-900); display: flex; align-items: center; gap: 12px;
-    }
-    h1.h2 i { color: var(--gray-500); font-size: 1.25rem; }
+<!-- Content header -->
+<div class="content__header">
+    <div>
+        <p class="content__subtitle">
+            <a href="{{ url_for('pages.dashboard') }}" style="color: var(--brand-primary); text-decoration: none;">Dashboard</a>
+            <span class="mx-2">›</span>
+            <span>Xuất hàng</span>
+        </p>
+        <h1 class="content__title">
+            <i class="fa-solid fa-arrow-up"></i>
+            Quản lý xuất hàng
+        </h1>
+    </div>
+    <div class="content__actions">
+        <button class="btn btn--primary" type="button" onclick="openModal('createExportModal')">
+            <i class="fa-solid fa-plus"></i> Tạo phiếu xuất
+        </button>
+    </div>
+</div>
 
-    /* Buttons */
-    .btn { 
-        border-radius: 8px; font-weight: 500; font-size: 0.875rem; 
-        padding: 8px 16px; border: 1px solid transparent; 
-        box-shadow: var(--shadow-md); transition: all 0.2s ease;
-        display: inline-flex; align-items: center; gap: 8px;
-    }
-    .btn i { font-size: 0.85rem; }
-    .btn:hover { transform: translateY(-1px); box-shadow: var(--shadow-md); }
-    
-    .btn-primary { background-color: var(--primary) !important; color: #fff !important; }
-    .btn-primary:hover { background-color: var(--primary-dark) !important; }
-    
-    .btn-success { background-color: var(--success) !important; color: #fff !important; }
-    .btn-success:hover { background-color: #059669 !important; }
+<!-- Stats -->
+<section class="dashboard-stats">
+    <div class="stats-grid stats-grid--3">
+        <div class="stat-card">
+            <div class="stat-card__header">
+                <span>Tổng phiếu xuất</span>
+                <div class="stat-card__icon stat-card__icon--orange">
+                    <i class="fa-solid fa-truck-fast"></i>
+                </div>
+            </div>
+            <div class="stat-card__value" id="totalExports">0</div>
+            <span class="stat-card__pill stat-card__pill--orange">Tổng cộng</span>
+        </div>
 
-    .btn-info { background-color: var(--accent-info) !important; color: #fff !important; }
-    .btn-info:hover { background-color: #2563EB !important; }
+        <div class="stat-card">
+            <div class="stat-card__header">
+                <span>Đã hoàn thành</span>
+                <div class="stat-card__icon stat-card__icon--green">
+                    <i class="fa-solid fa-check"></i>
+                </div>
+            </div>
+            <div class="stat-card__value" id="completedExports">0</div>
+            <span class="stat-card__pill stat-card__pill--green">Hoàn thành</span>
+        </div>
 
-    .btn-warning { background-color: var(--warning) !important; color: #fff !important; }
-    .btn-warning:hover { background-color: #D97706 !important; }
-    
-    .btn-secondary, .btn-outline-secondary { 
-        background-color: #fff !important; color: var(--gray-900) !important; 
-        border-color: var(--border-soft) !important; box-shadow: var(--shadow-md) !important;
-    }
-    .btn-secondary:hover, .btn-outline-secondary:hover { background-color: #F9FAFB !important; }
+        <div class="stat-card">
+            <div class="stat-card__header">
+                <span>Tổng doanh thu</span>
+                <div class="stat-card__icon stat-card__icon--blue">
+                    <i class="fa-solid fa-coins"></i>
+                </div>
+            </div>
+            <div class="stat-card__value stat-card__value--compact" id="totalRevenue">0 ₫</div>
+            <span class="stat-card__pill stat-card__pill--blue">Doanh thu</span>
+        </div>
+    </div>
+</section>
 
-    /* Stat Cards */
-    .saas-stat-card {
-        background: var(--surface-100) !important;
-        border: 1px solid var(--border-soft) !important;
-        border-radius: 12px !important;
-        box-shadow: var(--shadow-md) !important;
-        padding: 24px; transition: all 0.2s ease; height: 100%;
-    }
-    .saas-stat-card:hover { border-color: #D1D5DB !important; box-shadow: var(--shadow-md) !important; transform: translateY(-2px); }
-    .saas-stat-card .card-body { padding: 0 !important; }
-    .saas-stat-card .card-title {
-        font-size: 0.875rem; font-weight: 600; color: var(--gray-500); 
-        text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px;
-    }
-    .saas-stat-card h2 {
-        font-size: 2.25rem; font-weight: 700; color: var(--gray-900); margin: 0; line-height: 1; letter-spacing: -0.02em;
-    }
+<!-- Exports table -->
+<section class="card">
+    <div class="card__header">
+        <h3 class="card__title">
+            <i class="fa-solid fa-list"></i>
+            Danh sách phiếu xuất
+        </h3>
+    </div>
+    <div class="card__body" style="padding: 0;">
+        <div class="table-wrapper">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Mã phiếu</th>
+                        <th>Khách hàng</th>
+                        <th>Tổng tiền</th>
+                        <th>Trạng thái</th>
+                        <th>Ngày xuất</th>
+                        <th>Ghi chú</th>
+                        <th>Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody id="exportsTableBody">
+                    <tr>
+                        <td colspan="7" style="text-align: center; padding: 40px;">
+                            <i class="fa-solid fa-spinner fa-spin"></i> Đang tải...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
 
-    /* Main Content Card (Table Container) */
-    .card:not(.saas-stat-card) {
-        background: var(--surface-100) !important;
-        border: 1px solid var(--border-soft) !important;
-        border-radius: 12px !important;
-        box-shadow: var(--shadow-md) !important;
-        overflow: hidden;
-    }
-    .card:not(.saas-stat-card) > .card-body { padding: 0; }
-    .card:not(.saas-stat-card) > .card-body > .card-title {
-        padding: 20px 24px; margin: 0; border-bottom: 1px solid var(--border-soft);
-        font-size: 1rem; font-weight: 600; color: var(--gray-900); background: #fff;
-    }
+<!-- Modal: Tạo phiếu xuất -->
+<div class="modal" id="createExportModal">
+    <div class="modal__overlay" onclick="closeModal('createExportModal')"></div>
+    <div class="modal__content modal__content--lg">
+        <div class="modal__header">
+            <h2>Tạo phiếu xuất hàng</h2>
+            <button type="button" class="modal__close" onclick="closeModal('createExportModal')" aria-label="Đóng">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        <div class="modal__body">
+            <form id="createExportForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="customerSelect">Khách hàng</label>
+                        <select class="form-control" name="customer_id" id="customerSelect" required>
+                            <option value="">-- Chọn khách hàng --</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="notes">Ghi chú</label>
+                        <input type="text" class="form-control" name="notes">
+                    </div>
+                </div>
 
-    /* Table Styling */
-    .table { margin-bottom: 0; }
-    .table th { 
-        background-color: #F9FAFB; color: var(--gray-500); font-size: 0.75rem; 
-        text-transform: uppercase; letter-spacing: 0.05em; padding: 12px 24px; 
-        border-bottom: 1px solid var(--border-soft); font-weight: 600; border-top: none;
-    }
-    .table td { 
-        padding: 16px 24px; vertical-align: middle; border-bottom: 1px solid var(--border-soft); 
-        color: var(--gray-900); font-size: 0.875rem; 
-    }
-    .table-hover tbody tr:hover { background-color: #F9FAFB; }
-    .table tbody tr:last-child td { border-bottom: none; }
+                <h3 style="font-size: 15px; font-weight: 600; margin: 16px 0 12px; color: var(--text-primary);">Sản phẩm</h3>
+                <div id="exportItemsList" class="table-wrapper" style="margin-bottom: 12px;">
+                    <p style="color: var(--text-secondary); text-align: center; padding: 16px;">Chưa có sản phẩm nào.</p>
+                </div>
+                <button type="button" class="btn btn--outline btn--sm" onclick="addExportItem()">
+                    <i class="fa-solid fa-plus"></i> Thêm sản phẩm
+                </button>
+            </form>
+        </div>
+        <div class="modal__footer">
+            <button type="button" class="btn btn--outline" onclick="closeModal('createExportModal')">Hủy</button>
+            <button type="button" class="btn btn--primary" onclick="saveExport()">
+                <i class="fa-solid fa-check"></i> Tạo phiếu xuất
+            </button>
+        </div>
+    </div>
+</div>
 
-    /* Modals */
-    .modal-content { 
-        border-radius: 16px; border: 1px solid var(--border-soft); 
-        box-shadow: var(--shadow-lg); overflow: hidden; background: var(--surface-100);
-    }
-    .modal-header { 
-        background-color: var(--surface-100); border-bottom: 1px solid var(--border-soft); 
-        padding: 20px 24px; 
-    }
-    .modal-title { font-weight: 700; color: var(--gray-900); font-size: 1.1rem; display: flex; align-items: center; gap: 8px;}
-    .modal-body { padding: 24px; }
-    .modal-footer { 
-        background-color: #F9FAFB; border-top: 1px solid var(--border-soft); 
-        padding: 16px 24px; 
-    }
-    
-    /* Form Inputs */
-    .form-control, .form-select { 
-        border-radius: 8px; border: 1px solid #D1D5DB; padding: 10px 14px; 
-        font-size: 0.9rem; box-shadow: inset 0 1px 2px rgba(0,0,0,0.02); transition: all 0.2s;
-    }
-    .form-control:focus, .form-select:focus { 
-        border-color: var(--primary); box-shadow: 0 0 0 3px rgba(0, 49, 82, 0.2); outline: none;
-    }
-    .form-label { font-weight: 500; color: var(--gray-900); font-size: 0.875rem; margin-bottom: 6px; }
-</style>
 {% endblock %}
+
+<!-- Modal: Xem chi tiết phiếu xuất -->
+<div class="modal" id="viewExportModal">
+    <div class="modal__overlay" onclick="closeModal('viewExportModal')"></div>
+    <div class="modal__content modal__content--lg">
+        <div class="modal__header">
+            <h2>Chi tiết phiếu xuất</h2>
+            <button type="button" class="modal__close" onclick="closeModal('viewExportModal')" aria-label="Đóng">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        <div class="modal__body">
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Mã phiếu</label>
+                    <p id="viewExportCode" style="font-weight: 600;">—</p>
+                </div>
+                <div class="form-group">
+                    <label>Khách hàng</label>
+                    <p id="viewExportCustomer" style="font-weight: 600;">—</p>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Ngày xuất</label>
+                    <p id="viewExportDate">—</p>
+                </div>
+                <div class="form-group">
+                    <label>Trạng thái</label>
+                    <p id="viewExportStatus">—</p>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Tổng tiền</label>
+                    <p id="viewExportTotal" style="font-weight: 600; color: var(--brand-primary);">—</p>
+                </div>
+                <div class="form-group">
+                    <label>Ghi chú</label>
+                    <p id="viewExportNotes">—</p>
+                </div>
+            </div>
+            <div id="viewExportItems" class="table-wrapper"></div>
+        </div>
+        <div class="modal__footer">
+            <button type="button" class="btn btn--outline" onclick="closeModal('viewExportModal')">Đóng</button>
+        </div>
+    </div>
+</div>
 
 {% block scripts %}
 {{ super() }}
 <script src="{{ url_for('static', filename='js/admin_exports.js') }}" defer></script>
-
-{% endblock %}
-
-{% block content %}
-<div class="app-layout">
-    {% include 'components/sidebar.html' %}
-
-    <main class="app-content main-content exports-page">
-        <div
-            class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-            <h1 class="h2"><i class="fas fa-arrow-up"></i> <span data-i18n="exports.title">Quản lý xuất hàng</span></h1>
-            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createExportModal">
-                <i class="fas fa-plus"></i> <span data-i18n="exports.createExport">Tạo phiếu xuất</span>
-            </button>
-        </div>
-
-        <div class="row mb-4">
-            <div class="col-md-3">
-                <div class="card saas-stat-card">
-                    <div class="card-body">
-                        <h5 class="card-title" data-i18n="exports.totalExports">Tổng phiếu xuất</h5>
-                        <h2 id="totalExports">0</h2>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card saas-stat-card">
-                    <div class="card-body">
-                        <h5 class="card-title" data-i18n="imports.completed">Đã hoàn thành</h5>
-                        <h2 id="completedExports">0</h2>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card saas-stat-card">
-                    <div class="card-body">
-                        <h5 class="card-title" data-i18n="wallet.totalRevenue">Tổng doanh thu</h5>
-                        <h2 id="totalRevenue">0 VND</h2>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="card">
-            <div class="card-body">
-                <h5 class="card-title" data-i18n="exports.listTitle">Danh sách phiếu xuất</h5>
-                <div class="table-responsive">
-                    <table class="table table-hover">
-                        <thead>
-                            <tr>
-                                <th data-i18n="imports.colCode">Mã phiếu</th>
-                                <th data-i18n="nav.customers">Khách hàng</th>
-                                <th data-i18n="imports.colTotal">Tổng tiền</th>
-                                <th data-i18n="common.status">Trạng thái</th>
-                                <th data-i18n="exports.colDate">Ngày xuất</th>
-                                <th data-i18n="customers.colNotes">Ghi chú</th>
-                                <th data-i18n="common.actions">Thao tác</th>
-                            </tr>
-                        </thead>
-                        <tbody id="exportsTableBody">
-                            <tr>
-                                <td colspan="7" class="text-center">
-                                    <div class="spinner-border" role="status"></div>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </main>
-</div>
-
-<!-- Modal: Tạo phiếu xuất -->
-<div class="modal fade" id="createExportModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" data-i18n="exports.createExportTitle">Tạo phiếu xuất hàng</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
-            </div>
-            <div class="modal-body">
-                <form id="createExportForm">
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <label class="form-label" data-i18n="nav.customers">Khách hàng</label>
-                            <select class="form-select" name="customer_id" id="customerSelect" required>
-                                <option value="" data-i18n="exports.chooseCustomer">-- Chọn khách hàng --</option>
-                            </select>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label" data-i18n="customers.colNotes">Ghi chú</label>
-                            <input type="text" class="form-control" name="notes">
-                        </div>
-                    </div>
-
-                    <hr>
-                    <h6 data-i18n="sale.colProduct" style="font-weight: 600; margin-bottom: 12px;">Sản phẩm</h6>
-                    <div class="table-responsive mb-3" style="border: 1px solid var(--border-soft); border-radius: 8px;">
-                        <table class="table" id="exportItemsTable">
-                            <thead>
-                                <tr>
-                                    <th data-i18n="sale.colProduct">Sản phẩm</th>
-                                    <th width="150" data-i18n="imports.qty">Số lượng</th>
-                                    <th width="200" data-i18n="imports.unitPrice">Đơn giá</th>
-                                    <th width="50"></th>
-                                </tr>
-                            </thead>
-                            <tbody id="exportItemsBody">
-                                <!-- Sản phẩm sẽ được thêm tại đây -->
-                            </tbody>
-                        </table>
-                    </div>
-                    <button type="button" class="btn btn-secondary btn-sm" onclick="addExportItemRow()">
-                        <i class="fas fa-plus"></i> <span data-i18n="products.addProduct">Thêm sản phẩm</span>
-                    </button>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-i18n="common.close">Đóng</button>
-                <button type="button" class="btn btn-primary" onclick="submitExport()" data-i18n="exports.createExport">Tạo phiếu xuất</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Modal: Xem phiếu xuất -->
-<div class="modal fade" id="viewExportModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" data-i18n="exports.detailsTitle">Chi tiết phiếu xuất</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
-            </div>
-            <div class="modal-body">
-                <div class="row mb-3">
-                    <div class="col-md-6" style="line-height: 1.8;">
-                        <strong data-i18n="imports.codeLabel">Mã:</strong> <span id="viewExportCode"></span><br>
-                        <strong data-i18n="exports.customerLabel">Khách hàng:</strong> <span id="viewExportCustomer"></span><br>
-                        <strong data-i18n="sale.dateLabel">Ngày:</strong> <span id="viewExportDate"></span>
-                    </div>
-                    <div class="col-md-6 text-end" style="line-height: 1.8;">
-                        <strong data-i18n="imports.statusLabel">Trạng thái:</strong> <span id="viewExportStatus"></span><br>
-                        <strong data-i18n="imports.totalLabel">Tổng tiền:</strong> <span id="viewExportTotal" class="h5 text-primary"></span>
-                    </div>
-                </div>
-                <div class="mb-4">
-                    <strong data-i18n="imports.notesLabel">Ghi chú:</strong> <span id="viewExportNotes"></span>
-                </div>
-
-                <div class="table-responsive" style="border: 1px solid var(--border-soft); border-radius: 8px;">
-                    <table class="table table-striped">
-                        <thead>
-                            <tr>
-                                <th data-i18n="imports.colProductCode">Mã sản phẩm</th>
-                                <th data-i18n="products.colName">Tên sản phẩm</th>
-                                <th class="text-end" data-i18n="imports.qty">Số lượng</th>
-                                <th class="text-end" data-i18n="imports.unitPrice">Đơn giá</th>
-                                <th class="text-end" data-i18n="imports.subtotal">Thành tiền</th>
-                            </tr>
-                        </thead>
-                        <tbody id="viewExportItemsBody"></tbody>
-                    </table>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-i18n="common.close">Đóng</button>
-            </div>
-        </div>
-    </div>
-</div>
-
+<script>
+function openModal(id) {
+    var el = document.getElementById(id);
+    if (el) el.classList.add('active', 'show');
+}
+function closeModal(id) {
+    var el = document.getElementById(id);
+    if (el) el.classList.remove('active', 'show');
+}
+</script>
 {% endblock %}
