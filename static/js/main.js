@@ -37,30 +37,34 @@ document.addEventListener("DOMContentLoaded", () => {
   // 2. SIDEBAR TOGGLE (Mobile)
   // ========================================
   const menuToggleBtn = document.getElementById("menuToggle");
+  const mobileToggleBtn = document.getElementById("mobileSidebarToggle");
   const sidebar = document.getElementById("sidebar");
 
-  // Create overlay for mobile
-  const overlay = document.createElement("div");
-  overlay.className = "sidebar__overlay";
-  document.querySelector(".app").prepend(overlay);
+  // Use existing overlay from HTML, or create fallback
+  let overlay = document.getElementById("sidebarOverlay");
+  if (!overlay) {
+    overlay = document.createElement("div");
+    overlay.className = "sidebar-overlay";
+    overlay.id = "sidebarOverlay";
+    document.querySelector(".app").prepend(overlay);
+  }
 
   function openSidebar() {
-    sidebar.classList.add("open");
+    sidebar.classList.add("active");
     overlay.classList.add("active");
     document.body.style.overflow = "hidden";
-    mainWrapper.classList.add("sidebar-drawer-open");
   }
 
   function closeSidebar() {
-    sidebar.classList.remove("open");
+    sidebar.classList.remove("active");
     overlay.classList.remove("active");
     document.body.style.overflow = "";
-    mainWrapper.classList.remove("sidebar-drawer-open");
   }
 
+  // Desktop header toggle button
   if (menuToggleBtn) {
     menuToggleBtn.addEventListener("click", () => {
-      if (sidebar.classList.contains("open")) {
+      if (sidebar.classList.contains("active")) {
         closeSidebar();
       } else {
         openSidebar();
@@ -68,7 +72,26 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // Mobile topbar hamburger button
+  if (mobileToggleBtn) {
+    mobileToggleBtn.addEventListener("click", () => {
+      if (sidebar.classList.contains("active")) {
+        closeSidebar();
+      } else {
+        openSidebar();
+      }
+    });
+  }
+
+  // Click overlay to close
   overlay.addEventListener("click", closeSidebar);
+
+  // Auto-close sidebar when resizing to desktop
+  window.addEventListener("resize", () => {
+    if (window.innerWidth > 768) {
+      closeSidebar();
+    }
+  });
 
   // ========================================
   // 2b. SIDEBAR COLLAPSE (Desktop)
@@ -86,9 +109,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
   if (sidebarToggle) {
     sidebarToggle.addEventListener("click", () => {
-      // Only toggle collapsed state on desktop (>1024px)
-      // On tablet/mobile, use drawer behavior (open class)
-      if (window.innerWidth > 1024) {
+      // Only toggle collapsed state on desktop (>=1024px)
+      // On tablet/mobile (<1024px), use drawer behavior (open class)
+      if (window.innerWidth >= 1024) {
         sidebar.classList.toggle("collapsed");
         mainWrapper.classList.toggle("sidebar-collapsed");
         const collapsed = sidebar.classList.contains("collapsed");
@@ -100,7 +123,7 @@ document.addEventListener("DOMContentLoaded", () => {
         );
       } else {
         // Tablet/mobile: use drawer behavior
-        if (sidebar.classList.contains("open")) {
+        if (sidebar.classList.contains("active")) {
           closeSidebar();
         } else {
           openSidebar();
@@ -114,14 +137,65 @@ document.addEventListener("DOMContentLoaded", () => {
     mainWrapper.classList.add("sidebar-collapsed");
   }
 
-  // Auto-close sidebar on mobile when any nav item is clicked
-  // (router.js also handles clicks, this just closes the drawer)
-  document.querySelectorAll(".sidebar__item, .sidebar__submenu-item").forEach((el) => {
+  // Auto-close sidebar on mobile when clicking items WITHOUT submenu
+  // Items WITH submenu (has-sub) will only close after selecting from submenu
+  document.querySelectorAll(".sidebar__item:not(.sidebar__item--has-sub)").forEach((el) => {
     el.addEventListener("click", () => {
-      // Removed: sidebar no longer auto-closes or auto-expands on nav item click on tablet/mobile
-      // User must manually close by clicking the toggle button
+      if (window.innerWidth <= 768) {
+        closeSidebar();
+      }
     });
   });
+
+  // Auto-close sidebar on mobile when submenu item is clicked
+  document.querySelectorAll(".sidebar__submenu-item").forEach((el) => {
+    el.addEventListener("click", () => {
+      if (window.innerWidth <= 768) {
+        closeSidebar();
+      }
+    });
+  });
+
+  // ========================================
+  // 2c. SIDEBAR COLLAPSED - Click icon to expand (desktop)
+  // ========================================
+  document.querySelectorAll(".sidebar__item").forEach((el) => {
+    el.addEventListener("click", () => {
+      // If sidebar is collapsed on desktop, expand it
+      if (sidebar.classList.contains("collapsed") && window.innerWidth >= 1024) {
+        sidebar.classList.remove("collapsed");
+        if (mainWrapper) {
+          mainWrapper.classList.remove("sidebar-collapsed");
+        }
+        localStorage.setItem("sidebar-collapsed", "false");
+        document.querySelector(".app").style.setProperty("--sidebar-current-width", "240px");
+      }
+    });
+  });
+
+  // ========================================
+  // 2d. SIDEBAR USER CARD (mobile)
+  // ========================================
+  const sidebarUserCard = document.getElementById("sidebarUserCard");
+  const sidebarUserMenu = document.getElementById("sidebarUserMenu");
+
+  if (sidebarUserCard && sidebarUserMenu) {
+    sidebarUserCard.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      sidebarUserCard.classList.toggle("open");
+      sidebarUserMenu.classList.toggle("open");
+    });
+
+    // Handle menu item clicks
+    sidebarUserMenu.querySelectorAll(".sidebar-user-menu__item").forEach((el) => {
+      el.addEventListener("click", () => {
+        if (window.innerWidth <= 768) {
+          closeSidebar();
+        }
+      });
+    });
+  }
 
   // ========================================
   // 3. MODAL EVENTS (shared across pages)

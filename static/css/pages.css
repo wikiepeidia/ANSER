@@ -118,21 +118,7 @@
   transform: translateY(-1px);
 }
 
-@media (max-width: 768px) {
-  .welcome-banner {
-    flex-direction: column;
-    align-items: flex-start;
-  }
 
-  .welcome-banner__actions {
-    width: 100%;
-  }
-
-  .welcome-banner__btn {
-    flex: 1;
-    justify-content: center;
-  }
-}
 
 .content__title {
   font-size: 24px;

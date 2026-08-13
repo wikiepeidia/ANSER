@@ -258,13 +258,4 @@
   flex-shrink: 0;
 }
 
-@media (max-width: 480px) {
-  .ai-chat-widget {
-    right: 16px;
-    bottom: 16px;
-  }
-  .ai-chat-window {
-    width: calc(100vw - 32px);
-    bottom: 68px;
-  }
-}
+

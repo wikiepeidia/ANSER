@@ -425,84 +425,11 @@
 /* ==============================
    RESPONSIVE â€” Reports
    ============================== */
-@media (max-width: 1024px) {
-  .stats-grid--4 {
-    grid-template-columns: repeat(2, 1fr) !important;
-  }
 
-  .charts-row--4col {
-    grid-template-columns: repeat(2, 1fr);
-  }
 
-  .charts-row--3col {
-    grid-template-columns: repeat(2, 1fr);
-  }
 
-  .charts-row--4col > *,
-  .charts-row--3col > * {
-    min-width: 0;
-  }
 
-  .charts-row--2x2 {
-    grid-template-columns: 1fr;
-  }
-}
 
-@media (max-width: 1200px) {
-  .stats-grid--4 {
-    grid-template-columns: repeat(2, 1fr) !important;
-  }
-
-  .charts-row--2x2 {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 768px) {
-  .stats-grid--4 {
-    grid-template-columns: 1fr !important;
-  }
-
-  .toolbar {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .toolbar__filters {
-    flex-direction: column;
-  }
-
-  .form-row--2>.form-group,
-  .form-row--3>.form-group {
-    flex: 1 1 100%;
-  }
-
-  .charts-row--4col,
-  .charts-row--3col,
-  .charts-row--2x2 {
-    grid-template-columns: 1fr;
-  }
-
-  .charts-row--4col > *,
-  .charts-row--3col > *,
-  .charts-row--2x2 > * {
-    min-width: 0;
-  }
-
-  .report-toolbar {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .report-toolbar__right {
-    flex-direction: column;
-  }
-
-  .h-bar-item__label {
-    width: 110px;
-    font-size: 12px;
-  }
-}
 
 
 /* ==============================
@@ -753,17 +680,9 @@
 /* ==============================
    RESPONSIVE â€” Charts
    ============================== */
-@media (max-width: 1400px) {
-  .charts-row--4col {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
 
-@media (max-width: 1200px) {
-  .charts-row--3col {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
+
+
 
 /* ==============================
    PROFIT/REVENUE CHART VARIANT (reports page chart 1)

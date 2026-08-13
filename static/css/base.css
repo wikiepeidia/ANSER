@@ -47,8 +47,10 @@ img {
    ============================== */
 .app {
   display: flex;
+  width: 100%;
   min-height: 100vh;
-  --sidebar-current-width: var(--sidebar-width);
+  --sidebar-current-width: 240px;
+  overflow-x: hidden;
 }
 
 /* ==============================
@@ -70,7 +72,7 @@ img {
   overflow: hidden;
 }
 
-/* Logo â€” aligned with page header height (64px) */
+/* Logo â€"- aligned with page header height (64px) */
 .sidebar__logo {
   display: flex;
   align-items: center;
@@ -80,6 +82,7 @@ img {
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   white-space: nowrap;
   box-sizing: border-box;
+  flex-shrink: 0;
 }
 
 .sidebar__logo i {
@@ -229,6 +232,11 @@ img {
 
 .sidebar__nav::-webkit-scrollbar-track {
   background: transparent;
+}
+
+/* Sidebar footer - stays at bottom, doesn't shrink */
+.sidebar__footer {
+  flex-shrink: 0;
 }
 
 /* Sidebar Item */
@@ -407,6 +415,7 @@ img {
 .main-wrapper {
   margin-left: var(--sidebar-current-width);
   flex: 1;
+  flex-shrink: 0;
   display: flex;
   flex-direction: column;
   min-height: 100vh;
@@ -604,43 +613,6 @@ img {
    ============================== */
 
 /* Tablet: 769px - 1024px */
-@media (max-width: 1024px) {
-  .header__search {
-    max-width: 240px;
-  }
 
-  .header__search input {
-    font-size: 13px;
-  }
-}
 
 /* Mobile: ≤768px */
-@media (max-width: 768px) {
-  .header {
-    padding: 0 16px;
-  }
-
-  .header__search {
-    max-width: none;
-    flex: 1;
-    margin: 0 8px;
-  }
-
-  .header__avatar-role {
-    display: none;
-  }
-
-  .content {
-    padding: 16px;
-    gap: 16px;
-    overflow-x: hidden;
-  }
-
-  .content__title {
-    font-size: 20px;
-  }
-
-  .content__subtitle {
-    font-size: 13px;
-  }
-}

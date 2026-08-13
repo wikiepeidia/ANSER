@@ -364,37 +364,10 @@
 }
 
 /* Tablet: 769px - 1024px */
-@media (max-width: 1024px) {
-  .settings-sidebar {
-    min-width: 180px;
-    max-width: 180px;
-  }
-}
+
 
 /* Mobile: ≤768px */
-@media (max-width: 768px) {
-  .settings-layout {
-    flex-direction: column;
-  }
-  .settings-sidebar {
-    max-width: 100%;
-    width: 100%;
-    min-width: auto;
-    position: static;
-    flex-direction: row;
-    flex-wrap: wrap;
-    gap: 4px;
-    padding: 8px;
-  }
-  .settings-nav-item {
-    flex: 0 0 auto;
-    padding: 8px 10px;
-    font-size: 12px;
-  }
-  .settings-nav-item i {
-    font-size: 12px;
-  }
-}
+
 
 /* ==============================
    SMALL BUTTON
@@ -422,23 +395,8 @@
    ============================== */
 
 /* Tablet: 769px - 1024px */
-@media (max-width: 1024px) {
-  .form-row--2 > .form-group,
-  .form-row--3 > .form-group {
-    min-width: 180px;
-  }
-}
+
 
 /* Mobile: ≤768px */
-@media (max-width: 768px) {
-  .form-row {
-    flex-direction: column;
-    gap: 12px;
-  }
 
-  .form-row > .form-group {
-    flex: 1 1 100% !important;
-    min-width: 0;
-  }
-}
 
