@@ -96,6 +96,64 @@ class FakeLLM:
         return _FakeTokenizer()
 
 
+class _FakeVisionInputs(dict):
+    """Mapping-shaped processor result; never allocates a real tensor/GPU."""
+
+    def __init__(self):
+        super().__init__(input_ids=[[1, 2]])
+        self.input_ids = self["input_ids"]
+
+    def to(self, device):
+        self.device = device
+        return self
+
+
+class _FakeVisionProcessor:
+    def apply_chat_template(self, messages, tokenize=False, add_generation_prompt=True):
+        return "FAKE_VISION_PROMPT"
+
+    def __call__(self, **kwargs):
+        return _FakeVisionInputs()
+
+    def batch_decode(self, outputs, **kwargs):
+        return ["generated:vision"]
+
+
+class _FakeVisionModel:
+    device = "fake-cuda"
+
+    def __init__(self, *, fail=False):
+        self.calls = []
+        self.fail = fail
+
+    def generate(self, **kwargs):
+        start = time.monotonic()
+        time.sleep(0.2)
+        end = time.monotonic()
+        self.calls.append((start, end))
+        if self.fail:
+            raise RuntimeError("fake vision failure")
+        return [[1, 2, 3]]
+
+
+class _NoGrad:
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc, tb):
+        return False
+
+
+def _install_vision_stubs(monkeypatch):
+    torch_stub = types.ModuleType("torch")
+    torch_stub.no_grad = _NoGrad
+    monkeypatch.setitem(sys.modules, "torch", torch_stub)
+
+    qwen_utils_stub = types.ModuleType("qwen_vl_utils")
+    qwen_utils_stub.process_vision_info = lambda messages: (["fake-image"], None)
+    monkeypatch.setitem(sys.modules, "qwen_vl_utils", qwen_utils_stub)
+
+
 def test_concurrent_generate_calls_do_not_overlap():
     # Bypass the singleton and _initialize() entirely — construct a bare
     # instance and wire up just what generate_text/generate_chat touch.
@@ -136,3 +194,59 @@ def test_concurrent_generate_calls_do_not_overlap():
         "generate_text's and generate_chat's _blocking_generate closures — "
         "the exact 'AI replies to itself' race (ENGINE-03)."
     )
+
+
+def test_text_and_vision_gpu_calls_do_not_overlap(monkeypatch):
+    """vLLM and Qwen2-VL must never execute concurrently on the shared GPU."""
+    _install_vision_stubs(monkeypatch)
+
+    engine = object.__new__(ModelEngine)
+    engine.env = "COLAB"
+    engine.llm = FakeLLM()
+    engine.vision_model = _FakeVisionModel()
+    engine.vision_processor = _FakeVisionProcessor()
+    engine._generate_lock = threading.Lock()
+
+    async def _run_concurrent():
+        return await asyncio.gather(
+            engine.generate_text("hello text prompt"),
+            engine.generate_vision("fake.png", "read image"),
+        )
+
+    text_result, vision_result = asyncio.run(_run_concurrent())
+
+    assert text_result == "generated:hello text prompt"
+    assert vision_result == "generated:vision"
+    assert len(engine.llm.calls) == 1
+    assert len(engine.vision_model.calls) == 1
+    assert not _intervals_overlap(engine.llm.calls[0], engine.vision_model.calls[0]), (
+        "vLLM text generation overlapped Qwen2-VL generation on the same GPU. "
+        "All GPU inference paths must share ModelEngine._generate_lock."
+    )
+
+
+def test_vision_failure_releases_shared_gpu_lock(monkeypatch):
+    """An exception in Qwen2-VL must not permanently block later text work."""
+    _install_vision_stubs(monkeypatch)
+
+    engine = object.__new__(ModelEngine)
+    engine.env = "COLAB"
+    engine.llm = FakeLLM()
+    engine.vision_model = _FakeVisionModel(fail=True)
+    engine.vision_processor = _FakeVisionProcessor()
+    engine._generate_lock = threading.Lock()
+
+    async def _run_after_failure():
+        try:
+            await engine.generate_vision("fake.png", "read image")
+        except RuntimeError as exc:
+            assert str(exc) == "fake vision failure"
+        else:
+            raise AssertionError("fake vision call should fail")
+
+        return await asyncio.wait_for(
+            engine.generate_text("text after vision failure"),
+            timeout=2.0,
+        )
+
+    assert asyncio.run(_run_after_failure()) == "generated:text after vision failure"

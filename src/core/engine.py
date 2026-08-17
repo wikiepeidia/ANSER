@@ -128,15 +128,14 @@ class ModelEngine:
     def _initialize(self):
         self.env = os.getenv("ENV", "LOCAL").upper()
         self.config = Config()
-        # Narrow lock around self.llm.generate() call sites only (generate_text's
-        # and generate_chat's _blocking_generate closures) — vLLM's LLM.generate()
-        # is synchronous and not thread-safe, and both methods dispatch it via
-        # loop.run_in_executor()'s default multi-threaded ThreadPoolExecutor.
-        # Without this, two concurrent chat requests can interleave inside vLLM's
-        # scheduler state (ENGINE-03, "AI replies to itself"). Scoped tightly to
-        # just the .generate() call — NOT the outer async method — so unrelated
-        # request-path work (tokenization/templating, routing, RAG, webhooks)
-        # stays fully concurrent.
+        # Shared lock around every GPU inference section. vLLM's synchronous
+        # LLM.generate() is not thread-safe, and Qwen2-VL runs through the same
+        # default ThreadPoolExecutor on the same CUDA device. A chat endpoint can
+        # return its task id while vLLM is still generating; an OCR request may
+        # then enter Qwen2-VL concurrently. Serializing the device transfer and
+        # generation sections prevents the two runtimes from racing for the same
+        # CUDA context/allocator while keeping CPU preprocessing, routing, RAG,
+        # database work, and the ASGI event loop concurrent.
         self._generate_lock = threading.Lock()
 
         if self.env == "LOCAL":
@@ -284,14 +283,34 @@ class ModelEngine:
                 videos=video_inputs,
                 padding=True,
                 return_tensors="pt",
-            ).to(self.vision_model.device)
+            )
 
-            with torch.no_grad():
-                generated = self.vision_model.generate(**inputs, max_new_tokens=max_new_tokens)
-            trimmed = [out[len(inp):] for inp, out in zip(inputs.input_ids, generated)]
-            return self.vision_processor.batch_decode(
-                trimmed, skip_special_tokens=True, clean_up_tokenization_spaces=False
-            )[0].strip()
+            # The processor work above is CPU-only. Hold the same lock used by
+            # vLLM from the first device transfer through decode so no other
+            # Qwen/vLLM call can overlap this request's live CUDA tensors. The
+            # context manager releases the lock even when model.generate raises.
+            with self._generate_lock:
+                device_inputs = inputs.to(self.vision_model.device)
+                try:
+                    with torch.no_grad():
+                        generated = self.vision_model.generate(
+                            **device_inputs,
+                            max_new_tokens=max_new_tokens,
+                        )
+                    trimmed = [
+                        out[len(inp):]
+                        for inp, out in zip(device_inputs.input_ids, generated)
+                    ]
+                    return self.vision_processor.batch_decode(
+                        trimmed,
+                        skip_special_tokens=True,
+                        clean_up_tokenization_spaces=False,
+                    )[0].strip()
+                finally:
+                    # Drop request-local CUDA tensor references before another
+                    # inference acquires the lock. Do not call empty_cache():
+                    # vLLM owns a persistent KV cache in the same process.
+                    del device_inputs
 
         return await loop.run_in_executor(None, _blocking_vision)
 
