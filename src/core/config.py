@@ -111,14 +111,29 @@ class Config:
         #  "Forward context is not set" của vLLM + Qwen trên Colab.
         #
         #  gpu_memory_utilization/max_model_len are selected from
-        #  _VLLM_PROFILES via GPU_PROFILE (l4 default, a100 opt-in) --
-        #  the remaining keys (dtype/quantization/enforce_eager) are fixed,
-        #  not profile-dependent.
+        #  _VLLM_PROFILES via GPU_PROFILE (l4 default, a100 opt-in). An
+        #  explicit positive TEXT_MAX_MODEL_LEN overrides only max_model_len;
+        #  when absent, both profiles retain the proven 4096 default. The
+        #  remaining keys (dtype/quantization/enforce_eager) are fixed, not
+        #  profile-dependent.
         # =================================================================
         self.gpu_profile = GPU_PROFILE if GPU_PROFILE in _VLLM_PROFILES else "l4"
         _profile = _VLLM_PROFILES[self.gpu_profile]
+        _max_model_len = _profile["max_model_len"]
+        _raw_max_model_len = os.getenv("TEXT_MAX_MODEL_LEN")
+        if _raw_max_model_len is not None:
+            try:
+                _max_model_len = int(_raw_max_model_len.strip())
+            except ValueError:
+                raise ValueError(
+                    "TEXT_MAX_MODEL_LEN must be a positive integer"
+                ) from None
+            if _max_model_len < 1:
+                raise ValueError("TEXT_MAX_MODEL_LEN must be a positive integer")
+
         self.vllm_config = {
             **_profile,
+            "max_model_len":          _max_model_len,
             "dtype":                  "half",
             "quantization":           "awq",
             "enforce_eager":          True,   # fix vLLM + Qwen CUDA graph bug
