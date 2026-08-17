@@ -263,6 +263,7 @@ const Store = {
     { code: "NVL-005", name: "Bao bì đóng gói", unit: "cái", unitCost: 2500 },
     { code: "NVL-006", name: "Keo dán công nghiệp", unit: "kg", unitCost: 60000 },
     { code: "NVL-007", name: "Dây kéo", unit: "cái", unitCost: 3000 },
+    { code: "NVL-008", name: "Lá Atiso tươi", unit: "kg", unitCost: 12000 },
   ],
 
   _hashStr(s) {

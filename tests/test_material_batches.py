@@ -2,8 +2,30 @@
 (TRACE-02), and expiring-batches (TRACE-06) — routes/inventory_routes.py.
 """
 from datetime import datetime, timedelta
+from pathlib import Path
 
 from core.sanxuat_db import get_connection
+from routes.inventory_routes import _find_material
+
+
+def test_phase13_herbal_material_catalog_entry_matches_frontend():
+    """The live weigh-slip fixture must resolve to a real kg material."""
+    expected = {
+        'code': 'NVL-008',
+        'name': 'Lá Atiso tươi',
+        'unit': 'kg',
+        'unitCost': 12000,
+    }
+
+    assert _find_material('NVL-008') == expected
+
+    store_js = (Path(__file__).parents[1] / 'static' / 'js' / 'store.js').read_text(
+        encoding='utf-8'
+    )
+    assert (
+        '{ code: "NVL-008", name: "Lá Atiso tươi", unit: "kg", unitCost: 12000 }'
+        in store_js
+    )
 
 
 def test_create_list_update(logged_in_client):

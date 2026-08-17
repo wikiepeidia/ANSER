@@ -20,10 +20,11 @@ from routes.production_routes import _serialize_order
 
 inventory_bp = Blueprint('inventory', __name__)
 
-# Server-side source of truth for material reference data — ported verbatim
-# from static/js/store.js:255-263 (_MOCK_MATERIALS). A POST/PUT body's
-# materialCode is resolved against this list; materialName/unit are never
-# trusted from the client.
+# Server-side source of truth for material reference data, mirrored in
+# static/js/store.js (_MOCK_MATERIALS). A POST/PUT body's materialCode is
+# resolved against this list; materialName/unit are never trusted from the
+# client. NVL-008 is the first herbal raw material used by the real
+# manufacturing OCR intake path (Phase 13).
 MATERIALS_CATALOG = [
     {'code': 'NVL-001', 'name': 'Vải cotton', 'unit': 'm', 'unitCost': 45000},
     {'code': 'NVL-002', 'name': 'Chỉ may', 'unit': 'cuộn', 'unitCost': 8000},
@@ -32,6 +33,7 @@ MATERIALS_CATALOG = [
     {'code': 'NVL-005', 'name': 'Bao bì đóng gói', 'unit': 'cái', 'unitCost': 2500},
     {'code': 'NVL-006', 'name': 'Keo dán công nghiệp', 'unit': 'kg', 'unitCost': 60000},
     {'code': 'NVL-007', 'name': 'Dây kéo', 'unit': 'cái', 'unitCost': 3000},
+    {'code': 'NVL-008', 'name': 'Lá Atiso tươi', 'unit': 'kg', 'unitCost': 12000},
 ]
 
 
