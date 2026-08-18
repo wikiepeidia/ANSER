@@ -307,7 +307,7 @@ async def chat_endpoint(
 
             if runtime.kb:
                 try:
-                    results = runtime.kb.search(user_msg, top_k=2)
+                    results = runtime.kb.search(user_msg, top_k=6)
                     if results:
                         context_docs = f"[TÀI LIỆU NỘI BỘ]\n{results}"
                         found_internal = True
@@ -504,7 +504,7 @@ async def chat_manufacturing_endpoint(
 
             if runtime.kb:
                 try:
-                    results = runtime.kb.search(user_msg, top_k=2)
+                    results = runtime.kb.search(user_msg, top_k=6)
                     if results:
                         context_docs = f"[TÀI LIỆU NỘI BỘ]\n{results}"
                         found_internal = True

@@ -8,7 +8,7 @@ import uuid
 import torch
 from pypdf import PdfReader
 import docx
-from .ingest import CorpusIngestor
+from .ingest import CorpusIngestor, CORPUS_DIRS, PARENT_SUFFIX
 from .retrieval import Retriever
 from underthesea import word_tokenize, sent_tokenize
 from rank_bm25 import BM25Okapi
@@ -41,7 +41,7 @@ class KnowledgeBase:
 
         self.client = chromadb.PersistentClient(path=persist_dir)
         self.collection = self.client.get_or_create_collection(name="project_a_docs")
-        
+
         self.bm25 = None
         self.bm25_docs = []
         self._bm25_dirty = True
@@ -106,51 +106,40 @@ class KnowledgeBase:
                 logger.error("Failed to read document '%s': %s", filename, e, exc_info=True)
 
     def rebuild_collection(self):
-        """Delete and recreate the persisted collection, then fully re-ingest.
+        """Xoá sạch các collection corpus rồi nạp lại từ đầu.
 
-        ingest_folder() skips any file whose `source` metadata already has
-        entries in the collection (idempotent-by-filename ingest). That
-        means a smart_chunk() change alone has zero live effect until the
-        collection is explicitly emptied first -- otherwise every file gets
-        skipped and stale (old-boundary) chunks stay live forever
-        (PITFALLS.md Pitfall 4). This method always does a FULL delete +
-        reingest (never a partial per-file rebuild), so the resulting chunk
-        set is never a mix of old- and new-boundary chunks.
+        CorpusIngestor bỏ qua file đã có mặt trong collection (idempotent theo
+        `source`), nên một thay đổi ở chunker không có hiệu lực nào cho tới khi
+        collection được dọn hẳn -- nếu không, mọi file đều bị skip và chunk cũ
+        nằm lại vĩnh viễn (PITFALLS.md Pitfall 4). Luôn xoá + nạp lại TOÀN BỘ
+        (không rebuild từng file) để chunk set không lẫn hai thế hệ ranh giới.
+
+        Xoá kèm cả collection `_parents`: chunk con trỏ về cha qua `parent_id`,
+        giữ lại cha cũ trong khi con đã đổi thì `_expand_parents()` nở ra văn
+        bản của thế hệ trước.
+
+        Không đụng tới `project_a_docs` -- collection phẳng cũ nay chỉ còn phục
+        vụ `add_document()`.
         """
-        before_count = self.collection.count()
-        logger.info(
-            "rebuild_collection: starting rebuild of 'project_a_docs' (currently %d chunks)",
-            before_count,
-        )
+        names = [n for coll in CORPUS_DIRS.values()
+                 for n in (coll, coll + PARENT_SUFFIX)]
+        logger.info("rebuild_collection: xoá %d collection — %s",
+                    len(names), ", ".join(names))
 
-        try:
-            self.client.delete_collection(name="project_a_docs")
-        except Exception as e:
-            logger.warning(
-                "rebuild_collection: delete_collection('project_a_docs') failed "
-                "(collection may not exist yet) — continuing: %s",
-                e,
-            )
+        for name in names:
+            try:
+                self.client.delete_collection(name=name)
+            except Exception as e:
+                # Chưa từng ingest -> collection không tồn tại. Không phải lỗi.
+                logger.debug("rebuild_collection: bỏ qua '%s': %s", name, e)
 
-        self.collection = self.client.get_or_create_collection(name="project_a_docs")
+        results = CorpusIngestor(self).ingest_all()
+        skipped = [r for r in results if "BỎ QUA" in r["status"]]
+        logger.info("rebuild_collection: xong — %d file xử lý, %d file bỏ qua",
+                    len(results), len(skipped))
 
-        # Collection is now empty, so ingest_folder()'s per-file dedupe check
-        # (collection.get(where={"source": filename})) finds no existing ids
-        # for any file and re-reads/re-chunks every file in self.doc_dir with
-        # the current smart_chunk() logic.
-        self.ingest_folder()
-
-        # Force the next search() call's _ensure_bm25() to rebuild the
-        # lexical index from the fresh, single-generation chunk set — never
-        # a mix of old- and new-boundary chunks (Pitfall 4).
+        # Buộc _ensure_bm25() dựng lại chỉ mục lexical ở lần search() kế tiếp.
         self._bm25_dirty = True
-
-        after_count = self.collection.count()
-        logger.info(
-            "rebuild_collection: done — %d chunks before, %d chunks after",
-            before_count,
-            after_count,
-        )
 
     def smart_chunk(self, text, chunk_size=150, overlap=30):
         """3. Sentence/structure-aware chunking (chunk_size in words).
@@ -253,62 +242,6 @@ class KnowledgeBase:
             for rank, doc in enumerate(ranked_list, start=1):
                 scores[doc] = scores.get(doc, 0.0) + 1.0 / (k + rank)
         return sorted(scores.items(), key=lambda pair: pair[1], reverse=True)
-
-    def search(self, query: str, top_k=3):
-        self._ensure_bm25()
-
-        # Stage 1A: Dense Retrieval
-        query_vec = self.embedder.encode([query], show_progress_bar=False).tolist()
-        results = self.collection.query(query_embeddings=query_vec, n_results=10)
-
-        dense_results = (
-            results['documents'][0]
-            if results['documents'] and results['documents'][0]
-            else []
-        )
-
-        # Stage 1B: Lexical (BM25) Retrieval
-        if self.bm25:
-            tokenized_query = word_tokenize(query.lower())
-            bm25_results = self.bm25.get_top_n(tokenized_query, self.bm25_docs, n=5)
-        else:
-            bm25_results = []
-
-        # Merge: Reciprocal Rank Fusion (RAG-02) -- replaces the previous
-        # set()-based dedupe with a real, inspectable, deterministic fused
-        # rank order that rewards cross-list agreement.
-        fused = self.reciprocal_rank_fusion([dense_results, bm25_results])
-        candidates = [doc for doc, score in fused]
-        if not candidates:
-            return ""
-
-        # Stage 2: Cross-Encoder Reranking
-        pairs = [[query, doc] for doc in candidates]
-        scores = self.reranker.predict(pairs)
-
-        # Sort by score
-        scored_docs = sorted(zip(scores, candidates), key=lambda x: x[0], reverse=True)
-
-        # Stage 3: Lọc theo ngưỡng liên quan
-        # Cross-encoder ms-marco cho logit: dương = liên quan, âm sâu = không liên quan.
-        # Không lọc thì câu hỏi ngoài lĩnh vực vẫn nhận được tài liệu ngẫu nhiên
-        # -> model bị nhồi ngữ cảnh sai -> sinh nội dung vô nghĩa.
-        relevant = [(s, d) for s, d in scored_docs if s >= self.relevance_threshold]
-
-        if not relevant:
-            logger.info(
-                "KB: không có tài liệu vượt ngưỡng %.1f (điểm cao nhất %.2f) — trả rỗng",
-                self.relevance_threshold,
-                scored_docs[0][0] if scored_docs else float("nan"),
-            )
-            return ""
-
-        best_docs = [doc for _, doc in relevant[:top_k]]
-        logger.info(
-            "KB: %d/%d tài liệu vượt ngưỡng, điểm cao nhất %.2f",
-            len(relevant), len(scored_docs), relevant[0][0],
-        )
-        return "\n\n---\n\n".join(best_docs)
 
     def search(self, query, top_k=6, as_of=None):
         return self.retriever.search(query, top_k=top_k, as_of=as_of)
