@@ -112,6 +112,30 @@ ROUTE_HINTS = {
 }
 
 
+# Thứ bậc hiệu lực pháp lý. Cùng một nội dung, Luật là căn cứ gốc còn Nghị
+# định chỉ quy định chi tiết — trích dẫn Luật đúng hơn về mặt pháp lý.
+#
+# Không có ưu tiên này, văn bản dài chiếm hết top_k: NĐ 181 có 240 chunk còn
+# Luật 48 chỉ 134, nên câu "thuế suất thông thường" trả về NĐ 181 Điều 31/39
+# thay vì Luật 48 Điều 9.
+#
+# Cộng vào điểm rerank, không nhân — nhân sẽ làm một chunk lạc đề của Luật
+# vượt qua chunk đúng của Thông tư.
+HIERARCHY_BOOST = {
+    "luat": 0.05,
+    "nghi_quyet": 0.05,     # nghị quyết Quốc hội ngang luật
+    "phap_lenh": 0.04,
+    "nghi_dinh": 0.02,
+    "quyet_dinh": 0.01,
+    "thong_tu": 0.0,
+    "vbhn": 0.02,
+}
+
+
+def hierarchy_boost(meta: dict) -> float:
+    return HIERARCHY_BOOST.get(str(meta.get("loai_vb", "")).lower(), 0.0)
+
+
 def n_tokens(text: str) -> int:
     return int(len(text) / CHARS_PER_TOKEN)
 
@@ -297,7 +321,13 @@ class Retriever:
         candidates = [pool[i] for i, _ in fused if i in pool]
 
         pairs = [[expanded, c["text"]] for c in candidates]
-        scores = self.kb.reranker.predict(pairs)
+        raw = self.kb.reranker.predict(pairs)
+
+        # Ưu tiên thứ bậc: cộng sau khi rerank, trước khi cắt top_k. Cổng chất
+        # lượng vẫn so ngưỡng trên điểm ĐÃ cộng, nên một chunk sát ngưỡng của
+        # Luật sẽ qua còn chunk tương đương của Thông tư thì không — đúng ý đồ.
+        scores = [float(s) + hierarchy_boost(c.get("meta") or {})
+                  for s, c in zip(raw, candidates)]
         scored = sorted(zip(scores, candidates), key=lambda x: x[0], reverse=True)
 
         # Cổng chất lượng: dùng điểm reranker làm tín hiệu "đủ chưa", thay vì
