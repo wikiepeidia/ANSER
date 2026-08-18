@@ -1,0 +1,19 @@
+# Báo cáo ngành bán lẻ hàng tiêu dùng 12/2025
+so_hieu: "shs_banle_2025_12"
+loai_vb: bao_cao_nganh
+co_quan: "SHS Research"
+
+ngay_ban_hanh: 2025-12-01
+ngay_hieu_luc: 2025-12-01
+ngay_het_hieu_luc: null
+trang_thai: con_hieu_luc
+
+linh_vuc: [thi_truong_ban_le]
+huong_dan_cho: []
+
+ngay_tai: 2026-08-18
+dinh_dang_goc: pdf
+file_goc: "NGANH_BAN_LE_HANG_TIEU_DUNG_DEC_2025_ef112c5cbc.pdf"
+
+ingest: true
+collection: anser_market

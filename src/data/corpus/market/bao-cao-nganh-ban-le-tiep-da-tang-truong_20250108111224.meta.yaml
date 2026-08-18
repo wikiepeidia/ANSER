@@ -1,0 +1,19 @@
+# Ngành bán lẻ - Tiếp đà tăng trưởng
+so_hieu: "abs_banle_2025_01"
+loai_vb: bao_cao_nganh
+co_quan: "ABS Research"
+
+ngay_ban_hanh: 2025-01-08
+ngay_hieu_luc: 2025-01-08
+ngay_het_hieu_luc: null
+trang_thai: con_hieu_luc
+
+linh_vuc: [thi_truong_ban_le]
+huong_dan_cho: []
+
+ngay_tai: 2026-08-18
+dinh_dang_goc: pdf
+file_goc: "bao-cao-nganh-ban-le-tiep-da-tang-truong_20250108111224.pdf"
+
+ingest: true
+collection: anser_market

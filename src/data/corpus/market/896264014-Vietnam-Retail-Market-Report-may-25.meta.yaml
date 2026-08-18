@@ -1,0 +1,22 @@
+# Vietnam Retail Market Report
+so_hieu: "nielsen_vn_retail_2023"
+loai_vb: bao_cao_nganh
+co_quan: "Nielsen Consumer LLC"
+
+ngay_ban_hanh: 2023-01-01
+ngay_hieu_luc: 2023-01-01
+ngay_het_hieu_luc: null
+trang_thai: con_hieu_luc
+
+linh_vuc: [thi_truong_ban_le]
+huong_dan_cho: []
+
+ngay_tai: 2026-08-18
+dinh_dang_goc: pdf
+file_goc: "896264014-Vietnam-Retail-Market-Report-may-25.pdf"
+
+ingest: false
+collection: anser_market
+ly_do_khong_ingest: >
+  Báo cáo thương mại CÓ BẢN QUYỀN (c 2023 Nielsen Consumer LLC, All Rights
+  Reserved). Không index; cân nhắc gỡ khỏi repo công khai.

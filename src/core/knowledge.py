@@ -8,6 +8,7 @@ import uuid
 import torch
 from pypdf import PdfReader
 import docx
+from .ingest import CorpusIngestor
 from underthesea import word_tokenize, sent_tokenize
 from rank_bm25 import BM25Okapi
 
@@ -44,7 +45,7 @@ class KnowledgeBase:
         self.bm25_docs = []
         self._bm25_dirty = True
 
-        self.ingest_folder()
+        CorpusIngestor(self).ingest_all()
         self._ensure_bm25()
 
     def _resolve_reranker_device(self):

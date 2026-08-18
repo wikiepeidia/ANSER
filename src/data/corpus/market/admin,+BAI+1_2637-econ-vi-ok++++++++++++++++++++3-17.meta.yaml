@@ -1,0 +1,24 @@
+# Mô hình khám phá ý kiến khách hàng
+so_hieu: "admin"
+loai_vb: bai_bao_khoa_hoc
+co_quan: "HCMCOUJS 19(6)"
+
+ngay_ban_hanh: 2024-01-01
+ngay_hieu_luc: 2024-01-01
+ngay_het_hieu_luc: null
+trang_thai: con_hieu_luc
+
+linh_vuc: [nghien_cuu_hoc_thuat]
+huong_dan_cho: []
+
+ngay_tai: 2026-08-18
+dinh_dang_goc: pdf
+file_goc: "admin,+BAI+1_2637-econ-vi-ok++++++++++++++++++++3-17.pdf"
+
+ingest: false
+collection: anser_market
+ly_do_khong_ingest: >
+  Bài báo tạp chí học thuật (đặt vấn đề, tổng quan lý thuyết, mô hình hồi quy).
+  Không chứa thông tin tác nghiệp mà chủ cửa hàng cần, và dày đặc từ khóa chung
+  nên sẽ cạnh tranh với điều khoản luật ở nhánh BM25.
+  Bật lại nếu ANSER cần hỗ trợ nghiên cứu thị trường.

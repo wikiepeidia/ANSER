@@ -1,0 +1,22 @@
+# Báo cáo ngành bán lẻ tháng 9/2023
+so_hieu: "psi_banle_2023_09"
+loai_vb: bao_cao_nganh
+co_quan: "PSI"
+
+ngay_ban_hanh: 2023-09-30
+ngay_hieu_luc: 2023-09-30
+ngay_het_hieu_luc: null
+trang_thai: con_hieu_luc
+
+linh_vuc: [thi_truong_ban_le]
+huong_dan_cho: []
+
+ngay_tai: 2026-08-18
+dinh_dang_goc: pdf
+file_goc: "PSI_Retail sector_202309.pdf"
+
+ingest: false
+collection: anser_market
+ly_do_khong_ingest: >
+  Số liệu thị trường bán lẻ 2023, đã gần 3 năm. Chỉ còn giá trị lịch sử,
+  và dễ khiến bot trích số liệu cũ như thể hiện hành.

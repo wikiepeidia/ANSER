@@ -1,0 +1,19 @@
+# Ngành Bán lẻ - Bứt phá lợi nhuận
+so_hieu: "ssv_banle_2025"
+loai_vb: bao_cao_nganh
+co_quan: "Shinhan Securities Vietnam"
+
+ngay_ban_hanh: 2025-01-01
+ngay_hieu_luc: 2025-01-01
+ngay_het_hieu_luc: null
+trang_thai: con_hieu_luc
+
+linh_vuc: [thi_truong_ban_le]
+huong_dan_cho: []
+
+ngay_tai: 2026-08-18
+dinh_dang_goc: pdf
+file_goc: "SSV_Retail_Industry_Outlook_2025_VN.pdf"
+
+ingest: true
+collection: anser_market

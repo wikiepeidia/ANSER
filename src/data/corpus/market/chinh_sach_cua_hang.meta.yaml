@@ -1,0 +1,28 @@
+# Chính sách cửa hàng — tài liệu nội bộ, không phải văn bản QPPL
+so_hieu: "chinh_sach_cua_hang"
+loai_vb: noi_bo
+co_quan: "Ngọc Duy Group"
+
+# Nội bộ không có ngày ban hành chính thức. Đặt mốc đủ sớm để filter hiệu lực
+# luôn cho qua; khi có bản chính sách mới thì cập nhật lại.
+ngay_hieu_luc: 2024-01-01
+ngay_het_hieu_luc: null
+trang_thai: con_hieu_luc
+
+linh_vuc: [chinh_sach_noi_bo, doi_tra, bao_hanh, giao_hang]
+huong_dan_cho: []
+
+ngay_tai: 2026-08-18
+dinh_dang_goc: txt
+file_goc: "chinh_sach_cua_hang.txt"
+
+ingest: true
+collection: anser_internal
+
+# File hiện rất ngắn (5 chunk trong DB cũ). Nên bổ sung trước khi phục vụ
+# khách hàng thật:
+#   - chính sách đổi trả, bảo hành đầy đủ
+#   - biểu phí và thời gian giao hàng
+#   - quy trình xuất hóa đơn từ máy tính tiền
+#   - bảng ánh xạ mã sản phẩm -> thuế suất GTGT (8% hay 10%)
+ghi_chu: "Nội dung còn sơ sài"

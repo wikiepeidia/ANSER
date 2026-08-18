@@ -1,0 +1,19 @@
+# Đánh giá kinh tế Việt Nam nửa đầu 2025 (mô hình tổng cung - tổng cầu)
+so_hieu: "dubao_kinhte_2025_2026"
+loai_vb: bao_cao_nganh
+co_quan: "ĐH Kinh tế TP.HCM"
+
+ngay_ban_hanh: 2025-07-01
+ngay_hieu_luc: 2025-07-01
+ngay_het_hieu_luc: null
+trang_thai: con_hieu_luc
+
+linh_vuc: [thi_truong_ban_le]
+huong_dan_cho: []
+
+ngay_tai: 2026-08-18
+dinh_dang_goc: pdf
+file_goc: "dubaokinhteVietNam2025-2026.pdf"
+
+ingest: true
+collection: anser_market
