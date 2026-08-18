@@ -47,7 +47,6 @@ class KnowledgeBase:
         self._bm25_dirty = True
 
         CorpusIngestor(self).ingest_all()
-        self._ensure_bm25()
         self.retriever = Retriever(self)
 
     def _resolve_reranker_device(self):

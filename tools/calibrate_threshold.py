@@ -131,17 +131,68 @@ def histogram(in_s: list[float], out_s: list[float], bins: int = 20) -> None:
             print(f"  {a:7.3f}..{z:6.3f}  {'I' * ci}{'O' * co}")
 
 
+def build_kb(threshold: float | None = None):
+    """
+    KB tối giản: chỉ embedder + reranker, KHÔNG vLLM.
+
+    KnowledgeBase thật kéo theo model 7B AWQ (~12GB VRAM, vài phút khởi động)
+    cho một việc không dùng đến nó — đo ngưỡng chỉ cần hai model nhỏ. Trên
+    Colab, import KnowledgeBase còn hỏng hẳn nếu chưa cài vLLM.
+    """
+    import os
+    import chromadb
+    import torch
+    from sentence_transformers import SentenceTransformer, CrossEncoder
+
+    dev = "cuda" if torch.cuda.is_available() else "cpu"
+    print(f"  thiết bị: {dev}")
+
+    class MiniKB:
+        def __init__(self):
+            self.client = chromadb.PersistentClient(path="./data/vector_db")
+            self.embedder = SentenceTransformer(
+                "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
+                device=dev)
+            self.reranker = CrossEncoder("BAAI/bge-reranker-v2-m3", device=dev)
+            self.relevance_threshold = (
+                threshold if threshold is not None
+                else float(os.getenv("KB_RELEVANCE_THRESHOLD", "0.0")))
+            self._bm25_dirty = False
+            self.collection = self.client.get_or_create_collection(
+                name="project_a_docs")
+
+        def reciprocal_rank_fusion(self, ranked_lists, k=60):
+            scores = {}
+            for lst in ranked_lists:
+                for rank, doc in enumerate(lst, start=1):
+                    scores[doc] = scores.get(doc, 0.0) + 1.0 / (k + rank)
+            return sorted(scores.items(), key=lambda p: p[1], reverse=True)
+
+    return MiniKB()
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--top-n", type=int, default=3,
                     help="lấy điểm cao nhất của mấy chunk đầu (mặc định 3)")
     ap.add_argument("--out", default="threshold_report.json")
+    ap.add_argument("--ingest", action="store_true",
+                    help="nạp lại corpus trước khi đo")
     args = ap.parse_args()
 
-    print("Nạp KnowledgeBase (mất vài phút nếu build corpus lần đầu)...")
-    from src.core.knowledge import KnowledgeBase
-    kb = KnowledgeBase()
-    from src.core.retrieval import Retriever, expand_query, effectivity_filter
+    print("Nạp model (embedder + reranker)...")
+    kb = build_kb()
+
+    if args.ingest or kb.client.get_or_create_collection("anser_legal").count() == 0:
+        print("Vector DB trống — đang nạp corpus...")
+        from src.core.ingest import CorpusIngestor
+        CorpusIngestor(kb).ingest_all()
+
+    from src.core.retrieval import Retriever
+
+    for c in sorted(kb.client.list_collections(), key=lambda x: x.name):
+        if c.count():
+            print(f"  {c.name:<32}{c.count():>5} chunk")
 
     saved = kb.relevance_threshold
     kb.relevance_threshold = -999.0        # tắt cổng để thu điểm thô

@@ -18,7 +18,7 @@ GPU_PROFILE = os.getenv("GPU_PROFILE", "l4").strip().lower()
 # iteration per AI-OPS-02) pending Plan 02's live confirmation/tuning --
 # not a final tuned number.
 _VLLM_PROFILES = {
-    "l4":   {"gpu_memory_utilization": 0.55, "max_model_len": 4096},
+    "l4":   {"gpu_memory_utilization": 0.55, "max_model_len": 8192},
     "a100": {"gpu_memory_utilization": 0.85, "max_model_len": 4096},
 }
 
@@ -113,9 +113,9 @@ class Config:
         #  gpu_memory_utilization/max_model_len are selected from
         #  _VLLM_PROFILES via GPU_PROFILE (l4 default, a100 opt-in). An
         #  explicit positive TEXT_MAX_MODEL_LEN overrides only max_model_len;
-        #  when absent, both profiles retain the proven 4096 default. The
-        #  remaining keys (dtype/quantization/enforce_eager) are fixed, not
-        #  profile-dependent.
+        #  when absent, l4 uses 8192 (retrieval.py suy ngân sách ngữ cảnh
+        #  6000 token ra từ con số này) và a100 giữ 4096. Các key còn lại
+        #  (dtype/quantization/enforce_eager) cố định, không theo profile.
         # =================================================================
         self.gpu_profile = GPU_PROFILE if GPU_PROFILE in _VLLM_PROFILES else "l4"
         _profile = _VLLM_PROFILES[self.gpu_profile]

@@ -213,7 +213,7 @@ class CorpusIngestor:
         pcoll = self._collection(coll_name + PARENT_SUFFIX)
         pcoll.add(
             documents=[p.text for p in parents],
-            embeddings=[[0.0]] * len(parents),
+            embeddings=[[1.0]] * len(parents),
             metadatas=[{
                 "source": path.name, "sha256": sha,
                 "so_hieu": str(meta["so_hieu"]),
