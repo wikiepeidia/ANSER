@@ -9,6 +9,7 @@ import torch
 from pypdf import PdfReader
 import docx
 from .ingest import CorpusIngestor
+from .retrieval import Retriever
 from underthesea import word_tokenize, sent_tokenize
 from rank_bm25 import BM25Okapi
 
@@ -47,6 +48,7 @@ class KnowledgeBase:
 
         CorpusIngestor(self).ingest_all()
         self._ensure_bm25()
+        self.retriever = Retriever(self)
 
     def _resolve_reranker_device(self):
         """Independent device-placement override for the reranker only.
@@ -307,3 +309,6 @@ class KnowledgeBase:
             len(relevant), len(scored_docs), relevant[0][0],
         )
         return "\n\n---\n\n".join(best_docs)
+
+    def search(self, query, top_k=6, as_of=None):
+        return self.retriever.search(query, top_k=top_k, as_of=as_of)
