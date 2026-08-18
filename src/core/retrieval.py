@@ -27,6 +27,26 @@ from datetime import date
 
 logger = logging.getLogger("projecta.retrieval")
 
+# Cache BM25 giữa các truy vấn.
+#
+# Không cache thì mỗi câu hỏi phải get() toàn bộ collection, word_tokenize
+# từng chunk bằng underthesea, rồi dựng lại BM25Okapi — với 459 chunk trên
+# 2 collection là ~900 lần tokenize tiếng Việt cho MỘT câu hỏi, mất ~9 giây.
+#
+# Hai tầng cache:
+#   _TOKEN_CACHE  chunk -> token, theo (collection, số chunk). Tốn nhất, và
+#                 chỉ đổi khi corpus đổi.
+#   _BM25_CACHE   index đã dựng, theo (collection, điều kiện lọc). Cùng một
+#                 ngày giao dịch dùng lại được.
+_TOKEN_CACHE: dict = {}
+_BM25_CACHE: dict = {}
+
+
+def clear_cache():
+    """Gọi sau khi re-ingest, nếu không BM25 vẫn chạy trên chunk thế hệ cũ."""
+    _TOKEN_CACHE.clear()
+    _BM25_CACHE.clear()
+
 PARENT_SUFFIX = "_parents"
 
 # Ngân sách ngữ cảnh, suy ra từ max_model_len=8192 trừ system prompt (~200),
@@ -63,6 +83,15 @@ SYNONYMS = {
 # truy vấn khi câu hỏi thật sự thuộc về chúng — trộn vào mặc định thì chúng
 # cạnh tranh với điều khoản luật ở nhánh BM25 (từ khóa chung như "hàng hóa",
 # "loại khác" xuất hiện dày đặc trong danh mục).
+# Tên danh mục và mặt hàng thực tế của cửa hàng. Câu hỏi nhắc tới chúng phải
+# chạm được anser_product (mô tả sản phẩm) và anser_internal (bảng thuế suất).
+_PRODUCT_WORDS = [
+    "trà", "chè", "cao mềm", "cao nước", "thảo mộc", "thảo dược",
+    "atiso", "atisô", "olong", "ô long", "trà xanh", "sấy khô",
+    "hà thủ ô", "linh chi", "khổ qua", "nhàu", "đinh lăng",
+    "cà gai leo", "diệp hạ châu", "túi lọc",
+]
+
 ROUTE_HINTS = {
     "anser_legal_phuluc": re.compile(
         r"\b\d{4}\.\d{2}|mã hs|mã hàng|danh mục|khoáng sản|tỷ lệ %|tỷ lệ phần trăm",
@@ -70,8 +99,16 @@ ROUTE_HINTS = {
     "anser_market": re.compile(
         r"thị trường|xu hướng|tăng trưởng|đối thủ|thị phần|báo cáo ngành|dự báo",
         re.I),
+    # Bảng thuế suất theo danh mục nằm trong anser_internal. Nó là mắt xích
+    # nối TÊN SẢN PHẨM (khách hỏi) với NHÓM NGÀNH (luật quy định) — thiếu nó,
+    # câu "trà thảo mộc chịu thuế bao nhiêu %" bị reranker chấm 0.038 vì
+    # corpus pháp lý không có một chữ nào về trà.
     "anser_internal": re.compile(
-        r"cửa hàng|đổi trả|bảo hành|giao hàng|chính sách|shop", re.I),
+        r"cửa hàng|đổi trả|bảo hành|giao hàng|chính sách|shop"
+        r"|" + r"|".join(_PRODUCT_WORDS), re.I),
+    "anser_product": re.compile(
+        r"sản phẩm|mặt hàng|giá bao nhiêu|còn hàng|mã sp|công dụng|thành phần"
+        r"|" + r"|".join(_PRODUCT_WORDS), re.I),
 }
 
 
@@ -139,23 +176,44 @@ class Retriever:
 
         Nếu không, nhánh lexical bypass filter và kéo về điều khoản đã hết
         hiệu lực — rồi RRF đẩy chúng lên cao vì chúng khớp từ khóa rất tốt.
+
+        Index được cache: dựng lại mỗi truy vấn tốn ~4 giây cho một collection
+        459 chunk, chủ yếu do underthesea.word_tokenize.
         """
+        import json as _json
+
         from rank_bm25 import BM25Okapi
         from underthesea import word_tokenize
 
-        try:
-            data = collection.get(where=where, limit=5000)
-        except Exception as e:
-            logger.warning("bm25 get lỗi trên %s: %s", collection.name, e)
-            return []
-        docs = data.get("documents") or []
-        if not docs:
-            return []
+        key = (collection.name, _json.dumps(where, sort_keys=True, default=str))
+        cached = _BM25_CACHE.get(key)
 
-        bm25 = BM25Okapi([word_tokenize(d.lower()) for d in docs])
+        if cached is None:
+            try:
+                data = collection.get(where=where, limit=5000)
+            except Exception as e:
+                logger.warning("bm25 get lỗi trên %s: %s", collection.name, e)
+                return []
+            docs = data.get("documents") or []
+            if not docs:
+                return []
+
+            tok_key = (collection.name, len(docs))
+            tokens = _TOKEN_CACHE.get(tok_key)
+            if tokens is None or len(tokens) != len(docs):
+                tokens = [word_tokenize(d.lower()) for d in docs]
+                _TOKEN_CACHE[tok_key] = tokens
+                logger.info("BM25: tokenize %d chunk của %s (chỉ lần đầu)",
+                            len(docs), collection.name)
+
+            cached = (BM25Okapi(tokens), docs, data["ids"], data["metadatas"])
+            _BM25_CACHE[key] = cached
+
+        bm25, docs, ids, metas = cached
         scores = bm25.get_scores(word_tokenize(query.lower()))
-        order = sorted(range(len(docs)), key=lambda i: scores[i], reverse=True)[:BM25_N]
-        return [{"id": data["ids"][i], "text": docs[i], "meta": data["metadatas"][i]}
+        order = sorted(range(len(docs)), key=lambda i: scores[i],
+                       reverse=True)[:BM25_N]
+        return [{"id": ids[i], "text": docs[i], "meta": metas[i]}
                 for i in order if scores[i] > 0]
 
     # ------------------------------------------------------- tầng 2
