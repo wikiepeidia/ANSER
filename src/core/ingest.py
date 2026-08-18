@@ -39,6 +39,7 @@ CORPUS_DIRS = {
     "appendix": "anser_legal_phuluc",
     "internal": "anser_internal",
     "market":   "anser_market",
+    "product":  "anser_product",
 }
 
 PARENT_SUFFIX = "_parents"

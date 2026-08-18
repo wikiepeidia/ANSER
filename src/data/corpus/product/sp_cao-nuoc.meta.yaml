@@ -1,0 +1,27 @@
+# Sản phẩm nhóm CAO NƯỚC
+so_hieu: "sp_cao-nuoc"
+loai_vb: du_lieu_san_pham
+co_quan: "Ngọc Duy Group"
+
+# Không phải văn bản QPPL nên không có ngày ban hành. Đặt mốc đủ sớm để
+# filter hiệu lực luôn cho qua.
+ngay_hieu_luc: 2024-01-01
+ngay_het_hieu_luc: null
+trang_thai: con_hieu_luc
+
+linh_vuc: [san_pham]
+huong_dan_cho: []
+
+ngay_tai: 2026-08-18
+dinh_dang_goc: xlsx
+file_goc: "san_pham_ngocduy.xlsx"
+sha256_txt: "4e56a4be763ed12e"
+n_san_pham: 8
+
+ingest: true
+collection: anser_product
+
+# Giá nhập và tồn kho ĐÃ BỊ LOẠI ở tầng pipeline (build_product_corpus.py),
+# không phụ thuộc vào prompt. Giá nhập là dữ liệu nội bộ; tồn kho đổi hàng
+# ngày nên phải truy vấn SQL qua saas_api.py chứ không vector hóa.
+cot_bi_loai: [gia_nhap, hang_ton_kho]
