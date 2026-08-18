@@ -35,3 +35,4 @@ offline_training/*.jsonl
 offline_training/product_catalogs.json
 *.pyc
 
+data/vector_db/
